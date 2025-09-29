@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
+    "target": "es5",
+    "module": "esnext",
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["./src/*"]
+      "@mui/*": ["node_modules/@mui/*"]
     }
-  }
+  },
+  "include": ["next-env.d.js", "src/**/*"],
+  "exclude": ["node_modules"]
 }
