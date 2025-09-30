@@ -1,20 +1,27 @@
-import { NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Block access to old PWA/service worker files
-  const blockedPaths = ['/manifest.json', '/sw.js', '/workbox-', '/fallback-', '/precache-', '/service-worker.js'];
+  const blockedPaths = [
+    "/manifest.json",
+    "/sw.js",
+    "/workbox-",
+    "/fallback-",
+    "/precache-",
+    "/service-worker.js",
+  ];
 
   if (blockedPaths.some((path) => pathname.includes(path))) {
-    console.log('Blocking access to PWA file:', pathname);
-    return new Response('Service Worker files have been disabled', {
+    console.log("Blocking access to PWA file:", pathname);
+    return new Response("Service Worker files have been disabled", {
       status: 404,
       headers: {
-        'Content-Type': 'text/plain',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
+        "Content-Type": "text/plain",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
     });
   }
 
@@ -22,39 +29,56 @@ export async function middleware(request) {
   const response = NextResponse.next();
 
   // Nuclear cache control - prevent any caching
-  response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0, private');
-  response.headers.set('Pragma', 'no-cache');
-  response.headers.set('Expires', '0');
+  response.headers.set(
+    "Cache-Control",
+    "no-cache, no-store, must-revalidate, max-age=0, private",
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
 
   // Block service worker completely
-  response.headers.set('Service-Worker-Allowed', '/');
-  response.headers.set('Service-Worker', 'none');
+  response.headers.set("Service-Worker-Allowed", "/");
+  response.headers.set("Service-Worker", "none");
 
   // Clear all possible cached data
-  response.headers.set('Clear-Site-Data', '"cache", "storage", "executionContexts"');
+  response.headers.set(
+    "Clear-Site-Data",
+    '"cache", "storage", "executionContexts"',
+  );
 
   // Prevent any PWA manifest loading
-  response.headers.set('X-PWA-Disabled', 'true');
-  response.headers.set('X-Service-Worker-Disabled', 'true');
-  response.headers.set('X-Web-App-Manifest', 'none');
+  response.headers.set("X-PWA-Disabled", "true");
+  response.headers.set("X-Service-Worker-Disabled", "true");
+  response.headers.set("X-Web-App-Manifest", "none");
 
   // Force no transformation
-  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set("X-Content-Type-Options", "nosniff");
 
   // Get the token from the request
   const token = await getToken({ req: request });
 
+  // If user is trying to access root page, redirect based on session
+  if (pathname === "/") {
+    if (token) {
+      return NextResponse.redirect(new URL("/home", request.url));
+    } else {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
   // If user is trying to access login page and has a token, redirect to /home
-  if (pathname === '/login' && token) {
-    return NextResponse.redirect(new URL('/home', request.url));
+  if (pathname === "/login" && token) {
+    return NextResponse.redirect(new URL("/home", request.url));
   }
 
   // If user is trying to access protected routes without token, redirect to login
-  const protectedRoutes = ['/home', '/dashboard'];
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+  const protectedRoutes = ["/home", "/dashboard"];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
 
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return response;
@@ -62,14 +86,15 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    '/login',
-    '/home/:path*',
-    '/dashboard/:path*',
-    '/manifest.json',
-    '/sw.js',
-    '/workbox-:path*',
-    '/fallback-:path*',
-    '/precache-:path*',
-    '/service-worker.js'
-  ]
+    "/",
+    "/login",
+    "/home/:path*",
+    "/dashboard/:path*",
+    "/manifest.json",
+    "/sw.js",
+    "/workbox-:path*",
+    "/fallback-:path*",
+    "/precache-:path*",
+    "/service-worker.js",
+  ],
 };
