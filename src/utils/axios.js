@@ -5,8 +5,11 @@ import { replayRequests, saveRequest } from 'lib/offlineFetch';
 
 const axiosServices = axios.create({
   baseURL: process.env.NEXT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || '',
-  withCredentials: true,
-  timeout: 20000
+  withCredentials: false,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 axiosServices.interceptors.request.use(

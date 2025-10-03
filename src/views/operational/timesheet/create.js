@@ -64,6 +64,7 @@ import moment from 'moment';
 import OptionOperatorDriver from 'components/OptionOperatorDriver';
 import OptionEquipment from 'components/OptionEquipment';
 import OptionKegiatanKerja from 'components/OptionKegiatanKerja';
+import PhotoDropZoneFormik from 'components/PhotoDropZoneFormik';
 
 const msgSuccess = {
   open: true,
@@ -95,6 +96,9 @@ const initialValues = {
   smustart: 0.0,
   smufinish: 0.0,
   usedsmu: 0.0,
+  bbm: 0,
+  keterangan: '',
+  photo: '',
   kegiatan: [
     // {
     //     kegiatan_id: '',
@@ -134,6 +138,10 @@ export default function CreateTimesheet() {
     usedsmu: Yup.number().typeError('HM/KM Used harus angka').required('HM/KM Used wajib diisi'),
 
     bbm: Yup.number().typeError('Refuel BBM harus angka').min(0, 'Refuel BBM tidak boleh negatif').required('Refuel BBM wajib diisi'),
+
+    keterangan: Yup.string().nullable(),
+
+    photo: Yup.string().nullable(),
 
     kegiatan: Yup.array()
       .of(
@@ -237,11 +245,28 @@ export default function CreateTimesheet() {
       })
   });
   const onSubmitHandle = async (values) => {
+    // Create FormData for file upload
+    const formData = new FormData();
+    
+    // Append all form fields to FormData
+    Object.keys(values).forEach(key => {
+      if (key === 'photo' && values[key] instanceof File) {
+        // Handle file upload
+        formData.append('photo', values[key]);
+      } else if (key === 'kegiatan') {
+        // Handle array of activities
+        formData.append(key, JSON.stringify(values[key]));
+      } else {
+        // Handle regular fields
+        formData.append(key, values[key] || '');
+      }
+    });
+
     const config = {
       url: `/api/operation/timesheet/create`,
       method: 'POST',
-      data: values,
-      headers: { 'Content-Type': 'application/json' },
+      data: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
       status: 'pending',
       pesan: `INSERT TIMESHEET TANGGAL ${values.tanggal} EQUIPMENT ${values?.equipment.abbr}` // ✅ kirim pesan custom
     };
@@ -266,15 +291,6 @@ export default function CreateTimesheet() {
       }
       openNotification({ ...msgError, message: err?.diagnostic?.error || 'Gagal mengirim data' });
     }
-    // console.log('values.', values);
-    // try {
-    //   const resp = await axiosServices.post('/api/operation/timesheet/create', values);
-    //   console.log('RESP.', resp);
-    //   route.push('/timesheet');
-    //   openNotification(msgSuccess);
-    // } catch (error) {
-    //   openNotification({ ...msgError, message: error?.diagnostic?.error || '...' });
-    // }
   };
 
   return (
@@ -488,6 +504,22 @@ export default function CreateTimesheet() {
                       value={values.bbm}
                       onChange={handleChange}
                     />
+                  </Grid>
+                  <Grid item xs={12} sm={6} sx={{ mt: 2 }}>
+                    <InputForm
+                      label="Keterangan"
+                      type="text"
+                      name="keterangan"
+                      error={errors.keterangan}
+                      touched={touched.keterangan}
+                      value={values.keterangan}
+                      onChange={handleChange}
+                      multiline
+                      rows={10}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} sx={{ mt: 2 }}>
+                    <PhotoDropZoneFormik name="photo" />
                   </Grid>
                 </Grid>
                 <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">

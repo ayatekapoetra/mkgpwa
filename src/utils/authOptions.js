@@ -131,7 +131,7 @@ export const authOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production', // true in production, false in development
+        secure: false,
         maxAge: Number(process.env.NEXT_APP_JWT_TIMEOUT) // Default: 24 hours
       }
     },
@@ -141,7 +141,7 @@ export const authOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
         maxAge: 60 * 60 * 24 // 24 hours
       }
     },
@@ -151,7 +151,7 @@ export const authOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
         maxAge: 60 * 60 * 24 // 24 hours
       }
     }

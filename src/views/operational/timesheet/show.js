@@ -24,6 +24,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import MainCard from 'components/MainCard';
 import InputForm from 'components/InputForm';
 import ConfirmDialog from 'components/ConfirmDialog';
+import BtnBack from 'components/BtnBack';
 import OptionCabang from 'components/OptionCabang';
 import OptionPenyewa from 'components/OptionPenyewa';
 import OptionLokasiKerja from 'components/OptionLokasiPit';
@@ -42,7 +43,6 @@ import {
   Arrow,
   AlignVertically,
   TruckFast,
-  ArrowCircleLeft2,
   Timer1,
   Location,
   UserOctagon,
@@ -337,19 +337,7 @@ const ShowTimesheetScreen = () => {
           handleClose={toggleDialogHandle}
           handleAction={onRemoveHandle}
         />
-        <MainCard
-          title={
-            <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-              <Stack direction="row" alignItems="center" gap={1}>
-                <IconButton color={'secondary'} onClick={() => route.back()}>
-                  <ArrowCircleLeft2 />
-                </IconButton>
-                <Typography variant="subtitle1">Back</Typography>
-              </Stack>
-              <OfflineIndicator />
-            </Stack>
-          }
-        >
+        <MainCard title={<BtnBack href={'/timesheet'} />} secondary={<OfflineIndicator />} content={true}>
           <Formik
             enableReinitialize={true}
             initialValues={standardizedInitData}
