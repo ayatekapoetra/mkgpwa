@@ -2,11 +2,11 @@
 import { FormattedMessage } from 'react-intl';
 
 // ASSETS
-import { Download } from 'iconsax-react';
+import { DocumentDownload } from 'iconsax-react';
 
 // ICONS
 const icons = {
-  download: Download
+  download: DocumentDownload
 };
 
 // ==============================|| MENU ITEMS - MANUAL DOWNLOAD ||============================== //
