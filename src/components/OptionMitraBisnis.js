@@ -12,7 +12,7 @@ const OptionMitraBisnis = ({
 }) => {
   const { data: array, dataLoading } = useMitraBisnis();
 
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

@@ -12,7 +12,7 @@ const OptionMaterialMining = ({
 }) => {
   const { data: array, dataLoading } = useMaterialMining();
 
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

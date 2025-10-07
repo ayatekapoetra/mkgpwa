@@ -4,7 +4,7 @@ import { useGetLokasiKerja } from 'api/lokasi-mining';
 const FilterLokasiPit = ({ value = '', label = 'Lokasi Kerja', name = 'lokasi_id', startAdornment = null, setData }) => {
   const { data: array, dataLoading } = useGetLokasiKerja();
 
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

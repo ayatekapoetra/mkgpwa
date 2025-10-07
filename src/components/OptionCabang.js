@@ -12,7 +12,7 @@ const OptionCabang = ({
 }) => {
   const { data: array, dataLoading } = useCabang();
 
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

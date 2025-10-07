@@ -11,7 +11,7 @@ const OptionSubmenu = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetSubMenu();
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

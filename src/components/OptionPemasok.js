@@ -11,7 +11,7 @@ const OptionPemasok = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetPenyewa();
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

@@ -13,7 +13,7 @@ const OptionUser = ({
 }) => {
   const { data: array, dataLoading } = useUserKaryawan();
 
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

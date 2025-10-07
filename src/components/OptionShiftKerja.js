@@ -13,7 +13,7 @@ const OptionShiftKerja = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetShiftKerja();
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

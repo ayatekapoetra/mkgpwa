@@ -3,7 +3,7 @@ import { useGetKaryawanSection } from 'api/karyawan';
 
 const FilterKaryawan = ({ value = '', label = 'Karyawan', name = 'karyawan_id', startAdornment = null, params = null, setData }) => {
   const { data: array, dataLoading } = useGetKaryawanSection(params);
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

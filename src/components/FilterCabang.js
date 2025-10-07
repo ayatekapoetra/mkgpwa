@@ -3,7 +3,7 @@ import { useCabang } from 'api/cabang';
 
 const FilterCabang = ({ value = '', label = 'Nama Cabang', name = 'cabang_id', startAdornment = null, setData }) => {
   const { data: array, dataLoading } = useCabang();
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

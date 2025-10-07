@@ -3,7 +3,7 @@ import { useMaterialMining } from 'api/material';
 
 const FilterMaterialMining = ({ value = '', label = 'Jenis Material', name = 'material_id', startAdornment = null, setData }) => {
   const { data: array, dataLoading } = useMaterialMining();
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

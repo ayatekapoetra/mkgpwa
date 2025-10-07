@@ -4,7 +4,7 @@ import { useMitraBisnis } from 'api/mitra-bisnis';
 const FilterMitraBisnis = ({ value = '', label = 'Pemilik', name = 'mitra_id', startAdornment = null, setData = () => {} }) => {
   const { data: array, dataLoading } = useMitraBisnis();
 
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <div>Loading...</div>;
   }
   return (

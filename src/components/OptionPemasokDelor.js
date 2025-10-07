@@ -12,7 +12,7 @@ const OptionPemasokDelor = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetPemasokDelor();
-  if (dataLoading) {
+  if (dataLoading || !array) {
     return <InputSkeleton height={30} />;
   }
   return (
