@@ -10,10 +10,30 @@ const OptionLokasiKerja = ({
   startAdornment = null,
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetLokasiKerja();
+  const { data: array, dataLoading, dataEmpty } = useGetLokasiKerja();
 
-  if (dataLoading || !array) {
+  if (dataLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (dataEmpty || !array || array.length === 0) {
+    return (
+      <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
+        <FormControl fullWidth variant="outlined">
+          <TextField
+            label={label}
+            value=""
+            disabled
+            helperText="Tidak ada data lokasi kerja tersedia"
+            InputProps={{
+              startAdornment: startAdornment && (
+                <InputAdornment position="start">{startAdornment}</InputAdornment>
+              )
+            }}
+          />
+        </FormControl>
+      </Stack>
+    );
   }
   return (
     <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">

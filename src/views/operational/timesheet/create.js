@@ -325,7 +325,7 @@ export default function CreateTimesheet() {
                       type="date"
                       name="tanggal"
                       errors={errors.tanggal}
-                      touched={true}
+                      touched={touched.tanggal}
                       value={values.tanggal}
                       onChange={handleChange}
                       disabled={isSubmitting}
@@ -352,9 +352,9 @@ export default function CreateTimesheet() {
                       name={'penyewa_id'}
                       label="Nama Penyewa"
                       error={errors.penyewa_id}
-                      touched={true}
+                      touched={touched.penyewa_id}
                       startAdornment={<Android />}
-                      helperText={true && errors.penyewa_id}
+                      helperText={touched.penyewa_id && errors.penyewa_id}
                       setFieldValue={setFieldValue}
                       disabled={isSubmitting}
                     />
@@ -594,7 +594,7 @@ export default function CreateTimesheet() {
                                         values.equipment?.kategori == 'HE' ? { type: 'HE', isUniq: 'Y' } : { type: 'DT', isUniq: 'Y' }
                                       }
                                       name={`kegiatan[${idx}].kegiatan_id`}
-                                      touched={true}
+                                      touched={touched.kegiatan?.[idx]?.kegiatan_id}
                                       error={touched.kegiatan?.[idx]?.kegiatan_id && Boolean(errors.kegiatan?.[idx]?.kegiatan_id)}
                                       startAdornment={<Arrow />}
                                       setFieldValue={setFieldValue}
@@ -610,7 +610,7 @@ export default function CreateTimesheet() {
                                       value={item.material_id}
                                       label={'Jenis Material'}
                                       name={`kegiatan[${idx}].material_id`}
-                                      touched={true}
+                                      touched={touched.kegiatan?.[idx]?.material_id}
                                       error={touched.kegiatan?.[idx]?.material_id && Boolean(errors.kegiatan?.[idx]?.material_id)}
                                       startAdornment={<Ankr />}
                                       setFieldValue={setFieldValue}
@@ -626,7 +626,7 @@ export default function CreateTimesheet() {
                                       value={item.lokasi_id}
                                       label="Nama Lokasi"
                                       name={`kegiatan[${idx}].lokasi_id`}
-                                      touched={true}
+                                      touched={touched.kegiatan?.[idx]?.lokasi_id}
                                       error={touched.kegiatan?.[idx]?.lokasi_id && Boolean(errors.kegiatan?.[idx]?.lokasi_id)}
                                       startAdornment={<AlignVertically />}
                                       setFieldValue={setFieldValue}
@@ -642,8 +642,8 @@ export default function CreateTimesheet() {
                                       <OptionLokasiKerja
                                         value={item.lokasi_to}
                                         label="Lokasi Tujuan"
-                                        name={`kegiatan[${idx}].lokasi_to`}
-                                        touched={true}
+name={`kegiatan[${idx}].lokasi_to`}
+                                        touched={touched.kegiatan?.[idx]?.lokasi_to}
                                         error={touched.kegiatan?.[idx]?.lokasi_to && Boolean(errors.kegiatan?.[idx]?.lokasi_to)}
                                         startAdornment={<AlignVertically />}
                                         setFieldValue={setFieldValue}
@@ -658,7 +658,7 @@ export default function CreateTimesheet() {
                                       startAdornment={<Clock />}
                                       value={item.starttime}
                                       onChange={handleChange}
-                                      touched={true}
+                                      touched={touched.kegiatan?.[idx]?.starttime}
                                       errors={touched.kegiatan?.[idx]?.starttime && errors.kegiatan?.[idx]?.starttime}
                                     />
                                     {Boolean(errors.kegiatan?.[idx]?.starttime) && (
