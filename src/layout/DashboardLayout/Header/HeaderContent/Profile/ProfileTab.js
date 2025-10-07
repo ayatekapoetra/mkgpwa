@@ -1,6 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 
+// NEXT
+import { useRouter } from 'next/navigation';
+
 // MATERIAL - UI
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -13,10 +16,13 @@ import { Card, Edit2, Logout, Profile, Profile2User } from 'iconsax-react';
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
 const ProfileTab = ({ handleLogout }) => {
+  const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const handleListItemClick = (event, index) => {
     setSelectedIndex(index);
   };
+
+  const isOnline = typeof window !== 'undefined' && navigator.onLine;
 
   return (
     <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
@@ -33,18 +39,13 @@ const ProfileTab = ({ handleLogout }) => {
         <ListItemText primary="View Profile" />
       </ListItemButton>
 
-      <ListItemButton selected={selectedIndex === 3} onClick={(event) => handleListItemClick(event, 3)}>
+      <ListItemButton selected={selectedIndex === 3} onClick={() => router.push('/manual-download')} disabled={!isOnline}>
         <ListItemIcon>
           <Profile2User variant="Bulk" size={18} />
         </ListItemIcon>
-        <ListItemText primary="Social Profile" />
+        <ListItemText primary="Download Data Offline" />
       </ListItemButton>
-      <ListItemButton selected={selectedIndex === 4} onClick={(event) => handleListItemClick(event, 4)}>
-        <ListItemIcon>
-          <Card variant="Bulk" size={18} />
-        </ListItemIcon>
-        <ListItemText primary="Billing" />
-      </ListItemButton>
+      
       <ListItemButton selected={selectedIndex === 2} onClick={handleLogout}>
         <ListItemIcon>
           <Logout variant="Bulk" size={18} />

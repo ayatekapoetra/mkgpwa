@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -16,7 +16,8 @@ import {
   MenuItem,
   Paper,
   Typography,
-  Stack
+  Stack,
+  CircularProgress
 } from '@mui/material';
 import IconButton from 'components/@extended/IconButton';
 
@@ -111,6 +112,7 @@ const initialValues = {
 
 export default function CreateTimesheet() {
   const route = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const validationSchema = Yup.object().shape({
     tanggal: Yup.date().required('Tanggal wajib diisi'),
 
@@ -245,40 +247,47 @@ export default function CreateTimesheet() {
       })
   });
   const onSubmitHandle = async (values) => {
-    // Create FormData for file upload
-    const formData = new FormData();
-    
-    // Append all form fields to FormData
-    Object.keys(values).forEach(key => {
-      if (key === 'photo' && values[key] instanceof File) {
-        // Handle file upload
-        formData.append('photo', values[key]);
-      } else if (key === 'kegiatan') {
-        // Handle array of activities
-        formData.append(key, JSON.stringify(values[key]));
-      } else {
-        // Handle regular fields
-        formData.append(key, values[key] || '');
-      }
-    });
-
-    const config = {
-      url: `/api/operation/timesheet/create`,
-      method: 'POST',
-      data: formData,
-      headers: { 'Content-Type': 'multipart/form-data' },
-      status: 'pending',
-      pesan: `INSERT TIMESHEET TANGGAL ${values.tanggal} EQUIPMENT ${values?.equipment.abbr}` // ✅ kirim pesan custom
-    };
-
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      // offline → simpan ke queue
-      await saveRequest(config);
-      openNotification({ ...msgError, message: 'Offline: data disimpan ke antrian' });
+    // Prevent multiple submissions
+    if (isSubmitting) {
       return;
     }
 
+    setIsSubmitting(true);
+    
     try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Append all form fields to FormData
+      Object.keys(values).forEach(key => {
+        if (key === 'photo' && values[key] instanceof File) {
+          // Handle file upload
+          formData.append('photo', values[key]);
+        } else if (key === 'kegiatan') {
+          // Handle array of activities
+          formData.append(key, JSON.stringify(values[key]));
+        } else {
+          // Handle regular fields
+          formData.append(key, values[key] || '');
+        }
+      });
+
+      const config = {
+        url: `/api/operation/timesheet/create`,
+        method: 'POST',
+        data: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+        status: 'pending',
+        pesan: `INSERT TIMESHEET TANGGAL ${values.tanggal} EQUIPMENT ${values?.equipment.abbr}` // ✅ kirim pesan custom
+      };
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        // offline → simpan ke queue
+        await saveRequest(config);
+        openNotification({ ...msgError, message: 'Offline: data disimpan ke antrian' });
+        return;
+      }
+
       const resp = await axiosServices(config);
       if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         console.log('RESP.', resp);
@@ -289,7 +298,9 @@ export default function CreateTimesheet() {
       if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         console.error('Submit error:', err);
       }
-      openNotification({ ...msgError, message: err?.diagnostic?.error || 'Gagal mengirim data' });
+      openNotification({ ...msgError, message: typeof err?.diagnostic?.error === 'string' ? err?.diagnostic?.error : 'Gagal mengirim data' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -305,7 +316,7 @@ export default function CreateTimesheet() {
             }
 
             return (
-              <Form noValidate onSubmit={handleSubmit}>
+              <Form noValidate onSubmit={handleSubmit} style={{ pointerEvents: isSubmitting ? 'none' : 'auto' }}>
                 <HelperComponent values={values} setFieldValue={setFieldValue} />
                 <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
                   <Grid item xs={12} sm={3} sx={{ mb: 2 }}>
@@ -317,6 +328,7 @@ export default function CreateTimesheet() {
                       touched={true}
                       value={values.tanggal}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                 </Grid>
@@ -331,6 +343,7 @@ export default function CreateTimesheet() {
                       startAdornment={<Building3 />}
                       helperText={touched.cabang_id && errors.cabang_id}
                       setFieldValue={setFieldValue}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={5} sx={{ mt: 2 }}>
@@ -343,6 +356,7 @@ export default function CreateTimesheet() {
                       startAdornment={<Android />}
                       helperText={true && errors.penyewa_id}
                       setFieldValue={setFieldValue}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={3} sx={{ mt: 2 }}>
@@ -355,6 +369,7 @@ export default function CreateTimesheet() {
                         placeholder="Pilih"
                         onBlur={handleBlur}
                         onChange={handleChange}
+                        disabled={isSubmitting}
                         input={
                           <OutlinedInput
                             startAdornment={
@@ -383,6 +398,7 @@ export default function CreateTimesheet() {
                         value={values.overtime}
                         placeholder="Longshift"
                         onChange={handleChange}
+                        disabled={isSubmitting}
                         input={
                           <OutlinedInput
                             startAdornment={
@@ -412,6 +428,7 @@ export default function CreateTimesheet() {
                         value={values.shift_id}
                         placeholder="Longshift"
                         onChange={handleChange}
+                        disabled={isSubmitting}
                         input={
                           <OutlinedInput
                             startAdornment={
@@ -441,6 +458,7 @@ export default function CreateTimesheet() {
                       startAdornment={<UserOctagon />}
                       helperText={touched.karyawan_id && errors.karyawan_id}
                       setFieldValue={setFieldValue}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={3}>
@@ -453,6 +471,7 @@ export default function CreateTimesheet() {
                       startAdornment={<TruckFast />}
                       helperText={touched.equipment_id && errors.equipment_id}
                       setFieldValue={setFieldValue}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -466,6 +485,7 @@ export default function CreateTimesheet() {
                       touched={touched}
                       value={values.smustart}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -479,6 +499,7 @@ export default function CreateTimesheet() {
                       touched={touched}
                       value={values.smufinish}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={2}>
@@ -491,6 +512,7 @@ export default function CreateTimesheet() {
                       touched={touched.usedsmu}
                       value={values.usedsmu}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={2}>
@@ -503,6 +525,7 @@ export default function CreateTimesheet() {
                       touched={touched.bbm}
                       value={values.bbm}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} sx={{ mt: 2 }}>
@@ -516,10 +539,11 @@ export default function CreateTimesheet() {
                       onChange={handleChange}
                       multiline
                       rows={10}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} sx={{ mt: 2 }}>
-                    <PhotoDropZoneFormik name="photo" />
+                    <PhotoDropZoneFormik name="photo" disabled={isSubmitting} />
                   </Grid>
                 </Grid>
                 <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
@@ -543,6 +567,7 @@ export default function CreateTimesheet() {
                               variant="contained"
                               color="secondary"
                               startIcon={<AddSquare />}
+                              disabled={isSubmitting}
                             >
                               Kegiatan
                             </Button>
@@ -553,7 +578,7 @@ export default function CreateTimesheet() {
                           <div>
                             {values?.kegiatan.length == 0 && (
                               <Typography variant="h6" color="error" gutterBottom>
-                                {errors?.kegiatan}
+                                {typeof errors?.kegiatan === 'string' ? errors?.kegiatan : 'Minimal satu kegiatan harus diisi'}
                               </Typography>
                             )}
                           </div>
@@ -708,9 +733,15 @@ export default function CreateTimesheet() {
                                     </Grid>
                                   )}
                                   <Grid item xs={12} sm={1} sx={{ mt: 2 }}>
-                                    <IconButton variant="contained" color="error" size="large" onClick={() => remove(idx)}>
-                                      <Trash />
-                                    </IconButton>
+<IconButton 
+                                       variant="contained" 
+                                       color="error" 
+                                       size="large" 
+                                       onClick={() => remove(idx)}
+                                       disabled={isSubmitting}
+                                     >
+                                       <Trash />
+                                     </IconButton>
                                   </Grid>
                                 </Grid>
                               </Paper>
@@ -722,11 +753,28 @@ export default function CreateTimesheet() {
                   </Grid>
                   <Grid item xs={12} sm={12} sx={{ mt: 2 }}>
                     <Stack direction="row" gap={1}>
-                      <Button component={Link} href={'/timesheet'} variant="outlined" color="secondary" startIcon={<Back />}>
+                      <Button 
+                        component={Link} 
+                        href={'/timesheet'} 
+                        variant="outlined" 
+                        color="secondary" 
+                        startIcon={<Back />}
+                        disabled={isSubmitting}
+                        onClick={(e) => {
+                          if (isSubmitting) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
                         Cancel
                       </Button>
-                      <Button type="submit" variant="shadow" startIcon={<Send2 />}>
-                        Kirim Timesheet
+                      <Button 
+                        type="submit" 
+                        variant="shadow" 
+                        startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send2 />}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? 'Mengirim...' : 'Kirim Timesheet'}
                       </Button>
                     </Stack>
                   </Grid>

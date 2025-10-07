@@ -18,8 +18,8 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 // THIRD - PARTY
 import { Filter, Wifi, NoteAdd } from 'iconsax-react';
 import ListTimesheet from './list';
-import { getAllRequests } from 'lib/offlineFetch';
-import { replayRequests } from 'lib/offlineFetch';
+import { getAllRequests, replayRequests } from 'lib/offlineFetch';
+import SyncProgressDialog from 'components/SyncProgressDialog';
 
 // SWR
 import { useGetDailyTimesheet } from 'api/daily-timesheet';
@@ -48,6 +48,7 @@ export default function DailyTimesheetScreen() {
   const [queueStatus, setQueueStatus] = useState({});
   const [isOnline, setIsOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({ synced: 0, failed: 0, total: 0, current: '' });
   const { data, dataLoading } = useGetDailyTimesheet(params);
 
   const toggleFilterHandle = () => {
@@ -95,12 +96,36 @@ export default function DailyTimesheetScreen() {
     };
   }, []);
 
+  // Auto-sync on background trigger
+  useEffect(() => {
+    const handleBackgroundSync = async () => {
+      if (navigator.onLine && !syncing) {
+        const requests = await getAllRequests();
+        const pendingRequests = requests.filter((r) => r.status === 'pending' || r.status === 'error');
+        
+        if (pendingRequests.length > 0) {
+          handleManualSync();
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.__TAURI__) {
+      window.addEventListener('trigger-sync', handleBackgroundSync);
+      return () => window.removeEventListener('trigger-sync', handleBackgroundSync);
+    }
+  }, [syncing]);
+
   const handleManualSync = async () => {
     setSyncing(true);
     try {
-      await replayRequests();
+      await replayRequests((progress) => {
+        setSyncProgress(progress);
+      });
     } finally {
       setSyncing(false);
+      setTimeout(() => {
+        setSyncProgress({ synced: 0, failed: 0, total: 0, current: '' });
+      }, 2000);
     }
   };
 
@@ -151,6 +176,7 @@ export default function DailyTimesheetScreen() {
       >
         <FilterTimesheet params={params} setParams={setParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
         {!dataLoading && <ListTimesheet data={data} queueStatus={queueStatus} setParams={setParams} />}
+        <SyncProgressDialog open={syncing} progress={syncProgress} />
       </MainCard>
     </Fragment>
   );

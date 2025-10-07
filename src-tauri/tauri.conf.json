@@ -1,19 +1,19 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "MKG Desktop App",
+  "productName": "MKG DeskApp",
   "version": "1.0.0",
   "identifier": "com.makkuragatama.femkgpwa",
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
-    "devUrl": "http://localhost:3006",
+    "devUrl": "http://localhost:3005",
     "frontendDist": "dist"
   },
   "app": {
     "windows": [
       {
-        "title": "MKG Desktop App",
-        "url": "http://localhost:3006",
+        "title": "MKG DeskApp",
+        "url": "http://localhost:3005",
         "width": 1200,
         "height": 800,
         "resizable": true,
@@ -45,5 +45,15 @@
       "../.env.production"
     ]
   },
-  "plugins": {}
+  "plugins": {
+    "store": {
+      "path": ".store.json"
+    },
+    "fs": {
+      "scope": ["$APPDATA/*", "$APPDATA/**"]
+    },
+    "sql": {
+      "scope": ["sqlite:offline.db"]
+    }
+  }
 }

@@ -54,7 +54,7 @@ export function useGetMenuMaster() {
 
   const memoizedValue = useMemo(
     () => ({
-      menuMaster: data,
+      menuMaster: data || initialState,
       menuMasterLoading: isLoading
     }),
     [data, isLoading]

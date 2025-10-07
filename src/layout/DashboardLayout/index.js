@@ -27,13 +27,12 @@ import { MenuOrientation } from 'config';
 
 const DashboardLayout = ({ children }) => {
   const theme = useTheme();
-  const { menuMasterLoading } = useGetMenuMaster();
+  const { menuMasterLoading, menuMaster } = useGetMenuMaster();
   const downXL = useMediaQuery(theme.breakpoints.down('xl'));
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
   const { container, miniDrawer, menuOrientation } = useConfig();
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const drawerOpen = menuMaster?.isDashboardDrawerOpened ?? false;
 
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 
@@ -47,7 +46,8 @@ const DashboardLayout = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [downXL]);
 
-  if (menuMasterLoading) return <Loader />;
+  // Temporarily disable menu loading check for testing
+  // if (menuMasterLoading) return <Loader />;
 
   return (
     <Box sx={{ display: 'flex', width: '100%' }}>

@@ -2,8 +2,7 @@ import { TextractClient, AnalyzeDocumentCommand } from '@aws-sdk/client-textract
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import moment from 'moment';
-
-const axiosServices = axios.create({ baseURL: process.env.NEXT_APP_API_URL });
+import axiosServices from '../../../../utils/axios';
 
 export async function POST(req) {
   const apiPenyewa = await axiosServices('/api/public/penyewa/list');

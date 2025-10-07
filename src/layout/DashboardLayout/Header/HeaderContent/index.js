@@ -8,9 +8,9 @@ import Box from '@mui/material/Box';
 // import Search from './Search';
 // import Message from './Message';
 import Profile from './Profile';
-import ListFetchFailed from './ListFetchFailed';
+import ListFetchFailed from './ListFetchFailed.js';
 import Localization from './Localization';
-import Notification from './Notification';
+import Notification from './Notification.js';
 import MobileSection from './MobileSection';
 // import MegaMenuSection from './MegaMenuSection';
 
