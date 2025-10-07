@@ -39,7 +39,7 @@ const ProfileTab = ({ handleLogout }) => {
         <ListItemText primary="View Profile" />
       </ListItemButton>
 
-      <ListItemButton selected={selectedIndex === 3} onClick={() => router.push('/manual-download')} disabled={!isOnline}>
+      <ListItemButton selected={selectedIndex === 3} onClick={() => router.push('/manual-download')}>
         <ListItemIcon>
           <Profile2User variant="Bulk" size={18} />
         </ListItemIcon>
