@@ -45,7 +45,7 @@ const nextConfig = {
   env: {
     NEXT_APP_VERSION: 'v1.0.0',
     NEXTAUTH_SECRET: 'LlKq6ZtYbr+hTC073mAmAh9/h2HwMfsFo4hrfCx5mLg=',
-    NEXTAUTH_URL: 'https://apinext.makkuragatama.id',
+    NEXTAUTH_URL: 'https://pwa.makkuragatama.id',
     REACT_APP_GOOGLE_MAPS_API_KEY: 'AIzaSyAXv4RQK39CskcIB8fvM1Q7XCofZcLxUXw',
     NEXT_APP_API_URL: 'https://apinext.makkuragatama.id',
     NEXT_APP_JWT_SECRET: 'ikRgjkhi15HJiU78-OLKfjngiu',
