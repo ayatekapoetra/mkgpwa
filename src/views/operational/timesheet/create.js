@@ -253,11 +253,11 @@ export default function CreateTimesheet() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      
+
       // Append all form fields to FormData
       Object.keys(values).forEach(key => {
         if (key === 'photo' && values[key] instanceof File) {
@@ -642,7 +642,7 @@ export default function CreateTimesheet() {
                                       <OptionLokasiKerja
                                         value={item.lokasi_to}
                                         label="Lokasi Tujuan"
-name={`kegiatan[${idx}].lokasi_to`}
+                                        name={`kegiatan[${idx}].lokasi_to`}
                                         touched={touched.kegiatan?.[idx]?.lokasi_to}
                                         error={touched.kegiatan?.[idx]?.lokasi_to && Boolean(errors.kegiatan?.[idx]?.lokasi_to)}
                                         startAdornment={<AlignVertically />}
@@ -733,15 +733,15 @@ name={`kegiatan[${idx}].lokasi_to`}
                                     </Grid>
                                   )}
                                   <Grid item xs={12} sm={1} sx={{ mt: 2 }}>
-<IconButton 
-                                       variant="contained" 
-                                       color="error" 
-                                       size="large" 
-                                       onClick={() => remove(idx)}
-                                       disabled={isSubmitting}
-                                     >
-                                       <Trash />
-                                     </IconButton>
+                                    <IconButton
+                                      variant="contained"
+                                      color="error"
+                                      size="large"
+                                      onClick={() => remove(idx)}
+                                      disabled={isSubmitting}
+                                    >
+                                      <Trash />
+                                    </IconButton>
                                   </Grid>
                                 </Grid>
                               </Paper>
@@ -753,11 +753,11 @@ name={`kegiatan[${idx}].lokasi_to`}
                   </Grid>
                   <Grid item xs={12} sm={12} sx={{ mt: 2 }}>
                     <Stack direction="row" gap={1}>
-                      <Button 
-                        component={Link} 
-                        href={'/timesheet'} 
-                        variant="outlined" 
-                        color="secondary" 
+                      <Button
+                        component={Link}
+                        href={'/timesheet'}
+                        variant="outlined"
+                        color="secondary"
                         startIcon={<Back />}
                         disabled={isSubmitting}
                         onClick={(e) => {
@@ -768,9 +768,9 @@ name={`kegiatan[${idx}].lokasi_to`}
                       >
                         Cancel
                       </Button>
-                      <Button 
-                        type="submit" 
-                        variant="shadow" 
+                      <Button
+                        type="submit"
+                        variant="shadow"
                         startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send2 />}
                         disabled={isSubmitting}
                       >
