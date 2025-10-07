@@ -253,7 +253,7 @@ export default function ShowBarangScreen() {
       <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
         <DialogTitle>Konfirmasi Hapus</DialogTitle>
         <DialogContent>
-          <Typography>Apakah Anda yakin ingin menghapus Barang "{initialValues?.nama}"?</Typography>
+          <Typography>Apakah Anda yakin ingin menghapus Barang &quot;{initialValues?.nama}&quot;?</Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
             Tindakan ini tidak dapat dibatalkan.
           </Typography>

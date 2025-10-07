@@ -41,6 +41,7 @@ const MainCard = forwardRef(
     },
     ref
   ) => {
+    MainCard.displayName = 'MainCard';
     return (
       <MainCardStyled {...{ border, shadow, boxShadow, codeHighlight, modal, sx, elevation: elevation || 0, ...others }} ref={ref}>
         {/* card header and action */}

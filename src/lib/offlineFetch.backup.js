@@ -28,28 +28,28 @@ async function getOfflineModule() {
 }
 
 export async function saveRequest(config) {
-  const module = await getOfflineModule();
-  return module.saveRequest(config);
+  const offlineLib = await getOfflineModule();
+  return offlineLib.saveRequest(config);
 }
 
 export async function getAllRequests() {
-  const module = await getOfflineModule();
-  return module.getAllRequests();
+  const offlineLib = await getOfflineModule();
+  return offlineLib.getAllRequests();
 }
 
 export async function deleteRequest(key) {
-  const module = await getOfflineModule();
-  return module.deleteRequest(key);
+  const offlineLib = await getOfflineModule();
+  return offlineLib.deleteRequest(key);
 }
 
 export const removeRequest = deleteRequest;
 
 export async function replayRequests(onProgress = null, onConflict = null) {
-  const module = await getOfflineModule();
-  return module.replayRequests(onProgress, onConflict);
+  const offlineLib = await getOfflineModule();
+  return offlineLib.replayRequests(onProgress, onConflict);
 }
 
 export async function offlineFetch(config) {
-  const module = await getOfflineModule();
-  return module.offlineFetch(config);
+  const offlineLib = await getOfflineModule();
+  return offlineLib.offlineFetch(config);
 }

@@ -179,6 +179,8 @@ export const IndeterminateCheckbox = forwardRef(({ indeterminate, ...rest }, ref
   return <Checkbox indeterminate={indeterminate} ref={resolvedRef} {...rest} />;
 });
 
+IndeterminateCheckbox.displayName = 'IndeterminateCheckbox';
+
 IndeterminateCheckbox.propTypes = {
   indeterminate: PropTypes.bool
 };

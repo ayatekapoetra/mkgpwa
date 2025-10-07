@@ -12,6 +12,7 @@ import Zoom from '@mui/material/Zoom';
 // ==============================|| TRANSITIONS ||============================== //
 
 const Transitions = forwardRef(({ children, position = 'top-left', type = 'grow', direction = 'up', ...others }, ref) => {
+  Transitions.displayName = 'Transitions';
   let positionSX = {
     transformOrigin: '0 0 0'
   };
