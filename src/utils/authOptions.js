@@ -14,7 +14,7 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
-          const endpointAuthNew = process.env.NEXT_APP_API_URL + '/auth/login-mobile';
+          const endpointAuthNew = process.env.NEXT_APP_API_URL + '/api/auth/login';
           const user = await axios.post(endpointAuthNew, {
             password: credentials?.password,
             username: credentials?.username
