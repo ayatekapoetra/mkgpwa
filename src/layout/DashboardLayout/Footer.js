@@ -24,11 +24,11 @@ const Footer = () => (
         MakkuragaTama Dashboard
       </Typography>
       <Chip
-        label="v1.0.5"
+        label="v1.0.7"
         size="small"
-        color="secondary"
+        color="error"
         variant="filled"
-        sx={{ height: 18, fontSize: "0.7rem", fontWeight: 600 }}
+        sx={{ height: 20, fontSize: "0.75rem", fontWeight: 700 }}
       />
     </Stack>
     <Stack
