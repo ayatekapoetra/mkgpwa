@@ -140,7 +140,11 @@
     "directories": {
       "output": "dist"
     },
-    "publish": null,
+    "publish": {
+      "provider": "github",
+      "owner": "ayatekapoetra",
+      "repo": "mkgpwa"
+    },
     "files": [
       "electron/**/*",
       "out/**/*",
