@@ -29,16 +29,18 @@ jobs:
           ELECTRON_BUILD: true
 
       - name: Build Electron (macOS arm64)
-        run: npm run electron:publish:mac
+        run: npm run electron:dist:mac
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload DMG artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-arm64-dmg
-          path: dist/*.dmg
+          name: macos-artifacts
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/latest-mac.yml
 
   build-windows:
     runs-on: windows-latest
@@ -60,33 +62,39 @@ jobs:
           ELECTRON_BUILD: true
 
       - name: Build Electron (Windows x64)
-        run: npm run electron:publish:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:dist:win
 
-      - name: Upload installer artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-x64-installer
-          path: dist/*.exe
+          name: windows-artifacts
+          path: |
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
 
   release:
     needs: [build-mac, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Download macOS artifacts
         uses: actions/download-artifact@v4
         with:
-          name: macos-arm64-dmg
+          name: macos-artifacts
           path: dist/
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: windows-x64-installer
+          name: windows-artifacts
           path: dist/
+
+      - name: Display structure
+        run: ls -R dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -94,9 +102,8 @@ jobs:
           files: |
             dist/*.dmg
             dist/*.exe
-            dist/latest*.yml
+            dist/*.yml
+            dist/*.blockmap
           generate_release_notes: true
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
