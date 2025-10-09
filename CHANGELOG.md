@@ -5,6 +5,21 @@ All notable changes to MKG Desktop will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2025-10-09
+
+### Changed
+
+- Updated badge to success color with larger size for v1.0.9
+- Auto-update testing: v1.0.8 → v1.0.9
+
+## [1.0.8] - 2025-10-09
+
+### Fixed
+
+- Fixed CI build by disabling electron-builder auto-publish
+- CI now handles all uploads to GitHub Releases
+- Successfully built and published DMG, EXE, and latest.yml files
+
 ## [1.0.5] - 2025-10-09
 
 ### Changed
