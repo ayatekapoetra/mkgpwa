@@ -5,6 +5,7 @@ import Link from "next/link";
 import Links from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
 
 // ==============================|| MAIN LAYOUT - FOOTER ||============================== //
 
@@ -15,9 +16,21 @@ const Footer = () => (
     alignItems="center"
     sx={{ p: "24px 16px 0px", mt: "auto" }}
   >
-    <Typography variant="caption">
-      MakkuragaTama Dashboard Versi 1.0.1
-    </Typography>
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Typography
+        variant="caption"
+        sx={{ color: "primary.main", fontWeight: 500 }}
+      >
+        MakkuragaTama Dashboard
+      </Typography>
+      <Chip
+        label="v1.0.2"
+        size="small"
+        color="primary"
+        variant="outlined"
+        sx={{ height: 18, fontSize: "0.7rem" }}
+      />
+    </Stack>
     <Stack
       spacing={1.5}
       direction="row"
