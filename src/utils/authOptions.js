@@ -1,5 +1,5 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
-import axios from 'utils/axios';
+import axios from 'axios';
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -101,10 +101,6 @@ export const authOptions = {
       return session;
     }
   },
-  session: {
-    strategy: 'jwt',
-    maxAge: Number(process.env.NEXT_APP_JWT_TIMEOUT) // Default: 24 hours
-  },
   jwt: {
     secret: process.env.NEXTAUTH_SECRET
   },
@@ -123,6 +119,10 @@ export const authOptions = {
     async session() {
       // Handle session event
     }
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: Number(process.env.NEXT_APP_JWT_TIMEOUT) // Default: 24 hours
   },
   cookies: {
     sessionToken: {

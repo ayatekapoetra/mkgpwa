@@ -1,27 +1,27 @@
 // THIRD - PARTY
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage } from "react-intl";
 
 // ASSETS
-import { DocumentDownload } from 'iconsax-react';
+import { DocumentDownload } from "iconsax-react";
 
 // ICONS
 const icons = {
-  download: DocumentDownload
+  download: DocumentDownload,
 };
 
 // ==============================|| MENU ITEMS - MANUAL DOWNLOAD ||============================== //
 
 const manualDownload = {
-  id: 'manual-download',
-  title: 'Download Data Offline',
-  type: 'item',
-  url: '/manual-download',
+  id: "manual-download",
+  title: "Download Data Offline",
+  type: "item",
+  url: "/(dashboard)/manual-download",
   icon: icons.download,
-  breadcrumbs: false
+  breadcrumbs: false,
 };
 
 const menuItems = {
-  items: [manualDownload]
+  items: [manualDownload],
 };
 
 export default menuItems;

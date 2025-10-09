@@ -109,10 +109,7 @@ export default function DailyTimesheetScreen() {
       }
     };
 
-    if (typeof window !== 'undefined' && window.__TAURI__) {
-      window.addEventListener('trigger-sync', handleBackgroundSync);
-      return () => window.removeEventListener('trigger-sync', handleBackgroundSync);
-    }
+    return undefined;
   }, [syncing]);
 
   const handleManualSync = async () => {

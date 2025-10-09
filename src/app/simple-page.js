@@ -10,7 +10,8 @@ export default function SimplePage() {
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '3em', marginBottom: '20px' }}>🎉 MKG Desktop App</h1>
         <p style={{ fontSize: '1.2em', marginBottom: '30px' }}>
-          Selamat! Aplikasi desktop Tauri dengan Next.js berhasil berjalan!
+           Selamat! Aplikasi desktop berjalan!
+
         </p>
         
         <div style={{ 
@@ -21,8 +22,7 @@ export default function SimplePage() {
         }}>
           <h2>✅ Status Berhasil:</h2>
           <ul style={{ lineHeight: '1.8' }}>
-            <li>✅ Tauri CLI terinstall</li>
-            <li>✅ Rust backend terkonfigurasi</li>
+
             <li>✅ Next.js frontend berjalan</li>
             <li>✅ Material-UI components loaded</li>
             <li>✅ Tailwind CSS aktif</li>
@@ -32,11 +32,7 @@ export default function SimplePage() {
         <div style={{ marginTop: '30px' }}>
           <button 
             onClick={() => {
-              if (typeof window !== 'undefined' && window.__TAURI__) {
-                alert('Tauri API detected! 🚀');
-              } else {
-                alert('Running in browser mode');
-              }
+              alert('Running in browser mode');
             }}
             style={{
               background: '#FFC107',
@@ -50,7 +46,7 @@ export default function SimplePage() {
               marginRight: '10px'
             }}
           >
-            Test Tauri API
+            Test Electron API
           </button>
           
           <button 

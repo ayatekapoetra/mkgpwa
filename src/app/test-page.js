@@ -5,7 +5,7 @@ export default function TestPage() {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1 style={{ color: '#FFC107' }}>MKG Desktop App - Test Page</h1>
       <p style={{ fontSize: '18px', margin: '20px 0' }}>
-        ✅ Tauri is working correctly!
+        ✅ Electron is working correctly!
       </p>
       <div style={{ 
         background: '#f5f5f5', 
@@ -14,7 +14,7 @@ export default function TestPage() {
         border: '1px solid #ddd'
       }}>
         <h3>Environment Info:</h3>
-        <p>Platform: Desktop (Tauri)</p>
+        <p>Platform: Desktop (Electron)</p>
         <p>Framework: Next.js 14</p>
         <p>UI: Material-UI + Tailwind CSS</p>
       </div>

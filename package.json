@@ -1,6 +1,7 @@
 {
   "name": "femkgpwa",
   "version": "1.0.0",
+  "description": "MKG Desktop Application - Mining Equipment Management System",
   "author": {
     "name": "Ayat Ekapoetra",
     "email": "ayatekapoetra@gmail.com",
@@ -8,21 +9,27 @@
   },
   "private": true,
   "license": "UNLICENSED",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev -p 3005",
-    "dev:tauri": "next dev -p 3006",
     "build": "rm -rf .next && next build",
-    "build:tauri": "TAURI_BUILD=true npm run build && npm run prepare:tauri && cd src-tauri && tauri build --bundles app",
-    "build:tauri:dmg": "TAURI_BUILD=true npm run build && npm run prepare:tauri && cd src-tauri && tauri build",
-    "build:app": "./build-tauri.sh",
-    "build:quick": "./quick-build.sh",
-    "build:dev": "./dev-tauri.sh",
-    "build:clean": "./cleanup-tauri.sh",
-    "prepare:tauri": "mkdir -p src-tauri/dist && echo '<!DOCTYPE html><html><head><title>MKG</title></head><body><div id=\"root\">Loading...</div></body></html>' > src-tauri/dist/index.html && cp -r .next src-tauri/ && cp -r node_modules src-tauri/ && cp -r public src-tauri/ && cp package.json src-tauri/ && cp next.config.js src-tauri/ && cp server-standalone.js src-tauri/ && cp .env.production src-tauri/.env.local 2>/dev/null || true",
-    "tauri": "tauri dev",
-    "tauri:start": "next start -p 3006 & tauri dev",
+    "build:electron": "cross-env ELECTRON_BUILD=true yarn build",
     "start": "next start -p 3005",
-    "start:tauri": "next start -p 3006",
+    "electron": "cross-env ELECTRON_START_URL=http://localhost:3005 electron .",
+    "electron:dev": "concurrently \"yarn dev\" \"yarn electron\"",
+    "electron:prod": "cross-env ELECTRON_START_URL= electron .",
+    "electron:build": "npm run build:electron",
+    "electron:build:start": "npm run build:electron && npm start",
+    "electron:full": "npm run build:electron && concurrently \"npm start\" \"npm run electron:prod\"",
+    "electron:pack": "npm run build:electron && electron-builder --dir",
+    "electron:dist": "npm run build:electron && electron-builder",
+    "electron:dist:mac": "npm run build:electron && electron-builder --mac",
+    "electron:dist:win": "npm run build:electron && electron-builder --win",
+    "electron:dist:linux": "npm run build:electron && electron-builder --linux",
+    "electron:publish": "npm run build:electron && electron-builder --publish always",
+    "electron:publish:mac": "npm run build:electron && electron-builder --mac --publish always",
+    "electron:publish:win": "npm run build:electron && electron-builder --win --publish always",
+    "build:static": "node build-electron.js",
     "lint": "next lint --quiet",
     "clean": "rm -rf .next out node_modules/.cache",
     "prettier": "prettier --write ./src"
@@ -47,10 +54,6 @@
     "@react-spring/web": "^10.0.1",
     "@tanstack/react-query": "^5.80.6",
     "@tanstack/react-table": "^8.21.3",
-    "@tauri-apps/plugin-fs": "^2.4.2",
-    "@tauri-apps/plugin-notification": "^2.3.1",
-    "@tauri-apps/plugin-sql": "^2.3.0",
-    "@tauri-apps/plugin-store": "^2.4.0",
     "apexcharts": "^5.3.3",
     "axios": "^1.6.2",
     "axios-mock-adapter": "^1.22.0",
@@ -58,6 +61,7 @@
     "chance": "^1.1.11",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "electron-updater": "^6.6.2",
     "formik": "^2.4.5",
     "framer-motion": "^10.16.16",
     "history": "^5.3.0",
@@ -67,6 +71,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.439.0",
     "match-sorter": "^8.0.2",
+    "mime-types": "^3.0.1",
     "moment": "^2.30.1",
     "next": "^14.0.4",
     "next-auth": "^4.24.5",
@@ -111,6 +116,11 @@
     "@babel/eslint-parser": "^7.23.3",
     "@date-io/date-fns": "^2.17.0",
     "autoprefixer": "^10.4.19",
+    "concurrently": "^9.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3",
+    "electron-icon-maker": "^0.0.5",
     "encoding": "^0.1.13",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.0.4",
@@ -123,5 +133,69 @@
     "postcss": "^8.4.38",
     "prettier": "^3.1.1",
     "tailwindcss": "^3.4.4"
+  },
+  "build": {
+    "appId": "com.mkg.desktop",
+    "productName": "MKG Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ayatekapoetra",
+        "repo": "mkgpwa"
+      }
+    ],
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "public/**/*",
+      ".next/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "public",
+        "to": "public"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": {
+        "target": "dmg",
+        "arch": "arm64"
+      },
+      "icon": "public/icons/logo.png",
+      "extendInfo": {
+        "CFBundleDisplayName": "MKG Desktop",
+        "CFBundleIdentifier": "com.mkg.desktop",
+        "CFBundleVersion": "1.0.0",
+        "CFBundleShortVersionString": "1.0.0",
+        "LSUIElement": false,
+        "NSHighResolutionCapable": true
+      },
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icons/logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

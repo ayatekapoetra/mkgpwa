@@ -19,16 +19,10 @@ export default function HomePage() {
     console.log('HomePage - Session status:', status);
     console.log('HomePage - Session data:', session);
 
-    // Check if running in Tauri environment
-    const isTauri = typeof window !== 'undefined' && window.__TAURI__;
-    console.log('Running in Tauri environment:', isTauri);
-
     if (session) {
-      console.log('Session found, redirecting to /home');
-      router.push('/home');
+      setTimeout(() => router.push('/home'), 0);
     } else {
-      console.log('No session found, redirecting to /login');
-      router.push('/login');
+      setTimeout(() => router.push('/login'), 0);
     }
   }, [session, status, router, mounted]);
 
