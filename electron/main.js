@@ -29,8 +29,16 @@ autoUpdater.logger = console;
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
+let checkingDialog = null;
+
 autoUpdater.on("checking-for-update", () => {
   console.log("Checking for update...");
+  checkingDialog = dialog.showMessageBox({
+    type: "info",
+    title: "Checking for Updates",
+    message: "Checking for updates...",
+    buttons: [],
+  });
 });
 
 autoUpdater.on("update-available", (info) => {
@@ -50,11 +58,23 @@ autoUpdater.on("update-available", (info) => {
 });
 
 autoUpdater.on("update-not-available", (info) => {
-  console.log("Update not available:", info.version);
+  console.log("Update not available. Current version:", info.version);
+  dialog.showMessageBox({
+    type: "info",
+    title: "No Updates",
+    message: `You are already running the latest version (${info.version}).`,
+    buttons: ["OK"],
+  });
 });
 
 autoUpdater.on("error", (err) => {
   console.error("Update error:", err);
+  dialog.showMessageBox({
+    type: "error",
+    title: "Update Error",
+    message: `Error checking for updates: ${err.message}`,
+    buttons: ["OK"],
+  });
 });
 
 autoUpdater.on("download-progress", (progress) => {
