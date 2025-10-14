@@ -162,10 +162,16 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "target": {
-        "target": "dmg",
-        "arch": "arm64"
-      },
+      "target": [
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        },
+        {
+          "target": "zip",
+          "arch": "arm64"
+        }
+      ],
       "icon": "public/icons/logo.png",
       "extendInfo": {
         "CFBundleDisplayName": "MKG Desktop",
