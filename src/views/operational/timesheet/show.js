@@ -55,7 +55,7 @@ import {
 import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup'; // ⬅ WAJIB
 
-import { useGetDTDailyTimesheet } from 'api/daily-timesheet';
+import { useShowDailyTimesheet } from 'api/daily-timesheet';
 import { openNotification } from 'api/notification';
 
 const msgSuccess = {
@@ -90,7 +90,7 @@ const breadcrumbLinks = [
 const ShowTimesheetScreen = () => {
   const route = useRouter();
   const { id } = useParams();
-  const { data: initData, dataLoading } = useGetDTDailyTimesheet(id);
+  const { data: initData, dataLoading } = useShowDailyTimesheet(id);
   console.log('initData--', initData);
 
   // Standardize initData handling to prevent client-side exceptions

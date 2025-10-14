@@ -39,6 +39,27 @@ export const useGetDailyTimesheet = (params) => {
   return memoizedValue;
 };
 
+export const useShowDailyTimesheet = (id) => {
+  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + `/${id}`, fetcher, {
+    revalidateIfStale: true,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: false
+  });
+
+  const memoizedValue = useMemo(
+    () => ({
+      data: data?.data || data?.rows || data,
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      dataEmpty: !isLoading && !(data?.data || data?.rows || data)
+    }),
+    [data, error, isLoading, isValidating]
+  );
+
+  return memoizedValue;
+};
+
 export const useGetDTDailyTimesheet = (id) => {
   const { data, isLoading, error, isValidating } = useSWR(endpoints.key + `/${id}` + endpoints.show, fetcher, {
     revalidateIfStale: true,

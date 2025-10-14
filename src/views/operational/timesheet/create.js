@@ -100,14 +100,7 @@ const initialValues = {
   bbm: 0,
   keterangan: '',
   photo: '',
-  kegiatan: [
-    // {
-    //     kegiatan_id: '',
-    //     lokasi_id: '',
-    //     lokasi_to: '',
-    //     material_id: ''
-    // }
-  ]
+  kegiatan: []
 };
 
 export default function CreateTimesheet() {
