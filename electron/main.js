@@ -4,6 +4,8 @@ const http = require("http");
 const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
 
+app.commandLine.appendSwitch("disable-http2");
+
 function checkServerReady(url) {
   return new Promise((resolve) => {
     const check = () => {
@@ -28,6 +30,17 @@ let nextServer = null;
 autoUpdater.logger = console;
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.requestHeaders = {
+  "Cache-Control": "no-cache",
+};
+
+autoUpdater.setFeedURL({
+  provider: "github",
+  owner: "ayatekapoetra",
+  repo: "mkgpwa",
+  private: false,
+});
 
 let checkingDialog = null;
 
@@ -124,14 +137,40 @@ autoUpdater.on("update-not-available", (info) => {
   });
 });
 
+let updateRetryCount = 0;
+const MAX_UPDATE_RETRIES = 2;
+
 autoUpdater.on("error", (err) => {
   console.error("Update error:", err);
-  dialog.showMessageBox({
-    type: "error",
-    title: "Update Error",
-    message: `Error checking for updates: ${err.message}`,
-    buttons: ["OK"],
-  });
+
+  if (
+    err.message.includes("ERR_HTTP2_PROTOCOL_ERROR") &&
+    updateRetryCount < MAX_UPDATE_RETRIES
+  ) {
+    updateRetryCount++;
+    console.log(
+      `Retrying update check (${updateRetryCount}/${MAX_UPDATE_RETRIES})...`,
+    );
+    setTimeout(() => {
+      autoUpdater.checkForUpdates();
+    }, 2000);
+    return;
+  }
+
+  updateRetryCount = 0;
+
+  dialog
+    .showMessageBox({
+      type: "error",
+      title: "Update Error",
+      message: `Error checking for updates: ${err.message}\n\nPlease check manually at:\nhttps://github.com/ayatekapoetra/mkgpwa/releases`,
+      buttons: ["OK", "Open GitHub"],
+    })
+    .then((result) => {
+      if (result.response === 1) {
+        shell.openExternal("https://github.com/ayatekapoetra/mkgpwa/releases");
+      }
+    });
 });
 
 autoUpdater.on("download-progress", (progress) => {
