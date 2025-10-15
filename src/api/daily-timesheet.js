@@ -21,8 +21,8 @@ export const useGetDailyTimesheet = (params) => {
 
   const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
     revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true
   });
 
   const memoizedValue = useMemo(
