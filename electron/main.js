@@ -1,7 +1,7 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, Menu, dialog, shell } = require("electron");
 const path = require("path");
 const http = require("http");
-const { spawn } = require("child_process");
+const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
 
 function checkServerReady(url) {
@@ -30,6 +30,63 @@ autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
 let checkingDialog = null;
+
+function openMarkdownFile(filePath, fileName) {
+  const viewerPath = path.join(__dirname, "markdown-viewer.html");
+
+  if (!fs.existsSync(filePath)) {
+    dialog.showErrorBox(
+      "File Not Found",
+      `The documentation file could not be found:\n${filePath}`,
+    );
+    return;
+  }
+
+  const docWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    minWidth: 600,
+    minHeight: 400,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: false,
+    },
+    title: `${fileName} - MKG Desktop`,
+    backgroundColor: "#ffffff",
+  });
+
+  const viewerUrl = `file://${viewerPath}?file=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`;
+  docWindow.loadURL(viewerUrl);
+
+  docWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
+}
+
+function openDocumentationDialog() {
+  const docsDir = path.join(__dirname, "..", "docs");
+  const rootDir = path.join(__dirname, "..");
+
+  dialog
+    .showOpenDialog({
+      title: "Select Documentation File",
+      defaultPath: fs.existsSync(docsDir) ? docsDir : rootDir,
+      properties: ["openFile"],
+      filters: [
+        { name: "Markdown Files", extensions: ["md"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    })
+    .then((result) => {
+      if (!result.canceled && result.filePaths.length > 0) {
+        const filePath = result.filePaths[0];
+        const fileName = path.basename(filePath, ".md");
+        openMarkdownFile(filePath, fileName);
+      }
+    });
+}
 
 autoUpdater.on("checking-for-update", () => {
   console.log("Checking for update...");
@@ -188,6 +245,58 @@ function createAppMenu() {
       submenu: [
         { role: "minimize", label: "Minimize" },
         { role: "close", label: "Close" },
+      ],
+    },
+    {
+      label: "Documentation",
+      submenu: [
+        {
+          label: "User Guide",
+          accelerator: "CmdOrCtrl+Shift+H",
+          click: () => {
+            const userGuidePath = path.join(
+              __dirname,
+              "..",
+              "docs",
+              "USER_GUIDE.md",
+            );
+            openMarkdownFile(userGuidePath, "User Guide");
+          },
+        },
+        {
+          label: "README",
+          click: () => {
+            const readmePath = path.join(__dirname, "..", "README.md");
+            openMarkdownFile(readmePath, "README");
+          },
+        },
+        {
+          label: "Troubleshooting",
+          click: () => {
+            const troubleshootPath = path.join(
+              __dirname,
+              "..",
+              "docs",
+              "TROUBLESHOOTING.md",
+            );
+            openMarkdownFile(troubleshootPath, "Troubleshooting");
+          },
+        },
+        {
+          label: "Changelog",
+          click: () => {
+            const changelogPath = path.join(__dirname, "..", "CHANGELOG.md");
+            openMarkdownFile(changelogPath, "Changelog");
+          },
+        },
+        { type: "separator" },
+        {
+          label: "Browse Documentation...",
+          accelerator: "CmdOrCtrl+Shift+D",
+          click: () => {
+            openDocumentationDialog();
+          },
+        },
       ],
     },
     {
