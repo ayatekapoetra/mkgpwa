@@ -1,6 +1,6 @@
 {
   "name": "femkgpwa",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "MKG Desktop Application - Mining Equipment Management System",
   "author": {
     "name": "Ayat Ekapoetra",
@@ -138,7 +138,7 @@
   },
   "build": {
     "appId": "com.mkg.desktop",
-    "productName": "MKG Desktop",
+    "productName": "MKG-Desktop",
     "directories": {
       "output": "dist"
     },
