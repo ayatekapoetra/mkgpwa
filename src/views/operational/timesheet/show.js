@@ -303,7 +303,7 @@ const ShowTimesheetScreen = () => {
 
   const onRemoveHandle = async () => {
     try {
-      await axiosServices.post(`/api/operation/timesheet/${id}/destroy`);
+      await axiosServices.delete(`/api/operation/timesheet/${id}`);
       route.push('/timesheet');
       openNotification(msgSuccess);
     } catch (error) {
