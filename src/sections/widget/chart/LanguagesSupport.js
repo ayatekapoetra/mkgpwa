@@ -139,7 +139,7 @@ const LanguagesSupport = () => {
               <ArrowRight />
             </Avatar>
             <Typography variant="subtitle1">Update version</Typography>
-            <Chip color="success" size="small" label="v1.1.0" sx={{ borderRadius: 1, bgcolor: 'success.main' }} />
+            <Chip color="success" size="small" label="v1.2.1" sx={{ borderRadius: 1, bgcolor: 'success.main' }} />
           </Stack>
         </Grid>
         <Grid item xs={12}>
