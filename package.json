@@ -1,6 +1,6 @@
 {
   "name": "femkgpwa",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "MKG Desktop Application - Mining Equipment Management System",
   "author": {
     "name": "Ayat Ekapoetra",
@@ -188,10 +188,13 @@
         "LSUIElement": false,
         "NSHighResolutionCapable": true
       },
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist"
+      "identity": null,
+      "signIgnore": [
+        "node_modules",
+        ".next"
+      ]
     },
     "win": {
       "target": [
