@@ -12,9 +12,6 @@ const OptionLokasiKerja = ({
 }) => {
   const { data: array, dataLoading, dataEmpty } = useGetLokasiKerja();
 
-  console.log('array--', array);
-  
-
   if (dataLoading) {
     return <div>Loading...</div>;
   }

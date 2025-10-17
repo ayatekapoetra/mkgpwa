@@ -8,8 +8,6 @@ const FilterEquipment = ({ value = '', label = 'Equipment', name = 'equipment_id
     return <div>Loading...</div>;
   }
 
-  console.log('array--', array);
-  
 
   return (
     <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">

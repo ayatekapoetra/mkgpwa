@@ -1,39 +1,39 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Fragment, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import moment from 'moment';
+import Link from "next/link";
+import { Fragment, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import moment from "moment";
 
 // MATERIAL - UI
-import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
-import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Button from "@mui/material/Button";
 
-import IconButton from 'components/@extended/IconButton';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import InputAdornment from '@mui/material/InputAdornment';
-import FormHelperText from '@mui/material/FormHelperText';
+import IconButton from "components/@extended/IconButton";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import InputAdornment from "@mui/material/InputAdornment";
+import FormHelperText from "@mui/material/FormHelperText";
 
 // PROJECT IMPORTS
-import MainCard from 'components/MainCard';
-import InputForm from 'components/InputForm';
-import ConfirmDialog from 'components/ConfirmDialog';
-import BtnBack from 'components/BtnBack';
-import OptionCabang from 'components/OptionCabang';
-import OptionPenyewa from 'components/OptionPenyewa';
-import OptionLokasiKerja from 'components/OptionLokasiPit';
-import OptionEquipment from 'components/OptionEquipment';
-import OptionMaterialMining from 'components/OptionMaterialMining';
-import OptionKegiatanKerja from 'components/OptionKegiatanKerja';
-import OptionKaryawan from 'components/OptionKaryawan';
-import PhotoDropZoneFormik from 'components/PhotoDropZoneFormik';
-import OfflineIndicator from 'components/OfflineIndicator';
+import MainCard from "components/MainCard";
+import InputForm from "components/InputForm";
+import ConfirmDialog from "components/ConfirmDialog";
+import BtnBack from "components/BtnBack";
+import OptionCabang from "components/OptionCabang";
+import OptionPenyewa from "components/OptionPenyewa";
+import OptionLokasiKerja from "components/OptionLokasiPit";
+import OptionEquipment from "components/OptionEquipment";
+import OptionMaterialMining from "components/OptionMaterialMining";
+import OptionKegiatanKerja from "components/OptionKegiatanKerja";
+import OptionKaryawan from "components/OptionKaryawan";
+import PhotoDropZoneFormik from "components/PhotoDropZoneFormik";
+import OfflineIndicator from "components/OfflineIndicator";
 
 // THIRD - PARTY
 import {
@@ -48,41 +48,42 @@ import {
   UserOctagon,
   GasStation,
   Trash,
-  Back,
+  Autobrightness,
   Send2,
-  AddSquare
-} from 'iconsax-react';
-import { Formik, Form, FieldArray } from 'formik';
-import * as Yup from 'yup'; // ⬅ WAJIB
+  AddSquare,
+  CloseSquare,
+} from "iconsax-react";
+import { Formik, Form, FieldArray } from "formik";
+import * as Yup from "yup"; // ⬅ WAJIB
 
-import { useShowDailyTimesheet } from 'api/daily-timesheet';
-import { openNotification } from 'api/notification';
+import { useShowDailyTimesheet } from "api/daily-timesheet";
+import { openNotification } from "api/notification";
 
 const msgSuccess = {
   open: true,
-  title: 'success',
-  message: 'Timesheet berhasil diupdate...',
-  alert: { color: 'success' }
+  title: "success",
+  message: "Timesheet berhasil diupdate...",
+  alert: { color: "success" },
 };
 const msgError = {
   open: true,
-  title: 'error',
-  message: '',
-  alert: { color: 'error' }
+  title: "error",
+  message: "",
+  alert: { color: "error" },
 };
 
-const BASEURI = 'https://cdn.makkuragatama.id';
-import { APP_DEFAULT_PATH } from 'config';
-import Breadcrumbs from 'components/@extended/Breadcrumbs';
-import CircularLoader from 'components/CircularLoader';
-import ErrorBoundary from 'components/ErrorBoundary';
-import axiosServices from 'utils/axios';
+const BASEURI = "https://cdn.makkuragatama.id";
+import { APP_DEFAULT_PATH } from "config";
+import Breadcrumbs from "components/@extended/Breadcrumbs";
+import CircularLoader from "components/CircularLoader";
+import ErrorBoundary from "components/ErrorBoundary";
+import axiosServices from "utils/axios";
 
 const breadcrumbLinks = [
-  { title: 'Home', to: APP_DEFAULT_PATH },
-  { title: 'TimeSheet', to: '/timesheet' },
-  { title: 'DT', to: '/timesheet' },
-  { title: 'Show', to: '#' }
+  { title: "Home", to: APP_DEFAULT_PATH },
+  { title: "TimeSheet", to: "/timesheet" },
+  { title: "DT", to: "/timesheet" },
+  { title: "Show", to: "#" },
 ];
 
 // ==============================|| SAMPLE PAGE ||============================== //
@@ -91,56 +92,73 @@ const ShowTimesheetScreen = () => {
   const route = useRouter();
   const { id } = useParams();
   const { data: initData, dataLoading } = useShowDailyTimesheet(id);
-  console.log('initData--', initData);
+  console.log("initData--", initData);
 
   // Standardize initData handling to prevent client-side exceptions
   const standardizedInitData = {
-    date_ops: initData?.date_ops || '',
-    site_id: initData?.site_id || initData?.cabang_id || '',
-    penyewa_id: initData?.penyewa_id || '',
-    mainact: initData?.mainact || initData?.activity || '',
-    longshift: initData?.longshift || initData?.overtime || 'ls0',
-    shift_id: initData?.shift_id || '',
-    karyawan_id: initData?.karyawan_id || '',
-    equipment_id: initData?.equipment_id || '',
+    date_ops: initData?.date_ops || "",
+    site_id: initData?.site_id || initData?.cabang_id || "",
+    penyewa_id: initData?.penyewa_id || "",
+    mainact: initData?.mainact || initData?.activity || "",
+    longshift: initData?.longshift || initData?.overtime || "ls0",
+    shift_id: initData?.shift_id || "",
+    karyawan_id: initData?.karyawan_id || "",
+    equipment_id: initData?.equipment_id || "",
     smustart: initData?.smustart || 0,
     smufinish: initData?.smufinish || 0,
     usedsmu: initData?.usedsmu || 0,
     bbm: initData?.bbm || 0,
-    keterangan: initData?.keterangan || '',
-    photo: initData?.photo || '',
-    kegiatan: initData?.items || initData?.kegiatan || []
+    keterangan: initData?.keterangan || "",
+    photo: initData?.photo || "",
+    status: initData?.status || "",
+    kegiatan: initData?.items || initData?.kegiatan || [],
   };
 
   const [openDialog, setOpenDialog] = useState(false);
 
   const validationSchema = Yup.object().shape({
-    date_ops: Yup.date().required('Tanggal wajib diisi'),
+    date_ops: Yup.date().required("Tanggal wajib diisi"),
 
-    site_id: Yup.string().required('Cabang wajib dipilih'),
+    site_id: Yup.string().required("Cabang wajib dipilih"),
 
-    penyewa_id: Yup.string().required('Penyewa wajib dipilih'),
+    penyewa_id: Yup.string().required("Penyewa wajib dipilih"),
 
-    mainact: Yup.string().oneOf(['mining', 'barging', 'rental'], 'Pilih salah satu aktivitas').required('Group Aktivitas wajib dipilih'),
+    mainact: Yup.string()
+      .oneOf(["mining", "barging", "rental"], "Pilih salah satu aktivitas")
+      .required("Group Aktivitas wajib dipilih"),
 
-    longshift: Yup.string().oneOf(['ls0', 'ls1', 'ls2'], 'Pilih salah satu status longshift').required('Status Longshift wajib diisi'),
+    longshift: Yup.string()
+      .oneOf(["ls0", "ls1", "ls2"], "Pilih salah satu status longshift")
+      .required("Status Longshift wajib diisi"),
 
-    shift_id: Yup.string().oneOf(['1', '2'], 'Pilih shift yang tersedia').required('Shift kerja wajib dipilih'),
+    shift_id: Yup.string()
+      .oneOf(["1", "2"], "Pilih shift yang tersedia")
+      .required("Shift kerja wajib dipilih"),
 
-    karyawan_id: Yup.string().required('Operator / Driver wajib dipilih'),
+    karyawan_id: Yup.string().required("Operator / Driver wajib dipilih"),
 
-    equipment_id: Yup.string().required('Kode Equipment wajib dipilih'),
+    equipment_id: Yup.string().required("Kode Equipment wajib dipilih"),
 
-    smustart: Yup.number().typeError('HM/KM Start harus angka').required('HM/KM Start wajib diisi'),
+    smustart: Yup.number()
+      .typeError("HM/KM Start harus angka")
+      .required("HM/KM Start wajib diisi"),
 
     smufinish: Yup.number()
-      .typeError('HM/KM Finish harus angka')
-      .required('HM/KM Finish wajib diisi')
-      .min(Yup.ref('smustart'), 'HM/KM Finish tidak boleh lebih kecil dari Start'),
+      .typeError("HM/KM Finish harus angka")
+      .required("HM/KM Finish wajib diisi")
+      .min(
+        Yup.ref("smustart"),
+        "HM/KM Finish tidak boleh lebih kecil dari Start",
+      ),
 
-    usedsmu: Yup.number().typeError('HM/KM Used harus angka').required('HM/KM Used wajib diisi'),
+    usedsmu: Yup.number()
+      .typeError("HM/KM Used harus angka")
+      .required("HM/KM Used wajib diisi"),
 
-    bbm: Yup.number().typeError('Refuel BBM harus angka').min(0, 'Refuel BBM tidak boleh negatif').required('Refuel BBM wajib diisi'),
+    bbm: Yup.number()
+      .typeError("Refuel BBM harus angka")
+      .min(0, "Refuel BBM tidak boleh negatif")
+      .required("Refuel BBM wajib diisi"),
 
     keterangan: Yup.string().nullable(),
 
@@ -149,104 +167,132 @@ const ShowTimesheetScreen = () => {
     kegiatan: Yup.array()
       .of(
         Yup.object().shape({
-          kegiatan_id: Yup.string().nullable().required('Jenis kegiatan wajib dipilih'),
+          kegiatan_id: Yup.string()
+            .nullable()
+            .required("Jenis kegiatan wajib dipilih"),
 
           material_id: Yup.number()
             .nullable()
-            .transform((value) => (value === '' || value === null || isNaN(value) ? null : Number(value)))
-            .when(['$kategori', 'kegiatan_id'], {
-              is: (kategori, kegiatan_id) => kategori === 'DT' && kegiatan_id !== '3',
-              then: (schema) => schema.required('Material wajib diisi')
+            .transform((value) =>
+              value === "" || value === null || isNaN(value)
+                ? null
+                : Number(value),
+            )
+            .when(["$kategori", "kegiatan_id"], {
+              is: (kategori, kegiatan_id) =>
+                kategori === "DT" && kegiatan_id !== "3",
+              then: (schema) => schema.required("Material wajib diisi"),
             }),
 
-          lokasi_id: Yup.string().nullable().required('Lokasi wajib dipilih'),
+          lokasi_id: Yup.string().nullable().required("Lokasi wajib dipilih"),
 
           lokasi_to: Yup.string()
             .nullable()
-            .when('$kategori', {
-              is: 'DT',
-              then: (schema) => schema.required('Lokasi tujuan wajib diisi')
+            .when("$kategori", {
+              is: "DT",
+              then: (schema) => schema.required("Lokasi tujuan wajib diisi"),
             }),
 
           starttime: Yup.date()
-            .typeError('Waktu Start tidak valid')
-            .required('Waktu Start wajib diisi')
-            .test('after-or-equal-date_ops', 'Waktu Start tidak boleh sebelum date_ops operational', function (value) {
-              // ambil tanggal dari context Yup (lihat bagian Formik validate)
-              const tanggalRoot =
-                this.resolve?.(Yup.ref('$date_ops')) ?? (this.options && this.options.context && this.options.context.date_ops);
+            .typeError("Waktu Start tidak valid")
+            .required("Waktu Start wajib diisi")
+            .test(
+              "after-or-equal-date_ops",
+              "Waktu Start tidak boleh sebelum date_ops operational",
+              function (value) {
+                // ambil tanggal dari context Yup (lihat bagian Formik validate)
+                const tanggalRoot =
+                  this.resolve?.(Yup.ref("$date_ops")) ??
+                  (this.options &&
+                    this.options.context &&
+                    this.options.context.date_ops);
 
-              if (!value || !tanggalRoot) return true; // skip kalau kosong atau tanggal tidak tersedia
+                if (!value || !tanggalRoot) return true; // skip kalau kosong atau tanggal tidak tersedia
 
-              // helper: konversi ke YMD number (YYYYMMDD) untuk perbandingan tanpa jam
-              const toYMD = (d) => {
-                const dt = new Date(d);
-                // validasi date
-                if (Number.isNaN(dt.getTime())) return null;
-                const y = dt.getFullYear();
-                const m = dt.getMonth() + 1;
-                const day = dt.getDate();
-                return y * 10000 + m * 100 + day;
-              };
+                // helper: konversi ke YMD number (YYYYMMDD) untuk perbandingan tanpa jam
+                const toYMD = (d) => {
+                  const dt = new Date(d);
+                  // validasi date
+                  if (Number.isNaN(dt.getTime())) return null;
+                  const y = dt.getFullYear();
+                  const m = dt.getMonth() + 1;
+                  const day = dt.getDate();
+                  return y * 10000 + m * 100 + day;
+                };
 
-              const startYMD = toYMD(value);
-              const tanggalYMD = toYMD(tanggalRoot);
+                const startYMD = toYMD(value);
+                const tanggalYMD = toYMD(tanggalRoot);
 
-              if (startYMD === null || tanggalYMD === null) return true; // biarkan Yup tipeError menangani format
+                if (startYMD === null || tanggalYMD === null) return true; // biarkan Yup tipeError menangani format
 
-              return startYMD >= tanggalYMD;
-            }),
+                return startYMD >= tanggalYMD;
+              },
+            ),
 
           endtime: Yup.date()
-            .typeError('Waktu Finish tidak valid')
-            .min(Yup.ref('starttime'), 'Waktu Finish harus lebih besar dari Start')
-            .required('Waktu Finish wajib diisi'),
+            .typeError("Waktu Finish tidak valid")
+            .min(
+              Yup.ref("starttime"),
+              "Waktu Finish harus lebih besar dari Start",
+            )
+            .required("Waktu Finish wajib diisi"),
 
           smustart: Yup.number()
-            .typeError('HM Start harus angka')
-            .when('$kategori', {
-              is: 'HE',
-              then: (schema) => schema.required('HM Start wajib diisi')
+            .typeError("HM Start harus angka")
+            .when("$kategori", {
+              is: "HE",
+              then: (schema) => schema.required("HM Start wajib diisi"),
             }),
 
           smufinish: Yup.number()
-            .typeError('HM Finish harus angka')
-            .when('$kategori', {
-              is: 'HE',
+            .typeError("HM Finish harus angka")
+            .when("$kategori", {
+              is: "HE",
               then: (schema) =>
-                schema.required('HM Finish wajib diisi').min(Yup.ref('smustart'), 'HM Finish tidak boleh lebih kecil dari Start')
+                schema
+                  .required("HM Finish wajib diisi")
+                  .min(
+                    Yup.ref("smustart"),
+                    "HM Finish tidak boleh lebih kecil dari Start",
+                  ),
             }),
 
-          seq: Yup.string().required('SEQ wajib diisi'),
+          seq: Yup.string().required("SEQ wajib diisi"),
 
           ritase: Yup.string()
             .nullable()
-            .when('$kategori', {
-              is: 'DT',
-              then: (schema) => schema.required('Ritase wajib diisi')
-            })
-        })
+            .when("$kategori", {
+              is: "DT",
+              then: (schema) => schema.required("Ritase wajib diisi"),
+            }),
+        }),
       )
-      .min(1, 'Minimal satu kegiatan harus diisi')
+      .min(1, "Minimal satu kegiatan harus diisi")
       // 🔥 Cek tumpang tindih antar kegiatan
-      .test('no-overlap', 'Kegiatan tidak boleh saling beririsan', function (kegiatanList) {
-        if (!Array.isArray(kegiatanList)) return true;
-        const sorted = [...kegiatanList].sort((a, b) => new Date(a.starttime) - new Date(b.starttime));
+      .test(
+        "no-overlap",
+        "Kegiatan tidak boleh saling beririsan",
+        function (kegiatanList) {
+          if (!Array.isArray(kegiatanList)) return true;
+          const sorted = [...kegiatanList].sort(
+            (a, b) => new Date(a.starttime) - new Date(b.starttime),
+          );
 
-        for (let i = 0; i < sorted.length - 1; i++) {
-          const currEnd = new Date(sorted[i].endtime);
-          const nextStart = new Date(sorted[i + 1].starttime);
+          for (let i = 0; i < sorted.length - 1; i++) {
+            const currEnd = new Date(sorted[i].endtime);
+            const nextStart = new Date(sorted[i + 1].starttime);
 
-          if (currEnd > nextStart) {
-            return this.createError({
-              path: `kegiatan[${i + 1}].starttime`,
-              message: 'Waktu kegiatan tumpang tindih dengan sebelumnya'
-            });
+            if (currEnd > nextStart) {
+              return this.createError({
+                path: `kegiatan[${i + 1}].starttime`,
+                message: "Waktu kegiatan tumpang tindih dengan sebelumnya",
+              });
+            }
           }
-        }
 
-        return true;
-      })
+          return true;
+        },
+      ),
   });
 
   const toggleDialogHandle = () => {
@@ -254,36 +300,41 @@ const ShowTimesheetScreen = () => {
   };
 
   const onsubmitHandle = async (values) => {
-    console.log('values update---', values);
+    console.log("values update---", values);
     try {
       const formData = new FormData();
       // Append all fields
       Object.keys(values).forEach((key) => {
-        if (key === 'kegiatan') {
+        if (key === "kegiatan") {
           formData.append(key, JSON.stringify(values[key]));
-        } else if (key === 'photo' && values[key] instanceof File) {
+        } else if (key === "photo" && values[key] instanceof File) {
           formData.append(key, values[key]);
         } else {
-          formData.append(key, values[key] || '');
+          formData.append(key, values[key] || "");
         }
       });
 
-      const response = await axiosServices.post(`/api/operation/timesheet/${id}/update`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await axiosServices.post(
+        `/api/operation/timesheet/${id}/update`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
       // Check if response indicates offline save
-      if (response.status === 0 && response.message?.includes('offline')) {
+      if (response.status === 0 && response.message?.includes("offline")) {
         openNotification({
           open: true,
-          title: 'info',
-          message: 'Data disimpan secara offline. Akan disinkronkan saat koneksi tersedia.',
-          alert: { color: 'info' }
+          title: "info",
+          message:
+            "Data disimpan secara offline. Akan disinkronkan saat koneksi tersedia.",
+          alert: { color: "info" },
         });
       } else {
-        route.push('/timesheet');
+        route.push("/timesheet");
         openNotification(msgSuccess);
       }
     } catch (error) {
@@ -291,12 +342,16 @@ const ShowTimesheetScreen = () => {
       if (!navigator.onLine) {
         openNotification({
           open: true,
-          title: 'info',
-          message: 'Data disimpan secara offline. Akan disinkronkan saat koneksi tersedia.',
-          alert: { color: 'info' }
+          title: "info",
+          message:
+            "Data disimpan secara offline. Akan disinkronkan saat koneksi tersedia.",
+          alert: { color: "info" },
         });
       } else {
-        openNotification({ ...msgError, message: error?.diagnostic?.error || '...' });
+        openNotification({
+          ...msgError,
+          message: error?.diagnostic?.error || "...",
+        });
       }
     }
   };
@@ -304,11 +359,34 @@ const ShowTimesheetScreen = () => {
   const onRemoveHandle = async () => {
     try {
       await axiosServices.delete(`/api/operation/timesheet/${id}`);
-      route.push('/timesheet');
+      route.push("/timesheet");
       openNotification(msgSuccess);
     } catch (error) {
       console.log(error);
-      openNotification({ ...msgError, message: error?.diagnostic?.error || '...' });
+      openNotification({
+        ...msgError,
+        message: error?.diagnostic?.error || "...",
+      });
+    }
+  };
+
+  const onApproveHandle = async () => {
+    try {
+      await axiosServices.post(`/api/operation/timesheet/${id}/approved`);
+      openNotification({
+        open: true,
+        title: "success",
+        message: "Timesheet berhasil diapprove...",
+        alert: { color: "success" },
+      });
+      // Refresh data atau redirect jika needed
+      route.refresh();
+    } catch (error) {
+      console.log(error);
+      openNotification({
+        ...msgError,
+        message: error?.diagnostic?.error || "Gagal approve timesheet",
+      });
     }
   };
 
@@ -319,34 +397,52 @@ const ShowTimesheetScreen = () => {
   return (
     <ErrorBoundary>
       <Fragment>
-        <Breadcrumbs custom heading={'Show Daily Timesheet'} links={breadcrumbLinks} />
+        <Breadcrumbs
+          custom
+          heading={"Show Daily Timesheet"}
+          links={breadcrumbLinks}
+        />
         <ConfirmDialog
           open={openDialog}
           message={
             <Stack>
-              <Typography>{'Apakah anda yakin akan menghapus data ini ?'}</Typography>
+              <Typography>
+                {"Apakah anda yakin akan menghapus data ini ?"}
+              </Typography>
               <Typography
                 variant="body"
                 component="pre" // agar whitespace dan newline terlihat
-                style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
               >
-                Data akan dihapus secara permanen dan tidak dapat diakses kembali
+                Data akan dihapus secara permanen dan tidak dapat diakses
+                kembali
               </Typography>
             </Stack>
           }
           handleClose={toggleDialogHandle}
           handleAction={onRemoveHandle}
         />
-        <MainCard title={<BtnBack href={'/timesheet'} />} secondary={<OfflineIndicator />} content={true}>
+        <MainCard
+          title={<BtnBack href={"/timesheet"} />}
+          secondary={<OfflineIndicator />}
+          content={true}
+        >
           <Formik
             enableReinitialize={true}
             initialValues={standardizedInitData}
             validationSchema={validationSchema}
             onSubmit={onsubmitHandle}
           >
-            {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
-              console.log('values---', values);
-              console.log('errors---', errors);
+            {({
+              errors,
+              handleChange,
+              handleSubmit,
+              touched,
+              values,
+              setFieldValue,
+            }) => {
+              console.log("values---", values);
+              console.log("errors---", errors);
 
               return (
                 <Form noValidate onSubmit={handleSubmit}>
@@ -358,14 +454,14 @@ const ShowTimesheetScreen = () => {
                         name="date_ops"
                         errors={errors.date_ops}
                         touched={true}
-                        value={moment(values?.date_ops).format('YYYY-MM-DD')}
+                        value={moment(values?.date_ops).format("YYYY-MM-DD")}
                         onChange={handleChange}
                       />
                     </Grid>
                     <Grid item xs={12} sm={4} sx={{ mt: 2 }}>
                       <OptionCabang
                         value={values.site_id}
-                        name={'site_id'}
+                        name={"site_id"}
                         label="Nama Cabang"
                         error={errors.site_id}
                         touched={touched.site_id}
@@ -377,7 +473,7 @@ const ShowTimesheetScreen = () => {
                     <Grid item xs={12} sm={4} sx={{ mt: 2 }}>
                       <OptionPenyewa
                         value={values.penyewa_id}
-                        name={'penyewa_id'}
+                        name={"penyewa_id"}
                         label="Nama Penyewa"
                         error={errors.penyewa_id}
                         touched={Boolean(true)}
@@ -388,7 +484,9 @@ const ShowTimesheetScreen = () => {
                     </Grid>
                     <Grid item xs={12} sm={4} sx={{ mt: 2 }}>
                       <FormControl fullWidth>
-                        <InputLabel id="activity-label">Group Kegiatan</InputLabel>
+                        <InputLabel id="activity-label">
+                          Group Kegiatan
+                        </InputLabel>
                         <Select
                           labelId="activity-label"
                           name="mainact"
@@ -407,16 +505,16 @@ const ShowTimesheetScreen = () => {
                           }
                         >
                           <MenuItem value="">Pilih</MenuItem>
-                          <MenuItem value={'mining'}>MINING</MenuItem>
-                          <MenuItem value={'barging'}>BARGING</MenuItem>
-                          <MenuItem value={'rental'}>RENTAL</MenuItem>
+                          <MenuItem value={"mining"}>MINING</MenuItem>
+                          <MenuItem value={"barging"}>BARGING</MenuItem>
+                          <MenuItem value={"rental"}>RENTAL</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} sm={5} sx={{ mt: 2 }}>
                       <OptionKaryawan
-                        label={'Operator'}
-                        name={'karyawan_id'}
+                        label={"Operator"}
+                        name={"karyawan_id"}
                         value={values.karyawan_id}
                         error={errors.karyawan_id}
                         touched={Boolean(true)}
@@ -428,7 +526,7 @@ const ShowTimesheetScreen = () => {
                     <Grid item xs={12} sm={3} sx={{ mt: 2 }}>
                       <OptionEquipment
                         value={values.equipment_id}
-                        name={'equipment_id'}
+                        name={"equipment_id"}
                         label="Kode Equipemnt"
                         error={errors.equipment_id}
                         touched={Boolean(true)}
@@ -438,12 +536,16 @@ const ShowTimesheetScreen = () => {
                       />
                     </Grid>
                     <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
-                      <FormControl fullWidth touched={Boolean(true)} error={errors.shift_id}>
+                      <FormControl
+                        fullWidth
+                        touched={Boolean(true)}
+                        error={errors.shift_id}
+                      >
                         <InputLabel id="shift-label">Shift Kerja</InputLabel>
                         <Select
                           labelId="overtime-label"
                           name="shift_id"
-                          value={values.shift_id || ''}
+                          value={values.shift_id || ""}
                           placeholder="Longshift"
                           onChange={handleChange}
                           input={
@@ -458,15 +560,19 @@ const ShowTimesheetScreen = () => {
                           }
                         >
                           <MenuItem value="">Pilih</MenuItem>
-                          <MenuItem value={'1'}>Shift 1</MenuItem>
-                          <MenuItem value={'2'}>Shift 2</MenuItem>
+                          <MenuItem value={"1"}>Shift 1</MenuItem>
+                          <MenuItem value={"2"}>Shift 2</MenuItem>
                         </Select>
-                        {touched.shift_id && errors.shift_id && <FormHelperText>{errors.shift_id}</FormHelperText>}
+                        {touched.shift_id && errors.shift_id && (
+                          <FormHelperText>{errors.shift_id}</FormHelperText>
+                        )}
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} sm={3} sx={{ mt: 2 }}>
                       <FormControl fullWidth>
-                        <InputLabel id="overtime-label">Status Longshift</InputLabel>
+                        <InputLabel id="overtime-label">
+                          Status Longshift
+                        </InputLabel>
                         <Select
                           labelId="overtime-label"
                           name="longshift"
@@ -485,9 +591,9 @@ const ShowTimesheetScreen = () => {
                           }
                         >
                           <MenuItem value="">Pilih</MenuItem>
-                          <MenuItem value={'ls0'}>Tidak Longshift</MenuItem>
-                          <MenuItem value={'ls1'}>Longshift 1</MenuItem>
-                          <MenuItem value={'ls2'}>Longshift 2</MenuItem>
+                          <MenuItem value={"ls0"}>Tidak Longshift</MenuItem>
+                          <MenuItem value={"ls1"}>Longshift 1</MenuItem>
+                          <MenuItem value={"ls2"}>Longshift 2</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
@@ -496,7 +602,7 @@ const ShowTimesheetScreen = () => {
                       <InputForm
                         label="Refuel BBM"
                         type="number"
-                        name={'bbm'}
+                        name={"bbm"}
                         startAdornment={<GasStation />}
                         errors={errors}
                         touched={touched}
@@ -564,12 +670,12 @@ const ShowTimesheetScreen = () => {
                                 <Button
                                   onClick={() =>
                                     push({
-                                      kegiatan_id: '',
-                                      lokasi_id: '',
-                                      lokasi_to: '',
-                                      material_id: '',
-                                      starttime: '',
-                                      endtime: ''
+                                      kegiatan_id: "",
+                                      lokasi_id: "",
+                                      lokasi_to: "",
+                                      material_id: "",
+                                      starttime: "",
+                                      endtime: "",
                                     })
                                   }
                                   variant="contained"
@@ -584,13 +690,24 @@ const ShowTimesheetScreen = () => {
                             >
                               {values.kegiatan?.map((item, idx) => {
                                 return (
-                                  <Grid key={idx} container spacing={1} sx={{ alignItems: 'center', mb: 5 }}>
+                                  <Grid
+                                    key={idx}
+                                    container
+                                    spacing={1}
+                                    sx={{ alignItems: "center", mb: 5 }}
+                                  >
                                     <Grid item xs={12} sm={3}>
                                       <OptionKegiatanKerja
                                         value={item.kegiatan_id}
-                                        label={'Jenis Kegiatan'}
+                                        label={"Jenis Kegiatan"}
                                         name={`kegiatan[${idx}].kegiatan_id`}
-                                        error={touched.kegiatan?.[idx]?.kegiatan_id && Boolean(errors.kegiatan?.[idx]?.kegiatan_id)}
+                                        error={
+                                          touched.kegiatan?.[idx]
+                                            ?.kegiatan_id &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.kegiatan_id,
+                                          )
+                                        }
                                         startAdornment={<Arrow />}
                                         setFieldValue={setFieldValue}
                                       />
@@ -598,9 +715,15 @@ const ShowTimesheetScreen = () => {
                                     <Grid item xs={12} sm={3}>
                                       <OptionMaterialMining
                                         value={item.material_id}
-                                        label={'Jenis Material'}
+                                        label={"Jenis Material"}
                                         name={`kegiatan[${idx}].material_id`}
-                                        error={touched.kegiatan?.[idx]?.material_id && Boolean(errors.kegiatan?.[idx]?.material_id)}
+                                        error={
+                                          touched.kegiatan?.[idx]
+                                            ?.material_id &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.material_id,
+                                          )
+                                        }
                                         startAdornment={<Ankr />}
                                         setFieldValue={setFieldValue}
                                       />
@@ -610,7 +733,12 @@ const ShowTimesheetScreen = () => {
                                         value={item.lokasi_id}
                                         label="Lokasi Awal"
                                         name={`kegiatan[${idx}].lokasi_id`}
-                                        error={touched.kegiatan?.[idx]?.lokasi_id && Boolean(errors.kegiatan?.[idx]?.lokasi_id)}
+                                        error={
+                                          touched.kegiatan?.[idx]?.lokasi_id &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.lokasi_id,
+                                          )
+                                        }
                                         startAdornment={<AlignVertically />}
                                         setFieldValue={setFieldValue}
                                       />
@@ -620,7 +748,12 @@ const ShowTimesheetScreen = () => {
                                         value={item.lokasi_to}
                                         label="Lokasi Tujuan"
                                         name={`kegiatan[${idx}].lokasi_to`}
-                                        error={touched.kegiatan?.[idx]?.lokasi_to && Boolean(errors.kegiatan?.[idx]?.lokasi_to)}
+                                        error={
+                                          touched.kegiatan?.[idx]?.lokasi_to &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.lokasi_to,
+                                          )
+                                        }
                                         startAdornment={<AlignVertically />}
                                         setFieldValue={setFieldValue}
                                       />
@@ -630,7 +763,10 @@ const ShowTimesheetScreen = () => {
                                         label="SEQ"
                                         type="text"
                                         name={`kegiatan[${idx}].seq`}
-                                        error={touched.kegiatan?.[idx]?.seq && Boolean(errors.kegiatan?.[idx]?.seq)}
+                                        error={
+                                          touched.kegiatan?.[idx]?.seq &&
+                                          Boolean(errors.kegiatan?.[idx]?.seq)
+                                        }
                                         value={item.seq}
                                         onChange={handleChange}
                                       />
@@ -640,10 +776,15 @@ const ShowTimesheetScreen = () => {
                                         name={`kegiatan[${idx}].starttime`}
                                         label="Job Start"
                                         type="datetime-local"
-                                        value={moment(item.starttime).format('YYYY-MM-DDTHH:mm')}
+                                        value={moment(item.starttime).format(
+                                          "YYYY-MM-DDTHH:mm",
+                                        )}
                                         onChange={handleChange}
                                         touched
-                                        errors={touched.kegiatan?.[idx]?.starttime && errors.kegiatan?.[idx]?.starttime}
+                                        errors={
+                                          touched.kegiatan?.[idx]?.starttime &&
+                                          errors.kegiatan?.[idx]?.starttime
+                                        }
                                       />
                                     </Grid>
                                     <Grid item xs={12} sm={3} sx={{ mt: 2 }}>
@@ -651,8 +792,15 @@ const ShowTimesheetScreen = () => {
                                         label="Job Finish"
                                         type="datetime-local"
                                         name={`kegiatan[${idx}].endtime`}
-                                        error={touched.kegiatan?.[idx]?.endtime && Boolean(errors.kegiatan?.[idx]?.endtime)}
-                                        value={moment(item.endtime).format('YYYY-MM-DDTHH:mm')}
+                                        error={
+                                          touched.kegiatan?.[idx]?.endtime &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.endtime,
+                                          )
+                                        }
+                                        value={moment(item.endtime).format(
+                                          "YYYY-MM-DDTHH:mm",
+                                        )}
                                         onChange={handleChange}
                                       />
                                     </Grid>
@@ -661,7 +809,12 @@ const ShowTimesheetScreen = () => {
                                         label="KM Start"
                                         type="text"
                                         name={`kegiatan[${idx}].smustart`}
-                                        error={touched.kegiatan?.[idx]?.smustart && Boolean(errors.kegiatan?.[idx]?.smustart)}
+                                        error={
+                                          touched.kegiatan?.[idx]?.smustart &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.smustart,
+                                          )
+                                        }
                                         value={item.smustart}
                                         onChange={handleChange}
                                       />
@@ -671,7 +824,12 @@ const ShowTimesheetScreen = () => {
                                         label="KM Finish"
                                         type="text"
                                         name={`kegiatan[${idx}].smufinish`}
-                                        error={touched.kegiatan?.[idx]?.smufinish && Boolean(errors.kegiatan?.[idx]?.smufinish)}
+                                        error={
+                                          touched.kegiatan?.[idx]?.smufinish &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.smufinish,
+                                          )
+                                        }
                                         value={item.smufinish}
                                         onChange={handleChange}
                                       />
@@ -681,14 +839,24 @@ const ShowTimesheetScreen = () => {
                                         label="Rit"
                                         type="text"
                                         name={`kegiatan[${idx}].ritase`}
-                                        error={touched.kegiatan?.[idx]?.ritase && Boolean(errors.kegiatan?.[idx]?.ritase)}
+                                        error={
+                                          touched.kegiatan?.[idx]?.ritase &&
+                                          Boolean(
+                                            errors.kegiatan?.[idx]?.ritase,
+                                          )
+                                        }
                                         value={item.ritase}
                                         onChange={handleChange}
                                       />
                                     </Grid>
                                     <Grid item xs={12} sm={2}>
                                       <Stack>
-                                        <Button onClick={() => remove(idx)} variant="contained" color="error" startIcon={<Trash />}>
+                                        <Button
+                                          onClick={() => remove(idx)}
+                                          variant="outlined"
+                                          color="error"
+                                          startIcon={<CloseSquare />}
+                                        >
                                           Hapus Kegiatan
                                         </Button>
                                       </Stack>
@@ -704,14 +872,32 @@ const ShowTimesheetScreen = () => {
 
                     <Grid item xs={12} sm={12} sx={{ mt: 2 }}>
                       <Stack direction="row" justifyContent="space-between">
-                        <IconButton variant="contained" color="error" onClick={toggleDialogHandle}>
-                          <Trash />
-                        </IconButton>
                         <Stack direction="row" gap={1}>
-                          <Button component={Link} href={'/timesheet'} variant="outlined" color="secondary" startIcon={<Back />}>
-                            Cancel
+                          <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<Trash />}
+                            onClick={toggleDialogHandle}
+                          >
+                            Hapus Timesheet
                           </Button>
-                          <Button type="submit" variant="shadow" startIcon={<Send2 />}>
+                        </Stack>
+                        <Stack direction="row" gap={1}>
+                          {values.status !== "A" && (
+                            <Button
+                              color="warning"
+                              variant="shadow"
+                              startIcon={<Autobrightness />}
+                              onClick={onApproveHandle}
+                            >
+                              Approve
+                            </Button>
+                          )}
+                          <Button
+                            type="submit"
+                            variant="shadow"
+                            startIcon={<Send2 />}
+                          >
                             Update Data
                           </Button>
                         </Stack>

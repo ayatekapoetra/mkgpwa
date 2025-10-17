@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import React, { useState, useMemo } from 'react';
-import { useReactTable, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
-import moment from 'moment';
-import 'moment/locale/id';
+import Link from "next/link";
+import React, { useState, useMemo } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+} from "@tanstack/react-table";
+import moment from "moment";
+import "moment/locale/id";
 
 import {
   Box,
@@ -19,8 +24,12 @@ import {
   Typography,
   Badge,
   Stack,
-  IconButton as MuiIconButton
-} from '@mui/material';
+  IconButton as MuiIconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
 // THIRD - PARTY
 import {
@@ -36,38 +45,43 @@ import {
   ArrowUp2,
   ArrowDown2,
   ArrowDown3,
-  ArrowRight3
-} from 'iconsax-react';
+  ArrowRight3,
+} from "iconsax-react";
 
-import Paginate from 'components/Paginate';
-import IconButton from 'components/@extended/IconButton';
+import Paginate from "components/Paginate";
+import IconButton from "components/@extended/IconButton";
 
 // Set moment locale to Indonesian
-moment.locale('id');
+moment.locale("id");
 
-const ResizeHandle = styled('div')(({ theme, isresizing }) => ({
-  position: 'absolute',
+const ResizeHandle = styled("div")(({ theme, isresizing }) => ({
+  position: "absolute",
   right: 0,
   top: 0,
-  height: '100%',
-  width: '6px',
-  backgroundColor: isresizing ? theme.palette.primary.main : 'transparent',
-  cursor: 'col-resize',
-  userSelect: 'none',
-  touchAction: 'none',
+  height: "100%",
+  width: "6px",
+  backgroundColor: isresizing ? theme.palette.primary.main : "transparent",
+  cursor: "col-resize",
+  userSelect: "none",
+  touchAction: "none",
   zIndex: 1,
-  transition: 'background-color 0.2s ease',
-  '&:hover': {
-    backgroundColor: theme.palette.primary.light
-  }
+  transition: "background-color 0.2s ease",
+  "&:hover": {
+    backgroundColor: theme.palette.primary.light,
+  },
 }));
 
-export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams }) {
+export default function ListTimesheetDesktop({
+  data,
+  queueStatus = {},
+  setParams,
+}) {
   const [sorting, setSorting] = useState([]);
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Helper functions for safe data formatting
-  const safeMomentFormat = (date, format = 'DD-MM-YYYY', fallback = '-') => {
+  const safeMomentFormat = (date, format = "DD-MM-YYYY", fallback = "-") => {
     try {
       const momentDate = moment(date);
       return momentDate.isValid() ? momentDate.format(format) : fallback;
@@ -76,13 +90,17 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
     }
   };
 
-  const safeTimeFormat = (timeString, format = 'ddd, HH:mm', fallback = '-') => {
+  const safeTimeFormat = (
+    timeString,
+    format = "ddd, HH:mm",
+    fallback = "-",
+  ) => {
     try {
       if (!timeString) return fallback;
 
       // Debug log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('safeTimeFormat processing:', timeString);
+      if (process.env.NODE_ENV === "development") {
+        console.log("safeTimeFormat processing:", timeString);
       }
 
       // Try parsing with different formats
@@ -92,82 +110,89 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
       momentTime = moment(timeString);
       if (momentTime.isValid()) {
         const result = momentTime.format(format);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Parsed as full datetime:', result);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Parsed as full datetime:", result);
         }
         return result;
       }
 
       // Try as time only (HH:mm format)
-      momentTime = moment(timeString, 'HH:mm');
+      momentTime = moment(timeString, "HH:mm");
       if (momentTime.isValid()) {
         const result = momentTime.format(format);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Parsed as HH:mm:', result);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Parsed as HH:mm:", result);
         }
         return result;
       }
 
       // Try as time with seconds (HH:mm:ss format)
-      momentTime = moment(timeString, 'HH:mm:ss');
+      momentTime = moment(timeString, "HH:mm:ss");
       if (momentTime.isValid()) {
         const result = momentTime.format(format);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Parsed as HH:mm:ss:', result);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Parsed as HH:mm:ss:", result);
         }
         return result;
       }
 
       // Try as datetime without timezone (YYYY-MM-DD HH:mm)
-      momentTime = moment(timeString, 'YYYY-MM-DD HH:mm');
+      momentTime = moment(timeString, "YYYY-MM-DD HH:mm");
       if (momentTime.isValid()) {
         const result = momentTime.format(format);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Parsed as YYYY-MM-DD HH:mm:', result);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Parsed as YYYY-MM-DD HH:mm:", result);
         }
         return result;
       }
 
       // Try as datetime with seconds (YYYY-MM-DD HH:mm:ss)
-      momentTime = moment(timeString, 'YYYY-MM-DD HH:mm:ss');
+      momentTime = moment(timeString, "YYYY-MM-DD HH:mm:ss");
       if (momentTime.isValid()) {
         const result = momentTime.format(format);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Parsed as YYYY-MM-DD HH:mm:ss:', result);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Parsed as YYYY-MM-DD HH:mm:ss:", result);
         }
         return result;
       }
 
       // If all parsing fails, return the original string as fallback
-      if (process.env.NODE_ENV === 'development') {
-        console.log('All parsing failed, returning original:', timeString);
+      if (process.env.NODE_ENV === "development") {
+        console.log("All parsing failed, returning original:", timeString);
       }
       return timeString || fallback;
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Error in safeTimeFormat:', error);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Error in safeTimeFormat:", error);
       }
       return fallback;
     }
   };
 
-  const safeNumberFormat = (number, decimals = 2, fallback = '-') => {
+  const safeNumberFormat = (number, decimals = 2, fallback = "-") => {
     try {
-      return number != null && !isNaN(number) ? Number(number).toFixed(decimals) : fallback;
+      return number != null && !isNaN(number)
+        ? Number(number).toFixed(decimals)
+        : fallback;
     } catch (error) {
       return fallback;
     }
   };
 
-  const safeTextFormat = (text, fallback = '-') => {
-    return text != null && text !== '' ? text : fallback;
+  const safeTextFormat = (text, fallback = "-") => {
+    return text != null && text !== "" ? text : fallback;
   };
 
   // Reusable TableCell components
-  const TimeCell = ({ timeString, format = 'ddd, HH:mm', fallback = '-' }) => {
+  const TimeCell = ({ timeString, format = "ddd, HH:mm", fallback = "-" }) => {
     // Debug: log the actual timeString received
-    if (process.env.NODE_ENV === 'development') {
-      console.log('TimeCell received timeString:', timeString, 'type:', typeof timeString);
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "TimeCell received timeString:",
+        timeString,
+        "type:",
+        typeof timeString,
+      );
     }
 
     return (
@@ -177,19 +202,19 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
     );
   };
 
-  const LocationCell = ({ location, fallback = '-' }) => (
+  const LocationCell = ({ location, fallback = "-" }) => (
     <Typography variant="body2" fontWeight="medium">
       {safeTextFormat(location?.nama, fallback)}
     </Typography>
   );
 
-  const ActivityCell = ({ activity, fallback = '-' }) => (
+  const ActivityCell = ({ activity, fallback = "-" }) => (
     <Typography variant="body2" fontWeight="medium">
       {safeTextFormat(activity?.nama, fallback)}
     </Typography>
   );
 
-  const TextCell = ({ text, fallback = '-', fontWeight = 'medium', color }) => (
+  const TextCell = ({ text, fallback = "-", fontWeight = "medium", color }) => (
     <Typography variant="body2" fontWeight={fontWeight} color={color}>
       {safeTextFormat(text, fallback)}
     </Typography>
@@ -202,27 +227,40 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
     // Merge queue status with table data
     return processedRows.map((row) => ({
       ...row,
-      syncStatus: queueStatus[row.id] || 'synced'
+      syncStatus: queueStatus[row.id] || "synced",
     }));
   }, [data, queueStatus]);
 
   const columns = useMemo(
     () => [
       {
-        header: 'ACT',
-        accessorKey: 'index',
-        size: 80,
-        minSize: 80,
+        header: "ACT",
+        accessorKey: "index",
+        size: 90,
+        minSize: 90,
         enableResizing: true,
         enableSorting: false,
         cell: ({ row }) => {
-          const { id } = row.original;
+          const { id, status } = row.original;
           const isExpanded = expandedRows.has(id);
+          if (status == "A") {
+            var btnColor = "secondary";
+          } else if (status == "W") {
+            var btnColor = "warning";
+          } else {
+            var btnColor = "error";
+          }
 
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               {/* Edit button */}
-              <IconButton size={'small'} color="primary" component={Link} href={`/timesheet/${id}/show`} title="Edit Timesheet">
+              <IconButton
+                size={"small"}
+                color={btnColor}
+                component={Link}
+                href={`/timesheet/${id}/show`}
+                title="Edit Timesheet"
+              >
                 <Edit />
               </IconButton>
 
@@ -239,47 +277,52 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
                   }
                   setExpandedRows(newExpanded);
                 }}
-                title={isExpanded ? 'Collapse Details' : 'Expand Details'}
+                title={isExpanded ? "Collapse Details" : "Expand Details"}
                 sx={{
-                  color: isExpanded ? 'primary.main' : 'text.secondary',
-                  transition: 'color 0.2s ease'
+                  color: isExpanded ? "primary.main" : "text.secondary",
+                  transition: "color 0.2s ease",
                 }}
               >
-                {isExpanded ? <ArrowDown3 size={16} /> : <ArrowRight3 size={16} />}
+                {isExpanded ? (
+                  <ArrowDown3 size={16} />
+                ) : (
+                  <ArrowRight3 size={16} />
+                )}
               </MuiIconButton>
             </Box>
           );
-        }
+        },
       },
       {
-        header: 'Status',
-        accessorKey: 'syncStatus',
+        header: "Status",
+        accessorKey: "syncStatus",
         size: 100,
         enableSorting: false,
         cell: ({ row }) => {
           const { syncStatus } = row.original;
+          console.log("row.original--", row.original);
 
-          if (syncStatus === 'pending') {
+          if (syncStatus === "pending") {
             return (
-              <div style={{ textAlign: 'center' }}>
-                <Badge badgeContent={'OFFLINE'} color="warning" />
+              <div style={{ textAlign: "center" }}>
+                <Badge badgeContent={"OFFLINE"} color="warning" />
               </div>
             );
-          } else if (syncStatus === 'synced') {
+          } else if (syncStatus === "synced") {
             return (
-              <div style={{ textAlign: 'center' }}>
-                <Badge badgeContent={'SYNCED'} color="success" />
+              <div style={{ textAlign: "center" }}>
+                <Badge badgeContent={"SYNCED"} color="success" />
               </div>
             );
-          } else if (syncStatus === 'failed') {
+          } else if (syncStatus === "failed") {
             return (
-              <div style={{ textAlign: 'center' }}>
-                <Badge badgeContent={'FAILED'} color="error" />
+              <div style={{ textAlign: "center" }}>
+                <Badge badgeContent={"FAILED"} color="error" />
               </div>
             );
           }
-          return <div style={{ textAlign: 'center' }}>-</div>;
-        }
+          return <div style={{ textAlign: "center" }}>-</div>;
+        },
       },
       {
         header: () => (
@@ -288,7 +331,7 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">Tanggal</Typography>
           </Stack>
         ),
-        accessorKey: 'date_ops',
+        accessorKey: "date_ops",
         size: 120,
         sortingFn: (rowA, rowB) => {
           const dateA = new Date(rowA.original.date_ops);
@@ -298,7 +341,7 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
         cell: ({ row }) => {
           const { date_ops } = row.original;
           return <Typography>{safeMomentFormat(date_ops)}</Typography>;
-        }
+        },
       },
       {
         header: () => (
@@ -307,16 +350,16 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">Bisnis</Typography>
           </Stack>
         ),
-        accessorKey: 'bisnis.initial',
+        accessorKey: "bisnis.initial",
         size: 100,
         cell: ({ row }) => {
           const { bisnis } = row.original;
           return (
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: "center" }}>
               <Typography>{safeTextFormat(bisnis?.initial)}</Typography>
             </div>
           );
-        }
+        },
       },
       {
         header: () => (
@@ -325,16 +368,16 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">Site</Typography>
           </Stack>
         ),
-        accessorKey: 'cabang.initial',
+        accessorKey: "cabang.initial",
         size: 80,
         cell: ({ row }) => {
           const { cabang } = row.original;
           return (
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: "center" }}>
               <Typography>{safeTextFormat(cabang?.initial)}</Typography>
             </div>
           );
-        }
+        },
       },
       {
         header: () => (
@@ -343,21 +386,21 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">Operator / Driver</Typography>
           </Stack>
         ),
-        accessorKey: 'karyawan.nama',
+        accessorKey: "karyawan.nama",
         size: 250,
-        cell: (info) => safeTextFormat(info.getValue())
+        cell: (info) => safeTextFormat(info.getValue()),
       },
       {
-        header: 'Equipment',
-        accessorKey: 'kdunit',
+        header: "Equipment",
+        accessorKey: "kdunit",
         size: 120,
-        cell: (info) => safeTextFormat(info.getValue())
+        cell: (info) => safeTextFormat(info.getValue()),
       },
       {
-        header: 'Penyewa',
-        accessorKey: 'penyewa.abbr',
+        header: "Penyewa",
+        accessorKey: "penyewa.abbr",
         size: 80,
-        cell: (info) => safeTextFormat(info.getValue())
+        cell: (info) => safeTextFormat(info.getValue()),
       },
       {
         header: () => (
@@ -366,22 +409,34 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">BBM</Typography>
           </Stack>
         ),
-        accessorKey: 'bbm',
+        accessorKey: "bbm",
         size: 80,
-        cell: (info) => <div style={{ textAlign: 'right' }}>{safeTextFormat(info.getValue())}</div>
+        cell: (info) => (
+          <div style={{ textAlign: "right" }}>
+            {safeTextFormat(info.getValue())}
+          </div>
+        ),
       },
       {
-        header: 'SMU Start',
-        accessorKey: 'smustart',
+        header: "SMU Start",
+        accessorKey: "smustart",
         size: 120,
-        meta: { align: 'right' },
-        cell: (info) => <div style={{ textAlign: 'right' }}>{safeTextFormat(info.getValue())}</div>
+        meta: { align: "right" },
+        cell: (info) => (
+          <div style={{ textAlign: "right" }}>
+            {safeTextFormat(info.getValue())}
+          </div>
+        ),
       },
       {
-        header: 'SMU Finish',
-        accessorKey: 'smufinish',
+        header: "SMU Finish",
+        accessorKey: "smufinish",
         size: 120,
-        cell: (info) => <div style={{ textAlign: 'right' }}>{safeTextFormat(info.getValue())}</div>
+        cell: (info) => (
+          <div style={{ textAlign: "right" }}>
+            {safeTextFormat(info.getValue())}
+          </div>
+        ),
       },
       {
         header: () => (
@@ -390,9 +445,13 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">SMU USED</Typography>
           </Stack>
         ),
-        accessorKey: 'usedhmkm',
+        accessorKey: "usedhmkm",
         size: 120,
-        cell: (info) => <div style={{ textAlign: 'right' }}>{safeNumberFormat(info.getValue(), 2)}</div>
+        cell: (info) => (
+          <div style={{ textAlign: "right" }}>
+            {safeNumberFormat(info.getValue(), 2)}
+          </div>
+        ),
       },
       {
         header: () => (
@@ -401,45 +460,45 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
             <Typography variant="subtitle">LS</Typography>
           </Stack>
         ),
-        accessorKey: 'longshift',
+        accessorKey: "longshift",
         size: 80,
         cell: ({ row }) => {
           const { longshift } = row.original;
-          if (longshift == 'ls0') {
+          if (longshift == "ls0") {
             return (
-              <div style={{ textAlign: 'center' }}>
-                <Badge badgeContent={'LS0'} color="success" />
+              <div style={{ textAlign: "center" }}>
+                <Badge badgeContent={"LS0"} color="success" />
               </div>
             );
-          } else if (longshift == 'ls1') {
+          } else if (longshift == "ls1") {
             return (
-              <div style={{ textAlign: 'center' }}>
-                <Badge badgeContent={'LS1'} color="warning" />
+              <div style={{ textAlign: "center" }}>
+                <Badge badgeContent={"LS1"} color="warning" />
               </div>
             );
           } else {
             return (
-              <div style={{ textAlign: 'center' }}>
-                <Badge badgeContent={'LS2'} color="error" />
+              <div style={{ textAlign: "center" }}>
+                <Badge badgeContent={"LS2"} color="error" />
               </div>
             );
           }
-        }
+        },
       },
       {
-        header: 'ALokasi',
-        accessorKey: 'mainact',
+        header: "ALokasi",
+        accessorKey: "mainact",
         size: 120,
-        cell: (info) => safeTextFormat(info.getValue()?.toUpperCase())
+        cell: (info) => safeTextFormat(info.getValue()?.toUpperCase()),
       },
       {
-        header: 'Metode',
-        accessorKey: 'metode',
+        header: "Metode",
+        accessorKey: "metode",
         size: 80,
-        cell: (info) => safeTextFormat(info.getValue()?.toUpperCase())
-      }
+        cell: (info) => safeTextFormat(info.getValue()?.toUpperCase()),
+      },
     ],
-    [expandedRows]
+    [expandedRows],
   );
   const [columnSizing, setColumnSizing] = useState({});
   const [columnSizingInfo, setColumnSizingInfo] = useState({});
@@ -462,39 +521,95 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
 
     return (
       <TableRow>
-        <TableCell colSpan={parentColumns.length} sx={{ p: 0, border: 'none' }}>
-          <Box sx={{ bgcolor: 'background.default', p: 2 }}>
+        <TableCell colSpan={parentColumns.length} sx={{ p: 0, border: "none" }}>
+          <Box sx={{ bgcolor: "background.default", p: 2 }}>
             <Paper
               sx={{
-                border: '1px solid',
-                borderColor: 'divider',
+                border: "1px solid",
+                borderColor: "divider",
                 borderRadius: 1,
-                overflow: 'hidden'
+                overflow: "hidden",
               }}
             >
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Seq</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Lokasi</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Lokasi Tujuan</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Kegiatan</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Material</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Start Time</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>End Time</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Waktu (jam)</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>SMU Start</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>SMU Finish</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Used SMU</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Ritase</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Tools</TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Seq
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Lokasi
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Lokasi Tujuan
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Kegiatan
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Material
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Start Time
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      End Time
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Waktu (jam)
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      SMU Start
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      SMU Finish
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Used SMU
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Ritase
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "bold", bgcolor: "background.paper" }}
+                    >
+                      Tools
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {sortedItems.map((item, index) => (
                     <TableRow key={index} hover>
                       <TableCell>
-                        <TextCell text={item.seq} fontWeight="bold" color="primary.main" />
+                        <TextCell
+                          text={item.seq}
+                          fontWeight="bold"
+                          color="primary.main"
+                        />
                       </TableCell>
                       <TableCell>
                         <LocationCell location={item.lokasi} />
@@ -516,7 +631,10 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight="medium">
-                          {item.timetot ? safeNumberFormat(item.timetot / 60, 2) : '-'} jam
+                          {item.timetot
+                            ? safeNumberFormat(item.timetot / 60, 2)
+                            : "-"}{" "}
+                          jam
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -526,7 +644,11 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
                         <TextCell text={item.smufinish} />
                       </TableCell>
                       <TableCell>
-                        <TextCell text={item.usedsmu} fontWeight="bold" color="success.main" />
+                        <TextCell
+                          text={item.usedsmu}
+                          fontWeight="bold"
+                          color="success.main"
+                        />
                       </TableCell>
                       <TableCell>
                         <TextCell text={item.ritase} />
@@ -548,11 +670,11 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
   const table = useReactTable({
     data: tableData,
     columns,
-    columnResizeMode: 'onChange',
+    columnResizeMode: "onChange",
     state: {
       columnSizing,
       columnSizingInfo,
-      sorting
+      sorting,
     },
     onColumnSizingChange: setColumnSizing,
     onColumnSizingInfoChange: setColumnSizingInfo,
@@ -560,24 +682,24 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     defaultColumn: {
-      minSize: 60
-    }
+      minSize: 60,
+    },
   });
 
   return (
     <Paper
       sx={{
-        overflowX: 'auto',
-        width: '100%',
-        boxShadow: 'none',
-        border: '1px solid',
-        borderColor: 'divider'
+        overflowX: "auto",
+        width: "100%",
+        boxShadow: "none",
+        border: "1px solid",
+        borderColor: "divider",
       }}
     >
       <Table
         sx={{
-          tableLayout: 'fixed',
-          minWidth: '100%'
+          tableLayout: "fixed",
+          minWidth: "100%",
         }}
       >
         <TableHead>
@@ -589,34 +711,41 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
                   colSpan={header.colSpan}
                   onClick={header.column.getToggleSortingHandler()}
                   sx={{
-                    position: 'relative',
+                    position: "relative",
                     width: header.getSize(),
                     minWidth: header.column.columnDef.minSize,
-                    fontWeight: 'bold',
-                    backgroundColor: 'background.paper',
-                    borderBottom: '2px solid',
-                    borderColor: 'divider',
-                    padding: '12px 16px',
-                    cursor: header.column.getCanSort() ? 'pointer' : 'default',
-                    '&:hover': {
-                      backgroundColor: header.column.getCanSort() ? 'action.hover' : 'background.paper'
-                    }
+                    fontWeight: "bold",
+                    backgroundColor: "background.paper",
+                    borderBottom: "2px solid",
+                    borderColor: "divider",
+                    padding: "12px 16px",
+                    cursor: header.column.getCanSort() ? "pointer" : "default",
+                    "&:hover": {
+                      backgroundColor: header.column.getCanSort()
+                        ? "action.hover"
+                        : "background.paper",
+                    },
                   }}
                 >
                   <Box
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      height: '100%',
-                      overflow: 'hidden'
+                      display: "flex",
+                      alignItems: "center",
+                      height: "100%",
+                      overflow: "hidden",
                     }}
                   >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
                     {header.column.getCanSort() && (
-                      <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
-                        {header.column.getIsSorted() === 'asc' ? (
+                      <Box
+                        sx={{ ml: 1, display: "flex", alignItems: "center" }}
+                      >
+                        {header.column.getIsSorted() === "asc" ? (
                           <ArrowUp2 size={16} variant="Outline" />
-                        ) : header.column.getIsSorted() === 'desc' ? (
+                        ) : header.column.getIsSorted() === "desc" ? (
                           <ArrowDown2 size={16} variant="Outline" />
                         ) : (
                           <Sort size={16} variant="Outline" />
@@ -627,7 +756,9 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
                       <ResizeHandle
                         onMouseDown={header.getResizeHandler()}
                         onTouchStart={header.getResizeHandler()}
-                        isresizing={header.column.getIsResizing() ? 'true' : undefined}
+                        isresizing={
+                          header.column.getIsResizing() ? "true" : undefined
+                        }
                       />
                     )}
                   </Box>
@@ -637,36 +768,56 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
           ))}
         </TableHead>
         <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <React.Fragment key={row.id}>
-              <TableRow
-                hover
-                sx={{
-                  '&:last-child td': { borderBottom: 0 },
-                  bgcolor: expandedRows.has(row.original.id) ? 'action.hover' : 'background.paper'
-                }}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    sx={{
-                      padding: '12px 16px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      width: cell.column.getSize(),
-                      minWidth: cell.column.columnDef.minSize,
-                      borderBottom: expandedRows.has(row.original.id) ? '2px solid' : '1px solid',
-                      borderColor: expandedRows.has(row.original.id) ? 'primary.main' : 'divider'
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-              {renderNestedRows(row, columns)}
-            </React.Fragment>
-          ))}
+          {table.getRowModel().rows.map((row) => {
+            // Debug log untuk status
+            if (row.original.status === "R") {
+              console.log("Found status R row:", row.original);
+            }
+            return (
+              <React.Fragment key={row.id}>
+                <TableRow
+                  hover
+                  sx={{
+                    "&:last-child td": { borderBottom: 0 },
+                    bgcolor:
+                      row.original.status === "W"
+                        ? "background.default"
+                        : row.original.status === "R"
+                          ? "warning.default"
+                          : expandedRows.has(row.original.id)
+                            ? "action.hover"
+                            : "background.paper",
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      sx={{
+                        padding: "12px 16px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        width: cell.column.getSize(),
+                        minWidth: cell.column.columnDef.minSize,
+                        borderBottom: expandedRows.has(row.original.id)
+                          ? "2px solid"
+                          : "1px solid",
+                        borderColor: expandedRows.has(row.original.id)
+                          ? "primary.main"
+                          : "divider",
+                      }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {renderNestedRows(row, columns)}
+              </React.Fragment>
+            );
+          })}
         </TableBody>
         <TableFooter>
           <TableRow>
@@ -676,7 +827,9 @@ export default function ListTimesheetDesktop({ data, queueStatus = {}, setParams
                 total={data?.data?.total || data?.total || 0}
                 lastPage={data?.data?.lastPage || data?.lastPage || 1}
                 perPage={data?.data?.perPage || data?.perPage || 10}
-                onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+                onPageChange={(newPage) =>
+                  setParams((prev) => ({ ...prev, page: newPage }))
+                }
               />
             </TableCell>
           </TableRow>
