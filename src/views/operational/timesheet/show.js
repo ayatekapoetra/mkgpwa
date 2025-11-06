@@ -872,16 +872,20 @@ const ShowTimesheetScreen = () => {
 
                     <Grid item xs={12} sm={12} sx={{ mt: 2 }}>
                       <Stack direction="row" justifyContent="space-between">
-                        <Stack direction="row" gap={1}>
-                          <Button
-                            variant="contained"
-                            color="error"
-                            startIcon={<Trash />}
-                            onClick={toggleDialogHandle}
-                          >
-                            Hapus Timesheet
-                          </Button>
-                        </Stack>
+                        {
+                          values.status !== "A" && (
+                            <Stack direction="row" gap={1}>
+                              <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<Trash />}
+                                onClick={toggleDialogHandle}
+                              >
+                                Hapus Timesheet
+                              </Button>
+                            </Stack>
+                          )
+                        }
                         <Stack direction="row" gap={1}>
                           {values.status !== "A" && (
                             <Button

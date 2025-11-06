@@ -1,18 +1,18 @@
-import PropTypes from 'prop-types';
-import Stack from '@mui/material/Stack';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import FormHelperText from '@mui/material/FormHelperText';
+import PropTypes from "prop-types";
+import Stack from "@mui/material/Stack";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 
 const InputForm = ({
   touched = false,
   errors = {},
-  label = 'No Label',
-  type = 'text',
-  name = 'NoName',
-  placeholder = 'No Teks...',
-  value = '',
+  label = "No Label",
+  type = "text",
+  name = "NoName",
+  placeholder = "No Teks...",
+  value = "",
   startAdornment = null,
   endAdornment = null,
   onBlur = null,
@@ -22,7 +22,7 @@ const InputForm = ({
   multiline = false,
   rows = 1,
   min = undefined, // ✅ Tambahkan min
-  max = undefined // ✅ Tambahkan max
+  max = undefined, // ✅ Tambahkan max
 }) => {
   const hasError = touched && errors && errors[name];
 
@@ -47,9 +47,9 @@ const InputForm = ({
           multiline={multiline}
           rows={rows}
           inputProps={{
-            ...(type === 'number' ? { step: 'any' } : {}),
+            ...(type === "number" ? { step: "any" } : {}),
             ...(min !== undefined ? { min } : {}),
-            ...(max !== undefined ? { max } : {})
+            ...(max !== undefined ? { max } : {}),
           }}
         />
       </FormControl>
@@ -81,7 +81,7 @@ InputForm.propTypes = {
   multiline: PropTypes.bool,
   rows: PropTypes.number,
   min: PropTypes.oneOfType([PropTypes.string, PropTypes.number]), // ✅ Tambahkan propTypes
-  max: PropTypes.oneOfType([PropTypes.string, PropTypes.number]) // ✅ Tambahkan propTypes
+  max: PropTypes.oneOfType([PropTypes.string, PropTypes.number]), // ✅ Tambahkan propTypes
 };
 
 export default InputForm;
