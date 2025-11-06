@@ -8,10 +8,11 @@ const OptionSubmenu = ({
   error = null, // Tambahkan prop error
   touched = false, // Tambahkan prop touched
   startAdornment = null,
-  setFieldValue
+  setFieldValue,
+  menuId = ''
 }) => {
-  const { data: array, dataLoading } = useGetSubMenu();
-  if (dataLoading || !array) {
+  const { data: array, dataLoading } = useGetSubMenu(menuId);
+  if (dataLoading) {
     return <div>Loading...</div>;
   }
   return (
@@ -19,8 +20,8 @@ const OptionSubmenu = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array.find((option) => option?.id == value) || null}
+          options={array || []}
+          value={array?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
           }}

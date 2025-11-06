@@ -18,6 +18,7 @@ export const endpoints = {
   master: "master",
   user: "/user-menu",
   submenu: "/submenu",
+  listMenu: "/list-menu",
 
   keySetting: "api/setting/akses-menu/list",
 };
@@ -71,9 +72,63 @@ export function useGetMenuMaster() {
   return memoizedValue;
 }
 
-export function useGetSubMenu() {
+export function useGetListMenu() {
+  const { data, isLoading, error, isValidating } = useSWR(
+    endpoints.key + endpoints.listMenu,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    },
+  );
+
+  useOfflineStorage("menu", "list-menu", data);
+
+  const memoizedValue = useMemo(
+    () => ({
+      data: data?.rows,
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      dataEmpty: !isLoading && !data?.rows?.length,
+    }),
+    [data, isLoading, error, isValidating],
+  );
+
+  return memoizedValue;
+}
+
+export function useGetAllSubMenu() {
   const { data, isLoading, error, isValidating } = useSWR(
     endpoints.key + endpoints.submenu,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    },
+  );
+
+  useOfflineStorage("menu", "all-submenu", data);
+
+  const memoizedValue = useMemo(
+    () => ({
+      data: data?.rows,
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      dataEmpty: !isLoading && !data?.rows?.length,
+    }),
+    [data, isLoading, error, isValidating],
+  );
+
+  return memoizedValue;
+}
+
+export function useGetSubMenu(menuId = "") {
+  const { data, isLoading, error, isValidating } = useSWR(
+    menuId ? `${endpoints.key}${endpoints.submenu}?menu_id=${menuId}` : null,
     fetcher,
     {
       revalidateIfStale: false,
@@ -90,7 +145,7 @@ export function useGetSubMenu() {
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length,
+      dataEmpty: !isLoading && !data?.rows?.length,
     }),
     [data, isLoading, error, isValidating],
   );

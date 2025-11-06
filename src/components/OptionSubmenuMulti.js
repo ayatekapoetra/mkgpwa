@@ -1,5 +1,5 @@
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment } from '@mui/material';
-import { useGetSubMenu } from 'api/menu';
+import { useGetAllSubMenu } from 'api/menu';
 
 const OptionSubmenuMulti = ({
   value = [], // nilai sekarang berupa array object
@@ -10,7 +10,7 @@ const OptionSubmenuMulti = ({
   startAdornment = null,
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetSubMenu();
+  const { data: array, dataLoading } = useGetAllSubMenu();
 
   if (dataLoading) {
     return <div>Loading...</div>;
@@ -23,7 +23,7 @@ const OptionSubmenuMulti = ({
           multiple
           fullWidth
           disableCloseOnSelect
-          options={array}
+          options={array || []}
           value={value}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue); // langsung set array object
