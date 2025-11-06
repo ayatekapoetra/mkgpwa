@@ -113,6 +113,38 @@ Jika auto-update gagal:
 2. Cek versi terbaru di: https://github.com/ayatekapoetra/mkgpwa/releases
 3. Download dan install manual
 
+### Error: "Code signature did not pass validation"
+
+```
+Error checking for updates: Code signature at URL file:///.../MKG-Desktop.app/
+did not pass validation: code has no resources but signature indicates they must be present
+```
+
+**Penyebab:**
+
+- Aplikasi tidak di-sign dengan Apple Developer Certificate
+- electron-updater mencoba memverifikasi signature yang tidak ada
+
+**Solusi:**
+
+1. **Download Manual** (Recommended)
+   - Buka: https://github.com/ayatekapoetra/mkgpwa/releases
+   - Download versi terbaru (.dmg atau .zip)
+   - Install manual dan jalankan `xattr -cr` command
+
+2. **Update via Terminal**
+
+   ```bash
+   # Download update terbaru
+   cd ~/Downloads
+   curl -LO https://github.com/ayatekapoetra/mkgpwa/releases/latest/download/MKG-Desktop-*.dmg
+
+   # Install dan remove quarantine
+   open MKG-Desktop-*.dmg
+   cp -R "/Volumes/MKG Desktop/MKG-Desktop.app" /Applications/
+   xattr -cr "/Applications/MKG-Desktop.app"
+   ```
+
 ### Error Saat Download Update
 
 ```

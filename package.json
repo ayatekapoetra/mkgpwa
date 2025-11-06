@@ -147,6 +147,8 @@
       "owner": "ayatekapoetra",
       "repo": "mkgpwa"
     },
+    "afterSign": "electron-builder-notarize",
+    "electronUpdaterCompatibility": ">=2.16",
     "files": [
       "electron/**/*",
       "out/**/*",

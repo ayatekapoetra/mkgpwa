@@ -6,6 +6,8 @@ const { autoUpdater } = require("electron-updater");
 
 app.commandLine.appendSwitch("disable-http2");
 
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
+
 function checkServerReady(url) {
   return new Promise((resolve) => {
     const check = () => {
@@ -38,6 +40,12 @@ autoUpdater.requestHeaders = {
 if (process.platform === "darwin") {
   autoUpdater.allowDowngrade = true;
   autoUpdater.disableWebInstaller = false;
+
+  Object.defineProperty(app, "isPackaged", {
+    get() {
+      return true;
+    },
+  });
 }
 
 autoUpdater.setFeedURL({
