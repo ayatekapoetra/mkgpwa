@@ -354,6 +354,19 @@ function createAppMenu() {
         },
         { type: "separator" },
         {
+          label: "About MKG Desktop",
+          click: () => {
+            const packageJson = require("../package.json");
+            dialog.showMessageBox({
+              type: "info",
+              title: "About MKG Desktop",
+              message: `MKG Desktop`,
+              detail: `Version: ${packageJson.version}\n\nMining Equipment Management System\n\n© 2025 ${packageJson.author.name}\n${packageJson.author.url}`,
+              buttons: ["OK"],
+            });
+          },
+        },
+        {
           label: "Developer Tools Info",
           click: () => {
             const message = `
@@ -456,7 +469,6 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // Enable context menu
       contextMenu: true,
     },
     show: false,
@@ -465,11 +477,32 @@ async function createWindow() {
     icon: path.join(__dirname, "../public/icons/logo.png"),
   });
 
-  // Create context menu
   createContextMenu(win);
 
   const startUrl = process.env.ELECTRON_START_URL || "http://localhost:3005";
-  let shouldAutoLoad = true;
+
+  win.webContents.on("did-finish-load", () => {
+    console.log("Page finished loading, showing window...");
+    setTimeout(() => {
+      win.show();
+    }, 100);
+  });
+
+  win.webContents.on(
+    "did-fail-load",
+    async (_e, code, desc, url, isMainFrame) => {
+      if (isMainFrame && code !== -3) {
+        console.warn("did-fail-load", code, desc, url);
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          await checkServerReady(startUrl);
+          await win.loadURL(startUrl);
+        } catch (e3) {
+          console.error("Retry after did-fail-load failed:", e3);
+        }
+      }
+    },
+  );
 
   // Set environment variables for NextAuth in Electron
   if (!process.env.ELECTRON_START_URL) {
@@ -485,12 +518,11 @@ async function createWindow() {
   }
 
   // In production, load the Next.js app directly
+  const isPackaged = app.isPackaged;
+
   if (!process.env.ELECTRON_START_URL) {
     console.log("Loading Next.js app in production mode...");
     try {
-      // Check if we're running from the packaged app
-      const isPackaged = app.isPackaged;
-
       if (isPackaged) {
         const appPath = app.getAppPath();
         const next = require("next");
@@ -503,32 +535,32 @@ async function createWindow() {
         const handle = nextApp.getRequestHandler();
 
         await nextApp.prepare();
+        console.log("Next.js prepared, starting server...");
 
         const server = http.createServer((req, res) => {
           handle(req, res);
         });
 
-        server.listen(Number(process.env.PORT), "localhost", () => {
+        server.listen(Number(process.env.PORT), "localhost", async () => {
           console.log(
             "Production Next.js server started on port",
             process.env.PORT,
           );
-          setTimeout(() => {
-            win.loadURL(`http://localhost:${process.env.PORT}`);
-            win.show();
-          }, 200);
+          await new Promise((r) => setTimeout(r, 2000));
+          await checkServerReady(`http://localhost:${process.env.PORT}`);
+          console.log("Server verified ready, loading URL...");
+          await win.loadURL(`http://localhost:${process.env.PORT}`);
         });
 
         nextServer = server;
       } else {
-        // In development/unpackaged, rely on external Next.js server (npm start)
         console.log("Waiting for external Next.js server...");
         await checkServerReady(startUrl);
         console.log("Server is ready, loading application...");
+        await win.loadURL(startUrl);
       }
     } catch (error) {
       console.error("Failed to start production server:", error);
-      // Show error window
       const errorWin = new BrowserWindow({
         width: 600,
         height: 400,
@@ -544,53 +576,19 @@ async function createWindow() {
       return;
     }
   } else if (process.env.ELECTRON_START_URL) {
-    // Wait for server to be ready in development
     console.log("Waiting for Next.js server to be ready...");
     await checkServerReady(startUrl);
     console.log("Server is ready, loading application...");
-  }
 
-  try {
-    await win.loadURL(startUrl);
-    win.show();
-  } catch (error) {
-    console.error("Failed to load URL:", error);
-    // Retry once after small delay (server warming)
     try {
-      await new Promise((r) => setTimeout(r, 800));
+      await win.loadURL(startUrl);
+    } catch (error) {
+      console.error("Failed to load URL:", error);
+      await new Promise((r) => setTimeout(r, 1500));
       await checkServerReady(startUrl);
       await win.loadURL(startUrl);
-      win.show();
-    } catch (e2) {
-      const errorWin = new BrowserWindow({
-        width: 600,
-        height: 400,
-        parent: win,
-        modal: true,
-        show: false,
-      });
-      errorWin.loadURL(
-        `data:text/html,<html><body style="font-family: Arial, sans-serif; padding: 20px;"><h2>Error Loading Application</h2><p>Failed to load the application. Please try again.</p><p><strong>Error:</strong> ${e2.message}</p><button onclick="window.close()">Close</button></body></html>`,
-      );
-      errorWin.show();
     }
   }
-
-  win.webContents.on(
-    "did-fail-load",
-    async (_e, code, desc, _url, isMainFrame) => {
-      if (isMainFrame) {
-        console.warn("did-fail-load", code, desc);
-        await new Promise((r) => setTimeout(r, 500));
-        try {
-          await checkServerReady(startUrl);
-          await win.loadURL(startUrl);
-        } catch (e3) {
-          console.error("Retry after did-fail-load failed:", e3);
-        }
-      }
-    },
-  );
 
   // Open DevTools in development
   if (process.env.ELECTRON_START_URL) {
