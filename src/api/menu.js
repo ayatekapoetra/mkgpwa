@@ -1,35 +1,39 @@
-import useSWR, { mutate } from 'swr';
-import { useMemo } from 'react';
+import useSWR, { mutate } from "swr";
+import { useMemo } from "react";
 
 // Project-imports
-import { fetcher } from 'utils/axios';
-import { useOfflineStorage } from 'lib/useOfflineStorage';
+import { fetcher } from "utils/axios";
+import { useOfflineStorage } from "lib/useOfflineStorage";
 
 const initialState = {
-  openedItem: 'dashboard',
-  openedComponent: 'buttons',
+  openedItem: "dashboard",
+  openedComponent: "buttons",
   openedHorizontalItem: null,
   isDashboardDrawerOpened: false,
-  isComponentDrawerOpened: true
+  isComponentDrawerOpened: true,
 };
 
 export const endpoints = {
-  key: 'api/menu',
-  master: 'master',
-  user: '/user-menu',
-  submenu: '/submenu',
+  key: "api/menu",
+  master: "master",
+  user: "/user-menu",
+  submenu: "/submenu",
 
-  keySetting: 'api/setting/akses-menu/list'
+  keySetting: "api/setting/akses-menu/list",
 };
 
 export function useGetMenu() {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.user, fetcher, {
-    revalidateIfStale: true,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: false
-  });
+  const { data, isLoading, error, isValidating } = useSWR(
+    endpoints.key + endpoints.user,
+    fetcher,
+    {
+      revalidateIfStale: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: false,
+    },
+  );
 
-  useOfflineStorage('menu', 'user-menu', data);
+  useOfflineStorage("menu", "user-menu", data);
 
   const memoizedValue = useMemo(
     () => ({
@@ -37,40 +41,48 @@ export function useGetMenu() {
       menuLoading: isLoading,
       menuError: error,
       menuValidating: isValidating,
-      menuEmpty: !isLoading && !data?.length
+      menuEmpty: !isLoading && !data?.length,
     }),
-    [data, error, isLoading, isValidating]
+    [data, error, isLoading, isValidating],
   );
 
   return memoizedValue;
 }
 
 export function useGetMenuMaster() {
-  const { data, isLoading } = useSWR(endpoints.key + endpoints.master, () => initialState, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false
-  });
+  const { data, isLoading } = useSWR(
+    endpoints.key + endpoints.master,
+    () => initialState,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    },
+  );
 
   const memoizedValue = useMemo(
     () => ({
       menuMaster: data || initialState,
-      menuMasterLoading: isLoading
+      menuMasterLoading: isLoading,
     }),
-    [data, isLoading]
+    [data, isLoading],
   );
 
   return memoizedValue;
 }
 
 export function useGetSubMenu() {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.submenu, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: true
-  });
+  const { data, isLoading, error, isValidating } = useSWR(
+    endpoints.key + endpoints.submenu,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    },
+  );
 
-  useOfflineStorage('menu', 'submenu', data);
+  useOfflineStorage("menu", "submenu", data);
 
   const memoizedValue = useMemo(
     () => ({
@@ -78,22 +90,25 @@ export function useGetSubMenu() {
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length
+      dataEmpty: !isLoading && !data?.data?.length,
     }),
-    [data, isLoading, error, isValidating]
+    [data, isLoading, error, isValidating],
   );
 
   return memoizedValue;
 }
 
-export function useGetUserAccess() {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.keySetting, fetcher, {
+export function useGetUserAccess(params = {}) {
+  const queryString = new URLSearchParams(params).toString();
+  const url = `${endpoints.keySetting}${queryString ? `?${queryString}` : ""}`;
+
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
-    revalidateOnReconnect: true
+    revalidateOnReconnect: true,
   });
 
-  useOfflineStorage('menu', 'user-access', data);
+  useOfflineStorage("menu", "user-access", data);
 
   const memoizedValue = useMemo(
     () => ({
@@ -101,9 +116,32 @@ export function useGetUserAccess() {
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length
+      dataEmpty: !isLoading && !data?.rows?.data?.length,
     }),
-    [data, isLoading, error, isValidating]
+    [data, isLoading, error, isValidating],
+  );
+
+  return memoizedValue;
+}
+
+export function useShowUserAccess(id) {
+  const { data, isLoading, error } = useSWR(
+    id ? `${endpoints.keySetting}?user_id=${id}&perPages=100` : null,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    },
+  );
+
+  const memoizedValue = useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      dataLoading: isLoading,
+      dataError: error,
+    }),
+    [data, isLoading, error],
   );
 
   return memoizedValue;
@@ -117,7 +155,7 @@ export function handlerComponentDrawer(isComponentDrawerOpened) {
     (currentMenuMaster) => {
       return { ...currentMenuMaster, isComponentDrawerOpened };
     },
-    false
+    false,
   );
 }
 
@@ -129,7 +167,7 @@ export function handlerActiveComponent(openedComponent) {
     (currentMenuMaster) => {
       return { ...currentMenuMaster, openedComponent };
     },
-    false
+    false,
   );
 }
 
@@ -141,7 +179,7 @@ export function handlerDrawerOpen(isDashboardDrawerOpened) {
     (currentMenuMaster) => {
       return { ...currentMenuMaster, isDashboardDrawerOpened };
     },
-    false
+    false,
   );
 }
 
@@ -153,7 +191,7 @@ export function handlerHorizontalActiveItem(openedHorizontalItem) {
     (currentMenuMaster) => {
       return { ...currentMenuMaster, openedHorizontalItem };
     },
-    false
+    false,
   );
 }
 
@@ -165,6 +203,6 @@ export function handlerActiveItem(openedItem) {
     (currentMenuMaster) => {
       return { ...currentMenuMaster, openedItem };
     },
-    false
+    false,
   );
 }

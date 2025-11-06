@@ -1,68 +1,62 @@
-'use client';
+"use client";
 
-import { Fragment, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Fragment } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 
-import { CardActions, Grid, Button } from '@mui/material';
+import {
+  CardActions,
+  Grid,
+  Button,
+  Stack,
+  Typography,
+  Checkbox,
+} from "@mui/material";
+import { Trash } from "iconsax-react";
 
-// THIRD - PARTY
-import { Layer, Building3, AlignVertically, BagHappy, Trash } from 'iconsax-react';
-import { Formik, Form } from 'formik';
-import * as Yup from 'yup'; // ⬅ WAJIB
+import MainCard from "components/MainCard";
+import { APP_DEFAULT_PATH } from "config";
+import Breadcrumbs from "components/@extended/Breadcrumbs";
+import BtnBack from "components/BtnBack";
+import axiosServices from "utils/axios";
 
-// COMPONENTS
-import MainCard from 'components/MainCard';
-import { APP_DEFAULT_PATH } from 'config';
-import Breadcrumbs from 'components/@extended/Breadcrumbs';
-import BtnBack from 'components/BtnBack';
-import OptionCabang from 'components/OptionCabang';
-import OptionLokasiKerja from 'components/OptionLokasiPit';
-import OptionMaterialMining from 'components/OptionMaterialMining';
-import InputForm from 'components/InputForm';
-import axiosServices from 'utils/axios';
-
-// HOOK
-import { openNotification } from 'api/notification';
-import { useShowDom } from 'api/dom';
+import { openNotification } from "api/notification";
+import { useShowUserAccess } from "api/menu";
 
 const msgSuccess = {
   open: true,
-  title: 'success',
-  message: 'Dom berhasil dihapus...',
-  alert: { color: 'success' }
+  title: "success",
+  message: "User access berhasil dihapus...",
+  alert: { color: "success" },
 };
 const msgError = {
   open: true,
-  title: 'error',
-  message: '',
-  alert: { color: 'error' }
+  title: "error",
+  message: "",
+  alert: { color: "error" },
 };
 
-const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Dom', to: '/dom' }, { title: 'Destroy' }];
+const breadcrumbLinks = [
+  { title: "Home", to: APP_DEFAULT_PATH },
+  { title: "User Access", to: "/user-access" },
+  { title: "Delete" },
+];
 
-export default function DestroyDomScreen() {
+export default function DestroyUserAccess() {
   const route = useRouter();
   const { id } = useParams();
-  const { data: initialValues, dataLoading } = useShowDom(id);
+  const { data: accessData, dataLoading } = useShowUserAccess(id);
 
-  const validationSchema = Yup.object({
-    cabang_id: Yup.string().required('Cabang wajib dipilih'),
-
-    lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
-
-    material_id: Yup.string().required('Material wajib dipilih'),
-
-    no_dom: Yup.string().required('Nomor DOM wajib diisi').min(3, 'Minimal 3 karakter')
-  });
-
-  const onSubmitHandle = async (values) => {
+  const onSubmitHandle = async () => {
     try {
-      await axiosServices.post(`/api/master/dom/${id}/destroy`, values);
-      route.push('/dom');
+      await axiosServices.post(`/api/setting/akses-menu/${id}/destroy`);
+      route.push("/user-access");
       openNotification(msgSuccess);
     } catch (error) {
-      openNotification({ ...msgError, message: error?.diagnostic?.error || '...' });
+      openNotification({
+        ...msgError,
+        message: error?.diagnostic?.error || "Gagal menghapus data",
+      });
     }
   };
 
@@ -72,92 +66,100 @@ export default function DestroyDomScreen() {
 
   return (
     <Fragment>
-      <Breadcrumbs custom heading={'Delete Dom'} links={breadcrumbLinks} />
-      <MainCard title={<BtnBack href={'/dom'} />} secondary={null} content={true}>
-        <Formik initialValues={initialValues} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
-          {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
-            return (
-              <Form noValidate onSubmit={handleSubmit}>
-                <HelperComponent values={values} setFieldValue={setFieldValue} />
-                <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
-                  <Grid item xs={12} sm={6}>
-                    <InputForm
-                      label="Nomor Dom"
-                      type="text"
-                      name="no_dom"
-                      errors={errors}
-                      touched={touched}
-                      value={values.no_dom}
-                      onChange={handleChange}
-                      startAdornment={<Layer />}
-                    />
-                    <span>
-                      <small>contoh format : IM.05.25.MTK.01</small>
-                    </span>
-                  </Grid>
-                </Grid>
-                <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
-                  <Grid item xs={12} sm={4} sx={{ mt: 3 }}>
-                    <OptionCabang
-                      value={values.cabang_id}
-                      name={'cabang_id'}
-                      label="Nama Cabang"
-                      error={errors.cabang_id}
-                      touched={touched.cabang_id}
-                      startAdornment={<Building3 />}
-                      helperText={touched.cabang_id && errors.cabang_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4} sx={{ mt: 1 }}>
-                    <OptionLokasiKerja
-                      value={values.lokasi_id}
-                      name={'lokasi_id'}
-                      label="Lokasi Kerja"
-                      error={errors.lokasi_id}
-                      touched={touched.lokasi_id}
-                      startAdornment={<AlignVertically />}
-                      helperText={touched.lokasi_id && errors.lokasi_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4} sx={{ mt: 1 }}>
-                    <OptionMaterialMining
-                      value={values.material_id}
-                      name={'material_id'}
-                      label="Jenis Material"
-                      error={errors.material_id}
-                      touched={touched.material_id}
-                      startAdornment={<BagHappy />}
-                      helperText={touched.material_id && errors.material_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <CardActions>
-                      <Button component={Link} href="/dom" variant="outlined" color="secondary">
-                        Batal
-                      </Button>
-                      <Button type="submit" variant="contained" color="error" startIcon={<Trash variant="Bold" />}>
-                        Hapus
-                      </Button>
-                    </CardActions>
-                  </Grid>
-                </Grid>
-              </Form>
-            );
-          }}
-        </Formik>
+      <Breadcrumbs
+        custom
+        heading={"Delete User Access"}
+        links={breadcrumbLinks}
+      />
+      <MainCard
+        title={<BtnBack href={"/user-access"} />}
+        secondary={null}
+        content={true}
+      >
+        <Grid
+          container
+          spacing={3}
+          alignItems="flex-start"
+          justifyContent="flex-start"
+        >
+          <Grid item xs={12}>
+            <Typography variant="h5" gutterBottom>
+              Konfirmasi Hapus Akses User
+            </Typography>
+            <Typography variant="body1" color="textSecondary" gutterBottom>
+              Anda akan menghapus semua akses untuk user:{" "}
+              <strong>
+                {accessData[0]?.user?.nmlengkap || accessData[0]?.nmuser}
+              </strong>
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+              Daftar Akses yang akan dihapus:
+            </Typography>
+            <Stack spacing={1}>
+              {accessData.map((access) => (
+                <MainCard
+                  key={access.id}
+                  sx={{ backgroundColor: "background.default" }}
+                >
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography variant="body1" sx={{ flex: 1 }}>
+                      {access.submenu?.name || access.nmsubmenu}
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      {access.read === "Y" && (
+                        <Checkbox checked disabled size="small" />
+                      )}
+                      {access.insert === "Y" && (
+                        <Checkbox
+                          checked
+                          disabled
+                          size="small"
+                          color="success"
+                        />
+                      )}
+                      {access.update === "Y" && (
+                        <Checkbox
+                          checked
+                          disabled
+                          size="small"
+                          color="warning"
+                        />
+                      )}
+                      {access.remove === "Y" && (
+                        <Checkbox checked disabled size="small" color="error" />
+                      )}
+                    </Stack>
+                  </Stack>
+                </MainCard>
+              ))}
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12}>
+            <CardActions>
+              <Button
+                component={Link}
+                href="/user-access"
+                variant="outlined"
+                color="secondary"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={onSubmitHandle}
+                variant="contained"
+                color="error"
+                startIcon={<Trash variant="Bold" />}
+              >
+                Hapus Semua Akses
+              </Button>
+            </CardActions>
+          </Grid>
+        </Grid>
       </MainCard>
     </Fragment>
   );
 }
-
-const HelperComponent = ({ values, setFieldValue }) => {
-  useEffect(() => {
-    if (values.no_dom) {
-      setFieldValue('no_dom', values.no_dom?.toUpperCase());
-    }
-  }, [values, setFieldValue]);
-  return null;
-};
