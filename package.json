@@ -1,6 +1,6 @@
 {
   "name": "femkgpwa",
-  "version": "1.2.7",
+  "version": "1.2.9",
   "description": "MKG Desktop Application - Mining Equipment Management System",
   "author": {
     "name": "Ayat Ekapoetra",
@@ -191,6 +191,7 @@
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "identity": null,
+      "type": "distribution",
       "signIgnore": [
         "node_modules",
         ".next"

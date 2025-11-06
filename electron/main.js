@@ -35,6 +35,11 @@ autoUpdater.requestHeaders = {
   "Cache-Control": "no-cache",
 };
 
+if (process.platform === "darwin") {
+  autoUpdater.allowDowngrade = true;
+  autoUpdater.disableWebInstaller = false;
+}
+
 autoUpdater.setFeedURL({
   provider: "github",
   owner: "ayatekapoetra",
