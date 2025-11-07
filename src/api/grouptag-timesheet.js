@@ -19,8 +19,8 @@ export const useGetGroupTagTimesheet = (params) => {
     : endpoints.key;
 
   const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
+    revalidateIfStale: true,
+    revalidateOnFocus: true,
     revalidateOnReconnect: true,
   });
 

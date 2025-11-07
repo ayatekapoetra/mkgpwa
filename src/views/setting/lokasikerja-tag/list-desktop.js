@@ -150,7 +150,7 @@ export default function ListGroupTagDesktop({ data, setParams }) {
         cell: ({ row }) => {
           const { cabang } = row.original;
           return (
-            <Typography variant="body2" fontWeight="medium">
+            <Typography variant="subtitle" fontWeight="medium">
               {safeTextFormat(cabang?.nama)}
             </Typography>
           );
@@ -164,11 +164,11 @@ export default function ListGroupTagDesktop({ data, setParams }) {
           </Stack>
         ),
         accessorKey: "penyewa.nama",
-        size: 200,
+        size: 250,
         cell: ({ row }) => {
           const { penyewa } = row.original;
           return (
-            <Typography variant="body2" fontWeight="medium">
+            <Typography variant="subtitle" fontWeight="medium">
               {safeTextFormat(penyewa?.nama)}
             </Typography>
           );
@@ -186,7 +186,7 @@ export default function ListGroupTagDesktop({ data, setParams }) {
         cell: ({ row }) => {
           const { pitkerja } = row.original;
           return (
-            <Typography variant="body2" fontWeight="medium">
+            <Typography variant="subtitle" fontWeight="medium">
               {pitkerja?.nama || '-'}
             </Typography>
           );
