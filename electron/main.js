@@ -487,7 +487,7 @@ async function createWindow() {
 
   createContextMenu(win);
 
-  const startUrl = process.env.ELECTRON_START_URL || "http://localhost:3005";
+  const startUrl = process.env.ELECTRON_START_URL || "http://localhost:3006";
 
   win.webContents.on("did-finish-load", () => {
     console.log("Page finished loading, showing window...");
@@ -514,7 +514,7 @@ async function createWindow() {
 
   // Set environment variables for NextAuth in Electron
   if (!process.env.ELECTRON_START_URL) {
-    process.env.NEXTAUTH_URL = "http://localhost:3005";
+    process.env.NEXTAUTH_URL = "http://localhost:3006";
     process.env.NEXTAUTH_TRUST_HOST = "true";
     try {
       const nextCfg = require("../next.config.js");
@@ -536,7 +536,7 @@ async function createWindow() {
         const next = require("next");
         const http = require("http");
 
-        process.env.PORT = process.env.PORT || "3005";
+        process.env.PORT = process.env.PORT || "3006";
         process.env.HOSTNAME = process.env.HOSTNAME || "localhost";
 
         const nextApp = next({ dev: false, dir: appPath });

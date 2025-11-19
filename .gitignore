@@ -133,3 +133,6 @@ jspm_packages/
 *.rpm
 *.AppImage
 *.snap
+laporan-xls-all-timesheet.md
+laporan-xls-dt-timesheet.md
+laporan-xls-he-timesheet.md

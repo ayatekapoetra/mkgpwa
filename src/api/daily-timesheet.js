@@ -3,11 +3,15 @@ import { useMemo } from 'react';
 
 // UTIL
 import { fetcher } from 'utils/axios';
+import axiosServices from 'utils/axios';
 
 export const endpoints = {
   key: '/api/operation/timesheet',
   list: '/list',
-  show: '/show'
+  show: '/show',
+  exportAlatBerat: '/alat-berat/export-excel',
+  exportDumptruck: '/dumptruck/export-excel',
+  exportAll: '/all/export-excel'
 };
 
 /**
@@ -100,4 +104,31 @@ export const useGetHEDailyTimesheet = (id) => {
   );
 
   return memoizedValue;
+};
+
+export const exportTimesheetHeavyEquipment = async (params) => {
+  const url = params 
+    ? endpoints.key + endpoints.exportAlatBerat + `?${new URLSearchParams(params)}`
+    : endpoints.key + endpoints.exportAlatBerat;
+  
+  const response = await axiosServices.get(url);
+  return response.data;
+};
+
+export const exportTimesheetDumptruck = async (params) => {
+  const url = params 
+    ? endpoints.key + endpoints.exportDumptruck + `?${new URLSearchParams(params)}`
+    : endpoints.key + endpoints.exportDumptruck;
+  
+  const response = await axiosServices.get(url);
+  return response.data;
+};
+
+export const exportTimesheetAll = async (params) => {
+  const url = params 
+    ? endpoints.key + endpoints.exportAll + `?${new URLSearchParams(params)}`
+    : endpoints.key + endpoints.exportAll;
+  
+  const response = await axiosServices.get(url);
+  return response.data;
 };

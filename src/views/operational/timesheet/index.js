@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 // MATERIAL - UI
 import Button from '@mui/material/Button';
-import { Stack, useMediaQuery, useTheme } from '@mui/material';
+import { Stack, useMediaQuery, useTheme, List, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 
 // COMPONENTS
 import IconButton from 'components/@extended/IconButton';
@@ -16,14 +16,16 @@ import { APP_DEFAULT_PATH } from 'config';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 
 // THIRD - PARTY
-import { Filter, Wifi, NoteAdd } from 'iconsax-react';
+import { Filter, Wifi, NoteAdd, DocumentDownload } from 'iconsax-react';
 import ListTimesheet from './list';
 import { getAllRequests, replayRequests } from 'lib/offlineFetch';
 import SyncProgressDialog from 'components/SyncProgressDialog';
 
 // SWR
-import { useGetDailyTimesheet } from 'api/daily-timesheet';
+import { useGetDailyTimesheet, exportTimesheetHeavyEquipment, exportTimesheetDumptruck, exportTimesheetAll } from 'api/daily-timesheet';
 import FilterTimesheet from './filter';
+import { generateHeavyEquipmentTimesheetExcel, generateDumptruckTimesheetExcel, generateAllTimesheetExcel } from 'utils/excelExport';
+import { useSnackbar } from 'notistack';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -33,6 +35,7 @@ const breadcrumbLinks = [
 export default function DailyTimesheetScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { enqueueSnackbar } = useSnackbar();
 
   const [params, setParams] = useState({
     page: 1,
@@ -49,10 +52,21 @@ export default function DailyTimesheetScreen() {
   const [isOnline, setIsOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState({ synced: 0, failed: 0, total: 0, current: '' });
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [anchorElDownload, setAnchorElDownload] = useState(null);
+  const openDownloadMenu = Boolean(anchorElDownload);
   const { data, dataLoading } = useGetDailyTimesheet(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
+  };
+
+  const handleClickDownload = (event) => {
+    setAnchorElDownload(event.currentTarget);
+  };
+
+  const handleCloseDownloadMenu = () => {
+    setAnchorElDownload(null);
   };
 
   // Load queue status
@@ -126,6 +140,75 @@ export default function DailyTimesheetScreen() {
     }
   };
 
+  const handleDownloadExcel = async (type) => {
+    handleCloseDownloadMenu();
+    setDownloadingExcel(true);
+    try {
+      const exportParams = {
+        site_id: params.site_id,
+        karyawan_id: params.karyawan_id,
+        penyewa_id: params.penyewa_id,
+        equipment_id: params.equipment_id,
+        startdate: params.startdate,
+        enddate: params.enddate,
+        status: params.status
+      };
+
+      Object.keys(exportParams).forEach(key => {
+        if (!exportParams[key]) delete exportParams[key];
+      });
+
+      if (type === 'alat-berat') {
+        const response = await exportTimesheetHeavyEquipment(exportParams);
+        
+        if (!response?.rows || response.rows.length === 0) {
+          enqueueSnackbar('Tidak ada data Alat Berat untuk di-export', { variant: 'warning' });
+          return;
+        }
+
+        generateHeavyEquipmentTimesheetExcel(response.rows);
+        enqueueSnackbar('Excel Alat Berat berhasil di-download', { variant: 'success' });
+      } else if (type === 'dumptruck') {
+        console.log('Fetching Dumptruck data with params:', exportParams);
+        const response = await exportTimesheetDumptruck(exportParams);
+        console.log('Dumptruck response:', response);
+        
+        if (!response?.rows || response.rows.length === 0) {
+          enqueueSnackbar('Tidak ada data Dumptruck untuk di-export', { variant: 'warning' });
+          return;
+        }
+
+        console.log('Generating Excel for', response.rows.length, 'records');
+        generateDumptruckTimesheetExcel(response.rows);
+        enqueueSnackbar('Excel Dumptruck berhasil di-download', { variant: 'success' });
+      } else if (type === 'all') {
+        console.log('Fetching All data with params:', exportParams);
+        const response = await exportTimesheetAll(exportParams);
+        console.log('All response:', response);
+        
+        if (!response?.rows || response.rows.length === 0) {
+          enqueueSnackbar('Tidak ada data untuk di-export', { variant: 'warning' });
+          return;
+        }
+
+        console.log('Generating Excel for', response.rows.length, 'records');
+        generateAllTimesheetExcel(response.rows);
+        enqueueSnackbar('Excel All Equipment berhasil di-download', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error('Download Excel error:', error);
+      if (error?.stack) {
+        console.error('Error stack:', error.stack);
+      }
+      if (error?.response) {
+        console.error('Error response:', error.response);
+      }
+      enqueueSnackbar(error?.response?.data?.diagnostic?.message || error?.message || 'Gagal download Excel', { variant: 'error' });
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
   return (
     <Fragment>
       <Breadcrumbs custom heading={'Daily Timesheet'} links={breadcrumbLinks} />
@@ -164,9 +247,54 @@ export default function DailyTimesheetScreen() {
           </Stack>
         }
         secondary={
-          <IconButton shape="rounded" color="secondary" onClick={toggleFilterHandle}>
-            <Filter />
-          </IconButton>
+          <>
+            <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
+              <Stack direction="row" spacing={0}>
+                <ListItemButton onClick={handleClickDownload} disabled={downloadingExcel}>
+                  <ListItemIcon>
+                    <DocumentDownload />
+                  </ListItemIcon>
+                </ListItemButton>
+                <ListItemButton onClick={toggleFilterHandle}>
+                  <ListItemIcon>
+                    <Filter />
+                  </ListItemIcon>
+                </ListItemButton>
+              </Stack>
+            </List>
+            <Menu
+              anchorEl={anchorElDownload}
+              open={openDownloadMenu}
+              onClose={handleCloseDownloadMenu}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem onClick={() => handleDownloadExcel('alat-berat')}>
+                <ListItemIcon>
+                  <DocumentDownload size={20} />
+                </ListItemIcon>
+                <ListItemText>Download Excel Alat Berat</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => handleDownloadExcel('dumptruck')}>
+                <ListItemIcon>
+                  <DocumentDownload size={20} />
+                </ListItemIcon>
+                <ListItemText>Download Excel Dumptruck</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => handleDownloadExcel('all')}>
+                <ListItemIcon>
+                  <DocumentDownload size={20} />
+                </ListItemIcon>
+                <ListItemText>Download Excel All Equipment</ListItemText>
+              </MenuItem>
+            </Menu>
+          </>
         }
         content={false}
         sx={{ mt: 1 }}

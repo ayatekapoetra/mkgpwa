@@ -72,12 +72,10 @@ export async function middleware(request) {
   }
 
   // If user is trying to access protected routes without token, redirect to login
-  const protectedRoutes = ["/home", "/dashboard"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/check-mail"];
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-  if (isProtectedRoute && !token) {
+  if (!isPublicRoute && !token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -86,15 +84,6 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    "/",
-    "/login",
-    "/home/:path*",
-    "/dashboard/:path*",
-    "/manifest.json",
-    "/sw.js",
-    "/workbox-:path*",
-    "/fallback-:path*",
-    "/precache-:path*",
-    "/service-worker.js",
+    "/((?!api|_next/static|_next/image|favicon.ico|icons|public).*)",
   ],
 };
