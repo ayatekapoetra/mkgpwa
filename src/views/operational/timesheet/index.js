@@ -224,26 +224,16 @@ export default function DailyTimesheetScreen() {
                 Buat Timesheet
               </Button>
             )}
-            {!isOnline &&
-              (isMobile ? (
-                <IconButton variant="outlined" color="warning" onClick={handleManualSync} disabled={syncing}>
-                  <Wifi />
-                </IconButton>
-              ) : (
-                <Button variant="outlined" color="warning" startIcon={<Wifi />} onClick={handleManualSync} disabled={syncing}>
-                  {syncing ? 'Syncing...' : 'Sync Now'}
-                </Button>
-              ))}
-            {isOnline &&
-              (isMobile ? (
-                <IconButton variant="outlined" color="success" onClick={handleManualSync} disabled={syncing}>
-                  <Wifi />
-                </IconButton>
-              ) : (
-                <Button variant="outlined" color="success" startIcon={<Wifi />} onClick={handleManualSync} disabled={syncing}>
-                  {syncing ? 'Syncing...' : 'Refresh Queue'}
-                </Button>
-              ))}
+            {!isOnline && (
+              <IconButton variant="outlined" color="warning" onClick={handleManualSync} disabled={syncing}>
+                <Wifi />
+              </IconButton>
+            )}
+            {isOnline && (
+              <IconButton variant="outlined" color="success" onClick={handleManualSync} disabled={syncing}>
+                <Wifi />
+              </IconButton>
+            )}
           </Stack>
         }
         secondary={
