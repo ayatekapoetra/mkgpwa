@@ -25,6 +25,9 @@ import { ThemeMode } from 'config';
 // ASSETS
 import { ArrowRight } from 'iconsax-react';
 
+// VERSION
+import packageJson from '../../../../package.json';
+
 // ==============================|| CHART ||============================== //
 
 const DataChart = () => {
@@ -139,7 +142,7 @@ const LanguagesSupport = () => {
               <ArrowRight />
             </Avatar>
             <Typography variant="subtitle1">Update version</Typography>
-            <Chip color="success" size="small" label="v1.4.0" sx={{ borderRadius: 1, bgcolor: 'success.main' }} />
+            <Chip color="success" size="small" label={`v${packageJson.version}`} sx={{ borderRadius: 1, bgcolor: 'success.main' }} />
           </Stack>
         </Grid>
         <Grid item xs={12}>

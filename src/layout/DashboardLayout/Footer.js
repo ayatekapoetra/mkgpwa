@@ -7,6 +7,9 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 
+// VERSION
+import packageJson from "../../../package.json";
+
 // ==============================|| MAIN LAYOUT - FOOTER ||============================== //
 
 const Footer = () => (
@@ -24,7 +27,7 @@ const Footer = () => (
         MakkuragaTama Dashboard
       </Typography>
       <Chip
-        label="v1.4.0"
+        label={`v${packageJson.version}`}
         size="small"
         color="success"
         variant="filled"
