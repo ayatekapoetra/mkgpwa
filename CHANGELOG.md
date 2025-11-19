@@ -5,6 +5,45 @@ All notable changes to MKG Desktop will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-01-19
+
+### Added
+
+- Excel export functionality for Heavy Equipment (HE) timesheet with 19 columns
+- Excel export functionality for Dumptruck (DT/LT/LV) timesheet with 15 columns
+- Excel export functionality for All Equipment timesheet with 22 columns (combined)
+- Dropdown menu for selecting export type (HE/DT/All)
+- New utility module `excelExport.js` with XLSX library integration
+- Three new API endpoints for timesheet exports:
+  - `/api/operation/timesheet/alat-berat/export-excel`
+  - `/api/operation/timesheet/dumptruck/export-excel`
+  - `/api/operation/timesheet/all/export-excel`
+- Conditional column logic based on equipment category
+- Excel styling with headers, auto-width columns, and borders
+
+### Changed
+
+- Updated timesheet list page with export options
+- Improved data filtering to separate HE and DT/LT/LV categories
+- Enhanced error handling with detailed console logging
+- Updated version badge in UI to v1.4.0
+
+### Fixed
+
+- Fixed `approvedby` field to use `karyawan_id` instead of `user_id`
+- Fixed route ordering to prevent conflicts with dynamic parameters
+- Fixed null handling for optional fields (lokasi_to, ritase)
+- Improved error messages for export failures
+
+### Technical
+
+- Added `EXPORT_EXCEL_ALAT_BERAT` service method in backend
+- Added `EXPORT_EXCEL_DUMPTRUCK` service method in backend
+- Added `EXPORT_EXCEL_ALL` service method in backend
+- Added `approvedByKaryawan` relation in DailyTimesheet model
+- Added `lokasiTujuan` relation support in TimesheetItem
+- Optimized queries with eager loading to prevent N+1 issues
+
 ## [1.0.9] - 2025-10-09
 
 ### Changed
