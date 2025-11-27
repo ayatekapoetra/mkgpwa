@@ -66,3 +66,23 @@ export const deleteBisnisUnit = async (id) => {
   const response = await axiosServices.delete(endpoints.key + `/${id}`);
   return response.data;
 };
+
+export const usePublicBisnis = () => {
+  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.list, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  const memoizedValue = useMemo(
+    () => ({
+      bisnisUnit: data?.rows || [],
+      bisnisUnitLoading: isLoading,
+      bisnisUnitError: error,
+      bisnisUnitValidating: isValidating
+    }),
+    [data, error, isLoading, isValidating]
+  );
+
+  return memoizedValue;
+};

@@ -4,11 +4,10 @@ import MenuItem from '@mui/material/MenuItem';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import InputAdornment from '@mui/material/InputAdornment';
 
 import { Category2 } from 'iconsax-react';
 
-export default function SelectSearch({ label = 'Nolabel', size = '', name, value = '', array = [], onChange = null }) {
+export default function SelectSearch({ label = 'Nolabel', size = '', name, value = '', array = [], onChange = null, startAdornment = null }) {
   return (
     <FormControl fullWidth>
       <InputLabel id={name}>{label}</InputLabel>
@@ -20,11 +19,7 @@ export default function SelectSearch({ label = 'Nolabel', size = '', name, value
         onChange={onChange}
         input={
           <OutlinedInput
-            startAdornment={
-              <InputAdornment position="start">
-                <Category2 />
-              </InputAdornment>
-            }
+            startAdornment={startAdornment || <Category2 />}
             label={label}
           />
         }
@@ -43,7 +38,6 @@ export default function SelectSearch({ label = 'Nolabel', size = '', name, value
   );
 }
 
-// Tambahkan validasi prop
 SelectSearch.propTypes = {
   name: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -54,5 +48,6 @@ SelectSearch.propTypes = {
       teks: PropTypes.string.isRequired
     })
   ),
-  onChange: PropTypes.func
+  onChange: PropTypes.func,
+  startAdornment: PropTypes.node
 };

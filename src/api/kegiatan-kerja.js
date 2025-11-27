@@ -3,12 +3,12 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/penyewa',
+  key: '/api/master/kegiatan-kerja',
   list: '/list',
-  public: '/api/public/penyewa/list'
+  public: '/api/public/kegiatan/list'
 };
 
-export const useGetPenyewa = (params) => {
+export const useGetKegiatanKerja = (params) => {
   const url = params ? endpoints.key + endpoints.list + `?${new URLSearchParams(params)}` : endpoints.key + endpoints.list;
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, {
@@ -19,12 +19,12 @@ export const useGetPenyewa = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      penyewa: data?.rows || [],
-      penyewaLoading: isLoading,
-      penyewaError: error,
-      penyewaValidating: isValidating,
-      penyewaEmpty: !isLoading && !data?.rows?.length,
-      penyewaMutate: mutate,
+      kegiatanKerja: data?.rows || [],
+      kegiatanKerjaLoading: isLoading,
+      kegiatanKerjaError: error,
+      kegiatanKerjaValidating: isValidating,
+      kegiatanKerjaEmpty: !isLoading && !data?.rows?.length,
+      kegiatanKerjaMutate: mutate,
       page: data?.page,
       perPage: data?.perPage,
       total: data?.total,
@@ -36,7 +36,7 @@ export const useGetPenyewa = (params) => {
   return memoizedValue;
 };
 
-export const useShowPenyewa = (id) => {
+export const useShowKegiatanKerja = (id) => {
   const { data, isLoading, error, isValidating } = useSWR(id ? endpoints.key + `/${id}` : null, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -45,10 +45,10 @@ export const useShowPenyewa = (id) => {
 
   const memoizedValue = useMemo(
     () => ({
-      penyewa: data?.rows || null,
-      penyewaLoading: isLoading,
-      penyewaError: error,
-      penyewaValidating: isValidating
+      kegiatanKerja: data?.rows || null,
+      kegiatanKerjaLoading: isLoading,
+      kegiatanKerjaError: error,
+      kegiatanKerjaValidating: isValidating
     }),
     [data, error, isLoading, isValidating]
   );
@@ -56,7 +56,7 @@ export const useShowPenyewa = (id) => {
   return memoizedValue;
 };
 
-export const usePublicPenyewa = () => {
+export const usePublicKegiatanKerja = () => {
   const { data, isLoading, error, isValidating } = useSWR(endpoints.public, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -65,10 +65,10 @@ export const usePublicPenyewa = () => {
 
   const memoizedValue = useMemo(
     () => ({
-      penyewa: data?.rows || [],
-      penyewaLoading: isLoading,
-      penyewaError: error,
-      penyewaValidating: isValidating
+      kegiatanKerja: data?.rows || [],
+      kegiatanKerjaLoading: isLoading,
+      kegiatanKerjaError: error,
+      kegiatanKerjaValidating: isValidating
     }),
     [data, error, isLoading, isValidating]
   );
@@ -76,4 +76,4 @@ export const usePublicPenyewa = () => {
   return memoizedValue;
 };
 
-export const usePenyewa = usePublicPenyewa;
+export const useKegiatanKerja = usePublicKegiatanKerja;

@@ -4,14 +4,12 @@ import { Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { CardActions, Grid, Button, Typography } from '@mui/material';
+import { CardActions, Grid, Button, Typography, TextField, MenuItem } from '@mui/material';
 
-// THIRD - PARTY
-import { Building3, Send2 } from 'iconsax-react';
+import { Building3, Send2, Category } from 'iconsax-react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 
-// COMPONENTS
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -20,9 +18,7 @@ import OptionCabang from 'components/OptionCabang';
 import InputForm from 'components/InputForm';
 import axiosServices from 'utils/axios';
 
-// HOOK
 import { openNotification } from 'api/notification';
-import OptionSysOption from 'components/OptionSysOption';
 import { saveRequest } from 'lib/offlineFetch';
 
 const msgSuccess = {
@@ -143,19 +139,22 @@ export default function AddLokasiKerjaScreen() {
                        </Typography>
                      )}
                    </Grid>
-                  <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
-                    <OptionSysOption
-                      value={values.type}
-                      name={'type'}
-                      label="Type"
-                      group={'lokasi-type'}
-                      error={errors.type}
-                      touched={touched.type}
-                      startAdornment={<Building3 />}
-                      helperText={touched.type && errors.type}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
+                   <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
+                     <TextField
+                       select
+                       fullWidth
+                       label="Type Lokasi"
+                       name="type"
+                       value={values.type}
+                       onChange={handleChange}
+                       error={Boolean(touched.type && errors.type)}
+                       helperText={touched.type && errors.type}
+                     >
+                       <MenuItem value="PIT">PIT</MenuItem>
+                       <MenuItem value="STP">STP</MenuItem>
+                       <MenuItem value="OTH">OTH</MenuItem>
+                     </TextField>
+                   </Grid>
                   <Grid item xs={12}>
                     <CardActions>
                       <Button component={Link} href="/lokasi-kerja" variant="outlined" color="secondary">

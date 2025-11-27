@@ -11,37 +11,38 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 
 import MainCard from 'components/MainCard';
-import ListTableLokasiKerja from './listtable';
-import FilterLokasiKerja from './filter';
+import ListTableBisnisUnit from './listtable';
+import FilterBisnisUnit from './filter';
 
-import { useGetLokasiKerja } from 'api/lokasi-kerja';
+import { useGetBisnisUnit } from 'api/bisnis-unit';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
-const LokasiKerjaScreen = () => {
+const BisnisUnitScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [params, setParams] = useState({
     page: 1,
     perPages: 25,
-    nama: '',
-    cabang_id: '',
-    type: '',
-    abbr: ''
+    name: '',
+    kode: ''
   });
-  const { lokasiKerja, lokasiKerjaLoading, lokasiKerjaError, page, perPage, total, lastPage } = useGetLokasiKerja(params);
+  const { bisnisUnit, bisnisUnitLoading, bisnisUnitError } = useGetBisnisUnit(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
 
-  if (lokasiKerjaLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (lokasiKerjaError) return <p>Error fetching data</p>;
+  if (bisnisUnitLoading) return <Typography variant="body1">Loading...</Typography>;
+  if (bisnisUnitError) {
+    console.log('Data error details:', bisnisUnitError);
+    return <p>Error fetching data: {JSON.stringify(bisnisUnitError)}</p>;
+  }
 
   return (
     <MainCard
       title={
-        <Button variant="contained" component={Link} href={`/lokasi-kerja/create`}>
-          Add Lokasi Kerja
+        <Button variant="contained" component={Link} href={`/bisnis-unit/create`}>
+          Add Bisnis Unit
         </Button>
       }
       secondary={
@@ -56,28 +57,28 @@ const LokasiKerjaScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableLokasiKerja data={{ data: lokasiKerja || [] }} />
+        <ListTableBisnisUnit data={{ data: bisnisUnit?.data || bisnisUnit || [] }} />
 
         <Stack sx={{ p: 2 }}>
           <Paginate
-            page={page || 1}
-            total={total || 0}
-            lastPage={lastPage || 1}
-            perPage={perPage || 25}
+            page={bisnisUnit?.page || 1}
+            total={bisnisUnit?.total || (Array.isArray(bisnisUnit) ? bisnisUnit.length : 0)}
+            lastPage={bisnisUnit?.lastPage || 1}
+            perPage={bisnisUnit?.perPage || 25}
             onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
           />
         </Stack>
       </Stack>
 
-      <FilterLokasiKerja 
+      <FilterBisnisUnit 
         data={params} 
         setData={setParams} 
         open={openFilter} 
-        count={total || 0} 
+        count={bisnisUnit?.total || (Array.isArray(bisnisUnit) ? bisnisUnit.length : 0)} 
         onClose={toggleFilterHandle} 
       />
     </MainCard>
   );
 };
 
-export default LokasiKerjaScreen;
+export default BisnisUnitScreen;

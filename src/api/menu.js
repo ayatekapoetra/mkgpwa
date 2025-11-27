@@ -4,6 +4,7 @@ import { useMemo } from "react";
 // Project-imports
 import { fetcher } from "utils/axios";
 import { useOfflineStorage } from "lib/useOfflineStorage";
+import { getMenuIcon } from "utils/getMenuIcon";
 
 const initialState = {
   openedItem: "dashboard",
@@ -36,15 +37,61 @@ export function useGetMenu() {
 
   useOfflineStorage("menu", "user-menu", data);
 
+  // Transform menu data to include icon components
+  const transformedData = useMemo(() => {
+    if (!data?.dashboard?.children) {
+      console.log('[Menu Transform] No data to transform');
+      return data;
+    }
+
+    console.log('[Menu Transform] Starting transformation...');
+    
+    const transformMenu = (menuItems, depth = 0) => {
+      return menuItems.map(item => {
+        const transformed = { ...item };
+        const indent = '  '.repeat(depth);
+        
+        // Convert icon string to component
+        if (item.icon && typeof item.icon === 'string') {
+          const IconComponent = getMenuIcon(item.icon);
+          console.log(`${indent}[Transform] ${item.title}: "${item.icon}" → ${IconComponent ? '✓ Component' : '✗ NULL'}`);
+          transformed.icon = IconComponent;
+        } else if (item.icon) {
+          console.log(`${indent}[Transform] ${item.title}: Already a component`);
+        } else {
+          console.log(`${indent}[Transform] ${item.title}: No icon`);
+        }
+        
+        // Transform children recursively
+        if (item.children && Array.isArray(item.children)) {
+          transformed.children = transformMenu(item.children, depth + 1);
+        }
+        
+        return transformed;
+      });
+    };
+
+    const result = {
+      ...data,
+      dashboard: {
+        ...data.dashboard,
+        children: transformMenu(data.dashboard.children)
+      }
+    };
+    
+    console.log('[Menu Transform] Transformation complete');
+    return result;
+  }, [data]);
+
   const memoizedValue = useMemo(
     () => ({
-      menu: data?.dashboard,
+      menu: transformedData?.dashboard,
       menuLoading: isLoading,
       menuError: error,
       menuValidating: isValidating,
-      menuEmpty: !isLoading && !data?.length,
+      menuEmpty: !isLoading && !transformedData?.length,
     }),
-    [data, error, isLoading, isValidating],
+    [transformedData, error, isLoading, isValidating],
   );
 
   return memoizedValue;

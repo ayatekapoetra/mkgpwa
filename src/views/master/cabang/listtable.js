@@ -25,7 +25,7 @@ const ResizeHandle = styled('div')(({ theme, isresizing }) => ({
   }
 }));
 
-export default function ListTableLokasiKerja({ data = { data: [] } }) {
+export default function ListTableCabang({ data = { data: [] } }) {
   const tableData = useMemo(() => (Array.isArray(data.data) ? data.data : []), [data]);
 
   const columns = useMemo(
@@ -39,43 +39,85 @@ export default function ListTableLokasiKerja({ data = { data: [] } }) {
           const { id } = row.original;
           return (
             <Box sx={{ width: 20, textAlign: 'center' }}>
-              <IconButton variant="dashed" color="primary" component={Link} href={`/lokasi-kerja/${id}`}>
+              <IconButton variant="dashed" color="primary" component={Link} href={`/cabang/${id}/show`}>
                 <Edit />
               </IconButton>
             </Box>
           );
         }
       },
-
       {
-        header: 'Nama',
-        accessorKey: 'nama',
-        size: 150,
-        minSize: 150,
+        header: 'Area',
+        accessorKey: 'area',
+        size: 100,
+        minSize: 100,
         enableResizing: true,
         cell: (info) => {
           return <Typography variant="subtitle1">{info.getValue() || '-'}</Typography>;
         }
       },
-       {
-         header: 'Type',
-         accessorKey: 'type',
-         size: 80,
-         minSize: 80,
-         cell: (info) => info.getValue() || '-'
-       },
-       {
-         header: 'Abbr',
-         accessorKey: 'abbr',
-         size: 100,
-         minSize: 100,
-         cell: (info) => info.getValue() || '-'
-       },
-       {
-         header: 'Cabang',
-         accessorKey: 'cabang.nama',
-         minSize: 120
-       }
+      {
+        header: 'Kode',
+        accessorKey: 'kode',
+        size: 80,
+        minSize: 80,
+        enableResizing: true,
+        cell: (info) => {
+          return <Typography variant="subtitle1">{info.getValue() || '-'}</Typography>;
+        }
+      },
+      {
+        header: 'Initial',
+        accessorKey: 'initial',
+        size: 80,
+        minSize: 80,
+        enableResizing: true,
+        cell: (info) => {
+          return <Typography variant="subtitle1">{info.getValue() || '-'}</Typography>;
+        }
+      },
+      {
+        header: 'Nama',
+        accessorKey: 'nama',
+        size: 200,
+        minSize: 200,
+        enableResizing: true,
+        cell: (info) => {
+          return <Typography variant="subtitle1">{info.getValue() || '-'}</Typography>;
+        }
+      },
+      {
+        header: 'Tipe',
+        accessorKey: 'tipe',
+        size: 100,
+        minSize: 100,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Email',
+        accessorKey: 'email',
+        size: 150,
+        minSize: 150,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Phone',
+        accessorKey: 'phone',
+        size: 120,
+        minSize: 120,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Bisnis Unit',
+        accessorKey: 'bisnis.name',
+        size: 150,
+        minSize: 150,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      }
     ],
     []
   );
@@ -103,7 +145,7 @@ export default function ListTableLokasiKerja({ data = { data: [] } }) {
     <Paper
       sx={{
         width: '100%',
-        overflowX: 'auto', // biar bisa scroll horizontal
+        overflowX: 'auto',
         boxShadow: 'none',
         border: '1px solid',
         borderColor: 'divider'

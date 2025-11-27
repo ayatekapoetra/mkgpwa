@@ -11,37 +11,38 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 
 import MainCard from 'components/MainCard';
-import ListTableLokasiKerja from './listtable';
-import FilterLokasiKerja from './filter';
+import ListTableKegiatanKerja from './listtable';
+import FilterKegiatanKerja from './filter';
 
-import { useGetLokasiKerja } from 'api/lokasi-kerja';
+import { useGetKegiatanKerja } from 'api/kegiatan-kerja';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
-const LokasiKerjaScreen = () => {
+const KegiatanKerjaScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [params, setParams] = useState({
     page: 1,
     perPages: 25,
     nama: '',
-    cabang_id: '',
-    type: '',
-    abbr: ''
+    grpequipment: ''
   });
-  const { lokasiKerja, lokasiKerjaLoading, lokasiKerjaError, page, perPage, total, lastPage } = useGetLokasiKerja(params);
+  const { kegiatanKerja, kegiatanKerjaLoading, kegiatanKerjaError, page, perPage, total, lastPage } = useGetKegiatanKerja(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
 
-  if (lokasiKerjaLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (lokasiKerjaError) return <p>Error fetching data</p>;
+  if (kegiatanKerjaLoading) return <Typography variant="body1">Loading...</Typography>;
+  if (kegiatanKerjaError) {
+    console.log('Data error details:', kegiatanKerjaError);
+    return <p>Error fetching data: {JSON.stringify(kegiatanKerjaError)}</p>;
+  }
 
   return (
     <MainCard
       title={
-        <Button variant="contained" component={Link} href={`/lokasi-kerja/create`}>
-          Add Lokasi Kerja
+        <Button variant="contained" component={Link} href={`/kegiatan-kerja/create`}>
+          Add Kegiatan Kerja
         </Button>
       }
       secondary={
@@ -56,7 +57,7 @@ const LokasiKerjaScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableLokasiKerja data={{ data: lokasiKerja || [] }} />
+        <ListTableKegiatanKerja data={{ data: kegiatanKerja || [] }} />
 
         <Stack sx={{ p: 2 }}>
           <Paginate
@@ -69,7 +70,7 @@ const LokasiKerjaScreen = () => {
         </Stack>
       </Stack>
 
-      <FilterLokasiKerja 
+      <FilterKegiatanKerja 
         data={params} 
         setData={setParams} 
         open={openFilter} 
@@ -80,4 +81,4 @@ const LokasiKerjaScreen = () => {
   );
 };
 
-export default LokasiKerjaScreen;
+export default KegiatanKerjaScreen;

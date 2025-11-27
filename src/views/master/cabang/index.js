@@ -11,37 +11,41 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 
 import MainCard from 'components/MainCard';
-import ListTableLokasiKerja from './listtable';
-import FilterLokasiKerja from './filter';
+import ListTableCabang from './listtable';
+import FilterCabang from './filter';
 
-import { useGetLokasiKerja } from 'api/lokasi-kerja';
+import { useGetCabang } from 'api/cabang';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
-const LokasiKerjaScreen = () => {
+const CabangScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [params, setParams] = useState({
     page: 1,
     perPages: 25,
     nama: '',
-    cabang_id: '',
-    type: '',
-    abbr: ''
+    kode: '',
+    area: '',
+    bisnis_id: '',
+    tipe: ''
   });
-  const { lokasiKerja, lokasiKerjaLoading, lokasiKerjaError, page, perPage, total, lastPage } = useGetLokasiKerja(params);
+  const { cabang, cabangLoading, cabangError } = useGetCabang(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
 
-  if (lokasiKerjaLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (lokasiKerjaError) return <p>Error fetching data</p>;
+  if (cabangLoading) return <Typography variant="body1">Loading...</Typography>;
+  if (cabangError) {
+    console.log('Data error details:', cabangError);
+    return <p>Error fetching data: {JSON.stringify(cabangError)}</p>;
+  }
 
   return (
     <MainCard
       title={
-        <Button variant="contained" component={Link} href={`/lokasi-kerja/create`}>
-          Add Lokasi Kerja
+        <Button variant="contained" component={Link} href={`/cabang/create`}>
+          Add Cabang
         </Button>
       }
       secondary={
@@ -56,28 +60,28 @@ const LokasiKerjaScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableLokasiKerja data={{ data: lokasiKerja || [] }} />
+        <ListTableCabang data={{ data: cabang?.data || cabang || [] }} />
 
         <Stack sx={{ p: 2 }}>
           <Paginate
-            page={page || 1}
-            total={total || 0}
-            lastPage={lastPage || 1}
-            perPage={perPage || 25}
+            page={cabang?.page || 1}
+            total={cabang?.total || (Array.isArray(cabang) ? cabang.length : 0)}
+            lastPage={cabang?.lastPage || 1}
+            perPage={cabang?.perPage || 25}
             onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
           />
         </Stack>
       </Stack>
 
-      <FilterLokasiKerja 
+      <FilterCabang 
         data={params} 
         setData={setParams} 
         open={openFilter} 
-        count={total || 0} 
+        count={cabang?.total || (Array.isArray(cabang) ? cabang.length : 0)} 
         onClose={toggleFilterHandle} 
       />
     </MainCard>
   );
 };
 
-export default LokasiKerjaScreen;
+export default CabangScreen;

@@ -7,6 +7,7 @@ import { FormattedMessage } from 'react-intl';
 import {
   Windows,
   Home3,
+  Home2,
   HomeTrendUp,
   Box1,
   Bank,
@@ -32,7 +33,18 @@ import {
   TruckTick,
   Book,
   FavoriteChart,
-  PresentionChart
+  PresentionChart,
+  Location,
+  Task,
+  Profile2User,
+  Buildings,
+  Diagram,
+  Layer,
+  ReceiptItem,
+  NoteText,
+  ClipboardText,
+  ShieldTick,
+  DocumentText
 } from 'iconsax-react';
 
 import { useGetMenu } from 'api/menu';
@@ -40,17 +52,19 @@ import { useGetMenu } from 'api/menu';
 
 const icons = {
   windows: Windows,
+  home: Home2,
+  home2: Home2,
   dashboard: HomeTrendUp,
   components: Box1,
   loading: Home3,
   bank: Bank,
-  page: Book1,
-  dom: VoiceCricle,
+  page: DocumentText,
+  dom: Diagram,
   maintenance: MessageProgramming,
   contactus: I24Support,
   equipment: Truck,
   barang: Box,
-  material: Airdrop,
+  material: Layer,
   do: TruckFast,
   so: TruckTime,
   ship: Ship,
@@ -59,14 +73,29 @@ const icons = {
   radar2: Radar2,
   smartCar: SmartCar,
   taskSquare: TaskSquare,
+  task: Task,
   setting: CpuSetting,
-  permission: SecurityUser,
+  permission: ShieldTick,
   logout: Logout,
   ocr: Scanner,
   ritase: TruckTick,
   book: Book,
   PresentionChart: PresentionChart,
-  FavoriteChart: FavoriteChart
+  FavoriteChart: FavoriteChart,
+  location: Location,
+  profile: Profile2User,
+  buildings: Buildings,
+  diagram: Diagram,
+  layer: Layer,
+  truck: Truck,
+  box: Box,
+  truckFast: TruckFast,
+  receiptItem: ReceiptItem,
+  noteText: NoteText,
+  clipboardText: ClipboardText,
+  shieldTick: ShieldTick,
+  documentText: DocumentText,
+  building: Buildings
 };
 
 const loadingMenu = {
@@ -131,7 +160,8 @@ function fillItem(item, children) {
   return {
     ...item,
     title: <FormattedMessage id={`${item?.title}`} />,
-    icon: icons[item?.icon],
+    // Use transformed icon component if already transformed, otherwise lookup in icons map
+    icon: typeof item?.icon === 'function' || typeof item?.icon === 'object' ? item.icon : icons[item?.icon],
     ...(children && { children })
   };
 }

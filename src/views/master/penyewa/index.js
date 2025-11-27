@@ -11,37 +11,40 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 
 import MainCard from 'components/MainCard';
-import ListTableLokasiKerja from './listtable';
-import FilterLokasiKerja from './filter';
+import ListTablePenyewa from './listtable';
+import FilterPenyewa from './filter';
 
-import { useGetLokasiKerja } from 'api/lokasi-kerja';
+import { useGetPenyewa } from 'api/penyewa';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
-const LokasiKerjaScreen = () => {
+const PenyewaScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [params, setParams] = useState({
     page: 1,
     perPages: 25,
     nama: '',
-    cabang_id: '',
-    type: '',
-    abbr: ''
+    kode: '',
+    abbr: '',
+    bisnis_id: ''
   });
-  const { lokasiKerja, lokasiKerjaLoading, lokasiKerjaError, page, perPage, total, lastPage } = useGetLokasiKerja(params);
+  const { penyewa, penyewaLoading, penyewaError, page, perPage, total, lastPage } = useGetPenyewa(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
 
-  if (lokasiKerjaLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (lokasiKerjaError) return <p>Error fetching data</p>;
+  if (penyewaLoading) return <Typography variant="body1">Loading...</Typography>;
+  if (penyewaError) {
+    console.log('Data error details:', penyewaError);
+    return <p>Error fetching data: {JSON.stringify(penyewaError)}</p>;
+  }
 
   return (
     <MainCard
       title={
-        <Button variant="contained" component={Link} href={`/lokasi-kerja/create`}>
-          Add Lokasi Kerja
+        <Button variant="contained" component={Link} href={`/penyewa/create`}>
+          Add Penyewa
         </Button>
       }
       secondary={
@@ -56,7 +59,7 @@ const LokasiKerjaScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableLokasiKerja data={{ data: lokasiKerja || [] }} />
+        <ListTablePenyewa data={{ data: penyewa || [] }} />
 
         <Stack sx={{ p: 2 }}>
           <Paginate
@@ -69,7 +72,7 @@ const LokasiKerjaScreen = () => {
         </Stack>
       </Stack>
 
-      <FilterLokasiKerja 
+      <FilterPenyewa 
         data={params} 
         setData={setParams} 
         open={openFilter} 
@@ -80,4 +83,4 @@ const LokasiKerjaScreen = () => {
   );
 };
 
-export default LokasiKerjaScreen;
+export default PenyewaScreen;
