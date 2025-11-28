@@ -39,8 +39,6 @@ export default function GroupTagTimesheetScreen() {
   const [openFilter, setOpenFilter] = useState(false);
   const { data, dataLoading } = useGetGroupTagTimesheet(params);
 
-  console.log("data---", data);
-
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
