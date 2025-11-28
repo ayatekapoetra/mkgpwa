@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-// NEXT
 import { useRouter } from 'next/navigation';
 
-// MATERIAL - UI
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
@@ -17,11 +14,9 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormHelperText from '@mui/material/FormHelperText';
 
-// THIRD - PARTY
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 
-// PROJECT IMPORTS
 import useUser from 'hooks/useUser';
 import useScriptRef from 'hooks/useScriptRef';
 import IconButton from 'components/@extended/IconButton';
@@ -31,15 +26,11 @@ import { openSnackbar } from 'api/snackbar';
 import { strengthColor, strengthIndicator } from 'utils/password-strength';
 import { resetPassword } from 'api/auth';
 
-// ASSETS
 import { Eye, EyeSlash } from 'iconsax-react';
 
-// ============================|| FIREBASE - RESET PASSWORD ||============================ //
-
-const AuthResetPassword = () => {
+const AuthResetPasswordForm = ({ token }) => {
   const scriptedRef = useScriptRef();
   const router = useRouter();
-
   const user = useUser();
 
   const [level, setLevel] = useState();
@@ -69,20 +60,25 @@ const AuthResetPassword = () => {
         submit: null
       }}
       validationSchema={Yup.object().shape({
-        password: Yup.string().max(255).required('Password is required'),
+        password: Yup.string().min(4, 'Password minimal 4 karakter').required('Password wajib diisi'),
         confirmPassword: Yup.string()
-          .required('Confirm Password is required')
-          .test('confirmPassword', 'Both Password must be match!', (confirmPassword, yup) => yup.parent.password === confirmPassword)
+          .required('Konfirmasi password wajib diisi')
+          .oneOf([Yup.ref('password'), null], 'Password tidak cocok')
       })}
       onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
         try {
-          // password reset
+          const response = await resetPassword(token, values.password, values.confirmPassword);
+
+          if (response.diagnostic.error) {
+            throw new Error(response.diagnostic.message);
+          }
+
           if (scriptedRef.current) {
             setStatus({ success: true });
             setSubmitting(false);
             openSnackbar({
               open: true,
-              message: 'Successfuly reset password.',
+              message: 'Password berhasil direset',
               variant: 'alert',
               alert: {
                 color: 'success'
@@ -95,7 +91,7 @@ const AuthResetPassword = () => {
         } catch (err) {
           if (scriptedRef.current) {
             setStatus({ success: false });
-            setErrors({ submit: err.message });
+            setErrors({ submit: err.message || 'Gagal reset password' });
             setSubmitting(false);
           }
         }
@@ -106,7 +102,7 @@ const AuthResetPassword = () => {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Stack spacing={1}>
-                <InputLabel htmlFor="password-reset">Password</InputLabel>
+                <InputLabel htmlFor="password-reset">Password Baru</InputLabel>
                 <OutlinedInput
                   fullWidth
                   error={Boolean(touched.password && errors.password)}
@@ -132,7 +128,7 @@ const AuthResetPassword = () => {
                       </IconButton>
                     </InputAdornment>
                   }
-                  placeholder="Enter password"
+                  placeholder="Masukkan password baru"
                 />
                 {touched.password && errors.password && (
                   <FormHelperText error id="helper-text-password-reset">
@@ -155,7 +151,7 @@ const AuthResetPassword = () => {
             </Grid>
             <Grid item xs={12}>
               <Stack spacing={1}>
-                <InputLabel htmlFor="confirm-password-reset">Confirm Password</InputLabel>
+                <InputLabel htmlFor="confirm-password-reset">Konfirmasi Password</InputLabel>
                 <OutlinedInput
                   fullWidth
                   error={Boolean(touched.confirmPassword && errors.confirmPassword)}
@@ -165,7 +161,7 @@ const AuthResetPassword = () => {
                   name="confirmPassword"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  placeholder="Enter confirm password"
+                  placeholder="Masukkan ulang password baru"
                 />
                 {touched.confirmPassword && errors.confirmPassword && (
                   <FormHelperText error id="helper-text-confirm-password-reset">
@@ -194,4 +190,4 @@ const AuthResetPassword = () => {
   );
 };
 
-export default AuthResetPassword;
+export default AuthResetPasswordForm;

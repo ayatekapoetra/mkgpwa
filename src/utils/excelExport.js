@@ -6,6 +6,11 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     throw new Error('Tidak ada data untuk di-export');
   }
 
+  console.log('Excel Export - Sample Data:', data[0]);
+  console.log('Excel Export - kdunit:', data[0]?.kdunit);
+  console.log('Excel Export - penyewa:', data[0]?.penyewa);
+  console.log('Excel Export - equipment:', data[0]?.equipment);
+
   const rows = [];
 
   const headers = [
@@ -36,12 +41,15 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     const items = timesheet.items || [];
 
     if (items.length === 0) {
+      const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
+      const namaPenyewa = timesheet.penyewa?.nama || '-';
+      
       const row = [
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
         timesheet.mainact || '-',
-        timesheet.penyewa?.nama || '-',
+        namaPenyewa,
         '-',
-        timesheet.kdunit || '-',
+        kdunit,
         getShiftName(timesheet.shift_id),
         timesheet.karyawan?.nama || '-',
         timesheet.smustart || 0,
@@ -62,13 +70,15 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
       items.forEach(item => {
         const tools = getToolsName(item.kegiatan_id);
         const totalJam = item.timetot ? (item.timetot / 60).toFixed(2) : '0.00';
+        const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
+        const namaPenyewa = timesheet.penyewa?.nama || '-';
 
         const row = [
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
           timesheet.mainact || '-',
-          timesheet.penyewa?.nama || '-',
+          namaPenyewa,
           tools,
-          timesheet.kdunit || '-',
+          kdunit,
           getShiftName(timesheet.shift_id),
           timesheet.karyawan?.nama || '-',
           timesheet.smustart || 0,
@@ -152,10 +162,17 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     throw new Error('Tidak ada data untuk di-export');
   }
 
+  console.log('Dumptruck Excel Export - Sample Data:', data[0]);
+  console.log('Dumptruck Excel Export - kdunit:', data[0]?.kdunit);
+  console.log('Dumptruck Excel Export - penyewa:', data[0]?.penyewa);
+  console.log('Dumptruck Excel Export - equipment:', data[0]?.equipment);
+
   const rows = [];
 
   const headers = [
     'Tanggal',
+    'Nama penyewa',
+    'Kode equipment',
     'Shift',
     'Nama driver',
     'KM start',
@@ -178,8 +195,13 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     const items = timesheet.items || [];
 
     if (items.length === 0) {
+      const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
+      const namaPenyewa = timesheet.penyewa?.nama || '-';
+      
       const row = [
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
+        namaPenyewa,
+        kdunit,
         getShiftName(timesheet.shift_id),
         timesheet.karyawan?.nama || '-',
         timesheet.smustart || 0,
@@ -199,9 +221,13 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     } else {
       items.forEach(item => {
         const totalJam = item.timetot ? (item.timetot / 60).toFixed(2) : '0.00';
+        const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
+        const namaPenyewa = timesheet.penyewa?.nama || '-';
 
         const row = [
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
+          namaPenyewa,
+          kdunit,
           getShiftName(timesheet.shift_id),
           timesheet.karyawan?.nama || '-',
           timesheet.smustart || 0,
@@ -225,21 +251,23 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   const colWidths = [
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 20 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 25 },
-    { wch: 20 }
+    { wch: 12 },  // Tanggal
+    { wch: 20 },  // Nama penyewa
+    { wch: 15 },  // Kode equipment
+    { wch: 10 },  // Shift
+    { wch: 20 },  // Nama driver
+    { wch: 10 },  // KM start
+    { wch: 10 },  // KM finish
+    { wch: 10 },  // KM used
+    { wch: 12 },  // Waktu start
+    { wch: 12 },  // Waktu finish
+    { wch: 10 },  // Total jam
+    { wch: 20 },  // Lokasi awal
+    { wch: 20 },  // Lokasi finish
+    { wch: 10 },  // Sequence
+    { wch: 10 },  // Ritase
+    { wch: 25 },  // Kegiatan kerja
+    { wch: 20 }   // Nama pengawas
   ];
   ws['!cols'] = colWidths;
 
@@ -267,6 +295,11 @@ export const generateAllTimesheetExcel = (data, filename) => {
   if (!data || data.length === 0) {
     throw new Error('Tidak ada data untuk di-export');
   }
+
+  console.log('All Excel Export - Sample Data:', data[0]);
+  console.log('All Excel Export - kdunit:', data[0]?.kdunit);
+  console.log('All Excel Export - penyewa:', data[0]?.penyewa);
+  console.log('All Excel Export - equipment:', data[0]?.equipment);
 
   const rows = [];
 
@@ -302,13 +335,16 @@ export const generateAllTimesheetExcel = (data, filename) => {
     const isHE = timesheet.equipment?.kategori === 'HE';
 
     if (items.length === 0) {
+      const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
+      const namaPenyewa = timesheet.penyewa?.nama || '-';
+      
       const row = [
         timesheet.equipment?.kategori || '-',
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
         timesheet.mainact || '-',
-        timesheet.penyewa?.nama || '-',
+        namaPenyewa,
         '-',
-        timesheet.kdunit || '-',
+        kdunit,
         getShiftName(timesheet.shift_id),
         timesheet.karyawan?.nama || '-',
         timesheet.smustart || 0,
@@ -334,14 +370,16 @@ export const generateAllTimesheetExcel = (data, filename) => {
         const ritase = !isHE ? (item.ritase || 0) : '-';
         const istirahat = isHE ? 1 : '-';
         const totalJam = item.timetot ? (item.timetot / 60).toFixed(2) : '0.00';
+        const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
+        const namaPenyewa = timesheet.penyewa?.nama || '-';
 
         const row = [
           timesheet.equipment?.kategori || '-',
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
           timesheet.mainact || '-',
-          timesheet.penyewa?.nama || '-',
+          namaPenyewa,
           tools,
-          timesheet.kdunit || '-',
+          kdunit,
           getShiftName(timesheet.shift_id),
           timesheet.karyawan?.nama || '-',
           timesheet.smustart || 0,

@@ -19,9 +19,12 @@ const CheckMail = () => {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Box sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-            <Typography variant="h3">Hi, Check Your Mail</Typography>
+            <Typography variant="h3">Cek WhatsApp Anda</Typography>
             <Typography color="secondary" sx={{ mb: 0.5, mt: 1.25 }}>
-              We have sent a password recover instructions to your email.
+              Link reset password telah dikirim ke WhatsApp Anda. Silakan klik link tersebut untuk melanjutkan proses reset password.
+            </Typography>
+            <Typography color="textSecondary" variant="body2" sx={{ mt: 2 }}>
+              Link akan kadaluarsa dalam 1 jam.
             </Typography>
           </Box>
         </Grid>

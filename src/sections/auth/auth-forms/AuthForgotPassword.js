@@ -21,6 +21,7 @@ import useScriptRef from 'hooks/useScriptRef';
 import AnimateButton from 'components/@extended/AnimateButton';
 import { openSnackbar } from 'api/snackbar';
 import useUser from 'hooks/useUser';
+import { forgotPassword } from 'api/auth';
 
 // ============================|| FIREBASE - FORGOT PASSWORD ||============================ //
 
@@ -32,31 +33,39 @@ const AuthForgotPassword = () => {
   return (
     <Formik
       initialValues={{
-        email: '',
+        phone: '',
         submit: null
       }}
       validationSchema={Yup.object().shape({
-        email: Yup.string().email('Must be a valid email').max(255).required('Email is required')
+        phone: Yup.string()
+          .matches(/^[0-9+]+$/, 'Nomor handphone hanya boleh berisi angka')
+          .min(10, 'Nomor handphone minimal 10 digit')
+          .max(15, 'Nomor handphone maksimal 15 digit')
+          .required('Nomor handphone wajib diisi')
       })}
       onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
         try {
-          setStatus({ success: true });
-          setSubmitting(false);
-          openSnackbar({
-            open: true,
-            message: 'Check mail for reset password link',
-            variant: 'alert',
-            alert: {
-              color: 'success'
-            }
-          });
-          setTimeout(() => {
-            router.push(user ? '/auth/check-mail' : '/check-mail');
-          }, 1500);
+          const response = await forgotPassword(values.phone);
+          
+          if (scriptedRef.current) {
+            setStatus({ success: true });
+            setSubmitting(false);
+            openSnackbar({
+              open: true,
+              message: 'Link reset password telah dikirim ke WhatsApp Anda',
+              variant: 'alert',
+              alert: {
+                color: 'success'
+              }
+            });
+            setTimeout(() => {
+              router.push(user ? '/auth/check-mail' : '/check-mail');
+            }, 1500);
+          }
         } catch (err) {
           if (scriptedRef.current) {
             setStatus({ success: false });
-            setErrors({ submit: err.message });
+            setErrors({ submit: err.message || 'Nomor handphone tidak terdaftar' });
             setSubmitting(false);
           }
         }
@@ -67,22 +76,22 @@ const AuthForgotPassword = () => {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Stack spacing={1}>
-                <InputLabel htmlFor="email-forgot">Email Address</InputLabel>
+                <InputLabel htmlFor="phone-forgot">Nomor Handphone</InputLabel>
                 <OutlinedInput
                   fullWidth
-                  error={Boolean(touched.email && errors.email)}
-                  id="email-forgot"
-                  type="email"
-                  value={values.email}
-                  name="email"
+                  error={Boolean(touched.phone && errors.phone)}
+                  id="phone-forgot"
+                  type="tel"
+                  value={values.phone}
+                  name="phone"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  placeholder="Enter email address"
+                  placeholder="Masukkan nomor handphone"
                   inputProps={{}}
                 />
-                {touched.email && errors.email && (
-                  <FormHelperText error id="helper-text-email-forgot">
-                    {errors.email}
+                {touched.phone && errors.phone && (
+                  <FormHelperText error id="helper-text-phone-forgot">
+                    {errors.phone}
                   </FormHelperText>
                 )}
               </Stack>
@@ -93,12 +102,12 @@ const AuthForgotPassword = () => {
               </Grid>
             )}
             <Grid item xs={12} sx={{ mb: -2 }}>
-              <Typography variant="caption">Do not forgot to check SPAM box.</Typography>
+              <Typography variant="caption">Link reset password akan dikirim ke WhatsApp Anda.</Typography>
             </Grid>
             <Grid item xs={12}>
               <AnimateButton>
                 <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-                  Send Password Reset Email
+                  Reset Password
                 </Button>
               </AnimateButton>
             </Grid>

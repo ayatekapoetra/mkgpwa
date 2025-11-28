@@ -15,8 +15,8 @@ export const endpoints = {
 
 export const useGetGroupTagTimesheet = (params) => {
   const url = params
-    ? `${endpoints.key}?${new URLSearchParams(params)}`
-    : endpoints.key;
+    ? `${endpoints.key}${endpoints.list}?${new URLSearchParams(params)}`
+    : `${endpoints.key}${endpoints.list}`;
 
   const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
     revalidateIfStale: true,
