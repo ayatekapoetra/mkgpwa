@@ -23,8 +23,13 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
     setData({
       nama: '',
       kode: '',
+      num_part: '',
+      serial: '',
       bisnis_id: '',
       kategori_id: '',
+      application_id: '',
+      manufacture_id: '',
+      brand_id: '',
       page: 1,
       perPages: 25
     });
@@ -37,12 +42,32 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
           <MainCard content={true} title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
               <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="nama">Nama</InputLabel>
+                <InputLabel htmlFor="nama">Nama Barang</InputLabel>
                 <InputSearch size="medium" type="text" value={data['nama']} onChange={(e) => setData({ ...data, nama: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="kode">Kode</InputLabel>
+                <InputLabel htmlFor="kode">Kode Barang</InputLabel>
                 <InputSearch size="medium" type="text" value={data['kode']} onChange={(e) => setData({ ...data, kode: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={12} lg={12}>
+                <InputLabel htmlFor="num_part">Part Number</InputLabel>
+                <InputSearch 
+                  size="medium" 
+                  type="text" 
+                  value={data['num_part']} 
+                  onChange={(e) => setData({ ...data, num_part: e.target.value })} 
+                  placeholder="Cari berdasarkan part number"
+                />
+              </Grid>
+              <Grid item xs={12} sm={12} lg={12}>
+                <InputLabel htmlFor="serial">Serial Number</InputLabel>
+                <InputSearch 
+                  size="medium" 
+                  type="text" 
+                  value={data['serial']} 
+                  onChange={(e) => setData({ ...data, serial: e.target.value })} 
+                  placeholder="Cari berdasarkan serial number"
+                />
               </Grid>
               <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
                 <FilterCabang

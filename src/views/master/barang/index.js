@@ -29,8 +29,13 @@ const BarangScreen = () => {
     perPages: 30,
     nama: '',
     kode: '',
+    num_part: '',
+    serial: '',
     bisnis_id: '',
-    kategori_id: ''
+    kategori_id: '',
+    application_id: '',
+    manufacture_id: '',
+    brand_id: ''
   });
   const { data, dataLoading, dataError } = useGetBarang(params);
 
