@@ -4,7 +4,6 @@
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CardActions from '@mui/material/CardActions';
@@ -14,7 +13,7 @@ import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import MainCard from 'components/MainCard';
 
 // ASSETS
-import { Add, Building3 } from 'iconsax-react';
+import { Add, Building3, SearchNormal1, Hashtag, Barcode, InfoCircle } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 import FilterCabang from 'components/FilterCabang';
 
@@ -41,32 +40,48 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
         <Stack p={1} sx={{ maxWidth: anchor == 'right' ? '400px' : '100vw' }}>
           <MainCard content={true} title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
-              <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="nama">Nama Barang</InputLabel>
-                <InputSearch size="medium" type="text" value={data['nama']} onChange={(e) => setData({ ...data, nama: e.target.value })} />
+              <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
+                <InputSearch 
+                  size="medium" 
+                  type="text" 
+                  value={data['nama']} 
+                  onChange={(e) => setData({ ...data, nama: e.target.value })} 
+                  startAdornment={<SearchNormal1 size="20" />}
+                  placeholder="Nama Barang"
+                  label="Nama Barang"
+                />
               </Grid>
-              <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="kode">Kode Barang</InputLabel>
-                <InputSearch size="medium" type="text" value={data['kode']} onChange={(e) => setData({ ...data, kode: e.target.value })} />
+              <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
+                <InputSearch 
+                  size="medium" 
+                  type="text" 
+                  value={data['kode']} 
+                  onChange={(e) => setData({ ...data, kode: e.target.value })} 
+                  startAdornment={<Hashtag size="20" />}
+                  placeholder="Kode Barang"
+                  label="Kode Barang"
+                />
               </Grid>
-              <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="num_part">Part Number</InputLabel>
+              <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
                 <InputSearch 
                   size="medium" 
                   type="text" 
                   value={data['num_part']} 
                   onChange={(e) => setData({ ...data, num_part: e.target.value })} 
-                  placeholder="Cari berdasarkan part number"
+                  startAdornment={<Barcode size="20" />}
+                  placeholder="Part Number"
+                  label="Part Number"
                 />
               </Grid>
-              <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="serial">Serial Number</InputLabel>
+              <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
                 <InputSearch 
                   size="medium" 
                   type="text" 
                   value={data['serial']} 
                   onChange={(e) => setData({ ...data, serial: e.target.value })} 
-                  placeholder="Cari berdasarkan serial number"
+                  startAdornment={<InfoCircle size="20" />}
+                  placeholder="Serial Number"
+                  label="Serial Number"
                 />
               </Grid>
               <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>

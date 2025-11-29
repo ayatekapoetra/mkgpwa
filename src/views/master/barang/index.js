@@ -37,9 +37,10 @@ const BarangScreen = () => {
     manufacture_id: '',
     brand_id: ''
   });
-  const { data, dataLoading, dataError } = useGetBarang(params);
+  const { data, dataLoading, dataError, pagination } = useGetBarang(params);
 
   console.log('Barang index - data:', data);
+  console.log('Barang index - pagination:', pagination);
   console.log('Barang index - dataLoading:', dataLoading);
   console.log('Barang index - dataError:', dataError);
 
@@ -78,10 +79,10 @@ const BarangScreen = () => {
 
         <Stack sx={{ p: 2 }}>
           <Paginate
-            page={1}
-            total={Array.isArray(data) ? data.length : 0}
-            lastPage={1}
-            perPage={30}
+            page={pagination?.page || 1}
+            total={pagination?.total || 0}
+            lastPage={pagination?.lastPage || 1}
+            perPage={pagination?.perPage || 30}
             onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
           />
         </Stack>

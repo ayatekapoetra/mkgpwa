@@ -30,10 +30,16 @@ export const useGetBarang = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows?.data || data?.rows,
       dataLoading: isLoading,
       dataError: error,
-      dataEmpty: !isLoading && !data?.rows?.length
+      dataEmpty: !isLoading && !data?.rows?.data?.length && !data?.rows?.length,
+      pagination: {
+        page: data?.rows?.page || 1,
+        perPage: data?.rows?.perPage || 25,
+        lastPage: data?.rows?.lastPage || 1,
+        total: data?.rows?.total || 0
+      }
     }),
     [data, error, isLoading]
   );

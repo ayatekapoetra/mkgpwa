@@ -74,10 +74,43 @@ export default function ListTableBarang({ data = { data: [] } }) {
         }
       },
       {
+        header: 'Manufacture',
+        accessorKey: 'manufacture.nama',
+        size: 150,
+        minSize: 120,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Brand',
+        accessorKey: 'brand.nama',
+        size: 120,
+        minSize: 100,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Application',
+        accessorKey: 'application.nama',
+        size: 150,
+        minSize: 120,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Bisnis Unit',
+        accessorKey: 'bisnis.name',
+        size: 150,
+        minSize: 120,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
         header: 'Satuan',
         accessorKey: 'satuan',
         size: 80,
         minSize: 80,
+        enableResizing: true,
         cell: (info) => info.getValue() || '-'
       },
       {
@@ -85,25 +118,15 @@ export default function ListTableBarang({ data = { data: [] } }) {
         accessorKey: 'min_stok',
         size: 80,
         minSize: 80,
-        cell: (info) => info.getValue() || '0'
-      },
-      {
-        header: 'Actual',
-        accessorKey: 'actual',
-        size: 80,
-        minSize: 80,
+        enableResizing: true,
         cell: (info) => info.getValue() || '0'
       },
       {
         header: 'Kategori',
         accessorKey: 'kategori.nama',
-        minSize: 120,
-        cell: (info) => info.getValue() || '-'
-      },
-      {
-        header: 'Bisnis',
-        accessorKey: 'bisnis.nama',
-        minSize: 120,
+        size: 120,
+        minSize: 100,
+        enableResizing: true,
         cell: (info) => info.getValue() || '-'
       }
     ],
