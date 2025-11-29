@@ -17,7 +17,7 @@ import MainCard from 'components/MainCard';
 import ListTableBarang from './listtable';
 
 // HOOK
-import { useGetBarangTest } from 'api/barang';
+import { useGetBarang } from 'api/barang';
 import Paginate from 'components/Paginate';
 import FilterBarang from './filter';
 
@@ -32,7 +32,7 @@ const BarangScreen = () => {
     bisnis_id: '',
     kategori_id: ''
   });
-  const { data, dataLoading, dataError } = useGetBarangTest(params);
+  const { data, dataLoading, dataError } = useGetBarang(params);
 
   console.log('Barang index - data:', data);
   console.log('Barang index - dataLoading:', dataLoading);
