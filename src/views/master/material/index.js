@@ -1,17 +1,20 @@
 'use client';
 
 // REACT
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 // MATERIAL - UI
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
 import ListMaterial from './list';
+import FilterMaterial from './filter';
 
 // THIRD - PARTY
 import { Edit2 } from 'iconsax-react';
@@ -20,17 +23,69 @@ import axiosServices from 'utils/axios';
 
 function MaterialScreen() {
   const columns = DataColumn();
+  const [openFilter, setOpenFilter] = useState(false);
+  const [params, setParams] = useState({
+    nama: '',
+    kategori: ''
+  });
+
   const { data = [], isLoading } = useQuery({
-    queryKey: ['jenis-material'],
+    queryKey: ['jenis-material', params],
     queryFn: async () => {
-      const res = await axiosServices.get('/api/master/material-ritase/list');
+      const queryParams = new URLSearchParams();
+      if (params.nama) queryParams.append('nama', params.nama);
+      if (params.kategori) queryParams.append('kategori', params.kategori);
+      
+      const url = `/api/master/material-ritase/list${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const res = await axiosServices.get(url);
       return res.data;
     }
   });
 
+  const toggleFilterHandle = () => {
+    setOpenFilter(!openFilter);
+  };
+
+  const filteredData = useMemo(() => {
+    if (!data.rows) return [];
+    
+    let filtered = data.rows;
+    
+    if (params.nama) {
+      filtered = filtered.filter(item => 
+        item.nama?.toLowerCase().includes(params.nama.toLowerCase())
+      );
+    }
+    
+    if (params.kategori) {
+      filtered = filtered.filter(item => 
+        item.kategori?.toLowerCase().includes(params.kategori.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [data.rows, params]);
+
   return (
-    <MainCard title={<BtnAction />} secondary={<div>xxxx</div>} content={false}>
-      {isLoading ? <h1>Loading...</h1> : <ListMaterial data={data.rows} columns={columns} />}
+    <MainCard 
+      title={<BtnAction />} 
+      secondary={
+        <Stack direction="row" gap={1}>
+          <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilterHandle}>
+            <FilterListIcon />
+          </IconButton>
+        </Stack>
+      } 
+      content={false}
+    >
+      <FilterMaterial 
+        data={params} 
+        setData={setParams} 
+        open={openFilter} 
+        count={filteredData.length} 
+        onClose={toggleFilterHandle} 
+      />
+      {isLoading ? <h1>Loading...</h1> : <ListMaterial data={filteredData} columns={columns} />}
     </MainCard>
   );
 }
