@@ -453,7 +453,7 @@ const ShowTimesheetScreen = () => {
                         type="date"
                         name="date_ops"
                         errors={errors.date_ops}
-                        touched={true}
+                        touched={touched.date_ops}
                         value={moment(values?.date_ops).format("YYYY-MM-DD")}
                         onChange={handleChange}
                       />
@@ -476,9 +476,9 @@ const ShowTimesheetScreen = () => {
                         name={"penyewa_id"}
                         label="Nama Penyewa"
                         error={errors.penyewa_id}
-                        touched={Boolean(true)}
+                        touched={touched.penyewa_id}
                         startAdornment={<Android />}
-                        helperText={Boolean(true) && errors.penyewa_id}
+                        helperText={touched.penyewa_id && errors.penyewa_id}
                         setFieldValue={setFieldValue}
                       />
                     </Grid>
@@ -517,9 +517,9 @@ const ShowTimesheetScreen = () => {
                         name={"karyawan_id"}
                         value={values.karyawan_id}
                         error={errors.karyawan_id}
-                        touched={Boolean(true)}
+                        touched={touched.karyawan_id}
                         startAdornment={<UserOctagon />}
-                        helperText={Boolean(true) && errors.karyawan_id}
+                        helperText={touched.karyawan_id && errors.karyawan_id}
                         setFieldValue={setFieldValue}
                       />
                     </Grid>
@@ -529,16 +529,15 @@ const ShowTimesheetScreen = () => {
                         name={"equipment_id"}
                         label="Kode Equipemnt"
                         error={errors.equipment_id}
-                        touched={Boolean(true)}
+                        touched={touched.equipment_id}
                         startAdornment={<TruckFast />}
-                        helperText={Boolean(true) && errors.equipment_id}
+                        helperText={touched.equipment_id && errors.equipment_id}
                         setFieldValue={setFieldValue}
                       />
                     </Grid>
                     <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
                       <FormControl
                         fullWidth
-                        touched={Boolean(true)}
                         error={errors.shift_id}
                       >
                         <InputLabel id="shift-label">Shift Kerja</InputLabel>
