@@ -1,6 +1,6 @@
 {
   "name": "femkgpwa",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "MKG Desktop Application - Mining Equipment Management System",
   "author": {
     "name": "Ayat Ekapoetra",
@@ -12,11 +12,11 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev -p 3005",
-    "dev:electron": "next dev -p 3006",
+    "dev:electron": "cross-env NEXTAUTH_URL=http://localhost:3006 next dev -p 3006",
     "build": "rm -rf .next && next build",
-    "build:electron": "cross-env ELECTRON_BUILD=true yarn build",
+    "build:electron": "cross-env ELECTRON_BUILD=true NEXTAUTH_URL=http://localhost:3006 yarn build",
     "start": "next start -p 3005",
-    "start:electron": "next start -p 3006",
+    "start:electron": "cross-env NEXTAUTH_URL=http://localhost:3006 next start -p 3006",
     "electron": "cross-env ELECTRON_START_URL=http://localhost:3006 electron .",
     "electron:dev": "concurrently \"yarn dev:electron\" \"yarn electron\"",
     "electron:prod": "cross-env ELECTRON_START_URL= electron .",
