@@ -1,4 +1,4 @@
-name: Deploy Web to Production
+name: Deploy Web to AWS (aaPanel)
 
 on:
   push:
@@ -19,47 +19,79 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Build Next.js for production
-        run: npm run build
-        env:
-          NEXT_APP_VERSION: ${{ github.ref_name }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          NEXTAUTH_TRUST_HOST: true
-          NEXT_APP_API_URL: ${{ secrets.NEXT_APP_API_URL }}
-          NEXT_APP_JWT_SECRET: ${{ secrets.NEXT_APP_JWT_SECRET }}
-          NEXT_APP_JWT_TIMEOUT: 86400
-          NEXT_APP_JWT_TIMEOUT_REMEMBER: 604800
-          NODE_ENV: production
-
-      - name: Deploy to Production Server via SSH
+      - name: Deploy to AWS EC2 via SSH (aaPanel)
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: ${{ secrets.AWS_PORT || 22 }}
           script: |
-            cd ${{ secrets.SERVER_PATH }}
+            echo "🚀 Starting deployment on AWS EC2 with aaPanel..."
+            
+            # Navigate to project directory
+            cd ${{ secrets.AAPANEL_PROJECT_PATH }}
+            
+            # Backup current build
+            echo "📦 Creating backup..."
+            if [ -d ".next" ]; then
+              TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+              tar -czf "/www/backup/mkg-frontend-backup-$TIMESTAMP.tar.gz" .next 2>/dev/null || true
+              # Keep only last 5 backups
+              ls -t /www/backup/mkg-frontend-backup-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm --
+            fi
+            
+            # Pull latest changes
+            echo "📥 Pulling latest code from repository..."
+            git fetch origin
+            git reset --hard origin/main
             git pull origin main
+            
+            # Load environment variables
+            if [ -f ".env.production" ]; then
+              export $(cat .env.production | grep -v '^#' | xargs)
+            fi
+            
+            # Install dependencies
+            echo "📦 Installing dependencies..."
             npm ci --legacy-peer-deps
-            npm run build
-            pm2 reload mkg-frontend || pm2 start npm --name "mkg-frontend" -- start
+            
+            # Build application
+            echo "🔨 Building Next.js application..."
+            NODE_ENV=production npm run build
+            
+            # Restart PM2 process via aaPanel
+            echo "🔄 Restarting application..."
+            if pm2 list | grep -q "mkg-frontend"; then
+              pm2 reload mkg-frontend --update-env
+              echo "✅ PM2 process reloaded"
+            else
+              pm2 start npm --name "mkg-frontend" -- start
+              pm2 save
+              echo "✅ PM2 process started"
+            fi
+            
+            # Wait for application to start
+            sleep 3
+            
+            # Health check
+            echo "🔍 Performing health check..."
+            if pm2 list | grep -q "online.*mkg-frontend"; then
+              echo "✅ Application is running!"
+              pm2 info mkg-frontend
+            else
+              echo "⚠️ Application might not be running properly"
+              pm2 logs mkg-frontend --lines 20 --nostream
+              exit 1
+            fi
 
       - name: Notify deployment status
         if: always()
         run: |
           if [ ${{ job.status }} == 'success' ]; then
-            echo "✅ Deployment successful!"
+            echo "✅ Deployment to AWS EC2 (aaPanel) successful!"
+            echo "🌐 Application URL: https://pwa.makkuragatama.id"
           else
-            echo "❌ Deployment failed!"
+            echo "❌ Deployment to AWS EC2 (aaPanel) failed!"
+            echo "Please check the logs above for details."
           fi

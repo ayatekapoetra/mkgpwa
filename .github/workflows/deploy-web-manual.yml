@@ -1,4 +1,4 @@
-name: Manual Deploy Web
+name: Manual Deploy to AWS (aaPanel)
 
 on:
   workflow_dispatch:
@@ -11,6 +11,15 @@ on:
         options:
           - production
           - staging
+      action:
+        description: 'Deployment action'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - restart
+          - rollback
 
 jobs:
   deploy:
@@ -18,21 +27,84 @@ jobs:
     environment: ${{ inputs.environment }}
     
     steps:
-      - name: Deploy via Webhook
-        run: |
-          curl -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "ref": "${{ github.ref }}",
-              "repository": "${{ github.repository }}",
-              "environment": "${{ inputs.environment }}",
-              "triggered_by": "${{ github.actor }}"
-            }'
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to AWS EC2 (aaPanel)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: ${{ secrets.AWS_PORT || 22 }}
+          script: |
+            echo "🚀 Manual deployment initiated by ${{ github.actor }}"
+            echo "Environment: ${{ inputs.environment }}"
+            echo "Action: ${{ inputs.action }}"
+            
+            # Set project path based on environment
+            if [ "${{ inputs.environment }}" == "production" ]; then
+              PROJECT_PATH="${{ secrets.AAPANEL_PROJECT_PATH }}"
+              PM2_NAME="mkg-frontend"
+            else
+              PROJECT_PATH="${{ secrets.AAPANEL_PROJECT_PATH_STAGING }}"
+              PM2_NAME="mkg-frontend-staging"
+            fi
+            
+            cd $PROJECT_PATH
+            
+            # Execute action
+            case "${{ inputs.action }}" in
+              "deploy")
+                echo "📥 Pulling latest code..."
+                git fetch origin
+                git reset --hard origin/main
+                git pull origin main
+                
+                echo "📦 Installing dependencies..."
+                npm ci --legacy-peer-deps
+                
+                echo "🔨 Building application..."
+                NODE_ENV=${{ inputs.environment }} npm run build
+                
+                echo "🔄 Restarting PM2..."
+                pm2 reload $PM2_NAME --update-env || pm2 start npm --name "$PM2_NAME" -- start
+                pm2 save
+                ;;
+                
+              "restart")
+                echo "🔄 Restarting application..."
+                pm2 restart $PM2_NAME
+                ;;
+                
+              "rollback")
+                echo "⏮️ Rolling back to previous backup..."
+                LATEST_BACKUP=$(ls -t /www/backup/mkg-frontend-backup-*.tar.gz 2>/dev/null | head -1)
+                if [ -n "$LATEST_BACKUP" ]; then
+                  rm -rf .next
+                  tar -xzf "$LATEST_BACKUP"
+                  pm2 restart $PM2_NAME
+                  echo "✅ Rollback completed"
+                else
+                  echo "❌ No backup found"
+                  exit 1
+                fi
+                ;;
+            esac
+            
+            # Health check
+            sleep 3
+            echo "🔍 Health check..."
+            pm2 status $PM2_NAME
 
       - name: Notify deployment
+        if: always()
         run: |
-          echo "🚀 Deployment triggered for ${{ inputs.environment }}"
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Manual ${{ inputs.action }} to ${{ inputs.environment }} successful!"
+          else
+            echo "❌ Manual ${{ inputs.action }} to ${{ inputs.environment }} failed!"
+          fi
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref_name }}"
           echo "Triggered by: ${{ github.actor }}"
