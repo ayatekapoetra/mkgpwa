@@ -1,0 +1,38 @@
+name: Manual Deploy Web
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - name: Deploy via Webhook
+        run: |
+          curl -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "ref": "${{ github.ref }}",
+              "repository": "${{ github.repository }}",
+              "environment": "${{ inputs.environment }}",
+              "triggered_by": "${{ github.actor }}"
+            }'
+
+      - name: Notify deployment
+        run: |
+          echo "🚀 Deployment triggered for ${{ inputs.environment }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Triggered by: ${{ github.actor }}"

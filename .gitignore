@@ -74,6 +74,10 @@ Thumbs.db
 logs
 *.log
 
+# Deployment backups
+backups/
+*.tar.gz
+
 # Runtime data
 pids
 *.pid
