@@ -3,6 +3,7 @@ import axios from 'axios';
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
   providers: [
     CredentialsProvider({
       id: 'login',

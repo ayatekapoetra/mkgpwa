@@ -3,10 +3,14 @@ const path = require("path");
 const http = require("http");
 const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
+const { loadElectronEnv } = require("./env-loader");
 
 app.commandLine.appendSwitch("disable-http2");
 
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
+
+// Load environment variables early
+loadElectronEnv();
 
 function checkServerReady(url) {
   return new Promise((resolve) => {
@@ -512,32 +516,24 @@ async function createWindow() {
     },
   );
 
-  // Set environment variables for NextAuth in Electron
-  if (!process.env.ELECTRON_START_URL) {
-    process.env.NEXTAUTH_URL = "http://localhost:3006";
-    process.env.NEXTAUTH_TRUST_HOST = "true";
-    try {
-      const nextCfg = require("../next.config.js");
-      const envs = (nextCfg && nextCfg.env) || {};
-      Object.keys(envs).forEach((k) => {
-        if (process.env[k] == null) process.env[k] = String(envs[k]);
-      });
-    } catch (_) {}
-  }
-
   // In production, load the Next.js app directly
   const isPackaged = app.isPackaged;
 
   if (!process.env.ELECTRON_START_URL) {
     console.log("Loading Next.js app in production mode...");
+    
+    // Environment variables already loaded by loadElectronEnv()
+    console.log("Using environment:", {
+      PORT: process.env.PORT,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      NEXT_APP_API_URL: process.env.NEXT_APP_API_URL,
+    });
+    
     try {
       if (isPackaged) {
         const appPath = app.getAppPath();
         const next = require("next");
         const http = require("http");
-
-        process.env.PORT = process.env.PORT || "3006";
-        process.env.HOSTNAME = process.env.HOSTNAME || "localhost";
 
         const nextApp = next({ dev: false, dir: appPath });
         const handle = nextApp.getRequestHandler();
@@ -584,7 +580,9 @@ async function createWindow() {
       return;
     }
   } else if (process.env.ELECTRON_START_URL) {
-    console.log("Waiting for Next.js server to be ready...");
+    console.log("Development mode: Waiting for Next.js server to be ready...");
+    console.log("Using development URL:", startUrl);
+    
     await checkServerReady(startUrl);
     console.log("Server is ready, loading application...");
 
