@@ -2,6 +2,9 @@
 const nextConfig = {
   output: 'standalone',
   trailingSlash: false,
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
   experimental: {
     serverComponentsExternalPackages: ["tesseract.js"],
   },
@@ -47,11 +50,13 @@ const nextConfig = {
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || "RzogYGZXMI7PAFQgDSONyA0G2BTbp/U6d3Amp5lo",
     AWS_REGION: process.env.AWS_REGION || "ap-southeast-1",
   },
-  generateBuildId: process.env.ELECTRON_BUILD === 'true' 
-    ? async () => "electron-build"
-    : async () => {
-        return require('crypto').randomBytes(16).toString('hex')
-      },
+  generateBuildId: async () => {
+    if (process.env.ELECTRON_BUILD === 'true') {
+      return 'electron-build';
+    }
+    // Use consistent build ID for production to avoid chunk mismatch
+    return process.env.BUILD_ID || 'production-build';
+  },
   webpack: (config) => {
     config.cache = false;
     config.experiments = {
