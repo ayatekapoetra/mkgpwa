@@ -13,6 +13,9 @@ const OptionOperatorDriver = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetOprDrv(params);
+
+  const options = Array.isArray(array) ? array : [];
+
   if (dataLoading) {
     return <div>Loading...</div>;
   }
@@ -21,11 +24,11 @@ const OptionOperatorDriver = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array?.find((option) => option?.id == value) || null}
+          options={options}
+          value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
-            setFieldValue(objValue, array?.find((option) => option?.id == newValue?.id) || null);
+            setFieldValue(objValue, options?.find((option) => option?.id == newValue?.id) || null);
           }}
           isOptionEqualToValue={(option, value) => option.id === value?.id}
           getOptionLabel={(option) => option.nama || ''}

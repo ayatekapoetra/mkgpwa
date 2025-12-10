@@ -11,7 +11,7 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 
 // THIRD - PARTY
-import { useAsyncDebounce } from 'react-table';
+import { useAsyncDebounce } from 'utils/react-table';
 import { matchSorter } from 'match-sorter';
 
 // PROJECT IMPORTS

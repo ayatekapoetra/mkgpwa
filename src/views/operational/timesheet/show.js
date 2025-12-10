@@ -31,7 +31,7 @@ import OptionLokasiKerja from "components/OptionLokasiPit";
 import OptionEquipment from "components/OptionEquipment";
 import OptionMaterialMining from "components/OptionMaterialMining";
 import OptionKegiatanKerja from "components/OptionKegiatanKerja";
-import OptionKaryawan from "components/OptionKaryawan";
+import OptionOperatorDriver from "components/OptionOperatorDriver";
 import PhotoDropZoneFormik from "components/PhotoDropZoneFormik";
 import OfflineIndicator from "components/OfflineIndicator";
 
@@ -512,8 +512,8 @@ const ShowTimesheetScreen = () => {
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} sm={5} sx={{ mt: 2 }}>
-                      <OptionKaryawan
-                        label={"Operator"}
+                      <OptionOperatorDriver
+                        label={"Operator / Driver"}
                         name={"karyawan_id"}
                         value={values.karyawan_id}
                         error={errors.karyawan_id}

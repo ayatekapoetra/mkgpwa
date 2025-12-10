@@ -1,6 +1,20 @@
 import * as XLSX from 'xlsx';
 import moment from 'moment';
 
+const calculateActivityDuration = (starttime, endtime) => {
+  if (!starttime || !endtime) return '0.00';
+  
+  const startMoment = moment(starttime);
+  const endMoment = moment(endtime);
+  
+  if (!startMoment.isValid() || !endMoment.isValid()) return '0.00';
+  
+  const durationMinutes = endMoment.diff(startMoment, 'minutes');
+  const durationHours = (durationMinutes / 60).toFixed(2);
+  
+  return durationHours;
+};
+
 export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
   if (!data || data.length === 0) {
     throw new Error('Tidak ada data untuk di-export');
@@ -67,11 +81,17 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
       ];
       rows.push(row);
     } else {
-      items.forEach(item => {
+      const sortedItems = [...items].sort((a, b) => {
+        const timeA = a.starttime ? new Date(a.starttime).getTime() : 0;
+        const timeB = b.starttime ? new Date(b.starttime).getTime() : 0;
+        return timeA - timeB;
+      });
+
+      sortedItems.forEach((item, index) => {
         const tools = getToolsName(item.kegiatan_id);
-        const totalJam = item.timetot ? (item.timetot / 60).toFixed(2) : '0.00';
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
+        const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
 
         const row = [
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
@@ -86,10 +106,10 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
           timesheet.usedhmkm || 0,
           item.lokasi?.nama || '-',
           item.seq || '-',
-          item.starttime ? moment(item.starttime).format('HH:mm') : '-',
-          item.endtime ? moment(item.endtime).format('HH:mm') : '-',
+          item.starttime ? moment(item.starttime).format('DD-MM-YY HH:mm') : '-',
+          item.endtime ? moment(item.endtime).format('DD-MM-YY HH:mm') : '-',
           1,
-          totalJam,
+          activityDuration,
           item.kegiatan?.nama || '-',
           timesheet.approvedByKaryawan?.nama || '-',
           timesheet.id || '-'
@@ -219,10 +239,16 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
       ];
       rows.push(row);
     } else {
-      items.forEach(item => {
-        const totalJam = item.timetot ? (item.timetot / 60).toFixed(2) : '0.00';
+      const sortedItems = [...items].sort((a, b) => {
+        const timeA = a.starttime ? new Date(a.starttime).getTime() : 0;
+        const timeB = b.starttime ? new Date(b.starttime).getTime() : 0;
+        return timeA - timeB;
+      });
+
+      sortedItems.forEach((item, index) => {
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
+        const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
 
         const row = [
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
@@ -233,9 +259,9 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
           timesheet.smustart || 0,
           timesheet.smufinish || 0,
           timesheet.usedhmkm || 0,
-          item.starttime ? moment(item.starttime).format('HH:mm') : '-',
-          item.endtime ? moment(item.endtime).format('HH:mm') : '-',
-          totalJam,
+          item.starttime ? moment(item.starttime).format('DD-MM-YY HH:mm') : '-',
+          item.endtime ? moment(item.endtime).format('DD-MM-YY HH:mm') : '-',
+          activityDuration,
           item.lokasi?.nama || '-',
           item.lokasiTujuan?.nama || '-',
           item.seq || '-',
@@ -364,14 +390,20 @@ export const generateAllTimesheetExcel = (data, filename) => {
       ];
       rows.push(row);
     } else {
-      items.forEach(item => {
+      const sortedItems = [...items].sort((a, b) => {
+        const timeA = a.starttime ? new Date(a.starttime).getTime() : 0;
+        const timeB = b.starttime ? new Date(b.starttime).getTime() : 0;
+        return timeA - timeB;
+      });
+
+      sortedItems.forEach((item, index) => {
         const tools = isHE ? getToolsName(item.kegiatan_id) : '-';
         const lokasiTujuan = !isHE ? (item.lokasiTujuan?.nama || '-') : '-';
         const ritase = !isHE ? (item.ritase || 0) : '-';
         const istirahat = isHE ? 1 : '-';
-        const totalJam = item.timetot ? (item.timetot / 60).toFixed(2) : '0.00';
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
+        const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
 
         const row = [
           timesheet.equipment?.kategori || '-',
@@ -389,10 +421,10 @@ export const generateAllTimesheetExcel = (data, filename) => {
           lokasiTujuan,
           item.seq || '-',
           ritase,
-          item.starttime ? moment(item.starttime).format('HH:mm') : '-',
-          item.endtime ? moment(item.endtime).format('HH:mm') : '-',
+          item.starttime ? moment(item.starttime).format('DD-MM-YY HH:mm') : '-',
+          item.endtime ? moment(item.endtime).format('DD-MM-YY HH:mm') : '-',
           istirahat,
-          totalJam,
+          activityDuration,
           item.kegiatan?.nama || '-',
           timesheet.approvedByKaryawan?.nama || '-',
           timesheet.id || '-'

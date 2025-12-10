@@ -5,12 +5,14 @@ const OptionPenyewa = ({
   value = '',
   label = 'Penyewa',
   name = 'penyewa_id',
-  error = null, // Tambahkan prop error
-  touched = false, // Tambahkan prop touched
+  error = null,
+  touched = false,
   startAdornment = null,
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetPenyewa();
+  const { penyewa: array, penyewaLoading: dataLoading } = useGetPenyewa();
+
+  const options = Array.isArray(array) ? array : [];
 
   if (dataLoading) {
     return <div>Loading...</div>;
@@ -20,8 +22,8 @@ const OptionPenyewa = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array?.find((option) => option?.id == value) || null}
+          options={options}
+          value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             // setData((prev) => ({ ...prev, assigner_id: newValue?.id || '' }));
             setFieldValue(name, newValue?.id || '');

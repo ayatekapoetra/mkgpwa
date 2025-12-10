@@ -2,7 +2,10 @@ import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdor
 import { useGetPenyewa } from 'api/penyewa';
 
 const FilterPenyewa = ({ value = '', label = 'Penyewa', name = 'penyewa_id', startAdornment = null, setData }) => {
-  const { data: array, dataLoading } = useGetPenyewa();
+  const { penyewa: array, penyewaLoading: dataLoading } = useGetPenyewa();
+
+  // Ensure array is always an array, even if undefined
+  const options = Array.isArray(array) ? array : [];
 
   if (dataLoading) {
     return <div>Loading...</div>;
@@ -12,8 +15,8 @@ const FilterPenyewa = ({ value = '', label = 'Penyewa', name = 'penyewa_id', sta
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array?.find((option) => option?.id == value) || null}
+          options={options}
+          value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setData((prev) => ({ ...prev, [name]: newValue?.id || '' }));
           }}

@@ -11,6 +11,9 @@ const OptionKaryawan = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetKaryawan();
+
+  const options = Array.isArray(array) ? array : [];
+
   if (dataLoading) {
     return <div>Loading...</div>;
   }
@@ -19,8 +22,8 @@ const OptionKaryawan = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array?.find((option) => option?.id == value) || null}
+          options={options}
+          value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             // setData((prev) => ({ ...prev, assigner_id: newValue?.id || '' }));
             setFieldValue(name, newValue?.id || '');

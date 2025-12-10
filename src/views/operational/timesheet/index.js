@@ -32,12 +32,34 @@ const breadcrumbLinks = [
   { title: 'Daily Timesheet', to: '/penugasan-kerja' }
 ];
 
+const STORAGE_KEY = 'timesheet_filter_params';
+
+const getStoredParams = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error('Error reading from localStorage:', error);
+    return null;
+  }
+};
+
+const saveParamsToStorage = (params) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+  }
+};
+
 export default function DailyTimesheetScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { enqueueSnackbar } = useSnackbar();
 
-  const [params, setParams] = useState({
+  const defaultParams = {
     page: 1,
     perPage: 25,
     site_id: '',
@@ -45,8 +67,16 @@ export default function DailyTimesheetScreen() {
     penyewa_id: '',
     equipment_id: '',
     startdate: '',
-    enddate: ''
+    enddate: '',
+    status: '',
+    type: ''
+  };
+
+  const [params, setParams] = useState(() => {
+    const storedParams = getStoredParams();
+    return storedParams || defaultParams;
   });
+
   const [openFilter, setOpenFilter] = useState(false);
   const [queueStatus, setQueueStatus] = useState({});
   const [isOnline, setIsOnline] = useState(true);
@@ -56,6 +86,10 @@ export default function DailyTimesheetScreen() {
   const [anchorElDownload, setAnchorElDownload] = useState(null);
   const openDownloadMenu = Boolean(anchorElDownload);
   const { data, dataLoading } = useGetDailyTimesheet(params);
+
+  useEffect(() => {
+    saveParamsToStorage(params);
+  }, [params]);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);

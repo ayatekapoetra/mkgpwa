@@ -3,6 +3,10 @@ import { useGetOprDrv } from 'api/karyawan';
 
 const FilterOperatorDriver = ({ value = '', label = 'Karyawan', name = 'karyawan_id', startAdornment = null, params = null, setData }) => {
   const { data: array, dataLoading } = useGetOprDrv(params);
+  
+  // Ensure array is always an array, even if undefined
+  const options = Array.isArray(array) ? array : [];
+  
   if (dataLoading) {
     return <div>Loading...</div>;
   }
@@ -11,8 +15,8 @@ const FilterOperatorDriver = ({ value = '', label = 'Karyawan', name = 'karyawan
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array?.find((option) => option?.id == value) || null}
+          options={options}
+          value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setData((prev) => ({ ...prev, [name]: newValue?.id || '' }));
           }}

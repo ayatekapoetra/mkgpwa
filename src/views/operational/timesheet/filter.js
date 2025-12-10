@@ -39,7 +39,8 @@ export default function FilterTimesheet({
 }) {
   const onResetFilter = () => {
     setParams((prev) => ({
-      ...prev,
+      page: 1,
+      perPage: prev.perPage || 25,
       site_id: "",
       karyawan_id: "",
       penyewa_id: "",
@@ -47,7 +48,7 @@ export default function FilterTimesheet({
       startdate: "",
       enddate: "",
       status: "",
-      status: "",
+      type: "",
     }));
   };
   return (
@@ -99,7 +100,7 @@ export default function FilterTimesheet({
                   name={"penyewa_id"}
                   label={"Penyewa"}
                   setData={setParams}
-                  value={params.karyawan_id}
+                  value={params.penyewa_id}
                   startAdornment={<Buildings2 />}
                 />
               </Grid>

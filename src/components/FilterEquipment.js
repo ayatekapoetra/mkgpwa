@@ -4,18 +4,20 @@ import { useGetEquipment } from 'api/equipment';
 const FilterEquipment = ({ value = '', label = 'Equipment', name = 'equipment_id', startAdornment = null, setData }) => {
   const { data: array, dataLoading } = useGetEquipment(null);
 
-  if (dataLoading || !array) {
+  // Ensure array is always an array, even if undefined
+  const options = Array.isArray(array) ? array : [];
+
+  if (dataLoading) {
     return <div>Loading...</div>;
   }
-
 
   return (
     <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array || []}
-          value={array?.find((option) => option?.id == value) || null}
+          options={options}
+          value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setData((prev) => ({ ...prev, [name]: newValue?.id || '' }));
           }}
