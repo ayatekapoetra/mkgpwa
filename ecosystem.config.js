@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'mkg-frontend',
-      script: 'npm',
-      args: 'start',
+      script: '.next/standalone/server.js',
+      interpreter: 'node',
       cwd: './',
       instances: 1,
       exec_mode: 'fork',
