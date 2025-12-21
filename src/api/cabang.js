@@ -23,11 +23,11 @@ export const useCabang = () => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows || [],
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length
+      dataEmpty: !isLoading && !data?.rows?.length
     }),
     [data, error, isLoading, isValidating]
   );
@@ -46,11 +46,11 @@ export const usePublicCabang = () => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows || [],
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length
+      dataEmpty: !isLoading && !data?.rows?.length
     }),
     [data, error, isLoading, isValidating]
   );

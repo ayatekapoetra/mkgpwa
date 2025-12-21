@@ -22,7 +22,7 @@ export const useGetLokasiKerja = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows || [],
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
