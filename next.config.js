@@ -56,8 +56,8 @@ const nextConfig = {
     if (process.env.ELECTRON_BUILD === 'true') {
       return 'electron-build';
     }
-    // Use consistent build ID for production to avoid chunk mismatch
-    return process.env.BUILD_ID || 'production-build';
+    // Use timestamp-based build ID to force new chunks on each build
+    return 'build-' + Date.now();
   },
   webpack: (config) => {
     config.cache = false;
