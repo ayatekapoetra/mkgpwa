@@ -28,7 +28,7 @@ export const useGetGroupTagTimesheet = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data,
       dataLoading: isLoading,
       dataError: error,
       dataEmpty:
