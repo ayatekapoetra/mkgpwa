@@ -58,11 +58,11 @@ const OptionLokasiPitMulti = ({
           multiple
           fullWidth
           options={array || []}
-          value={(array || []).filter((option) =>
-            value
-              ?.map((v) => (typeof v === "object" ? v.id : v))
-              .includes(option.id),
-          )}
+          value={(array || []).filter((option) => {
+            if (!value || !Array.isArray(value)) return false;
+            const valueIds = value.map((v) => (typeof v === "object" ? v.id : v));
+            return valueIds.includes(option.id);
+          })}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue);
           }}
