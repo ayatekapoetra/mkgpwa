@@ -23,6 +23,7 @@ const OptionLokasiPitMulti = ({
   const { data: array, dataLoading, dataEmpty } = useGetLokasiKerja();
   
   // Fix: Ensure array is always defined to prevent filter error - v1.4.13
+  console.log('OptionLokasiPitMulti - array:', array, 'type:', typeof array, 'isArray:', Array.isArray(array));
 
   if (dataLoading) {
     return <div>Loading...</div>;

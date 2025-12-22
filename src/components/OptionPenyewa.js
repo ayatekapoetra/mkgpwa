@@ -14,6 +14,9 @@ const OptionPenyewa = ({
   
   // Fix: Ensure array is always defined to prevent errors - v1.4.13
   const options = Array.isArray(array) ? array : [];
+  
+  // Debug log v1.4.13
+  console.log('OptionPenyewa - array:', array, 'options:', options);
 
   if (dataLoading) {
     return <div>Loading...</div>;
