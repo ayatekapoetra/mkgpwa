@@ -58,11 +58,13 @@ const nextConfig = {
     if (process.env.ELECTRON_BUILD === 'true') {
       return 'electron-build';
     }
-    // Use timestamp-based build ID to force new chunks on each build
-    return 'build-' + Date.now();
+    // Use static build ID to prevent chunk mismatch
+    return 'production-build';
   },
   webpack: (config, { isServer }) => {
+    // Disable cache for consistent builds
     config.cache = false;
+    
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,
@@ -70,12 +72,6 @@ const nextConfig = {
     };
 
     config.output.webassemblyModuleFilename = "static/wasm/[modulehash].wasm";
-    
-    // Force unique chunk names on every build
-    if (!isServer) {
-      config.output.filename = config.output.filename?.replace('[name]', '[name].[fullhash]');
-      config.output.chunkFilename = config.output.chunkFilename?.replace('[id]', '[id].[fullhash]');
-    }
     
     return config;
   },
