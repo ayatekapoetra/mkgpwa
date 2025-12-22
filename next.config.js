@@ -59,7 +59,7 @@ const nextConfig = {
     // Use timestamp-based build ID to force new chunks on each build
     return 'build-' + Date.now();
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.cache = false;
     config.experiments = {
       ...config.experiments,
@@ -68,6 +68,13 @@ const nextConfig = {
     };
 
     config.output.webassemblyModuleFilename = "static/wasm/[modulehash].wasm";
+    
+    // Force unique chunk names on every build
+    if (!isServer) {
+      config.output.filename = config.output.filename?.replace('[name]', '[name].[fullhash]');
+      config.output.chunkFilename = config.output.chunkFilename?.replace('[id]', '[id].[fullhash]');
+    }
+    
     return config;
   },
 };
