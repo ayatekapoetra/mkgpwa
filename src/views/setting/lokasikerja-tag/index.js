@@ -57,7 +57,7 @@ export default function GroupTagTimesheetScreen() {
               <IconButton
                 variant="contained"
                 component={Link}
-                href="/lokasikerja-tag/create"
+                href="/lokasikerja-tag/add"
                 color="primary"
               >
                 <Add />
@@ -66,7 +66,7 @@ export default function GroupTagTimesheetScreen() {
               <Button
                 variant="contained"
                 component={Link}
-                href="/lokasikerja-tag/create"
+                href="/lokasikerja-tag/add"
                 startIcon={<Tag2 />}
               >
                 Tambah Group Tag
