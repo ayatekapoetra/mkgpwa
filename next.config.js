@@ -5,6 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // Force cache invalidation with asset prefix
+  assetPrefix: process.env.ASSET_PREFIX || undefined,
   experimental: {
     serverComponentsExternalPackages: ["tesseract.js"],
   },
