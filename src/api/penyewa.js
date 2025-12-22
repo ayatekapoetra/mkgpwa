@@ -19,16 +19,16 @@ export const useGetPenyewa = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      penyewa: data?.rows || [],
+      penyewa: Array.isArray(data?.rows) ? data.rows : [],
       penyewaLoading: isLoading,
       penyewaError: error,
       penyewaValidating: isValidating,
       penyewaEmpty: !isLoading && !data?.rows?.length,
       penyewaMutate: mutate,
-      page: data?.page,
-      perPage: data?.perPage,
-      total: data?.total,
-      lastPage: data?.lastPage
+      page: data?.page || 1,
+      perPage: data?.perPage || 25,
+      total: data?.total || 0,
+      lastPage: data?.lastPage || 1
     }),
     [data, error, isLoading, isValidating, mutate]
   );
@@ -65,7 +65,7 @@ export const usePublicPenyewa = () => {
 
   const memoizedValue = useMemo(
     () => ({
-      penyewa: data?.rows || [],
+      penyewa: Array.isArray(data?.rows) ? data.rows : [],
       penyewaLoading: isLoading,
       penyewaError: error,
       penyewaValidating: isValidating

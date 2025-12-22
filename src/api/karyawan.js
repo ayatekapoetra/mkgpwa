@@ -72,11 +72,11 @@ export const useGetKaryawanSection = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows || [],
+      data: Array.isArray(data?.rows) ? data.rows : [],
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.length
+      dataEmpty: !isLoading && !data?.rows?.length
     }),
     [data, error, isLoading, isValidating]
   );
