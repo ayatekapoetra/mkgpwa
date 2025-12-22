@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 
 // MATERIAL - UI
 import MenuItem from '@mui/material/MenuItem';
@@ -11,7 +11,6 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 
 // THIRD - PARTY
-import { useAsyncDebounce } from 'utils/react-table';
 import { matchSorter } from 'match-sorter';
 
 // PROJECT IMPORTS
@@ -21,6 +20,24 @@ import IconButton from 'components/@extended/IconButton';
 import { Add, Minus, SearchNormal1 } from 'iconsax-react';
 
 // ==============================|| CUSTOM FUNCTION - REACT TABLE ||============================== //
+
+// useAsyncDebounce Hook
+export function useAsyncDebounce(defaultFn, wait = 0) {
+  const [timerId, setTimerId] = useState();
+  const debounced = useRef();
+
+  useEffect(() => {
+    debounced.current = (fn) => {
+      clearTimeout(timerId);
+      const newTimerId = setTimeout(() => {
+        fn();
+      }, wait);
+      setTimerId(newTimerId);
+    };
+  }, [timerId, wait]);
+
+  return debounced.current || ((fn) => fn());
+}
 
 export function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter, ...other }) {
   const count = preGlobalFilteredRows.length;
