@@ -15,8 +15,8 @@ const OptionKaryawanMulti = ({ value = [], params = '', label = 'Pemberi Tugas',
         <Autocomplete
           multiple
           fullWidth
-          options={array}
-          value={array.filter((option) => value?.map((m) => m.id).includes(option.id))}
+          options={array || []}
+          value={(array || []).filter((option) => value?.map((m) => m.id).includes(option.id))}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue);
           }}

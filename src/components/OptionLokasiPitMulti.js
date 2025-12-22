@@ -54,8 +54,8 @@ const OptionLokasiPitMulti = ({
         <Autocomplete
           multiple
           fullWidth
-          options={array}
-          value={array.filter((option) =>
+          options={array || []}
+          value={(array || []).filter((option) =>
             value
               ?.map((v) => (typeof v === "object" ? v.id : v))
               .includes(option.id),
