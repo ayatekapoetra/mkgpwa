@@ -37,7 +37,12 @@ export default function GroupTagTimesheetScreen() {
     lokasikerja_id: "",
   });
   const [openFilter, setOpenFilter] = useState(false);
-  const { data, dataLoading } = useGetGroupTagTimesheet(params);
+  const { data, dataLoading, dataError } = useGetGroupTagTimesheet(params);
+
+  // Debug logging
+  console.log('GroupTagTimesheet - data:', data);
+  console.log('GroupTagTimesheet - dataLoading:', dataLoading);
+  console.log('GroupTagTimesheet - dataError:', dataError);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
