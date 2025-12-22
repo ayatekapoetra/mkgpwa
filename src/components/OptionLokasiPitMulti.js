@@ -21,6 +21,8 @@ const OptionLokasiPitMulti = ({
   setFieldValue,
 }) => {
   const { data: array, dataLoading, dataEmpty } = useGetLokasiKerja();
+  
+  // Fix: Ensure array is always defined to prevent filter error - v1.4.13
 
   if (dataLoading) {
     return <div>Loading...</div>;

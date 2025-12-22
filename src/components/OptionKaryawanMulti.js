@@ -3,7 +3,8 @@ import { useGetKaryawanSection } from 'api/karyawan';
 
 const OptionKaryawanMulti = ({ value = [], params = '', label = 'Pemberi Tugas', name = 'assigner_id', setFieldValue }) => {
   const { data: array, dataLoading, dataError } = useGetKaryawanSection(params);
-  console.log('dataError', dataError);
+  
+  // Fix: Ensure array is always defined to prevent filter error - v1.4.13
 
   if (dataLoading) {
     return <div>Loading...</div>;

@@ -11,7 +11,8 @@ const OptionPenyewa = ({
   setFieldValue
 }) => {
   const { penyewa: array, penyewaLoading: dataLoading } = useGetPenyewa();
-
+  
+  // Fix: Ensure array is always defined to prevent errors - v1.4.13
   const options = Array.isArray(array) ? array : [];
 
   if (dataLoading) {
