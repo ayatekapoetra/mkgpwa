@@ -12,9 +12,10 @@ const OptionKegiatanKerja = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetKegiatanKerja(searchParams);
-  // console.log(array);
+  
+  const options = Array.isArray(array) ? array : [];
 
-  if (dataLoading || !array) {
+  if (dataLoading) {
     return <div>Loading...</div>;
   }
   return (
@@ -22,8 +23,8 @@ const OptionKegiatanKerja = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array.find((option) => option?.id == value) || null}
+          options={options}
+          value={options.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
           }}
