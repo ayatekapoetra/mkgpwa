@@ -1,4 +1,4 @@
-import EditGroupTagTimesheetScreen from "views/setting/lokasikerja-tag/edit";
+import EditGroupTagTimesheetScreen from "views/setting/timesheet-tag/edit";
 
 const EditGroupTagTimesheetPage = () => {
   return <EditGroupTagTimesheetScreen />;

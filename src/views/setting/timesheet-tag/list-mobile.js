@@ -109,7 +109,7 @@ export default function ListGroupTagMobile({ data, setParams }) {
                       },
                     }}
                     component={Link}
-                    href={`/lokasikerja-tag/${row.id}/edit`}
+                    href={`/timesheet-tag/${row.id}/edit`}
                   >
                     <Edit />
                   </IconButton>

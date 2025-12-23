@@ -1,6 +1,6 @@
 "use client";
 
-import GroupTagTimesheetScreen from "views/setting/lokasikerja-tag";
+import GroupTagTimesheetScreen from "views/setting/timesheet-tag";
 
 const GroupTagTimesheetPage = () => {
   return <GroupTagTimesheetScreen />;

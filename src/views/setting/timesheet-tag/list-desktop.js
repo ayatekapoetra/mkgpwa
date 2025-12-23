@@ -100,7 +100,7 @@ export default function ListGroupTagDesktop({ data, setParams }) {
                 size="small"
                 color="primary"
                 component={Link}
-                href={`/lokasikerja-tag/${id}/edit`}
+                href={`/timesheet-tag/${id}/edit`}
                 title="Edit Group Tag"
               >
                 <Edit />

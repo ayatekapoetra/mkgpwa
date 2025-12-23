@@ -50,7 +50,7 @@ const msgError = {
 const breadcrumbLinks = [
   { title: "Home", to: APP_DEFAULT_PATH },
   { title: "Setting", to: "/setting" },
-  { title: "Group Tag Timesheet", to: "/lokasikerja-tag" },
+  { title: "Group Tag Timesheet", to: "/timesheet-tag" },
   { title: "Create" },
 ];
 
@@ -112,7 +112,7 @@ export default function CreateGroupTagTimesheetScreen() {
     try {
       const resp = await axiosServices(config);
       console.log(resp);
-      route.push("/lokasikerja-tag");
+      route.push("/timesheet-tag");
       openNotification(msgSuccess);
     } catch (err) {
       console.error("Submit error:", err);
@@ -131,7 +131,7 @@ export default function CreateGroupTagTimesheetScreen() {
         links={breadcrumbLinks}
       />
       <MainCard
-        title={<BtnBack href={"/lokasikerja-tag"} />}
+        title={<BtnBack href={"/timesheet-tag"} />}
         secondary={null}
         content={true}
       >
@@ -264,7 +264,7 @@ export default function CreateGroupTagTimesheetScreen() {
                     <CardActions sx={{ justifyContent: "flex-start", px: 0 }}>
                       <Button
                         component={Link}
-                        href="/lokasikerja-tag"
+                        href="/timesheet-tag"
                         variant="outlined"
                         color="secondary"
                         startIcon={<Back />}
