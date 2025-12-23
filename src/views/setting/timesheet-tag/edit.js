@@ -100,8 +100,8 @@ export default function EditGroupTagTimesheetScreen() {
     };
 
     const config = {
-      url: `/api/master/grouptag-timesheet/${id}`,
-      method: "PUT",
+      url: `/api/master/grouptag-timesheet/${id}/update`,
+      method: "POST",
       data: payload,
       headers: { "Content-Type": "application/json" },
       status: "pending",
@@ -133,8 +133,8 @@ export default function EditGroupTagTimesheetScreen() {
 
   const onDeleteHandle = async () => {
     const config = {
-      url: `/api/master/grouptag-timesheet/${id}`,
-      method: "DELETE",
+      url: `/api/master/grouptag-timesheet/${id}/destroy`,
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       status: "pending",
       pesan: `DELETE GROUP TAG KEGIATAN ${initialValues?.kegiatan?.toUpperCase()}`,

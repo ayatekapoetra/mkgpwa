@@ -92,7 +92,7 @@ export default function CreateGroupTagTimesheetScreen() {
     };
 
     const config = {
-      url: `/api/master/grouptag-timesheet`,
+      url: `/api/master/grouptag-timesheet/create`,
       method: "POST",
       data: payload,
       headers: { "Content-Type": "application/json" },
