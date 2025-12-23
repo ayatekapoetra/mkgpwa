@@ -29,7 +29,8 @@ import IconButton from "components/@extended/IconButton";
 
 export default function ListGroupTagMobile({ data, setParams }) {
   const tableData = useMemo(() => {
-    const rows = data?.data?.rows || data?.data || data?.rows || data;
+    // API returns nested structure: data.rows.data
+    const rows = data?.rows?.data || data?.data?.rows || data?.data || data?.rows || data;
     return Array.isArray(rows) ? rows : [];
   }, [data]);
 
@@ -248,10 +249,10 @@ export default function ListGroupTagMobile({ data, setParams }) {
 
       <Box sx={{ mt: 2 }}>
         <Paginate
-          page={data?.data?.page || data?.page || 1}
-          total={data?.data?.total || data?.total || 0}
-          lastPage={data?.data?.lastPage || data?.lastPage || 1}
-          perPage={data?.data?.perPage || data?.perPage || 25}
+          page={data?.rows?.page || data?.data?.page || data?.page || 1}
+          total={data?.rows?.total || data?.data?.total || data?.total || 0}
+          lastPage={data?.rows?.lastPage || data?.data?.lastPage || data?.lastPage || 1}
+          perPage={data?.rows?.perPage || data?.data?.perPage || data?.perPage || 25}
           onPageChange={(newPage) =>
             setParams((prev) => ({ ...prev, page: newPage }))
           }
