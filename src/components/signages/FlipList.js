@@ -3,10 +3,10 @@
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { useSpring, animated } from '@react-spring/web';
-import { Box, Paper, Typography, Stack, Chip } from '@mui/material';
-import useMediaQuery from '@mui/material/useMediaQuery';
+import { Box, Paper, Typography, Stack, Chip, Divider, Avatar, LinearProgress, Collapse } from '@mui/material';
 import moment from 'moment';
 import Image from 'next/image';
+import { Construction, Engineering, Warning, Schedule, ExpandMore, CheckCircle } from '@mui/icons-material';
 
 const AnimatedPaper = animated(Paper);
 
@@ -28,165 +28,269 @@ export default function FlipListGroup({ data, setParams }) {
     }, 30 * 1000);
 
     return () => clearInterval(interval);
-  }, [data?.lastPage, setParams]); // ✅ pakai data.lastPage saja sebagai dependensi
+  }, [data?.lastPage, setParams]);
+
+  const leftColumn = data?.data?.filter((_, idx) => idx % 2 === 0) || [];
+  const rightColumn = data?.data?.filter((_, idx) => idx % 2 === 1) || [];
 
   return (
-    <Stack spacing={2} m={2}>
-      {data?.data?.map((obj, idx) => {
-        return <FlipItem key={idx} delay={idx * 200} value={obj} waktu={waktu} />;
-      })}
-    </Stack>
+    <Box sx={{ display: 'flex', gap: 3, p: 3 }}>
+      {/* Left Column */}
+      <Stack spacing={2} sx={{ flex: 1 }}>
+        {leftColumn.map((obj, idx) => (
+          <FlipItem key={obj.id || idx * 2} delay={idx * 2 * 100} value={obj} waktu={waktu} />
+        ))}
+      </Stack>
+
+      {/* Right Column */}
+      <Stack spacing={2} sx={{ flex: 1 }}>
+        {rightColumn.map((obj, idx) => (
+          <FlipItem key={obj.id || idx * 2 + 1} delay={(idx * 2 + 1) * 100} value={obj} waktu={waktu} />
+        ))}
+      </Stack>
+    </Box>
   );
 }
 
 const FlipItem = ({ delay, waktu, value }) => {
   const theme = useTheme();
-  const downSM = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDark = theme.palette.mode === 'dark';
   const [flipped, setFlipped] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
-  const { transform } = useSpring({
-    transform: `rotateX(${flipped ? 180 : 0}deg)`,
-    config: { duration: 1000 }
+  const { transform, opacity } = useSpring({
+    transform: `translateX(${flipped ? -10 : 0}px)`,
+    opacity: mounted ? 1 : 0,
+    config: { tension: 200, friction: 20 }
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       setFlipped(true);
-      setTimeout(() => setFlipped(false), 1000); // reset
+      setTimeout(() => setFlipped(false), 800);
     }, delay);
 
     return () => clearTimeout(timeout);
-  }, [waktu]);
+  }, [waktu, delay]);
 
   const brandLogo = getBrandLogo(value?.equipment?.manufaktur);
+  const itemsCount = value.items?.length || 0;
+  const statusStats = getStatusStats(value.items);
 
   return (
-    <Box
+    <AnimatedPaper
+      elevation={6}
       sx={{
-        px: 0.5,
-        py: 0.2,
-        width: '100%',
-        perspective: 1000,
-        overflow: 'hidden'
+        backgroundColor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: 2,
+        overflow: 'hidden',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          boxShadow: theme.shadows[10]
+        }
       }}
+      style={{ transform, opacity }}
     >
-      <AnimatedPaper
-        elevation={4}
+      {/* Main Info Row */}
+      <Box
         sx={{
-          // my: 1,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'background.paper',
-          color: 'transparant',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          backfaceVisibility: 'hidden',
-          transformStyle: 'preserve-3d'
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          p: 2,
+          cursor: 'pointer'
         }}
-        style={{
-          transform
-        }}
+        onClick={() => setExpanded(!expanded)}
       >
-        <Stack
-          p={1}
-          spacing={1}
-          direction={downSM ? 'column' : 'row'}
-          justifyContent="flex-start"
-          alignItems="center"
-          sx={{ width: '100%' }}
-        >
-          <Stack flex={1} justifyContent="center" alignItems="center">
-            <Chip color="primary" label={value.lokasi.nama?.replace(/\[.*?\]\s*/, '')} size="small" />
-            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '30px' }}>
-              {value.kode_unit}
-            </Typography>
+        <Stack direction="row" spacing={3} alignItems="center">
+          {/* Equipment Avatar */}
+          <Avatar
+            sx={{
+              width: 72,
+              height: 72,
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              border: '3px solid rgba(255,255,255,0.3)',
+              boxShadow: theme.shadows[4]
+            }}
+          >
             <Box
-              style={{
-                position: 'relative', // ✅ penting agar Image fill berfungsi
-                width: '150px',
-                height: '30px',
-                backgroundColor: theme.palette.mode == 'dark' ? '#C4C4C4' : '#ddd',
-                borderRadius: 5,
-                overflow: 'hidden' // ✅ mencegah gambar keluar box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 1
               }}
             >
-              <Image
-                src={brandLogo}
-                fill
-                style={{
-                  objectFit: 'contain'
-                }}
-                alt={value?.equipment?.manufaktur}
-              />
+              <Image src={brandLogo} fill style={{ objectFit: 'contain', padding: '8px' }} alt={value?.equipment?.manufaktur || 'Equipment'} />
             </Box>
+          </Avatar>
+
+          {/* Unit Info */}
+          <Stack spacing={0.5} flex={1}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 900,
+                color: 'white',
+                letterSpacing: 1,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+              }}
+            >
+              {value.kode_unit}
+            </Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Construction sx={{ fontSize: 16, color: 'rgba(255,255,255,0.9)' }} />
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                  {value.lokasi?.nama?.replace(/\[.*?\]\s*/, '') || '-'}
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Schedule sx={{ fontSize: 16, color: 'rgba(255,255,255,0.9)' }} />
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                  {moment(value.breakdown_at, 'DD-MM-YYYY HH:mm').format('DD MMM YYYY HH:mm')}
+                </Typography>
+              </Stack>
+            </Stack>
           </Stack>
-          <Stack flex={4}>
-            <ul>
-              {value.items.map((m, idx) => {
-                switch (m.status) {
-                  case 'WP':
-                    var statusColor = (
-                      <Typography color={theme.palette.warning['dark']} sx={{ fontWeight: 800 }}>
-                        Wait Part
-                      </Typography>
-                    );
-                    // var statusColor = <Typography color={theme.palette.info['dark']} sx={{fontWeight: 800}}>Wait Part</Typography>
-                    break;
-                  case 'WT':
-                    var statusColor = (
-                      <Typography color="primary" sx={{ fontWeight: 800 }}>
-                        Wait Teknisi
-                      </Typography>
-                    );
-                    break;
-                  case 'WS':
-                    var statusColor = (
-                      <Typography color="error" sx={{ fontWeight: 800 }}>
-                        Wait Services
-                      </Typography>
-                    );
-                    break;
-                  default:
-                    var statusColor = (
-                      <Typography color="success" sx={{ fontWeight: 800, color: '#51bb2b' }}>
-                        Finish
-                      </Typography>
-                    );
-                    break;
-                }
-                return (
-                  <li key={idx} style={{ marginButtom: 3 }}>
-                    <Typography variant="h4">{m.problem_issue}</Typography>
-                    <Stack my={1} spacing={0.5} direction={downSM ? 'column' : 'row'} justifyContent="space-between">
-                      <Stack direction="row" spacing={1} justifyContent="flex-sart" alignItems="center">
-                        <Paper sx={{ px: 1, minWidth: 150, textAlign: 'center', border: '1px dashed grey' }} variant="contained">
-                          {statusColor}
-                        </Paper>
-                        <Paper sx={{ px: 1, textAlign: 'center', border: '1px dashed grey' }} variant="contained" color="primary">
-                          {downSM ? (
-                            <Typography>{moment().format('DD-MM-YYYY')}</Typography>
-                          ) : (
-                            <Typography>Breakdown At: {moment().format('DD-MM-YYYY')}</Typography>
-                          )}
-                        </Paper>
-                      </Stack>
-                      <Paper
-                        sx={{ px: 1, textAlign: 'center', border: '1px dashed grey', alignItems: 'center', justifyContent: 'center' }}
-                        variant="contained"
-                        color="secondary"
-                      >
-                        <Typography sx={{ fontWeight: 700, letterSpacing: '0.1em' }}>{m.kode_wo}</Typography>
-                      </Paper>
-                    </Stack>
-                  </li>
-                );
-              })}
-            </ul>
+
+          {/* Status Summary */}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Chip
+              icon={<Warning sx={{ fontSize: 18 }} />}
+              label={`${itemsCount} Issue${itemsCount > 1 ? 's' : ''}`}
+              sx={{
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                color: theme.palette.error.main,
+                fontWeight: 700,
+                fontSize: 14,
+                height: 36,
+                '& .MuiChip-icon': { color: theme.palette.error.main }
+              }}
+            />
+            <ExpandMore
+              sx={{
+                color: 'white',
+                fontSize: 32,
+                transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s'
+              }}
+            />
           </Stack>
         </Stack>
-      </AnimatedPaper>
-    </Box>
+      </Box>
+
+      {/* Issues Detail */}
+      <Collapse in={expanded} timeout="auto">
+        <Box sx={{ backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)' }}>
+          {value.items?.map((item, idx) => {
+            const statusInfo = getStatusInfo(item.status, theme);
+            return (
+              <Box key={idx}>
+                <Box
+                  sx={{
+                    p: 3,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                    }
+                  }}
+                >
+                  <Stack direction="row" spacing={3} alignItems="flex-start">
+                    {/* Problem Description */}
+                    <Stack spacing={1} flex={1}>
+                      <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                        <Engineering sx={{ fontSize: 24, color: theme.palette.text.secondary, mt: 0.2, flexShrink: 0 }} />
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 600,
+                            lineHeight: 1.5,
+                            wordBreak: 'break-word',
+                            color: theme.palette.text.primary,
+                            flex: 1
+                          }}
+                        >
+                          {item.problem_issue}
+                        </Typography>
+                      </Stack>
+
+                      {/* Status and WO Row */}
+                      <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
+                        <Box
+                          sx={{
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1.5,
+                            backgroundColor: statusInfo.bgColor,
+                            border: `1.5px solid ${statusInfo.borderColor}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            minWidth: 120
+                          }}
+                        >
+                          {statusInfo.icon}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: statusInfo.color,
+                              fontSize: 12
+                            }}
+                          >
+                            {statusInfo.label}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={item.kode_wo}
+                          size="small"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: 12,
+                            height: 28,
+                            fontFamily: 'monospace',
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                            border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}`,
+                            letterSpacing: 0.3
+                          }}
+                        />
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Box>
+                {idx < value.items.length - 1 && (
+                  <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', mx: 3 }} />
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+      </Collapse>
+
+      {/* Progress Footer */}
+      <Box>
+        <LinearProgress
+          variant="determinate"
+          value={((30 - (new Date().getSeconds() % 30)) / 30) * 100}
+          sx={{
+            height: 4,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            '& .MuiLinearProgress-bar': {
+              background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+            }
+          }}
+        />
+      </Box>
+    </AnimatedPaper>
   );
 };
 
@@ -215,4 +319,47 @@ function getBrandLogo(manufacturer) {
     XGMA: `/assets/images/manufaktur/XGMA.png?v=2`
   };
   return logos[manufacturer] || '/assets/images/manufaktur/NoLogo.png';
+}
+
+function getStatusInfo(status, theme) {
+  const isDark = theme.palette.mode === 'dark';
+  const statusMap = {
+    WT: {
+      label: 'Wait Technician',
+      color: theme.palette.primary.main,
+      bgColor: isDark ? 'rgba(33, 150, 243, 0.15)' : 'rgba(33, 150, 243, 0.1)',
+      borderColor: isDark ? 'rgba(33, 150, 243, 0.4)' : 'rgba(33, 150, 243, 0.3)',
+      icon: <Schedule sx={{ fontSize: 18, color: theme.palette.primary.main }} />
+    },
+    WP: {
+      label: 'Wait Part',
+      color: theme.palette.warning.main,
+      bgColor: isDark ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 152, 0, 0.1)',
+      borderColor: isDark ? 'rgba(255, 152, 0, 0.4)' : 'rgba(255, 152, 0, 0.3)',
+      icon: <Warning sx={{ fontSize: 18, color: theme.palette.warning.main }} />
+    },
+    WS: {
+      label: 'In Service',
+      color: theme.palette.info.main,
+      bgColor: isDark ? 'rgba(0, 188, 212, 0.15)' : 'rgba(0, 188, 212, 0.1)',
+      borderColor: isDark ? 'rgba(0, 188, 212, 0.4)' : 'rgba(0, 188, 212, 0.3)',
+      icon: <Engineering sx={{ fontSize: 18, color: theme.palette.info.main }} />
+    },
+    DONE: {
+      label: 'Completed',
+      color: theme.palette.success.main,
+      bgColor: isDark ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.1)',
+      borderColor: isDark ? 'rgba(76, 175, 80, 0.4)' : 'rgba(76, 175, 80, 0.3)',
+      icon: <CheckCircle sx={{ fontSize: 18, color: theme.palette.success.main }} />
+    }
+  };
+  return statusMap[status] || statusMap.WT;
+}
+
+function getStatusStats(items) {
+  const stats = { WT: 0, WP: 0, WS: 0, DONE: 0 };
+  items?.forEach((item) => {
+    stats[item.status] = (stats[item.status] || 0) + 1;
+  });
+  return stats;
 }
