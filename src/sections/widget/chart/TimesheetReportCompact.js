@@ -109,7 +109,7 @@ const TimesheetReportCompact = () => {
         radius: 2
       }
     },
-    colors: [theme.palette.primary.main]
+    colors: ['#ff9800']
   };
 
   // CHART OPTIONS - COMPACT DONUT CHART
@@ -144,7 +144,7 @@ const TimesheetReportCompact = () => {
     tooltip: {
       theme: mode === ThemeMode.DARK ? 'dark' : 'light'
     },
-    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main, theme.palette.info.main],
+    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main, theme.palette.error.main],
     states: {
       hover: {
         filter: {
@@ -171,18 +171,45 @@ const TimesheetReportCompact = () => {
   const [donutOptions, setDonutOptions] = useState(donutChartOptions);
 
   useEffect(() => {
-    setLineOptions((prevState) => ({
-      ...prevState,
+    // Define attractive colors based on theme mode
+    const warningColor = mode === ThemeMode.DARK ? '#ffb74d' : '#ff9800';
+    
+    const primaryColor = theme.palette.primary?.main || '#1976d2';
+    const successColor = theme.palette.success?.main || '#4caf50';
+    const warningColorPalette = theme.palette.warning?.main || '#ff9800';
+    const errorColor = theme.palette.error?.main || '#f44336';
+    
+    setLineOptions({
+      ...lineChartOptions,
+      colors: [warningColor],
+      chart: {
+        ...lineChartOptions.chart,
+        foreColor: theme.palette.text.secondary
+      },
+      legend: {
+        ...lineChartOptions.legend,
+        labels: {
+          colors: theme.palette.text.secondary,
+          fontSize: '10px',
+          useSeriesColors: false
+        }
+      },
       theme: {
         mode: mode === ThemeMode.DARK ? 'dark' : 'light'
       }
-    }));
-    setDonutOptions((prevState) => ({
-      ...prevState,
+    });
+    
+    setDonutOptions({
+      ...donutChartOptions,
+      colors: [primaryColor, successColor, warningColorPalette, errorColor],
+      chart: {
+        ...donutChartOptions.chart,
+        foreColor: theme.palette.text.secondary
+      },
       theme: {
         mode: mode === ThemeMode.DARK ? 'dark' : 'light'
       }
-    }));
+    });
   }, [mode, theme]);
 
   // Sample data - in real implementation, this would come from API
@@ -320,7 +347,7 @@ const TimesheetReportCompact = () => {
               <Typography variant="subtitle2" sx={{ mb: 0.5, fontSize: '0.7rem', fontWeight: 500 }}>
                 Weekly Trend
               </Typography>
-              <ReactApexChart options={lineOptions} series={lineSeries} type="line" height={120} />
+              <ReactApexChart key={`line-compact-${mode}`} options={lineOptions} series={lineSeries} type="line" height={120} />
             </CardContent>
           </Card>
         </Grid>
@@ -336,7 +363,7 @@ const TimesheetReportCompact = () => {
               <Typography variant="subtitle2" sx={{ mb: 0.5, fontSize: '0.7rem', fontWeight: 500 }}>
                 Activity Distribution
               </Typography>
-              <ReactApexChart options={donutOptions} series={donutSeries} type="donut" height={100} />
+              <ReactApexChart key={`donut-compact-${mode}`} options={donutOptions} series={donutSeries} type="donut" height={100} />
             </CardContent>
           </Card>
         </Grid>

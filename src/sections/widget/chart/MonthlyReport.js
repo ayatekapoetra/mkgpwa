@@ -73,7 +73,7 @@ const EcommerceDataChart = () => {
   useEffect(() => {
     setOptions((prevState) => ({
       ...prevState,
-      colors: [theme.palette.primary.main, theme.palette.primary.light, theme.palette.primary[200], theme.palette.warning.light],
+      colors: [theme.palette.primary.main, theme.palette.primary.light, theme.palette.primary[200], theme.palette.primary[100]],
       xaxis: {
         categories: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
         labels: {

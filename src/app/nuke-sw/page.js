@@ -133,7 +133,6 @@ export default function NukeServiceWorkerPage() {
         alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif',
         backgroundColor: '#1a1a1a',
         color: '#fff',
         textAlign: 'center'

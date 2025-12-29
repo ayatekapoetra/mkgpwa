@@ -68,6 +68,8 @@ export default function EditGroupTagTimesheetScreen() {
   const { id } = useParams();
   const { data: initialValues, dataLoading } = useShowGroupTagTimesheet(id);
 
+  console.log("DEBUG INITIAL VALUES FROM API:", initialValues);
+
   const validationSchema = Yup.object({
     kegiatan: Yup.string()
       .oneOf(
@@ -189,7 +191,7 @@ export default function EditGroupTagTimesheetScreen() {
               penyewa_id: "",
               penyewa: null,
               pit_id: "",
-              pit: null,
+              pitkerja: null,
             }
           }
           enableReinitialize={true}

@@ -19,16 +19,12 @@ export const useGetLokasiKerja = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      lokasiKerja: data?.rows || [],
+      lokasiKerja: data || { rows: [], page: 1, perPage: 25, total: 0, lastPage: 1 },
       lokasiKerjaLoading: isLoading,
       lokasiKerjaError: error,
       lokasiKerjaValidating: isValidating,
-      lokasiKerjaEmpty: !isLoading && !data?.rows?.length,
-      lokasiKerjaMutate: mutate,
-      page: data?.page,
-      perPage: data?.perPage,
-      total: data?.total,
-      lastPage: data?.lastPage
+      lokasiKerjaEmpty: !isLoading && (!data?.rows || data?.rows?.length === 0),
+      lokasiKerjaMutate: mutate
     }),
     [data, error, isLoading, isValidating, mutate]
   );

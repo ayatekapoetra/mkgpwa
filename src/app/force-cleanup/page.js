@@ -97,7 +97,6 @@ export default function ForceCleanupPage() {
         alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif',
         backgroundColor: '#f5f5f5'
       }}
     >

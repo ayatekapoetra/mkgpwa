@@ -92,7 +92,7 @@ const TimesheetReport = () => {
         colors: theme.palette.text.secondary
       }
     },
-    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main]
+    colors: ['#ff9800', '#ffb74d', '#ff6f00']
   };
 
   // CHART OPTIONS - BAR CHART FOR EQUIPMENT USAGE
@@ -104,13 +104,29 @@ const TimesheetReport = () => {
     },
     plotOptions: {
       bar: {
-        borderRadius: 4,
+        borderRadius: 6,
         horizontal: false,
-        columnWidth: '60%'
+        columnWidth: '60%',
+        dataLabels: {
+          position: 'top'
+        }
       }
     },
     dataLabels: {
       enabled: false
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shade: 'light',
+        type: 'vertical',
+        shadeIntensity: 0.3,
+        gradientToColors: undefined,
+        inverseColors: false,
+        opacityFrom: 0.9,
+        opacityTo: 0.7,
+        stops: [0, 100]
+      }
     },
     stroke: {
       show: true,
@@ -142,7 +158,7 @@ const TimesheetReport = () => {
         formatter: (value) => `${value} hours`
       }
     },
-    colors: [theme.palette.primary.main, theme.palette.success.main]
+    colors: ['#f44336', '#ef5350']
   };
 
   // CHART OPTIONS - DONUT CHART FOR ACTIVITY DISTRIBUTION
@@ -179,24 +195,109 @@ const TimesheetReport = () => {
   const [donutOptions, setDonutOptions] = useState(donutChartOptions);
 
   useEffect(() => {
-    setLineOptions((prevState) => ({
-      ...prevState,
+    // Define attractive colors based on theme mode
+    const warningColors = mode === ThemeMode.DARK 
+      ? ['#ffb74d', '#ffa726', '#ff9800'] // Lighter orange for dark mode
+      : ['#ff9800', '#fb8c00', '#f57c00']; // Vibrant orange for light mode
+    
+    const errorColors = mode === ThemeMode.DARK
+      ? ['#ef5350', '#f44336', '#e53935'] // Lighter red for dark mode
+      : ['#f44336', '#e53935', '#d32f2f']; // Vibrant red for light mode
+    
+    const primaryColor = theme.palette.primary?.main || '#1976d2';
+    const successColor = theme.palette.success?.main || '#4caf50';
+    const warningColor = theme.palette.warning?.main || '#ff9800';
+    const errorColor = theme.palette.error?.main || '#f44336';
+    const infoColor = theme.palette.info?.main || '#2196f3';
+    
+    setLineOptions({
+      ...lineChartOptions,
+      colors: warningColors,
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shade: mode === ThemeMode.DARK ? 'dark' : 'light',
+          type: 'vertical',
+          shadeIntensity: 0.5,
+          gradientToColors: mode === ThemeMode.DARK ? ['#ffca28', '#ffb300'] : ['#ffa000', '#ff6f00'],
+          inverseColors: false,
+          opacityFrom: 0.5,
+          opacityTo: 0.1,
+          stops: [0, 100]
+        }
+      },
+      grid: {
+        strokeDashArray: 3,
+        borderColor: theme.palette.divider
+      },
+      yaxis: {
+        show: true,
+        labels: {
+          style: {
+            colors: theme.palette.text.secondary
+          }
+        }
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        labels: {
+          colors: theme.palette.text.secondary
+        }
+      },
       theme: {
         mode: mode === ThemeMode.DARK ? 'dark' : 'light'
       }
-    }));
-    setBarOptions((prevState) => ({
-      ...prevState,
+    });
+    
+    setBarOptions({
+      ...barChartOptions,
+      colors: errorColors,
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shade: mode === ThemeMode.DARK ? 'dark' : 'light',
+          type: 'vertical',
+          shadeIntensity: 0.4,
+          gradientToColors: mode === ThemeMode.DARK ? ['#ff5252', '#ff1744'] : ['#ef5350', '#c62828'],
+          inverseColors: false,
+          opacityFrom: 0.95,
+          opacityTo: 0.75,
+          stops: [0, 100]
+        }
+      },
+      grid: {
+        strokeDashArray: 3,
+        borderColor: theme.palette.divider
+      },
+      yaxis: {
+        title: {
+          text: 'Hours Used'
+        },
+        labels: {
+          style: {
+            colors: theme.palette.text.secondary
+          }
+        }
+      },
       theme: {
         mode: mode === ThemeMode.DARK ? 'dark' : 'light'
       }
-    }));
-    setDonutOptions((prevState) => ({
-      ...prevState,
+    });
+    
+    setDonutOptions({
+      ...donutChartOptions,
+      colors: [primaryColor, successColor, warningColor, errorColor, infoColor],
+      legend: {
+        position: 'bottom',
+        labels: {
+          colors: theme.palette.text.secondary
+        }
+      },
       theme: {
         mode: mode === ThemeMode.DARK ? 'dark' : 'light'
       }
-    }));
+    });
   }, [mode, theme]);
 
   // Sample data - in real implementation, this would come from API
@@ -337,7 +438,7 @@ const TimesheetReport = () => {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Weekly Hours Trend
               </Typography>
-              <ReactApexChart options={lineOptions} series={lineSeries} type="line" height={300} />
+              <ReactApexChart key={`line-${mode}`} options={lineOptions} series={lineSeries} type="line" height={300} />
             </CardContent>
           </Card>
         </Grid>
@@ -348,7 +449,7 @@ const TimesheetReport = () => {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Activity Distribution
               </Typography>
-              <ReactApexChart options={donutOptions} series={donutSeries} type="donut" height={250} />
+              <ReactApexChart key={`donut-${mode}`} options={donutOptions} series={donutSeries} type="donut" height={250} />
             </CardContent>
           </Card>
         </Grid>
@@ -359,7 +460,7 @@ const TimesheetReport = () => {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Equipment Usage Comparison
               </Typography>
-              <ReactApexChart options={barOptions} series={barSeries} type="bar" height={250} />
+              <ReactApexChart key={`bar-${mode}`} options={barOptions} series={barSeries} type="bar" height={250} />
             </CardContent>
           </Card>
         </Grid>

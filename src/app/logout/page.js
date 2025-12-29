@@ -76,8 +76,7 @@ export default function LogoutPage() {
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif'
+        flexDirection: 'column'
       }}
     >
       <h1>Proses Logout...</h1>

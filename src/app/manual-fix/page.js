@@ -3,7 +3,6 @@ export default function ManualFixPage() {
     <div
       style={{
         padding: '20px',
-        fontFamily: 'Arial, sans-serif',
         maxWidth: '900px',
         margin: '0 auto',
         lineHeight: '1.6'

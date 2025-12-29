@@ -76,7 +76,7 @@ const DataChart = () => {
   useEffect(() => {
     setOptions((prevState) => ({
       ...prevState,
-      colors: [theme.palette.success.main],
+      colors: [theme.palette.primary.main],
       theme: {
         mode: mode === ThemeMode.DARK ? 'dark' : 'light'
       }

@@ -94,7 +94,6 @@ export default function FinalCleanupPage() {
         alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif',
         backgroundColor: '#f0f8ff',
         color: '#333'
       }}

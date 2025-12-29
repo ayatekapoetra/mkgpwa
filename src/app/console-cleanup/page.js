@@ -85,7 +85,6 @@ export default function ConsoleCleanupPage() {
     <div
       style={{
         padding: '20px',
-        fontFamily: 'Arial, sans-serif',
         maxWidth: '800px',
         margin: '0 auto'
       }}

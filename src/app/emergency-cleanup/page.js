@@ -131,7 +131,6 @@ export default function EmergencyCleanupPage() {
         alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif',
         backgroundColor: '#000',
         color: '#ff0000',
         textAlign: 'center'

@@ -69,11 +69,11 @@ export const useGetCabang = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      cabang: data?.rows || [],
+      cabang: data || { rows: [] },
       cabangLoading: isLoading,
       cabangError: error,
       cabangValidating: isValidating,
-      cabangEmpty: !isLoading && !data?.rows?.length,
+      cabangEmpty: !isLoading && (!data?.rows || data?.rows?.length === 0),
       cabangMutate: mutate
     }),
     [data, error, isLoading, isValidating, mutate]

@@ -2,7 +2,7 @@
 
 export default function TestPage() {
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ padding: '20px' }}>
       <h1 style={{ color: '#FFC107' }}>MKG Desktop App - Test Page</h1>
       <p style={{ fontSize: '18px', margin: '20px 0' }}>
         ✅ Electron is working correctly!

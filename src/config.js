@@ -1,5 +1,5 @@
 // NEXT
-import { Roboto } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 
 // ==============================|| THEME CONSTANT ||============================== //
 
@@ -30,12 +30,12 @@ export const ThemeDirection = {
   RTL: 'rtl'
 };
 
-const roboto = Roboto({ subsets: ['latin'], weight: ['300', '400', '500', '700'] });
+const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 // ==============================|| THEME CONFIG ||============================== //
 
 const config = {
-  fontFamily: roboto.style.fontFamily,
+  fontFamily: poppins.style.fontFamily,
   i18n: 'en',
   menuOrientation: MenuOrientation.VERTICAL,
   menuCaption: true,

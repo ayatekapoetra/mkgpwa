@@ -60,12 +60,12 @@ const CabangScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableCabang data={{ data: cabang?.data || cabang || [] }} />
+        <ListTableCabang data={{ data: cabang?.rows || [] }} />
 
         <Stack sx={{ p: 2 }}>
           <Paginate
             page={cabang?.page || 1}
-            total={cabang?.total || (Array.isArray(cabang) ? cabang.length : 0)}
+            total={cabang?.total || 0}
             lastPage={cabang?.lastPage || 1}
             perPage={cabang?.perPage || 25}
             onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
@@ -77,7 +77,7 @@ const CabangScreen = () => {
         data={params} 
         setData={setParams} 
         open={openFilter} 
-        count={cabang?.total || (Array.isArray(cabang) ? cabang.length : 0)} 
+        count={cabang?.total || 0} 
         onClose={toggleFilterHandle} 
       />
     </MainCard>

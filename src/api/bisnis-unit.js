@@ -19,11 +19,11 @@ export const useGetBisnisUnit = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      bisnisUnit: data?.rows || [],
+      bisnisUnit: data || { rows: [] },
       bisnisUnitLoading: isLoading,
       bisnisUnitError: error,
       bisnisUnitValidating: isValidating,
-      bisnisUnitEmpty: !isLoading && !data?.rows?.length,
+      bisnisUnitEmpty: !isLoading && (!data?.rows || data?.rows?.length === 0),
       bisnisUnitMutate: mutate
     }),
     [data, error, isLoading, isValidating, mutate]

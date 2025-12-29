@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 // MATERIAL - UI
+import Box from '@mui/material/Box';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -37,7 +38,7 @@ export default function BreakdownScreen() {
     ctg: 'HE',
     isGrid: true,
     page: 1,
-    perPage: 6,
+    perPage: 8,
     lastPage: 0
   });
   const { data, dataLoading } = useGetSignages(params);
@@ -52,75 +53,115 @@ export default function BreakdownScreen() {
   }, [clock]);
 
   return (
-    <Stack>
-      <Stack spacing={1} direction={downSM ? 'column' : 'row'} justifyContent="space-between" sx={{ mx: 1, mt: 1 }}>
-        <PanelCard
-          illustartion={'/assets/images/maintenance/breakdown.png'}
-          primary="Total Breakdown"
-          secondary={data?.BDtot}
-          color="error.main"
-        />
-        <PanelCard
-          illustartion={'/assets/images/maintenance/wait-tech.png'}
-          primary="Menunggu Teknisi"
-          secondary={data?.WTtot}
-          color="primary.main"
-        />
-        <PanelCard
-          illustartion={'/assets/images/maintenance/wait-part.png'}
-          primary="Menunggu Part"
-          secondary={data?.WPtot}
-          color="warning.main"
-        />
-        <PanelCard
-          illustartion={'/assets/images/maintenance/on-proses.png'}
-          primary="Dalam Pengerjaan"
-          secondary={data?.WStot}
-          color="success.main"
-        />
-      </Stack>
-      <Stack spacing={1} sx={{ m: 1, py: 2 }} direction={downSM ? 'column' : 'row'}>
-        <Paper sx={{ flex: 1 }}>
-          {!isLoading && (
-            <Stack mt={1} flex={1} p={1}>
-              <FormControl fullWidth>
-                <InputLabel id="cabang_id">Cabang</InputLabel>
-                <Select
-                  id="cabang_id"
-                  labelId="cabang_id"
-                  value={params.cabang_id || ''}
-                  placeholder="Cabang"
-                  onChange={(e) => setParams((prev) => ({ ...prev, cabang_id: e.target.value }))}
-                >
-                  {cabang?.map((m, idx) => {
-                    return (
-                      <MenuItem key={idx} value={m.id}>
-                        [{m.kode}] {m.nama}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
-            </Stack>
-          )}
-          <Stack mt={1} flex={1} p={1}>
-            <FormControl fullWidth>
-              <InputLabel id="perPage">Data perPage</InputLabel>
-              <OutlinedInput
-                fullWidth
-                type="number"
-                id="perPage"
-                name="perPage"
-                value={params.perPage}
-                onChange={(e) => setParams((prev) => ({ ...prev, perPage: e.target.value }))}
-                startAdornment={null}
-                endAdornment={<FtxToken />}
-              />
-            </FormControl>
-          </Stack>
+    <Stack sx={{ height: '100vh', overflow: 'hidden' }}>
+      {/* Compact Header with Stats and Controls */}
+      <Stack 
+        direction="row" 
+        spacing={1} 
+        alignItems="center" 
+        justifyContent="space-between" 
+        sx={{ 
+          mx: 1, 
+          mt: 1, 
+          mb: 0.5,
+          flexWrap: 'wrap',
+          gap: 1
+        }}
+      >
+        {/* Stats Cards - Compact */}
+        <Stack direction="row" spacing={1} sx={{ flex: 1, minWidth: '600px' }}>
+          <PanelCard
+            illustartion={'/assets/images/maintenance/breakdown.png'}
+            primary="Total Breakdown"
+            secondary={data?.BDtot}
+            color="error.main"
+          />
+          <PanelCard
+            illustartion={'/assets/images/maintenance/wait-tech.png'}
+            primary="Menunggu Teknisi"
+            secondary={data?.WTtot}
+            color="primary.main"
+          />
+          <PanelCard
+            illustartion={'/assets/images/maintenance/wait-part.png'}
+            primary="Menunggu Part"
+            secondary={data?.WPtot}
+            color="warning.main"
+          />
+          <PanelCard
+            illustartion={'/assets/images/maintenance/on-proses.png'}
+            primary="Dalam Pengerjaan"
+            secondary={data?.WStot}
+            color="success.main"
+          />
+        </Stack>
 
-          <Stack flex={1} p={1}>
-            <FormControl fullWidth>
+        {/* Controls - Horizontal with Clock */}
+        {!isLoading && (
+          <Stack 
+            direction="row" 
+            spacing={1.5} 
+            alignItems="stretch" 
+            sx={{ 
+              backgroundColor: 'background.paper',
+              borderRadius: 1,
+              p: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              height: '100px'
+            }}
+          >
+            {/* Left Section - Filters */}
+            <Stack direction="column" spacing={1} sx={{ justifyContent: 'space-between' }}>
+              <Stack direction="row" spacing={1}>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <InputLabel id="cabang_id">Cabang</InputLabel>
+                  <Select
+                    id="cabang_id"
+                    labelId="cabang_id"
+                    value={params.cabang_id || ''}
+                    label="Cabang"
+                    onChange={(e) => setParams((prev) => ({ ...prev, cabang_id: e.target.value }))}
+                  >
+                    {cabang?.map((m, idx) => {
+                      return (
+                        <MenuItem key={idx} value={m.id}>
+                          [{m.kode}] {m.nama}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ width: 90 }}>
+                  <InputLabel id="perPage">Limit</InputLabel>
+                  <OutlinedInput
+                    type="number"
+                    id="perPage"
+                    name="perPage"
+                    size="small"
+                    label="Limit"
+                    value={params.perPage}
+                    onChange={(e) => setParams((prev) => ({ ...prev, perPage: e.target.value }))}
+                  />
+                </FormControl>
+              </Stack>
+
+              <Stack direction="column" spacing={0.2} sx={{ pl: 0.5 }}>
+                <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: 600, fontSize: 10 }}>
+                  {tanggal}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: 1 }}>
+                  {clock}
+                </Typography>
+              </Stack>
+            </Stack>
+
+            {/* Divider */}
+            <Box sx={{ width: '1px', backgroundColor: 'divider', mx: 0.5 }} />
+
+            {/* Right Section - Category & Mode */}
+            <Stack direction="column" spacing={1} sx={{ justifyContent: 'center' }}>
               <RadioGroup
                 aria-label="ctg"
                 value={params.ctg}
@@ -128,38 +169,43 @@ export default function BreakdownScreen() {
                 onChange={(e) => setParams((prev) => ({ ...prev, ctg: e.target.value }))}
                 row
               >
-                <FormControlLabel value="HE" control={<Radio />} label="Alat Berat" />
-                <FormControlLabel value="DT" control={<Radio />} label="Dumptruck" />
+                <FormControlLabel value="HE" control={<Radio size="small" />} label="Heavy Equipment" />
+                <FormControlLabel value="DT" control={<Radio size="small" />} label="Dump Truck" />
               </RadioGroup>
-            </FormControl>
-          </Stack>
-          <Stack mt={1} flex={1} p={1}>
-            <FormControl fullWidth>
+
               <FormControlLabel
-                control={<Switch checked={params.isGrid} onChange={(e) => setParams((prev) => ({ ...prev, isGrid: e.target.checked }))} />}
-                label={params.isGrid ? 'Gird Mode' : 'List Mode'}
+                control={<Switch size="small" checked={params.isGrid} onChange={(e) => setParams((prev) => ({ ...prev, isGrid: e.target.checked }))} />}
+                label={params.isGrid ? 'Grid Mode' : 'List Mode'}
                 labelPlacement="end"
+                sx={{ ml: 0 }}
               />
-            </FormControl>
+            </Stack>
           </Stack>
-          <Stack my={2} justifyContent="center" alignItems="center">
-            <Image src={'/assets/images/maintenance/safety-first.png'} width={200} height={200} alt="Picture of the author" />
-            <Typography variant="h1">{clock}</Typography>
-            <Typography variant="body">{tanggal}</Typography>
-          </Stack>
-        </Paper>
-        <Paper sx={{ flex: 4 }}>
-          {!dataLoading && (
-            <>
-              {params.isGrid ? (
-                <FlipCardGroup data={data} setParams={setParams} mode={theme.palette.mode} />
-              ) : (
-                <FlipListGroup data={data} setParams={setParams} />
-              )}
-            </>
-          )}
-        </Paper>
+        )}
       </Stack>
+
+      {/* Main Content - Full Width */}
+      <Paper 
+        sx={{ 
+          flex: 1, 
+          m: 1, 
+          mt: 0,
+          maxHeight: 'calc(100vh - 130px)', 
+          overflow: 'auto',
+          backgroundColor: 'transparent',
+          boxShadow: 'none'
+        }}
+      >
+        {!dataLoading && (
+          <>
+            {params.isGrid ? (
+              <FlipCardGroup data={data} setParams={setParams} mode={theme.palette.mode} />
+            ) : (
+              <FlipListGroup data={data} setParams={setParams} />
+            )}
+          </>
+        )}
+      </Paper>
     </Stack>
   );
 }

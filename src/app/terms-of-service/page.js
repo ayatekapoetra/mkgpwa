@@ -5,7 +5,7 @@ export const metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: '1.6' }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px', lineHeight: '1.6' }}>
       <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '10px' }}>Terms of Service</h1>
       <p style={{ color: '#666', marginBottom: '30px', fontSize: '14px' }}>Last Updated: December 11, 2025</p>
 

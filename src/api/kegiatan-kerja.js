@@ -19,16 +19,12 @@ export const useGetKegiatanKerja = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      kegiatanKerja: data?.rows || [],
+      kegiatanKerja: data || { rows: [], page: 1, perPage: 25, total: 0, lastPage: 1 },
       kegiatanKerjaLoading: isLoading,
       kegiatanKerjaError: error,
       kegiatanKerjaValidating: isValidating,
-      kegiatanKerjaEmpty: !isLoading && !data?.rows?.length,
-      kegiatanKerjaMutate: mutate,
-      page: data?.page,
-      perPage: data?.perPage,
-      total: data?.total,
-      lastPage: data?.lastPage
+      kegiatanKerjaEmpty: !isLoading && (!data?.rows || data?.rows?.length === 0),
+      kegiatanKerjaMutate: mutate
     }),
     [data, error, isLoading, isValidating, mutate]
   );

@@ -111,7 +111,6 @@ export default function ConsoleFixPage() {
         alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif',
         backgroundColor: '#001122',
         color: '#00ff88',
         textAlign: 'center'

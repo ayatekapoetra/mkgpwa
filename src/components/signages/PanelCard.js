@@ -21,6 +21,7 @@ const PanelCard = ({ primary, secondary, issue, illustartion, color }) => {
         bgcolor: color,
         position: 'relative',
         overflow: 'hidden',
+        height: '100px',
         '&:before, &:after': {
           content: '""',
           width: 1,
@@ -39,29 +40,29 @@ const PanelCard = ({ primary, secondary, issue, illustartion, color }) => {
         }
       }}
     >
-      <Box sx={{ position: 'absolute', right: 0 }}>
-        <Typography variant="h5" color="common.white" sx={{ fontWeight: 800, p: 1 }}>
+      <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
+        <Typography variant="body2" color="common.white" sx={{ fontWeight: 700, fontSize: '11px' }}>
           {primary}
         </Typography>
       </Box>
-      <Box sx={{ px: 1.5, display: 'flex', flex: 1 }}>
+      <Box sx={{ px: 1, py: 0.5, display: 'flex', flex: 1, height: '100%' }}>
         <Grid container justifyContent="space-between" alignItems="center">
           <Grid item>
             <Box alignItems="center" justifyContent="flex-start">
-              <Image src={illustartion} width={200} height={200} alt="Picture of the author" />
+              <Image src={illustartion} width={80} height={80} alt={primary} style={{ objectFit: 'contain' }} />
             </Box>
           </Grid>
           <Grid item>
-            <Stack alignItems="flex-start">
-              <Typography variant="h3" color="common.white" sx={{ fontSize: '85px', textAlign: 'right' }}>
+            <Stack alignItems="flex-end" justifyContent="center">
+              <Typography variant="h2" color="common.white" sx={{ fontSize: '48px', fontWeight: 900, lineHeight: 1 }}>
                 {secondary}
               </Typography>
             </Stack>
           </Grid>
         </Grid>
         {issue && (
-          <Box sx={{ position: 'absolute', bottom: 0, right: 0 }}>
-            <Typography variant="h4" color="common.white" sx={{ fontWeight: 500, p: 1 }}>
+          <Box sx={{ position: 'absolute', bottom: 4, right: 8 }}>
+            <Typography variant="caption" color="common.white" sx={{ fontWeight: 600, fontSize: '10px' }}>
               {issue} Issues
             </Typography>
           </Box>

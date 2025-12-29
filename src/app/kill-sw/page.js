@@ -114,7 +114,6 @@ export default function KillServiceWorkerPage() {
         alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
-        fontFamily: 'Arial, sans-serif',
         backgroundColor: '#000',
         color: '#ff0000',
         textAlign: 'center'

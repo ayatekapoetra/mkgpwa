@@ -57,12 +57,12 @@ const BisnisUnitScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableBisnisUnit data={{ data: bisnisUnit?.data || bisnisUnit || [] }} />
+        <ListTableBisnisUnit data={{ data: bisnisUnit?.rows || [] }} />
 
         <Stack sx={{ p: 2 }}>
           <Paginate
             page={bisnisUnit?.page || 1}
-            total={bisnisUnit?.total || (Array.isArray(bisnisUnit) ? bisnisUnit.length : 0)}
+            total={bisnisUnit?.total || 0}
             lastPage={bisnisUnit?.lastPage || 1}
             perPage={bisnisUnit?.perPage || 25}
             onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
@@ -74,7 +74,7 @@ const BisnisUnitScreen = () => {
         data={params} 
         setData={setParams} 
         open={openFilter} 
-        count={bisnisUnit?.total || (Array.isArray(bisnisUnit) ? bisnisUnit.length : 0)} 
+        count={bisnisUnit?.total || 0} 
         onClose={toggleFilterHandle} 
       />
     </MainCard>
