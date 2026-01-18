@@ -30,7 +30,7 @@ const breadcrumbLinks = [
 const msgSuccess = {
   open: true,
   title: 'success',
-  message: 'Dom berhasil dibuat...',
+  message: 'Akses user berhasil dibuat...',
   alert: { color: 'success' }
 };
 const msgError = {
@@ -68,7 +68,7 @@ export default function CreateUserAccess() {
 
   const onSubmitHandle = async (values) => {
     const config = {
-      url: `/api/setting/akses-menu/create`,
+      url: `/setting/akses-menu/create`,
       method: 'POST',
       data: values,
       headers: { 'Content-Type': 'application/json' },

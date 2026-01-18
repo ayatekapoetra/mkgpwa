@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/maintenance/signages/list'
+  key: '/maintenance/signages/list'
 };
 
 export const useGetSignages = (params) => {

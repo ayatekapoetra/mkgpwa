@@ -45,8 +45,10 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     'Istirahat',
     'Total jam',
     'Kegiatan kerja',
+    'Nama material',
     'Nama pengawas',
-    'Kode timesheet'
+    'Kode timesheet',
+    'Created At'
   ];
 
   rows.push(headers);
@@ -75,9 +77,10 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
         '-',
         1,
         '-',
-        '-',
+        timesheet.material?.nama || '-' || '-',
         timesheet.approvedByKaryawan?.nama || '-',
-        timesheet.id || '-'
+        timesheet.id || '-',
+        timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
       ];
       rows.push(row);
     } else {
@@ -111,8 +114,10 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
           1,
           activityDuration,
           item.kegiatan?.nama || '-',
+          timesheet.material?.nama || '-' || '-',
           timesheet.approvedByKaryawan?.nama || '-',
-          timesheet.id || '-'
+          timesheet.id || '-',
+          timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
         ];
         rows.push(row);
       });
@@ -132,15 +137,18 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },
+    { wch: 10 },
     { wch: 20 },
     { wch: 15 },
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 15 }
+    { wch: 10 },
+    { wch: 25 },  // Nama material
+    { wch: 20 },  // Nama pengawas
+    { wch: 12 },  // Kode timesheet
+    { wch: 18 }   // Created At
   ];
   ws['!cols'] = colWidths;
 
@@ -206,7 +214,9 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     'Sequence',
     'Ritase',
     'Kegiatan kerja',
-    'Nama pengawas'
+    'Nama material',
+    'Nama pengawas',
+    'Created At'
   ];
 
   rows.push(headers);
@@ -233,9 +243,10 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
         '-',
         '-',
         '-',
-        '-',
-        '-',
-        timesheet.approvedByKaryawan?.nama || '-'
+        timesheet.material?.nama || '-' || '-',
+        timesheet.approvedByKaryawan?.nama || '-',
+        timesheet.id || '-',
+        timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
       ];
       rows.push(row);
     } else {
@@ -267,7 +278,10 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
           item.seq || '-',
           item.ritase || 0,
           item.kegiatan?.nama || '-',
-          timesheet.approvedByKaryawan?.nama || '-'
+          item.material?.nama || '-',
+          timesheet.approvedByKaryawan?.nama || '-',
+          timesheet.id || '-',
+          timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
         ];
         rows.push(row);
       });
@@ -292,8 +306,11 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     { wch: 20 },  // Lokasi finish
     { wch: 10 },  // Sequence
     { wch: 10 },  // Ritase
-    { wch: 25 },  // Kegiatan kerja
-    { wch: 20 }   // Nama pengawas
+    { wch: 20 },  // Kegiatan kerja
+    { wch: 15 },  // Nama material
+    { wch: 20 },  // Nama pengawas
+    { wch: 12 },  // Kode timesheet
+    { wch: 18 }   // Created At
   ];
   ws['!cols'] = colWidths;
 
@@ -350,8 +367,10 @@ export const generateAllTimesheetExcel = (data, filename) => {
     'Istirahat',
     'Total jam',
     'Kegiatan kerja',
+    'Nama material',
     'Nama pengawas',
-    'Kode timesheet'
+    'Kode timesheet',
+    'Created At'
   ];
 
   rows.push(headers);
@@ -383,10 +402,11 @@ export const generateAllTimesheetExcel = (data, filename) => {
         '-',
         '-',
         isHE ? 1 : '-',
-        '-',
+        timesheet.material?.nama || '-' || '-',
         '-',
         timesheet.approvedByKaryawan?.nama || '-',
-        timesheet.id || '-'
+        timesheet.id || '-',
+        timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
       ];
       rows.push(row);
     } else {
@@ -426,8 +446,10 @@ export const generateAllTimesheetExcel = (data, filename) => {
           istirahat,
           activityDuration,
           item.kegiatan?.nama || '-',
+          item.material?.nama || '-',
           timesheet.approvedByKaryawan?.nama || '-',
-          timesheet.id || '-'
+          timesheet.id || '-',
+          timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
         ];
         rows.push(row);
       });
@@ -456,9 +478,11 @@ export const generateAllTimesheetExcel = (data, filename) => {
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 15 }
+    { wch: 25 },  // Kegiatan kerja
+    { wch: 15 },  // Nama material
+    { wch: 20 },  // Nama pengawas
+    { wch: 12 },  // Kode timesheet
+    { wch: 18 }   // Created At
   ];
   ws['!cols'] = colWidths;
 

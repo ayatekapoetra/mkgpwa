@@ -6,10 +6,10 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  key: '/api/master/karyawan/list',
-  section: '/api/master/karyawan/section',
-  oprdrv: '/api/master/karyawan/oprdrv',
-  assigner: '/api/master/karyawan/assigner'
+  key: '/master/karyawan/list',
+  section: '/master/karyawan/section',
+  oprdrv: '/master/karyawan/oprdrv',
+  assigner: '/master/karyawan/assigner'
 };
 
 export const useGetKaryawan = () => {

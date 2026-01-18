@@ -32,7 +32,7 @@ import { saveRequest } from 'lib/offlineFetch';
 const msgSuccess = {
   open: true,
   title: 'success',
-  message: 'Dom berhasil diupdate...',
+  message: 'Equipment berhasil diupdate...',
   alert: { color: 'success' }
 };
 const msgError = {

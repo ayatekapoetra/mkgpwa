@@ -90,7 +90,7 @@ export default function ShowUserAccess() {
 
   const onSubmitHandle = async (values) => {
     const config = {
-      url: `/api/setting/akses-menu/create`,
+      url: `/setting/akses-menu/create`,
       method: "POST",
       data: values,
       headers: { "Content-Type": "application/json" },

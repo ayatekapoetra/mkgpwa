@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  key: '/api/master/dom',
+  key: '/master/dom',
   list: '/list'
 };
 

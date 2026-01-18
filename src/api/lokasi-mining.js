@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  key: '/api/master/lokasi-kerja/list'
+  key: '/master/lokasi-kerja/list'
 };
 
 export const useGetLokasiKerja = (params) => {

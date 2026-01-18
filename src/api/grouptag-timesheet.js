@@ -5,7 +5,7 @@ import { fetcher } from "utils/axios";
 import { useOfflineStorage } from "lib/useOfflineStorage";
 
 export const endpoints = {
-  key: "/api/master/grouptag-timesheet",
+  key: "/master/grouptag-timesheet",
   list: "/list",
   create: "/create",
   show: "/show",

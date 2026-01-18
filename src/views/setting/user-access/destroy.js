@@ -49,7 +49,7 @@ export default function DestroyUserAccess() {
 
   const onSubmitHandle = async () => {
     try {
-      await axiosServices.post(`/api/setting/akses-menu/${id}/destroy`);
+      await axiosServices.post(`/setting/akses-menu/${id}/destroy`);
       route.push("/user-access");
       openNotification(msgSuccess);
     } catch (error) {

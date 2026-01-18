@@ -5,7 +5,7 @@ import { fetcher } from "utils/axios";
 import { useOfflineStorage } from "lib/useOfflineStorage";
 
 export const endpoints = {
-  key: "/api/setting/sys-options",
+  key: "/setting/sys-options",
   list: "/list",
   groups: "/groups",
   byGroup: "/group",

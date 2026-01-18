@@ -33,15 +33,19 @@ export default function BreakdownScreen() {
   const [clock, setClock] = useState(moment().format('HH:mm:ss'));
   const [tanggal, setTanggal] = useState(moment().format('dddd, DD MMMM YYYY'));
   const { data: cabang, dataLoading: isLoading } = usePublicCabang();
-  const [params, setParams] = useState({
+
+  // UI State (tidak dikirim ke API)
+  const [isGrid, setIsGrid] = useState(true);
+
+  // API Params (hanya yang dibutuhkan backend)
+  const [apiParams, setApiParams] = useState({
     cabang_id: 2,
     ctg: 'HE',
-    isGrid: true,
     page: 1,
-    perPage: 8,
-    lastPage: 0
+    perPage: 8
   });
-  const { data, dataLoading } = useGetSignages(params);
+
+  const { data, dataLoading } = useGetSignages(apiParams);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -119,9 +123,9 @@ export default function BreakdownScreen() {
                   <Select
                     id="cabang_id"
                     labelId="cabang_id"
-                    value={params.cabang_id || ''}
+                    value={apiParams.cabang_id || ''}
                     label="Cabang"
-                    onChange={(e) => setParams((prev) => ({ ...prev, cabang_id: e.target.value }))}
+                    onChange={(e) => setApiParams((prev) => ({ ...prev, cabang_id: e.target.value }))}
                   >
                     {cabang?.map((m, idx) => {
                       return (
@@ -141,8 +145,8 @@ export default function BreakdownScreen() {
                     name="perPage"
                     size="small"
                     label="Limit"
-                    value={params.perPage}
-                    onChange={(e) => setParams((prev) => ({ ...prev, perPage: e.target.value }))}
+                    value={apiParams.perPage}
+                    onChange={(e) => setApiParams((prev) => ({ ...prev, perPage: e.target.value }))}
                   />
                 </FormControl>
               </Stack>
@@ -164,9 +168,9 @@ export default function BreakdownScreen() {
             <Stack direction="column" spacing={1} sx={{ justifyContent: 'center' }}>
               <RadioGroup
                 aria-label="ctg"
-                value={params.ctg}
+                value={apiParams.ctg}
                 name="ctg"
-                onChange={(e) => setParams((prev) => ({ ...prev, ctg: e.target.value }))}
+                onChange={(e) => setApiParams((prev) => ({ ...prev, ctg: e.target.value }))}
                 row
               >
                 <FormControlLabel value="HE" control={<Radio size="small" />} label="Heavy Equipment" />
@@ -174,8 +178,8 @@ export default function BreakdownScreen() {
               </RadioGroup>
 
               <FormControlLabel
-                control={<Switch size="small" checked={params.isGrid} onChange={(e) => setParams((prev) => ({ ...prev, isGrid: e.target.checked }))} />}
-                label={params.isGrid ? 'Grid Mode' : 'List Mode'}
+                control={<Switch size="small" checked={isGrid} onChange={(e) => setIsGrid(e.target.checked)} />}
+                label={isGrid ? 'Grid Mode' : 'List Mode'}
                 labelPlacement="end"
                 sx={{ ml: 0 }}
               />
@@ -198,10 +202,10 @@ export default function BreakdownScreen() {
       >
         {!dataLoading && (
           <>
-            {params.isGrid ? (
-              <FlipCardGroup data={data} setParams={setParams} mode={theme.palette.mode} />
+            {isGrid ? (
+              <FlipCardGroup data={data} setParams={setApiParams} mode={theme.palette.mode} />
             ) : (
-              <FlipListGroup data={data} setParams={setParams} />
+              <FlipListGroup data={data} setParams={setApiParams} />
             )}
           </>
         )}

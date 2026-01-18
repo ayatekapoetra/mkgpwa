@@ -315,7 +315,7 @@ const ShowTimesheetScreen = () => {
       });
 
       const response = await axiosServices.post(
-        `/api/operation/timesheet/${id}/update`,
+        `/operation/timesheet/${id}`,
         formData,
         {
           headers: {
@@ -358,7 +358,7 @@ const ShowTimesheetScreen = () => {
 
   const onRemoveHandle = async () => {
     try {
-      await axiosServices.delete(`/api/operation/timesheet/${id}`);
+      await axiosServices.delete(`/operation/timesheet/${id}`);
       route.push("/timesheet");
       openNotification(msgSuccess);
     } catch (error) {
@@ -372,7 +372,7 @@ const ShowTimesheetScreen = () => {
 
   const onApproveHandle = async () => {
     try {
-      await axiosServices.post(`/api/operation/timesheet/${id}/approved`);
+      await axiosServices.post(`/operation/timesheet/${id}/approved`);
       openNotification({
         open: true,
         title: "success",

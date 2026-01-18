@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import axiosServices from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/operation/timesheet',
+  key: '/operation/timesheet',
   list: '/list',
   show: '/show',
   exportAlatBerat: '/alat-berat/export-excel',

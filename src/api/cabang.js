@@ -7,8 +7,8 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  public: '/api/public/cabang',
-  key: '/api/master/cabang',
+  public: '/public/cabang',
+  key: '/master/cabang',
   list: '/list'
 };
 

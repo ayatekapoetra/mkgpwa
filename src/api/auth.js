@@ -1,9 +1,9 @@
 import axiosServices from 'utils/axios';
 
 export const endpoints = {
-  forgotPassword: '/api/auth/forgot-password',
-  validateToken: '/api/auth/reset-password',
-  resetPassword: '/api/auth/reset-password'
+  forgotPassword: '/auth/forgot-password',
+  validateToken: '/auth/reset-password',
+  resetPassword: '/auth/reset-password'
 };
 
 export const forgotPassword = async (phone) => {

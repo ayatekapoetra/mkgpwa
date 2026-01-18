@@ -4,7 +4,7 @@ import { fetcher } from 'utils/axios';
 import axiosServices from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/bisnis-unit',
+  key: '/master/bisnis-unit',
   list: '/list'
 };
 

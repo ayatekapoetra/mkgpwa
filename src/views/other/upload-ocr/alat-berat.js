@@ -83,7 +83,7 @@ const ScanABTimesheetScreen = () => {
   const [initialValues, setInitialValues] = useState(initData);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [typeocr, setTypeocr] = useState('/api/upload/timesheet-he/sensored-ocr-aws');
+  const [typeocr, setTypeocr] = useState('/upload/timesheet-he/sensored-ocr-aws');
   const [formKey, setFormKey] = useState(Date.now()); // waktu sebagai key unik
 
   const validationSchema = Yup.object().shape({
@@ -213,13 +213,13 @@ const ScanABTimesheetScreen = () => {
     setFieldValue('operator_id', '');
     setFieldValue('equipment_id', '');
     setFieldValue('kegiatan', []);
-    setTypeocr('/api/upload/timesheet-he/sensored-ocr-aws');
+    setTypeocr('/upload/timesheet-he/sensored-ocr-aws');
   };
 
   const onSubmitHandle = async (values, { resetForm }) => {
     // console.log('SUBMIT--', values);
     try {
-      const resp = await axiosServices.post('/api/operation/timesheet/create-ocr-he', values, {
+      const resp = await axiosServices.post('/operation/timesheet/create-ocr-he', values, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       // console.log(resp);
@@ -307,8 +307,8 @@ const ScanABTimesheetScreen = () => {
                         />
                       }
                     >
-                      <MenuItem value={'/api/upload/timesheet-he/sensored-ocr-aws'}>Ambil data yang disensor</MenuItem>
-                      <MenuItem value={'/api/upload/timesheet-he/unsensored-ocr-aws'}>Ambil data yang tidak disensor</MenuItem>
+                      <MenuItem value={'/upload/timesheet-he/sensored-ocr-aws'}>Ambil data yang disensor</MenuItem>
+                      <MenuItem value={'/upload/timesheet-he/unsensored-ocr-aws'}>Ambil data yang tidak disensor</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

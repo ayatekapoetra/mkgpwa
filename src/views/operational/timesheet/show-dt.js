@@ -251,7 +251,7 @@ const ShowDTTimesheetScreen = () => {
 
   const onsubmitHandle = async (values) => {
     try {
-      const response = await axiosServices.post(`/api/operation/timesheet/${id}/update`, values);
+      const response = await axiosServices.post(`/operation/timesheet/${id}`, values);
 
       // Check if response indicates offline save
       if (response.status === 0 && response.message?.includes('offline')) {
@@ -282,7 +282,7 @@ const ShowDTTimesheetScreen = () => {
 
   const onRemoveHandle = async () => {
     try {
-      await axiosServices.post(`/api/operation/timesheet/${id}/destroy`);
+      await axiosServices.delete(`/operation/timesheet/${id}`);
       route.push('/timesheet');
       openNotification(msgSuccess);
     } catch (error) {

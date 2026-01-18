@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import axiosServices from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/maintenance/daily-breakdown',
+  key: '/maintenance/daily-breakdown',
   list: '/list',
   show: '/',
   create: '/create',

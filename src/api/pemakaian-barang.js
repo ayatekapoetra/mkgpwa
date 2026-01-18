@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/laporan/pemakaian-barang',
+  key: '/laporan/pemakaian-barang',
   list: '/list'
 };
 

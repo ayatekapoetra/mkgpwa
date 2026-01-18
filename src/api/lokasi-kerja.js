@@ -3,9 +3,9 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/lokasi-kerja',
+  key: '/master/lokasi-kerja',
   list: '/list',
-  public: '/api/public/lokasi-kerja/list'
+  public: '/public/lokasi-kerja/list'
 };
 
 export const useGetLokasiKerja = (params) => {

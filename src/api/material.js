@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const useMaterialMining = (params) => {
-  const url = params ? `/api/master/material-ritase/list?${new URLSearchParams(params)}` : `/api/master/material-ritase/list`;
+  const url = params ? `/master/material-ritase/list?${new URLSearchParams(params)}` : `/master/material-ritase/list`;
 
   const { data, error, isLoading } = useSWR(url, fetcher, {
     revalidateIfStale: false,

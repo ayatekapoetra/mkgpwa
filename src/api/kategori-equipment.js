@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/kategori-equipment',
+  key: '/master/kategori-equipment',
   list: '/list'
 };
 

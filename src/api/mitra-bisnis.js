@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/mitra-bisnis',
+  key: '/master/mitra-bisnis',
   list: '/list' // server URL
 };
 

@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/produksi/ritase/miningproduksi'
+  key: '/produksi/ritase/miningproduksi'
 };
 
 /**

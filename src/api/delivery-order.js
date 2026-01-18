@@ -5,8 +5,8 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: 'api/msc/delivery-order',
-  keypemasok: '/api/master/pemasok',
+  key: '/msc/delivery-order',
+  keypemasok: '/master/pemasok',
   list: '/list', // server URL
   show: '/show', // server URL
   prepPickup: '/list-prepare-pickup', // Data prepare for pickup

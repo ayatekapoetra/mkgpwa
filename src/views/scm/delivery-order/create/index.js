@@ -80,7 +80,7 @@ export default function FormCreateScreen() {
   const onSubmitHandle = async (values) => {
     // console.log(values);
     try {
-      const resp = await axiosServices.post('api/msc/delivery-order/create', values);
+      const resp = await axiosServices.post('/msc/delivery-order/create', values);
       console.log('resp-api.', resp);
       openNotification(msgSuccess);
       router.push('/logistik/delivery-order');

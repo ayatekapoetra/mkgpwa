@@ -3,9 +3,9 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/penyewa',
+  key: '/master/penyewa',
   list: '/list',
-  public: '/api/public/penyewa/list'
+  public: '/public/penyewa/list'
 };
 
 export const useGetPenyewa = (params) => {

@@ -3,9 +3,9 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/master/kegiatan-kerja',
+  key: '/master/kegiatan-kerja',
   list: '/list',
-  public: '/api/public/kegiatan/list'
+  public: '/public/kegiatan/list'
 };
 
 export const useGetKegiatanKerja = (params) => {

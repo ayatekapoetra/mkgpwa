@@ -15,13 +15,13 @@ const initialState = {
 };
 
 export const endpoints = {
-  key: "api/menu",
+  key: "/menu",
   master: "master",
   user: "/user-menu",
   submenu: "/submenu",
   listMenu: "/list-menu",
 
-  keySetting: "api/setting/akses-menu/list",
+  keySetting: "/setting/akses-menu/list",
 };
 
 export function useGetMenu() {

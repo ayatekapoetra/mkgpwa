@@ -141,7 +141,7 @@ const ShowHETimesheetScreen = () => {
 
   const onsubmitHandle = async (values) => {
     try {
-      const response = await axiosServices.post(`/api/operation/timesheet/${id}/update`, values);
+      const response = await axiosServices.post(`/operation/timesheet/${id}`, values);
 
       // Check if response indicates offline save
       if (response.status === 0 && response.message?.includes('offline')) {
@@ -196,7 +196,7 @@ const ShowHETimesheetScreen = () => {
   const onRemoveHandle = async () => {
     setOpenDialog(!openDialog);
     try {
-      const resp = await axiosServices.post(`/api/operation/timesheet/${id}/destroy`);
+      const resp = await axiosServices.delete(`/operation/timesheet/${id}`);
       console.log('RESP.', resp);
 
       // Check if response indicates offline save

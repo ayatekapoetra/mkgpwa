@@ -14,7 +14,7 @@ const kegiatanKerjaStore = createLocalStore('kegiatan-mining');
  * **/
 
 export const useGetKegiatanKerja = (params) => {
-  const url = params ? `/api/master/kegiatan-kerja/list?${new URLSearchParams(params)}` : `/api/master/kegiatan-kerja/list`;
+  const url = params ? `/master/kegiatan-kerja/list?${new URLSearchParams(params)}` : `/master/kegiatan-kerja/list`;
 
   const { data, error, isLoading } = useSWR(url, fetcher, {
     revalidateIfStale: false,

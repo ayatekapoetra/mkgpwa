@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  key: '/api/master/barang',
+  key: '/master/barang',
   list: '/list',
   test: 'http://localhost:3003/test/barang/list' // Temporary test endpoint with full URL
 };

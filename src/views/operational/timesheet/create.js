@@ -266,7 +266,7 @@ export default function CreateTimesheet() {
       });
 
       const config = {
-        url: `/api/operation/timesheet/create`,
+        url: `/operation/timesheet/create`,
         method: 'POST',
         data: formData,
         headers: { 'Content-Type': 'multipart/form-data' },

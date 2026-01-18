@@ -5,9 +5,9 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/api/operation/penugasan-kerja/list',
-  items: '/api/operation/penugasan-kerja/list-items',
-  itemsShow: '/api/operation/penugasan-kerja'
+  key: '/operation/penugasan-kerja/list',
+  items: '/operation/penugasan-kerja/list-items',
+  itemsShow: '/operation/penugasan-kerja'
 };
 
 export const useGetPenugasanKerja = (params) => {
