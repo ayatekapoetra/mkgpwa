@@ -2,30 +2,15 @@
 import React, { useEffect, useState } from 'react';
 
 // MATERIAL - UI
-import Box from '@mui/material/Box';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import Switch from '@mui/material/Switch';
-import Image from 'next/image';
 import Stack from '@mui/material/Stack';
-import PanelCard from 'components/signages/PanelCard';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import RadioGroup from '@mui/material/RadioGroup';
+import { PolarChartByCtEquipment } from './Charts';
+import { useGetBreakdownChartPolar, useGetBreakdownChartLineDuration, useGetBreakdownTrendMonthly, useGetRepairTimeDistribution, useGetEquipmentPerformanceMatrix } from 'api/breakdown-charts';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FlipListGroup from 'components/signages/FlipList';
 import { useGetSignages } from 'api/signages';
 import moment from 'moment';
-import Radio from '@mui/material/Radio';
 import { usePublicCabang } from 'api/cabang';
-
-import { FtxToken } from 'iconsax-react';
-import FlipCardGroup from 'components/signages/FlipCard';
 
 export default function BreakdownScreen() {
   const theme = useTheme();
@@ -46,6 +31,23 @@ export default function BreakdownScreen() {
   });
 
   const { data, dataLoading } = useGetSignages(apiParams);
+  const { data: polarChartData, error: polarError } = useGetBreakdownChartPolar({ cabang_id: apiParams.cabang_id });
+  const { data: lineChartData, loading: lineChartLoading } = useGetBreakdownChartLineDuration({ cabang_id: apiParams.cabang_id });
+  const { data: trendMonthlyData, loading: trendMonthlyLoading } = useGetBreakdownTrendMonthly({ cabang_id: apiParams.cabang_id });
+  const { data: repairTimeData, loading: repairTimeLoading } = useGetRepairTimeDistribution({ cabang_id: apiParams.cabang_id });
+  const { data: bubbleData, loading: bubbleLoading } = useGetEquipmentPerformanceMatrix({ cabang_id: apiParams.cabang_id });
+  const hasPolarData = polarChartData && Array.isArray(polarChartData) && polarChartData.length > 0;
+
+  // Debug polar chart data
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    console.log('🎯 Breakdown Index - Polar Chart Data:', {
+      polarChartData,
+      polarError,
+      hasPolarData,
+      dataType: Array.isArray(polarChartData) ? 'Array' : typeof polarChartData,
+      dataLength: Array.isArray(polarChartData) ? polarChartData.length : 'N/A'
+    });
+  }
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -72,120 +74,8 @@ export default function BreakdownScreen() {
           gap: 1
         }}
       >
-        {/* Stats Cards - Compact */}
-        <Stack direction="row" spacing={1} sx={{ flex: 1, minWidth: '600px' }}>
-          <PanelCard
-            illustartion={'/assets/images/maintenance/breakdown.png'}
-            primary="Total Breakdown"
-            secondary={data?.BDtot}
-            color="error.main"
-          />
-          <PanelCard
-            illustartion={'/assets/images/maintenance/wait-tech.png'}
-            primary="Menunggu Teknisi"
-            secondary={data?.WTtot}
-            color="primary.main"
-          />
-          <PanelCard
-            illustartion={'/assets/images/maintenance/wait-part.png'}
-            primary="Menunggu Part"
-            secondary={data?.WPtot}
-            color="warning.main"
-          />
-          <PanelCard
-            illustartion={'/assets/images/maintenance/on-proses.png'}
-            primary="Dalam Pengerjaan"
-            secondary={data?.WStot}
-            color="success.main"
-          />
-        </Stack>
 
         {/* Controls - Horizontal with Clock */}
-        {!isLoading && (
-          <Stack 
-            direction="row" 
-            spacing={1.5} 
-            alignItems="stretch" 
-            sx={{ 
-              backgroundColor: 'background.paper',
-              borderRadius: 1,
-              p: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              height: '100px'
-            }}
-          >
-            {/* Left Section - Filters */}
-            <Stack direction="column" spacing={1} sx={{ justifyContent: 'space-between' }}>
-              <Stack direction="row" spacing={1}>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <InputLabel id="cabang_id">Cabang</InputLabel>
-                  <Select
-                    id="cabang_id"
-                    labelId="cabang_id"
-                    value={apiParams.cabang_id || ''}
-                    label="Cabang"
-                    onChange={(e) => setApiParams((prev) => ({ ...prev, cabang_id: e.target.value }))}
-                  >
-                    {cabang?.map((m, idx) => {
-                      return (
-                        <MenuItem key={idx} value={m.id}>
-                          [{m.kode}] {m.nama}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
-
-                <FormControl size="small" sx={{ width: 90 }}>
-                  <InputLabel id="perPage">Limit</InputLabel>
-                  <OutlinedInput
-                    type="number"
-                    id="perPage"
-                    name="perPage"
-                    size="small"
-                    label="Limit"
-                    value={apiParams.perPage}
-                    onChange={(e) => setApiParams((prev) => ({ ...prev, perPage: e.target.value }))}
-                  />
-                </FormControl>
-              </Stack>
-
-              <Stack direction="column" spacing={0.2} sx={{ pl: 0.5 }}>
-                <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: 600, fontSize: 10 }}>
-                  {tanggal}
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: 1 }}>
-                  {clock}
-                </Typography>
-              </Stack>
-            </Stack>
-
-            {/* Divider */}
-            <Box sx={{ width: '1px', backgroundColor: 'divider', mx: 0.5 }} />
-
-            {/* Right Section - Category & Mode */}
-            <Stack direction="column" spacing={1} sx={{ justifyContent: 'center' }}>
-              <RadioGroup
-                aria-label="ctg"
-                value={apiParams.ctg}
-                name="ctg"
-                onChange={(e) => setApiParams((prev) => ({ ...prev, ctg: e.target.value }))}
-                row
-              >
-                <FormControlLabel value="HE" control={<Radio size="small" />} label="Heavy Equipment" />
-                <FormControlLabel value="DT" control={<Radio size="small" />} label="Dump Truck" />
-              </RadioGroup>
-
-              <FormControlLabel
-                control={<Switch size="small" checked={isGrid} onChange={(e) => setIsGrid(e.target.checked)} />}
-                label={isGrid ? 'Grid Mode' : 'List Mode'}
-                labelPlacement="end"
-                sx={{ ml: 0 }}
-              />
-            </Stack>
-          </Stack>
-        )}
       </Stack>
 
       {/* Main Content - Full Width */}
@@ -194,7 +84,7 @@ export default function BreakdownScreen() {
           flex: 1, 
           m: 1, 
           mt: 0,
-          maxHeight: 'calc(100vh - 130px)', 
+           maxHeight: 'calc(100vh - 16px)', 
           overflow: 'auto',
           backgroundColor: 'transparent',
           boxShadow: 'none'
@@ -202,10 +92,19 @@ export default function BreakdownScreen() {
       >
         {!dataLoading && (
           <>
-            {isGrid ? (
-              <FlipCardGroup data={data} setParams={setApiParams} mode={theme.palette.mode} />
-            ) : (
-              <FlipListGroup data={data} setParams={setApiParams} />
+            {/* Polar Chart by CtgEquipment - Display above the list */}
+            {hasPolarData && (
+              <PolarChartByCtEquipment
+                data={polarChartData}
+                lineChartData={lineChartData}
+                lineChartLoading={lineChartLoading}
+                trendMonthlyData={trendMonthlyData}
+                trendMonthlyLoading={trendMonthlyLoading}
+                repairTimeData={repairTimeData}
+                repairTimeLoading={repairTimeLoading}
+                bubbleData={bubbleData}
+                bubbleLoading={bubbleLoading}
+              />
             )}
           </>
         )}

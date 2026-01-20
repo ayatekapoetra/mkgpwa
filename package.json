@@ -1,6 +1,6 @@
 {
   "name": "femkgpwa",
-  "version": "1.4.13",
+  "version": "1.4.14",
   "description": "MKG Desktop Application - Mining Equipment Management System",
   "author": {
     "name": "Ayat Ekapoetra",
@@ -54,7 +54,6 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
-    "@radix-ui/react-tooltip": "^1.0.7",
     "@react-spring/web": "^10.0.1",
     "@tanstack/react-query": "^5.80.6",
     "@tanstack/react-table": "^8.21.3",
@@ -63,6 +62,7 @@
     "axios-mock-adapter": "^1.22.0",
     "browser-image-compression": "^2.0.2",
     "chance": "^1.1.11",
+    "chart.js": "^4.4.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "electron-updater": "^6.6.2",
@@ -85,6 +85,7 @@
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-apexcharts": "^1.7.0",
+    "react-chartjs-2": "^5.2.0",
     "react-csv": "^2.2.2",
     "react-device-detect": "^2.2.3",
     "react-dnd": "^16.0.1",

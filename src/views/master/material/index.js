@@ -36,7 +36,7 @@ function MaterialScreen() {
       if (params.nama) queryParams.append('nama', params.nama);
       if (params.kategori) queryParams.append('kategori', params.kategori);
       
-      const url = `/api/master/material-ritase/list${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const url = `/master/material-ritase/list${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       const res = await axiosServices.get(url);
       return res.data;
     }
