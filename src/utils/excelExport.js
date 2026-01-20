@@ -3,15 +3,15 @@ import moment from 'moment';
 
 const calculateActivityDuration = (starttime, endtime) => {
   if (!starttime || !endtime) return '0.00';
-  
+
   const startMoment = moment(starttime);
   const endMoment = moment(endtime);
-  
+
   if (!startMoment.isValid() || !endMoment.isValid()) return '0.00';
-  
+
   const durationMinutes = endMoment.diff(startMoment, 'minutes');
   const durationHours = (durationMinutes / 60).toFixed(2);
-  
+
   return durationHours;
 };
 
@@ -19,12 +19,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
   if (!data || data.length === 0) {
     throw new Error('Tidak ada data untuk di-export');
   }
-
-  console.log('Excel Export - Sample Data:', data[0]);
-  console.log('Excel Export - kdunit:', data[0]?.kdunit);
-  console.log('Excel Export - penyewa:', data[0]?.penyewa);
-  console.log('Excel Export - equipment:', data[0]?.equipment);
-
+  
   const rows = [];
 
   const headers = [
@@ -60,7 +55,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     if (items.length === 0) {
       const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
       const namaPenyewa = timesheet.penyewa?.nama || '-';
-      
+
       const row = [
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
         timesheet.mainact || '-',
@@ -78,7 +73,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
         '-',
         1,
         '-',
-        timesheet.material?.nama || '-' || '-',
+        timesheet.material?.nama || '-',
         timesheet.approvedByKaryawan?.nama || '-',
         timesheet.id || '-',
         timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
@@ -116,7 +111,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
           1,
           activityDuration,
           item.kegiatan?.nama || '-',
-          timesheet.material?.nama || '-' || '-',
+          item.material?.nama || '-',
           timesheet.approvedByKaryawan?.nama || '-',
           timesheet.id || '-',
           timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
@@ -170,7 +165,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
 
   const timestamp = moment().format('YYYYMMDD_HHmmss');
   const finalFilename = filename || `Timesheet_HE_${timestamp}.xlsx`;
-  
+
   XLSX.writeFile(wb, finalFilename);
 };
 
@@ -191,11 +186,6 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
   if (!data || data.length === 0) {
     throw new Error('Tidak ada data untuk di-export');
   }
-
-  console.log('Dumptruck Excel Export - Sample Data:', data[0]);
-  console.log('Dumptruck Excel Export - kdunit:', data[0]?.kdunit);
-  console.log('Dumptruck Excel Export - penyewa:', data[0]?.penyewa);
-  console.log('Dumptruck Excel Export - equipment:', data[0]?.equipment);
 
   const rows = [];
 
@@ -230,7 +220,7 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     if (items.length === 0) {
       const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
       const namaPenyewa = timesheet.penyewa?.nama || '-';
-      
+
       const row = [
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
         namaPenyewa,
@@ -246,7 +236,7 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
         '-',
         '-',
         '-',
-        timesheet.material?.nama || '-' || '-',
+        timesheet.material?.nama || '-',
         timesheet.approvedByKaryawan?.nama || '-',
         timesheet.id || '-',
         timesheet.created_at ? moment(timesheet.created_at).format('DD-MM-YYYY HH:mm:ss') : '-'
@@ -334,7 +324,7 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
 
   const timestamp = moment().format('YYYYMMDD_HHmmss');
   const finalFilename = filename || `Timesheet_DT_${timestamp}.xlsx`;
-  
+
   XLSX.writeFile(wb, finalFilename);
 };
 
@@ -387,7 +377,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
     if (items.length === 0) {
       const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
       const namaPenyewa = timesheet.penyewa?.nama || '-';
-      
+
       const row = [
         timesheet.equipment?.kategori || '-',
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
@@ -407,7 +397,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
         '-',
         '-',
         isHE ? 1 : '-',
-        timesheet.material?.nama || '-' || '-',
+        timesheet.material?.nama || '-',
         '-',
         timesheet.approvedByKaryawan?.nama || '-',
         timesheet.id || '-',
@@ -508,6 +498,6 @@ export const generateAllTimesheetExcel = (data, filename) => {
 
   const timestamp = moment().format('YYYYMMDD_HHmmss');
   const finalFilename = filename || `Timesheet_All_${timestamp}.xlsx`;
-  
+
   XLSX.writeFile(wb, finalFilename);
 };

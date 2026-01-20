@@ -300,7 +300,6 @@ export default function ListTimesheetDesktop({
         enableSorting: false,
         cell: ({ row }) => {
           const { syncStatus } = row.original;
-          console.log("row.original--", row.original);
 
           if (syncStatus === "pending") {
             return (
