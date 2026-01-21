@@ -109,6 +109,7 @@ const WorkOrderCard = ({ workOrder, onClick }) => {
                 onClick={handleCopyWO}
                 sx={{
                   display: 'inline-flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   gap: 0.5,
                   px: 1,
@@ -123,18 +124,33 @@ const WorkOrderCard = ({ workOrder, onClick }) => {
                   }
                 }}
               >
-                <Typography
-                  sx={{
-                    fontFamily: 'monospace',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    color: statusConfig.primary,
-                    letterSpacing: 0.5
-                  }}
-                >
-                  {formatWONumber(workOrder.woNumber)}
-                </Typography>
-                <ContentCopyIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: 'monospace',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: statusConfig.primary,
+                      letterSpacing: 0.5
+                    }}
+                  >
+                    {formatWONumber(workOrder.woNumber)}
+                  </Typography>
+                  <ContentCopyIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+                </Box>
+                {workOrder.pitName && workOrder.pitName !== 'Unassigned' && (
+                  <Typography
+                    sx={{
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.3
+                    }}
+                  >
+                    📍 {workOrder.pitName}
+                  </Typography>
+                )}
               </Box>
             </Tooltip>
           </Box>
@@ -177,32 +193,15 @@ const WorkOrderCard = ({ workOrder, onClick }) => {
           >
             {workOrder.unitCode}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Typography
-              sx={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'text.secondary',
-                flex: 1
-              }}
-            >
-              {workOrder.unitName}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '11px',
-                fontWeight: 700,
-                px: 0.75,
-                py: 0.25,
-                borderRadius: 1,
-                backgroundColor: statusConfig.light,
-                color: statusConfig.primary,
-                textTransform: 'uppercase'
-              }}
-            >
-              {workOrder.pitName}
-            </Typography>
-          </Box>
+          <Typography
+            sx={{
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'text.secondary'
+            }}
+          >
+            {workOrder.unitName}
+          </Typography>
         </Box>
 
         {/* Problem Description */}

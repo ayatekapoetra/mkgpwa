@@ -194,7 +194,7 @@ const WorkOrderList = ({ data, setParams }) => {
                   fontSize: '11px',
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
-                  width: 120,
+                  width: 140,
                   px: 1.5
                 }}
               >
@@ -232,19 +232,6 @@ const WorkOrderList = ({ data, setParams }) => {
                   fontSize: '11px',
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
-                  width: 100,
-                  px: 1.5
-                }}
-              >
-                Pit
-              </TableCell>
-              <TableCell
-                sx={{
-                  backgroundColor: 'background.paper',
-                  fontWeight: 900,
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
                   width: 80,
                   px: 1.5
                 }}
@@ -258,7 +245,7 @@ const WorkOrderList = ({ data, setParams }) => {
                   fontSize: '11px',
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
-                  width: 180,
+                  width: 350,
                   px: 1.5
                 }}
               >
@@ -314,16 +301,32 @@ const WorkOrderList = ({ data, setParams }) => {
                     </Box>
                   </TableCell>
                   <TableCell sx={{ px: 1.5, py: 1 }}>
-                    <Box
-                      sx={{
-                        fontFamily: 'monospace',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: statusConfig.primary,
-                        letterSpacing: 0.5
-                      }}
-                    >
-                      {wo.woNumber || 'N/A'}
+                    <Box>
+                      <Box
+                        sx={{
+                          fontFamily: 'monospace',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: statusConfig.primary,
+                          letterSpacing: 0.5,
+                          mb: 0.25
+                        }}
+                      >
+                        {wo.woNumber || 'N/A'}
+                      </Box>
+                      {wo.pitName && wo.pitName !== 'Unassigned' && (
+                        <Box
+                          sx={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            color: 'text.secondary',
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.3
+                          }}
+                        >
+                          📍 {wo.pitName}
+                        </Box>
+                      )}
                     </Box>
                   </TableCell>
                   <TableCell sx={{ px: 1.5, py: 1 }}>
@@ -395,19 +398,6 @@ const WorkOrderList = ({ data, setParams }) => {
                     >
                       {wo.problem}
                     </Box>
-                  </TableCell>
-                  <TableCell sx={{ px: 1.5, py: 1 }}>
-                    <Chip
-                      label={wo.pitName}
-                      size="small"
-                      sx={{
-                        backgroundColor: statusConfig.light,
-                        color: statusConfig.primary,
-                        fontWeight: 700,
-                        fontSize: '10px',
-                        height: 20
-                      }}
-                    />
                   </TableCell>
                   <TableCell sx={{ px: 1.5, py: 1 }}>{getStatusChip(wo.status)}</TableCell>
                   <TableCell sx={{ px: 1.5, py: 1 }}>
