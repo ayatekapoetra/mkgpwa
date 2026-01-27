@@ -72,7 +72,15 @@ export async function middleware(request) {
   }
 
   // If user is trying to access protected routes without token, redirect to login
-  const publicRoutes = ["/login", "/register", "/forgot-password", "/check-mail"];
+  // Make signage dashboards public (no login required)
+  const publicRoutes = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/check-mail",
+    "/panel/timesheet",
+    "/panel/kehadiran-karyawan"
+  ];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   if (!isPublicRoute && !token) {
