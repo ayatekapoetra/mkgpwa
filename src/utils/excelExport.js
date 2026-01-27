@@ -1,6 +1,18 @@
 import * as XLSX from 'xlsx';
 import moment from 'moment';
 
+const toNumber = (value) => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getSmuValues = (timesheet, item) => {
+  const smuStart = toNumber(item?.smustart ?? timesheet?.smustart);
+  const smuFinish = toNumber(item?.smufinish ?? timesheet?.smufinish ?? smuStart);
+  const used = toNumber(item?.usedsmu ?? timesheet?.usedhmkm ?? (smuFinish - smuStart));
+  return { smuStart, smuFinish, used };
+};
+
 const calculateActivityDuration = (starttime, endtime) => {
   if (!starttime || !endtime) return '0.00';
 
@@ -19,7 +31,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
   if (!data || data.length === 0) {
     throw new Error('Tidak ada data untuk di-export');
   }
-  
+
   const rows = [];
 
   const headers = [
@@ -40,6 +52,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     'Jam finish',
     'Istirahat',
     'Total jam',
+    'Keterangan',
     'Kegiatan kerja',
     'Nama material',
     'Nama pengawas',
@@ -55,6 +68,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
     if (items.length === 0) {
       const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
       const namaPenyewa = timesheet.penyewa?.nama || '-';
+      const { smuStart, smuFinish, used } = getSmuValues(timesheet);
 
       const row = [
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
@@ -63,16 +77,18 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
         '-',
         kdunit,
         getShiftName(timesheet.shift_id),
+        timesheet.karyawan?.ktp || '-',
         timesheet.karyawan?.nama || '-',
-        timesheet.smustart || 0,
-        timesheet.smufinish || 0,
-        timesheet.usedhmkm || 0,
+        smuStart,
+        smuFinish,
+        used,
         '-',
         '-',
         '-',
         '-',
         1,
         '-',
+        timesheet.keterangan || '-',
         timesheet.material?.nama || '-',
         timesheet.approvedByKaryawan?.nama || '-',
         timesheet.id || '-',
@@ -91,6 +107,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
         const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
+        const { smuStart, smuFinish, used } = getSmuValues(timesheet, item);
 
         const row = [
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
@@ -101,15 +118,16 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
           getShiftName(timesheet.shift_id),
           timesheet.karyawan?.ktp || '-',
           timesheet.karyawan?.nama || '-',
-          timesheet.smustart || 0,
-          timesheet.smufinish || 0,
-          timesheet.usedhmkm || 0,
+          smuStart,
+          smuFinish,
+          used,
           item.lokasi?.nama || '-',
           item.seq || '-',
           item.starttime ? moment(item.starttime).format('DD-MM-YY HH:mm') : '-',
           item.endtime ? moment(item.endtime).format('DD-MM-YY HH:mm') : '-',
           1,
           activityDuration,
+          timesheet.keterangan || '-',
           item.kegiatan?.nama || '-',
           item.material?.nama || '-',
           timesheet.approvedByKaryawan?.nama || '-',
@@ -124,28 +142,29 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   const colWidths = [
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 20 },
-    { wch: 10 },
-    { wch: 15 },
-    { wch: 12 },
-    { wch: 20 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 20 },
-    { wch: 15 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 25 },  // Nama material
-    { wch: 20 },  // Nama pengawas
-    { wch: 12 },  // Kode timesheet
-    { wch: 18 }   // Created At
+    { wch: 12 },   // Tanggal
+    { wch: 12 },   // Kategori
+    { wch: 20 },   // Nama penyewa
+    { wch: 10 },   // Tools
+    { wch: 15 },   // Kode equipment
+    { wch: 12 },   // Shift kerja
+    { wch: 20 },   // KTP
+    { wch: 25 },   // Nama operator/driver
+    { wch: 10 },   // HM start
+    { wch: 10 },   // HM finish
+    { wch: 10 },   // HM total
+    { wch: 20 },   // Lokasi kerja
+    { wch: 15 },   // Block sequences
+    { wch: 18 },   // Jam start
+    { wch: 18 },   // Jam finish
+    { wch: 10 },   // Istirahat
+    { wch: 10 },   // Total jam
+    { wch: 30 },   // Keterangan
+    { wch: 20 },   // Kegiatan kerja
+    { wch: 25 },   // Nama material
+    { wch: 20 },   // Nama pengawas
+    { wch: 15 },   // Kode timesheet
+    { wch: 20 }    // Created At
   ];
   ws['!cols'] = colWidths;
 
@@ -202,6 +221,7 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     'Waktu start',
     'Waktu finish',
     'Total jam',
+    'Keterangan',
     'Lokasi awal',
     'Lokasi finish',
     'Sequence',
@@ -209,6 +229,7 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     'Kegiatan kerja',
     'Nama material',
     'Nama pengawas',
+    'Kode timesheet',
     'Created At'
   ];
 
@@ -220,17 +241,22 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
     if (items.length === 0) {
       const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
       const namaPenyewa = timesheet.penyewa?.nama || '-';
+      const { smuStart, smuFinish, used } = getSmuValues(timesheet);
 
       const row = [
         timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
         namaPenyewa,
         kdunit,
         getShiftName(timesheet.shift_id),
+        timesheet.karyawan?.ktp || '-',
         timesheet.karyawan?.nama || '-',
-        timesheet.smustart || 0,
-        timesheet.smufinish || 0,
-        timesheet.usedhmkm || 0,
+        smuStart,
+        smuFinish,
+        used,
         '-',
+        '-',
+        '-',
+        timesheet.keterangan || '-',
         '-',
         '-',
         '-',
@@ -253,6 +279,7 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
         const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
+        const { smuStart, smuFinish, used } = getSmuValues(timesheet, item);
 
         const row = [
           timesheet.date_ops ? moment(timesheet.date_ops).format('DD-MM-YYYY') : '-',
@@ -261,12 +288,13 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
           getShiftName(timesheet.shift_id),
           timesheet.karyawan?.ktp || '-',
           timesheet.karyawan?.nama || '-',
-          timesheet.smustart || 0,
-          timesheet.smufinish || 0,
-          timesheet.usedhmkm || 0,
+          smuStart,
+          smuFinish,
+          used,
           item.starttime ? moment(item.starttime).format('DD-MM-YY HH:mm') : '-',
           item.endtime ? moment(item.endtime).format('DD-MM-YY HH:mm') : '-',
           activityDuration,
+          timesheet.keterangan || '-',
           item.lokasi?.nama || '-',
           item.lokasiTujuan?.nama || '-',
           item.seq || '-',
@@ -285,26 +313,28 @@ export const generateDumptruckTimesheetExcel = (data, filename) => {
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   const colWidths = [
-    { wch: 12 },  // Tanggal
-    { wch: 20 },  // Nama penyewa
-    { wch: 15 },  // Kode equipment
-    { wch: 10 },  // Shift
-    { wch: 20 },  // Nama driver
-    { wch: 10 },  // KM start
-    { wch: 10 },  // KM finish
-    { wch: 10 },  // KM used
-    { wch: 12 },  // Waktu start
-    { wch: 12 },  // Waktu finish
-    { wch: 10 },  // Total jam
-    { wch: 20 },  // Lokasi awal
-    { wch: 20 },  // Lokasi finish
-    { wch: 10 },  // Sequence
-    { wch: 10 },  // Ritase
-    { wch: 20 },  // Kegiatan kerja
-    { wch: 15 },  // Nama material
-    { wch: 20 },  // Nama pengawas
-    { wch: 12 },  // Kode timesheet
-    { wch: 18 }   // Created At
+    { wch: 12 },   // Tanggal
+    { wch: 20 },   // Nama penyewa
+    { wch: 15 },   // Kode equipment
+    { wch: 10 },   // Shift
+    { wch: 20 },   // KTP
+    { wch: 25 },   // Nama driver
+    { wch: 10 },   // KM start
+    { wch: 10 },   // KM finish
+    { wch: 10 },   // KM used
+    { wch: 18 },   // Waktu start
+    { wch: 18 },   // Waktu finish
+    { wch: 10 },   // Total jam
+    { wch: 30 },   // Keterangan
+    { wch: 20 },   // Lokasi awal
+    { wch: 20 },   // Lokasi finish
+    { wch: 10 },   // Sequence
+    { wch: 10 },   // Ritase
+    { wch: 20 },   // Kegiatan kerja
+    { wch: 15 },   // Nama material
+    { wch: 20 },   // Nama pengawas
+    { wch: 15 },   // Kode timesheet
+    { wch: 20 }    // Created At
   ];
   ws['!cols'] = colWidths;
 
@@ -361,6 +391,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
     'Jam finish',
     'Istirahat',
     'Total jam',
+    'Keterangan',
     'Kegiatan kerja',
     'Nama material',
     'Nama pengawas',
@@ -377,6 +408,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
     if (items.length === 0) {
       const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
       const namaPenyewa = timesheet.penyewa?.nama || '-';
+      const { smuStart, smuFinish, used } = getSmuValues(timesheet);
 
       const row = [
         timesheet.equipment?.kategori || '-',
@@ -386,10 +418,12 @@ export const generateAllTimesheetExcel = (data, filename) => {
         '-',
         kdunit,
         getShiftName(timesheet.shift_id),
+        timesheet.karyawan?.ktp || '-',
         timesheet.karyawan?.nama || '-',
-        timesheet.smustart || 0,
-        timesheet.smufinish || 0,
-        timesheet.usedhmkm || 0,
+        smuStart,
+        smuFinish,
+        used,
+        '-',
         '-',
         '-',
         '-',
@@ -397,6 +431,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
         '-',
         '-',
         isHE ? 1 : '-',
+        timesheet.keterangan || '-',
         timesheet.material?.nama || '-',
         '-',
         timesheet.approvedByKaryawan?.nama || '-',
@@ -419,6 +454,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
         const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
+        const { smuStart, smuFinish, used } = getSmuValues(timesheet, item);
 
         const row = [
           timesheet.equipment?.kategori || '-',
@@ -430,9 +466,9 @@ export const generateAllTimesheetExcel = (data, filename) => {
           getShiftName(timesheet.shift_id),
           timesheet.karyawan?.ktp || '-',
           timesheet.karyawan?.nama || '-',
-          timesheet.smustart || 0,
-          timesheet.smufinish || 0,
-          timesheet.usedhmkm || 0,
+          smuStart,
+          smuFinish,
+          used,
           item.lokasi?.nama || '-',
           lokasiTujuan,
           item.seq || '-',
@@ -441,6 +477,7 @@ export const generateAllTimesheetExcel = (data, filename) => {
           item.endtime ? moment(item.endtime).format('DD-MM-YY HH:mm') : '-',
           istirahat,
           activityDuration,
+          timesheet.keterangan || '-',
           item.kegiatan?.nama || '-',
           item.material?.nama || '-',
           timesheet.approvedByKaryawan?.nama || '-',
@@ -455,30 +492,32 @@ export const generateAllTimesheetExcel = (data, filename) => {
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   const colWidths = [
-    { wch: 15 },
-    { wch: 12 },
-    { wch: 15 },
-    { wch: 20 },
-    { wch: 10 },
-    { wch: 15 },
-    { wch: 12 },
-    { wch: 20 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 15 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 25 },  // Kegiatan kerja
-    { wch: 15 },  // Nama material
-    { wch: 20 },  // Nama pengawas
-    { wch: 12 },  // Kode timesheet
-    { wch: 18 }   // Created At
+    { wch: 15 },   // Kategori Equipment
+    { wch: 12 },   // Tanggal
+    { wch: 15 },   // Kategori Aktivitas
+    { wch: 20 },   // Nama penyewa
+    { wch: 10 },   // Tools
+    { wch: 15 },   // Kode equipment
+    { wch: 12 },   // Shift kerja
+    { wch: 20 },   // KTP
+    { wch: 25 },   // Nama operator/driver
+    { wch: 12 },   // HM/KM start
+    { wch: 12 },   // HM/KM finish
+    { wch: 12 },   // HM/KM total
+    { wch: 20 },   // Lokasi kerja
+    { wch: 20 },   // Lokasi tujuan
+    { wch: 15 },   // Block sequences
+    { wch: 10 },   // Ritase
+    { wch: 18 },   // Jam start
+    { wch: 18 },   // Jam finish
+    { wch: 10 },   // Istirahat
+    { wch: 10 },   // Total jam
+    { wch: 30 },   // Keterangan
+    { wch: 25 },   // Kegiatan kerja
+    { wch: 15 },   // Nama material
+    { wch: 20 },   // Nama pengawas
+    { wch: 15 },   // Kode timesheet
+    { wch: 20 }    // Created At
   ];
   ws['!cols'] = colWidths;
 

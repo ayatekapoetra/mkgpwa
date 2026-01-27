@@ -378,6 +378,7 @@ export default function CreateTimesheet() {
                         <MenuItem value={'mining'}>MINING</MenuItem>
                         <MenuItem value={'barging'}>BARGING</MenuItem>
                         <MenuItem value={'rental'}>RENTAL</MenuItem>
+                        <MenuItem value={'explorasi'}>EXPLORASI</MenuItem>
                       </Select>
                       {touched.activity && errors.activity && <FormHelperText>{errors.activity}</FormHelperText>}
                     </FormControl>

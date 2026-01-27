@@ -102,7 +102,7 @@ export default function EditGroupTagTimesheetScreen() {
     };
 
     const config = {
-      url: `/api/master/grouptag-timesheet/${id}/update`,
+      url: `/master/grouptag-timesheet/${id}/update`,
       method: "POST",
       data: payload,
       headers: { "Content-Type": "application/json" },
@@ -135,7 +135,7 @@ export default function EditGroupTagTimesheetScreen() {
 
   const onDeleteHandle = async () => {
     const config = {
-      url: `/api/master/grouptag-timesheet/${id}/destroy`,
+      url: `/master/grouptag-timesheet/${id}/destroy`,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       status: "pending",

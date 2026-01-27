@@ -32,7 +32,7 @@ export default function FilterBisnisUnit({ count, open, onClose, data, setData, 
             <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
               <Grid item xs={12} sm={12} lg={12}>
                 <InputSearch 
-                  label="Nama Bisnis Unit"
+                  label="Nama Unit Bisnis"
                   size="medium" 
                   type="text" 
                   value={data['name']} 
@@ -75,7 +75,7 @@ function HeaderFilter({ count = 0, onClose }) {
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between">
       <Stack>
-        <Typography variant="body">Filter Bisnis Unit</Typography>
+        <Typography variant="body">Filter Unit Bisnis</Typography>
         <Typography variant="caption">count {count} data effected</Typography>
       </Stack>
       <IconButton color="error" onClick={onClose}>

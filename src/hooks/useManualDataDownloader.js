@@ -79,7 +79,9 @@ const useManualDataDownloader = () => {
           throw new Error(response.data?.message || "Failed to download data");
         }
       } catch (error) {
-        console.error(`Error downloading ${dataType}:`, error);
+        throw new Error(
+          `Error downloading ${dataType}: ${error.message || "Unknown error"}`,
+        );
         updateDownloadState(dataType, {
           status: "error",
           progress: 0,

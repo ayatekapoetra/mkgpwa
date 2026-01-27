@@ -70,7 +70,7 @@ export default function ShowCabangScreen() {
     console.log('Sending data:', cleanValues);
     
     const config = {
-      url: `/api/master/cabang/${id}/update`,
+      url: `/master/cabang/${id}/update`,
       method: 'POST',
       data: cleanValues,
       headers: { 'Content-Type': 'application/json' },
@@ -97,7 +97,7 @@ export default function ShowCabangScreen() {
 
   const onDeleteHandle = async () => {
     const config = {
-      url: `/api/master/cabang/${id}/destroy`,
+      url: `/master/cabang/${id}/destroy`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       status: 'pending',

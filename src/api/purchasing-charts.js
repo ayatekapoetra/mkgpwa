@@ -31,7 +31,7 @@ const logError = (endpoint, error, data) => {
 export const useGetPurchaseTrend = (params) => {
   const url = params ? endpoints.trend + `?${new URLSearchParams(params)}` : endpoints.trend;
   const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
-    refreshInterval: 180000,
+    refreshInterval: 30000,
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false

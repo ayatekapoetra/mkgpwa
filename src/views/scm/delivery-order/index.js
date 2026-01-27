@@ -43,7 +43,11 @@ export default function DeliveryOrderScreen() {
   const [openFilter, setOpenFilter] = useState(false);
 
   useEffect(() => {
-    if (data) setState(data.data);
+    if (data?.data) {
+      setState(data.data);
+    } else {
+      setState([]);
+    }
   }, [data]);
 
   const toggleFilterHandle = () => {
@@ -67,7 +71,7 @@ export default function DeliveryOrderScreen() {
         content={false}
       >
         <FilterDeliveryOrder count={data?.total} data={filtered} setData={setFiltered} open={openFilter} onClose={toggleFilterHandle} />
-        {dataLoading ? (
+        {dataLoading || !data ? (
           <div>loading...</div>
         ) : (
           <Stack>
@@ -76,10 +80,10 @@ export default function DeliveryOrderScreen() {
               data={state}
               paginate={
                 <Paginate
-                  page={data.page}
-                  total={data.total}
-                  lastPage={data.lastPage}
-                  perPage={data.perPage}
+                  page={data.page || filtered.page}
+                  total={data.total || 0}
+                  lastPage={data.lastPage || 0}
+                  perPage={data.perPage || filtered.perPage}
                   onPageChange={(newPage) => setFiltered({ ...filtered, page: newPage })}
                 />
               }

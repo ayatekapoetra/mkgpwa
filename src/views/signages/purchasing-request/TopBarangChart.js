@@ -35,11 +35,7 @@ export default function TopBarangChart({ data, loading }) {
   const topItems = data.slice(0, 10);
 
   // Extract labels and data
-  const labels = topItems.map(item => {
-    const name = item.barang_nama || 'N/A';
-    const code = item.barang_kode || '';
-    return code ? `${name} (${code})` : name;
-  });
+  const labels = topItems.map(item => item.barang_nama || 'N/A');
 
   const values = topItems.map(item => {
     const value = item.total_value || 0;

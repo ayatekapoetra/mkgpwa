@@ -39,31 +39,25 @@ export default function ApprovalDurationChart({ data, loading }) {
 
   const toValidated = topItems.map(item => parseFloat(item.avg_to_validated || 0));
   const toApproved = topItems.map(item => parseFloat(item.avg_to_approved || 0));
-  const totalDuration = topItems.map(item => parseFloat(item.avg_total_duration || 0));
 
   const chartData = {
     labels: labels,
     datasets: [
       {
-        label: 'Total Duration',
-        data: totalDuration,
-        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-        borderColor: 'rgba(239, 68, 68, 1)',
-        borderWidth: 1
+        label: 'To Validate',
+        data: toValidated,
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1,
+        stack: 'duration'
       },
       {
         label: 'To Approve',
         data: toApproved,
         backgroundColor: 'rgba(245, 158, 11, 0.8)',
         borderColor: 'rgba(245, 158, 11, 1)',
-        borderWidth: 1
-      },
-      {
-        label: 'To Validate',
-        data: toValidated,
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1
+        borderWidth: 1,
+        stack: 'duration'
       }
     ]
   };
@@ -107,6 +101,7 @@ export default function ApprovalDurationChart({ data, loading }) {
     },
     scales: {
       x: {
+        stacked: true,
         grid: {
           display: false
         },
@@ -119,6 +114,7 @@ export default function ApprovalDurationChart({ data, loading }) {
         }
       },
       y: {
+        stacked: true,
         beginAtZero: true,
         grid: {
           color: 'rgba(0, 0, 0, 0.05)'

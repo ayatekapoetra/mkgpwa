@@ -26,7 +26,43 @@ ChartJS.register(
   Filler
 );
 
-export default function PurchaseTrendChart({ data, loading }) {
+// Inline plugin for data labels - Red for Nilai Pembelian, Grey for Jumlah RO
+const purchaseTrendLabelsPlugin = {
+  id: 'purchaseTrendLabelsPlugin',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      meta.data.forEach((point, index) => {
+        const value = dataset.data[index];
+        if (value === undefined || value === null) return;
+
+        const { x, y } = point;
+        ctx.save();
+        ctx.font = '600 10px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+
+        if (datasetIndex === 0) {
+          // Nilai Pembelian (Juta) - Red color, format XX.XJt
+          ctx.fillStyle = '#ef4444'; // Red
+          ctx.textBaseline = 'bottom';
+          const formatted = `${value.toFixed(1)}Jt`;
+          ctx.fillText(formatted, x, y - 8);
+        } else {
+          // Jumlah RO - Grey color, no format
+          ctx.fillStyle = '#6b7280'; // Grey
+          ctx.textBaseline = 'top';
+          const formatted = `${Math.round(value)}`;
+          ctx.fillText(formatted, x, y + 8);
+        }
+
+        ctx.restore();
+      });
+    });
+  }
+};
+
+export default function PurchaseTrendChart({ data, loading, refreshKey }) {
   // Debug logging
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
@@ -58,59 +94,52 @@ export default function PurchaseTrendChart({ data, loading }) {
   }
 
   // Extract and format data using moment.js for robust date parsing
-  const processedData = data
-    .map(item => {
-      // Backend returns 'date_ro' not 'date'!
-      const dateStr = item.date_ro;
-      if (!dateStr) {
-        console.warn('Missing date_ro field:', item);
-        return null;
-      }
+  const parseDateValue = (value) => {
+    if (!value) return null;
+    let parsed = moment(value, moment.ISO_8601, true);
+    if (!parsed.isValid()) {
+      parsed = moment(value);
+    }
+    return parsed.isValid() ? parsed : null;
+  };
 
-      try {
-        const momentDate = moment(dateStr);
-        if (!momentDate.isValid()) {
-          console.warn('Invalid date:', dateStr, 'Original item:', item);
-          return null;
-        }
+  const aggregatedByDate = data.reduce((acc, item) => {
+    const dateStr = item.date_ro || item.date;
+    const parsedDate = parseDateValue(dateStr);
+    if (!parsedDate) return acc;
 
-        return {
-          ...item,
-          parsedDate: momentDate,
-          label: momentDate.format('DD MMM'),
-          originalDate: dateStr
-        };
-      } catch (error) {
-        console.error('Error parsing date:', dateStr, error, 'Item:', item);
-        return null;
-      }
-    })
-    .filter(item => item !== null); // Remove invalid entries
+    const key = parsedDate.format('YYYY-MM-DD');
+    if (!acc[key]) {
+      acc[key] = {
+        parsedDate,
+        total_value: 0,
+        count: 0
+      };
+    }
 
-  // If all dates are invalid, show error
-  if (processedData.length === 0) {
+    acc[key].total_value += Number(item.total_value || 0);
+    acc[key].count += Number(item.count || 0);
+    return acc;
+  }, {});
+
+  const sortedEntries = Object.values(aggregatedByDate).sort((a, b) => a.parsedDate.valueOf() - b.parsedDate.valueOf());
+
+  if (sortedEntries.length === 0) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 1 }}>
-        <p style={{ color: 'error.main', fontWeight: 'bold' }}>Invalid date format</p>
-        {data.length > 0 && (
-          <p style={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-            Original format: "{data[0]?.date_ro}"
-          </p>
-        )}
-        <p style={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-          Check console for details
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <p style={{ color: 'error.main' }}>No valid trend data available</p>
       </div>
     );
   }
 
-  const labels = processedData.map(item => item.label);
-  const counts = processedData.map(item => item.count || 0);
-  const totalValues = processedData.map(item => {
-    const value = item.total_value || 0;
-    // Convert to millions
-    return value / 1000000;
-  });
+  const labels = sortedEntries.map(item => item.parsedDate.format('DD MMM'));
+  const counts = sortedEntries.map(item => item.count);
+  const totalValues = sortedEntries.map(item => item.total_value / 1000000);
+  const dataPoints = sortedEntries.map(item => ({
+    key: item.parsedDate.format('YYYY-MM-DD'),
+    count: item.count,
+    totalValue: item.total_value
+  }));
 
   const chartData = {
     labels: labels,
@@ -197,8 +226,8 @@ export default function PurchaseTrendChart({ data, loading }) {
           },
           afterBody: function (context) {
             const dataIndex = context[0]?.dataIndex;
-            if (dataIndex !== undefined && processedData[dataIndex]) {
-              const originalValue = processedData[dataIndex].total_value || 0;
+            if (dataIndex !== undefined && dataPoints[dataIndex]) {
+              const originalValue = dataPoints[dataIndex].totalValue;
               const formattedValue = new Intl.NumberFormat('id-ID', {
                 style: 'currency',
                 currency: 'IDR',
@@ -276,8 +305,8 @@ export default function PurchaseTrendChart({ data, loading }) {
   };
 
   return (
-    <div style={{ height: '100%', position: 'relative' }}>
-      <Line data={chartData} options={options} />
+    <div key={`purchase-trend-${refreshKey ?? 'initial'}`} style={{ height: '100%', position: 'relative' }}>
+      <Line data={chartData} options={options} plugins={[purchaseTrendLabelsPlugin]} />
     </div>
   );
 }

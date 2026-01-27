@@ -23,7 +23,7 @@ import { saveRequest } from 'lib/offlineFetch';
 const msgSuccess = {
   open: true,
   title: 'success',
-  message: 'Bisnis Unit berhasil dibuat...',
+  message: 'Unit Bisnis berhasil dibuat...',
   alert: { color: 'success' }
 };
 const msgError = {
@@ -33,7 +33,7 @@ const msgError = {
   alert: { color: 'error' }
 };
 
-const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Bisnis Unit', to: '/bisnis-unit' }, { title: 'Create' }];
+const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Unit Bisnis', to: '/unit-bisnis' }, { title: 'Create' }];
 
 const initialValues = {
   initial: '',
@@ -47,7 +47,7 @@ const initialValues = {
   aktif: 'Y'
 };
 
-export default function AddBisnisUnitScreen() {
+export default function AddUnitBisnisScreen() {
   const route = useRouter();
 
   const validationSchema = Yup.object({
@@ -58,8 +58,8 @@ export default function AddBisnisUnitScreen() {
   });
 
   const onSubmitHandle = async (values) => {
-    const config = {
-      url: `/api/master/bisnis-unit/create`,
+      const config = {
+        url: `/master/bisnis-unit/create`,
       method: 'POST',
       data: values,
       headers: { 'Content-Type': 'application/json' },
@@ -76,7 +76,7 @@ export default function AddBisnisUnitScreen() {
     try {
       const resp = await axiosServices(config);
       console.log(resp);
-      route.push('/bisnis-unit');
+      route.push('/unit-bisnis');
       openNotification(msgSuccess);
     } catch (err) {
       console.error('Submit error:', err);
@@ -86,8 +86,8 @@ export default function AddBisnisUnitScreen() {
 
   return (
     <Fragment>
-      <Breadcrumbs custom heading={'Add Bisnis Unit'} links={breadcrumbLinks} />
-      <MainCard title={<BtnBack href={'/bisnis-unit'} />} secondary={null} content={true}>
+  <Breadcrumbs custom heading={'Add Unit Bisnis'} links={breadcrumbLinks} />
+  <MainCard title={<BtnBack href={'/unit-bisnis'} />} secondary={null} content={true}>
         <Formik initialValues={initialValues} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
           {({ errors, handleChange, handleSubmit, touched, values }) => {
             console.log(errors);
@@ -215,7 +215,7 @@ export default function AddBisnisUnitScreen() {
                   </Grid>
                   <Grid item xs={12}>
                     <CardActions>
-                      <Button component={Link} href="/bisnis-unit" variant="outlined" color="secondary">
+                      <Button component={Link} href="/unit-bisnis" variant="outlined" color="secondary">
                         Batal
                       </Button>
                       <Button type="submit" variant="contained" startIcon={<Send2 />}>

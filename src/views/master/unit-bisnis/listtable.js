@@ -42,7 +42,7 @@ export default function ListTableBisnisUnit({ data = { data: [] } }) {
           const { id } = row.original;
           return (
             <Box sx={{ width: 20, textAlign: 'center' }}>
-              <IconButton variant="dashed" color="primary" component={Link} href={`/bisnis-unit/${id}/show`}>
+              <IconButton variant="dashed" color="primary" component={Link} href={`/unit-bisnis/${id}`}>
                 <Edit />
               </IconButton>
             </Box>

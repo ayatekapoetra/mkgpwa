@@ -62,9 +62,10 @@ export default function PurchasingRequestScreen() {
 
   // Date Range Filter State
   const [dateRange, setDateRange] = useState({
-    start: moment().subtract(12, 'weeks').format('YYYY-MM-DD'),
+    start: moment().subtract(31, 'days').format('YYYY-MM-DD'),
     end: moment().format('YYYY-MM-DD')
   });
+  const [trendVersion, setTrendVersion] = useState(0);
 
   // API Hooks
   const { data: trendData, loading: trendLoading } = useGetPurchaseTrend({
@@ -133,6 +134,12 @@ export default function PurchasingRequestScreen() {
 
   // Debug logging - hanya di localhost
   useEffect(() => {
+    if (trendData) {
+      setTrendVersion(prev => prev + 1);
+    }
+  }, [trendData]);
+
+  useEffect(() => {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
       console.log('🔍 Debug - Purchasing Request Dashboard:', {
         trendData: trendData?.length || 0,
@@ -161,7 +168,7 @@ export default function PurchasingRequestScreen() {
 
   const handleResetFilter = () => {
     setDateRange({
-      start: moment().subtract(12, 'weeks').format('YYYY-MM-DD'),
+      start: moment().subtract(31, 'days').format('YYYY-MM-DD'),
       end: moment().format('YYYY-MM-DD')
     });
   };
@@ -233,7 +240,7 @@ export default function PurchasingRequestScreen() {
 
         <Grid container spacing={2}>
           {/* Row 1: Summary Cards - 3 Panel Berdampingan */}
-          <Grid item xs={12} md={2}>
+          <Grid item xs={2}>
             <Paper sx={{ p: 2, height: '200px' }}>
               <h3>Approval Rate</h3>
               {approvalRateLoading ? (
@@ -251,7 +258,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={5}>
+          <Grid item xs={5}>
             <Paper sx={{ p: 2, height: '200px' }}>
               <h3>Prioritas Distribution</h3>
               <div style={{ height: '140px' }}>
@@ -260,7 +267,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={5}>
+          <Grid item xs={5}>
             <Paper sx={{ p: 2, height: '200px' }}>
               <h3>Metode Distribution</h3>
               <div style={{ height: '140px' }}>
@@ -273,27 +280,8 @@ export default function PurchasingRequestScreen() {
           <Grid item xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Purchase Trend</h3>
-              <div style={{ height: '290px' }}>
-                <PurchaseTrendChart data={trendData} loading={trendLoading} />
-              </div>
-            </Paper>
-          </Grid>
-
-          {/* Row 3: Top Barang & Top Pemasok */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2, height: '350px' }}>
-              <h3>Top 10 Barang</h3>
-              <div style={{ height: '290px' }}>
-                <TopBarangChart data={topBarangData} loading={topBarangLoading} />
-              </div>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2, height: '350px' }}>
-              <h3>Top 10 Pemasok</h3>
-              <div style={{ height: '290px' }}>
-                <TopPemasokChart data={topPemasokData} loading={topPemasokLoading} />
+                <div style={{ height: '290px' }}>
+                <PurchaseTrendChart data={trendData} loading={trendLoading} refreshKey={trendVersion} />
               </div>
             </Paper>
           </Grid>
@@ -309,7 +297,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 5: Qty Comparison & Approval Duration */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={6}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Qty Request vs Approved</h3>
               <div style={{ height: '290px' }}>
@@ -318,7 +306,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={6}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Approval Duration (Days)</h3>
               <div style={{ height: '290px' }}>
@@ -333,6 +321,25 @@ export default function PurchasingRequestScreen() {
               <h3>Equipment Spending</h3>
               <div style={{ height: '240px' }}>
                 <EquipmentSpendingChart data={equipmentSpendingData} loading={equipmentSpendingLoading} />
+              </div>
+            </Paper>
+          </Grid>
+
+          {/* Row 3: Top Barang & Top Pemasok */}
+          <Grid item xs={6}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>Top 10 Barang</h3>
+              <div style={{ height: '290px' }}>
+                <TopBarangChart data={topBarangData} loading={topBarangLoading} />
+              </div>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={6}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>Top 10 Pemasok</h3>
+              <div style={{ height: '290px' }}>
+                <TopPemasokChart data={topPemasokData} loading={topPemasokLoading} />
               </div>
             </Paper>
           </Grid>

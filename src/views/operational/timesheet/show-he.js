@@ -332,6 +332,7 @@ const ShowHETimesheetScreen = () => {
                           <MenuItem value={'mining'}>MINING</MenuItem>
                           <MenuItem value={'barging'}>BARGING</MenuItem>
                           <MenuItem value={'rental'}>RENTAL</MenuItem>
+                          <MenuItem value={'explorasi'}>EXPLORASI</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>

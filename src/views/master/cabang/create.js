@@ -64,7 +64,7 @@ export default function AddCabangScreen() {
 
   const onSubmitHandle = async (values) => {
     const config = {
-      url: `/api/master/cabang/create`,
+      url: `/master/cabang/create`,
       method: 'POST',
       data: values,
       headers: { 'Content-Type': 'application/json' },

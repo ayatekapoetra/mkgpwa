@@ -2,7 +2,7 @@
 import { FormattedMessage } from 'react-intl';
 
 // ASSETS
-import { Book1, I24Support, MessageProgramming, Truck, Box, Airdrop, VoiceCricle } from 'iconsax-react';
+import { Book1, I24Support, MessageProgramming, Truck, Box, Airdrop, VoiceCricle, Building3 } from 'iconsax-react';
 
 // ICONS
 const icons = {
@@ -12,7 +12,8 @@ const icons = {
   contactus: I24Support,
   equipment: Truck,
   barang: Box,
-  material: Airdrop
+  material: Airdrop,
+  unit: Building3
 };
 
 // ==============================|| MENU ITEMS - PAGES ||============================== //
@@ -53,6 +54,13 @@ const MasterPage = {
       type: 'item',
       url: '/material',
       icon: icons.material
+    },
+    {
+      id: 'unit-bisnis',
+      title: <FormattedMessage id="Unit Bisnis" />,
+      type: 'item',
+      url: '/unit-bisnis',
+      icon: icons.unit
     }
   ]
 };

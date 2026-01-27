@@ -12,6 +12,7 @@
   "sample-page": "Sample Page",
   "under-construction": "Under Construction",
   "master": "Master",
+  "Unit Bisnis": "Business Unit",
   "Equipment": "equipment",
   "Sparepart": "Sparepart",
   "Jenis Material": "Jenis Material",
@@ -33,5 +34,7 @@
   "Penugasan Kerja": "Penugasan Kerja",
   "AB OCR Timesheet": "AB OCR Timesheet",
   "DT OCR Timesheet": "DT OCR Timesheet",
+  "Penyewa": "Penyewa",
+  "Cabang": "Branch",
   "Laporan": "Report"
 }

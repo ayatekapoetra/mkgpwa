@@ -48,6 +48,7 @@ import {
 } from 'iconsax-react';
 
 import { useGetMenu } from 'api/menu';
+import { getMenuIcon } from 'utils/getMenuIcon';
 // import { useSession } from 'next-auth/react';
 
 const icons = {
@@ -160,8 +161,15 @@ function fillItem(item, children) {
   return {
     ...item,
     title: <FormattedMessage id={`${item?.title}`} />,
-    // Use transformed icon component if already transformed, otherwise lookup in icons map
-    icon: typeof item?.icon === 'function' || typeof item?.icon === 'object' ? item.icon : icons[item?.icon],
+    icon: (() => {
+      if (typeof item?.icon === 'function' || typeof item?.icon === 'object') {
+        return item.icon;
+      }
+
+      const iconKey = (item?.icon || item?.id || '').toString().toLowerCase();
+      const resolvedIcon = icons[iconKey] || getMenuIcon(iconKey);
+      return resolvedIcon || icons.dom;
+    })(),
     ...(children && { children })
   };
 }

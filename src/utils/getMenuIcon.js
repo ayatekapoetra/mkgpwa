@@ -15,6 +15,7 @@ import {
   Buildings2,
   Ship,
   ReceiptItem,
+  BoxTime,
   NoteText,
   ClipboardText,
   Shield,
@@ -25,18 +26,30 @@ import {
   Windows,
   Home,
   Home2,
+  HomeTrendUp,
+  SmartCar,
   DocumentText,
   MaximizeCircle,
   CardCoin,
   Radar2,
   Setting2,
-  PresentionChart
+  PresentionChart,
+  Avalanche
 } from 'iconsax-react';
+
+const normalizeIconKey = (value) =>
+  value
+    ? value
+        .toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+    : '';
 
 // Icon mapping object
 const iconMap = {
   home: Home2,
   home2: Home2,
+  dashboard: HomeTrendUp,
   diagram: Diagram,
   building: Building,
   buildings: Buildings,
@@ -69,7 +82,9 @@ const iconMap = {
   setting: Setting2,
   setting2: Setting2,
   presentionChart: PresentionChart,
-  
+  smartcar: SmartCar,
+  avalanche: Avalanche,
+
   // Aliases for common names
   dom: Diagram,
   equipment: Truck,
@@ -80,11 +95,17 @@ const iconMap = {
   penyewa: Profile2User,
   cabang: Buildings,
   'delivery-order': TruckFast,
-  'pickup-order': ReceiptItem,
+  do: TruckFast,
+  'pickup-order': BoxTime,
   'shipping-order': Ship,
+  so: BoxTime,
   'penugasan-kerja': ClipboardText,
   'user-access': ShieldTick,
 };
+
+const normalizedIconMap = Object.fromEntries(
+  Object.entries(iconMap).map(([key, component]) => [normalizeIconKey(key), component])
+);
 
 /**
  * Get icon component from icon name string
@@ -98,7 +119,8 @@ export function getMenuIcon(iconName) {
   }
   
   const key = iconName.toLowerCase();
-  const IconComponent = iconMap[key];
+  const normalizedKey = normalizeIconKey(iconName);
+  const IconComponent = iconMap[key] || normalizedIconMap[normalizedKey];
   
   if (!IconComponent) {
     console.warn(`[getMenuIcon] Icon not found for: "${iconName}" (key: "${key}")`);

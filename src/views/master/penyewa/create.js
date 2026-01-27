@@ -55,7 +55,7 @@ export default function AddPenyewaScreen() {
 
   const onSubmitHandle = async (values) => {
     const config = {
-      url: `/api/master/penyewa/create`,
+      url: `/master/penyewa/create`,
       method: 'POST',
       data: values,
       headers: { 'Content-Type': 'application/json' },

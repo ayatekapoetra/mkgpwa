@@ -17,17 +17,23 @@ export const useGetBisnisUnit = (params) => {
     revalidateOnReconnect: false
   });
 
-  const memoizedValue = useMemo(
-    () => ({
-      bisnisUnit: data || { rows: [] },
+  const memoizedValue = useMemo(() => {
+    const rowsPayload = data?.rows;
+    const listPayload = rowsPayload?.data || rowsPayload?.rows || [];
+    const normalizedBisnisUnit = {
+      ...rowsPayload,
+      rows: Array.isArray(listPayload) ? listPayload : []
+    };
+
+    return {
+      bisnisUnit: normalizedBisnisUnit,
       bisnisUnitLoading: isLoading,
       bisnisUnitError: error,
       bisnisUnitValidating: isValidating,
-      bisnisUnitEmpty: !isLoading && (!data?.rows || data?.rows?.length === 0),
+      bisnisUnitEmpty: !isLoading && normalizedBisnisUnit.rows.length === 0,
       bisnisUnitMutate: mutate
-    }),
-    [data, error, isLoading, isValidating, mutate]
-  );
+    };
+  }, [data, error, isLoading, isValidating, mutate]);
 
   return memoizedValue;
 };

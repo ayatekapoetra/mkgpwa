@@ -14,6 +14,31 @@ import {
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// Inline plugin for drawing labels - Grey text with spacing, Jt/M formatting
+const equipmentSpendingLabelPlugin = {
+  id: 'equipmentSpendingLabelPlugin',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      meta.data.forEach((point, index) => {
+        const value = dataset.data[index] || 0;
+        const formatted = value >= 1000
+          ? `${(value / 1000).toFixed(2)}M`
+          : `${value.toFixed(2)}Jt`;
+        const { x, y } = point;
+        ctx.save();
+        ctx.font = '600 11px Poppins';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(formatted, x + 12, y);
+        ctx.restore();
+      });
+    });
+  }
+};
+
 export default function EquipmentSpendingChart({ data, loading }) {
   if (loading) {
     return (
@@ -138,7 +163,7 @@ export default function EquipmentSpendingChart({ data, loading }) {
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
-      <Bar data={chartData} options={options} />
+      <Bar data={chartData} options={options} plugins={[equipmentSpendingLabelPlugin]} />
     </div>
   );
 }

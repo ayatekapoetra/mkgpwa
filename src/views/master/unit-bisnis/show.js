@@ -24,7 +24,7 @@ import { replayRequests, saveRequest } from 'lib/offlineFetch';
 const msgSuccess = {
   open: true,
   title: 'success',
-  message: 'Bisnis Unit berhasil diupdate...',
+  message: 'Unit Bisnis berhasil diupdate...',
   alert: { color: 'success' }
 };
 const msgError = {
@@ -34,9 +34,9 @@ const msgError = {
   alert: { color: 'error' }
 };
 
-const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Bisnis Unit', to: '/bisnis-unit' }, { title: 'Show' }];
+const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Unit Bisnis', to: '/unit-bisnis' }, { title: 'Show' }];
 
-export default function ShowBisnisUnitScreen() {
+export default function ShowUnitBisnisScreen() {
   const route = useRouter();
   const { id } = useParams();
   const { bisnisUnit: initialValues, bisnisUnitLoading: dataLoading } = useShowBisnisUnit(id);
@@ -64,14 +64,14 @@ export default function ShowBisnisUnitScreen() {
   }, []);
 
   const onSubmitHandle = async (values) => {
-    const config = {
-      url: `/api/master/bisnis-unit/${id}/update`,
-      method: 'POST',
-      data: values,
-      headers: { 'Content-Type': 'application/json' },
-      status: 'pending',
-      pesan: `UPDATE BISNIS UNIT ${values.name}`
-    };
+      const config = {
+        url: `/master/bisnis-unit/${id}/update`,
+        method: 'POST',
+        data: values,
+        headers: { 'Content-Type': 'application/json' },
+        status: 'pending',
+        pesan: `UPDATE UNIT BISNIS ${values.name}`
+      };
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       await saveRequest(config);
@@ -82,7 +82,7 @@ export default function ShowBisnisUnitScreen() {
     try {
       const resp = await axiosServices(config);
       console.log(resp);
-      route.push('/bisnis-unit');
+        route.push('/unit-bisnis');
       openNotification(msgSuccess);
     } catch (err) {
       console.error('Submit error:', err);
@@ -92,11 +92,11 @@ export default function ShowBisnisUnitScreen() {
 
   const onDeleteHandle = async () => {
     const config = {
-      url: `/api/master/bisnis-unit/${id}/destroy`,
+      url: `/master/bisnis-unit/${id}/destroy`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       status: 'pending',
-      pesan: `DELETE BISNIS UNIT ${initialValues?.name}`
+      pesan: `DELETE UNIT BISNIS ${initialValues?.name}`
     };
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -108,8 +108,8 @@ export default function ShowBisnisUnitScreen() {
     try {
       const resp = await axiosServices(config);
       console.log(resp);
-      route.push('/bisnis-unit');
-      openNotification({ ...msgSuccess, message: 'Bisnis Unit berhasil dihapus...' });
+        route.push('/unit-bisnis');
+      openNotification({ ...msgSuccess, message: 'Unit Bisnis berhasil dihapus...' });
     } catch (err) {
       console.error('Delete error:', err);
       openNotification({ ...msgError, message: err?.message || 'Gagal menghapus data' });
@@ -120,8 +120,8 @@ export default function ShowBisnisUnitScreen() {
 
   return (
     <Fragment>
-      <Breadcrumbs custom heading={'Edit Bisnis Unit'} links={breadcrumbLinks} />
-      <MainCard title={<BtnBack href={'/bisnis-unit'} />} secondary={null} content={true}>
+      <Breadcrumbs custom heading={'Edit Unit Bisnis'} links={breadcrumbLinks} />
+      <MainCard title={<BtnBack href={'/unit-bisnis'} />} secondary={null} content={true}>
         <Formik initialValues={initialValues || { initial: '', kode: '', name: '', email: '', phone: '', alamat: '', kota: '', npwp: '', aktif: 'Y' }} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
           {({ errors, handleChange, handleSubmit, touched, values }) => {
             console.log(errors);
@@ -249,7 +249,7 @@ export default function ShowBisnisUnitScreen() {
                   </Grid>
                   <Grid item xs={12}>
                     <CardActions>
-                      <Button component={Link} href="/bisnis-unit" variant="outlined" color="secondary">
+                      <Button component={Link} href="/unit-bisnis" variant="outlined" color="secondary">
                         Batal
                       </Button>
                       <Button onClick={() => setOpenDeleteDialog(true)} variant="outlined" color="error" startIcon={<Trash />}>
@@ -270,7 +270,7 @@ export default function ShowBisnisUnitScreen() {
       <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
         <DialogTitle>Konfirmasi Hapus</DialogTitle>
         <DialogContent>
-          <Typography>Apakah Anda yakin ingin menghapus Bisnis Unit &quot;{initialValues?.name}&quot;?</Typography>
+          <Typography>Apakah Anda yakin ingin menghapus Unit Bisnis &quot;{initialValues?.name}&quot;?</Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
             Tindakan ini tidak dapat dibatalkan.
           </Typography>

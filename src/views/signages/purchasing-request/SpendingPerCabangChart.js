@@ -11,8 +11,34 @@ import {
   Legend
 } from 'chart.js';
 
-// Register ChartJS components
+// Register ChartJS components (without the label plugin - it will be passed inline)
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+// Inline plugin for drawing labels - passed directly to the Bar component
+// This prevents it from affecting other charts globally
+const spendingPerCabangLabelPlugin = {
+  id: 'spendingPerCabangLabelPlugin',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      meta.data.forEach((point, index) => {
+        const value = dataset.data[index] || 0;
+        const formatted = value >= 1000
+          ? `${(value / 1000).toFixed(2)}M`
+          : `${value.toFixed(2)}Jt`;
+        const { x, y } = point;
+        ctx.save();
+        ctx.font = '600 11px Poppins';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(formatted, x + 12, y);
+        ctx.restore();
+      });
+    });
+  }
+};
 
 export default function SpendingPerCabangChart({ data, loading }) {
   if (loading) {
@@ -136,7 +162,7 @@ export default function SpendingPerCabangChart({ data, loading }) {
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
-      <Bar data={chartData} options={options} />
+      <Bar data={chartData} options={options} plugins={[spendingPerCabangLabelPlugin]} />
     </div>
   );
 }

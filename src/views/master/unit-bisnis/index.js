@@ -18,7 +18,7 @@ import { useGetBisnisUnit } from 'api/bisnis-unit';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
-const BisnisUnitScreen = () => {
+const UnitBisnisScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [params, setParams] = useState({
     page: 1,
@@ -41,8 +41,8 @@ const BisnisUnitScreen = () => {
   return (
     <MainCard
       title={
-        <Button variant="contained" component={Link} href={`/bisnis-unit/create`}>
-          Add Bisnis Unit
+        <Button variant="contained" component={Link} href={`/unit-bisnis/create`}>
+          Add Unit Bisnis
         </Button>
       }
       secondary={
@@ -81,4 +81,4 @@ const BisnisUnitScreen = () => {
   );
 };
 
-export default BisnisUnitScreen;
+export default UnitBisnisScreen;

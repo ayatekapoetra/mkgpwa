@@ -66,7 +66,7 @@ export default function ShowPenyewaScreen() {
     console.log('Sending data:', cleanValues);
     
     const config = {
-      url: `/api/master/penyewa/${id}/update`,
+      url: `/master/penyewa/${id}/update`,
       method: 'POST',
       data: cleanValues,
       headers: { 'Content-Type': 'application/json' },
@@ -93,7 +93,7 @@ export default function ShowPenyewaScreen() {
 
   const onDeleteHandle = async () => {
     const config = {
-      url: `/api/master/penyewa/${id}/destroy`,
+      url: `/master/penyewa/${id}/destroy`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       status: 'pending',
