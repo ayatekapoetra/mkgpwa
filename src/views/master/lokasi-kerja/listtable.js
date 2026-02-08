@@ -57,25 +57,33 @@ export default function ListTableLokasiKerja({ data = { data: [] } }) {
           return <Typography variant="subtitle1">{info.getValue() || '-'}</Typography>;
         }
       },
-       {
-         header: 'Type',
-         accessorKey: 'type',
-         size: 80,
-         minSize: 80,
-         cell: (info) => info.getValue() || '-'
-       },
-       {
-         header: 'Abbr',
-         accessorKey: 'abbr',
-         size: 100,
-         minSize: 100,
-         cell: (info) => info.getValue() || '-'
-       },
-       {
-         header: 'Cabang',
-         accessorKey: 'cabang.nama',
-         minSize: 120
-       }
+
+      {
+        header: 'Abbr',
+        accessorKey: 'abbr',
+        size: 100,
+        minSize: 100,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Cabang',
+        accessorKey: 'cabang.nama',
+        minSize: 120,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Area',
+        accessorFn: (row) => row?.cabang?.area,
+        minSize: 120,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Type',
+        accessorKey: 'type',
+        size: 80,
+        minSize: 80,
+        cell: (info) => info.getValue() || '-'
+      }
     ],
     []
   );

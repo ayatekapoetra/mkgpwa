@@ -223,7 +223,7 @@ export default function ShowCabangScreen() {
                       helperText={touched.tipe && errors.tipe}
                     >
                       <MenuItem value="PUSAT">PUSAT</MenuItem>
-                      <MenuItem value="CABANG">CABANG</MenuItem>
+                      <MenuItem value="CAB">CABANG</MenuItem>
                     </TextField>
                   </Grid>
                   <Grid item xs={12} sm={6} sx={{ mb: 4 }}>

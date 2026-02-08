@@ -2,6 +2,7 @@
 
 // REACT
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 
 // MATERIAL - UI
 import Typography from '@mui/material/Typography';
@@ -91,7 +92,7 @@ function MaterialScreen() {
 }
 
 function BtnAction() {
-  return <Button variant="contained">Add Meterial</Button>;
+  return <Button variant="contained">Add Material</Button>;
 }
 
 function DataColumn() {
@@ -100,10 +101,17 @@ function DataColumn() {
       {
         Header: () => <div style={{ textAlign: 'center', maxWidth: 5 }}>ACT</div>,
         accessor: 'index',
-        Cell: () => {
+        Cell: ({ row }) => {
+          const materialId = row.original?.id ?? row.original?.material_id;
           return (
             <Box sx={{ width: 15 }}>
-              <IconButton variant="dashed" color="primary" onClick={() => alert('masih dalam pengembangan...')}>
+              <IconButton
+                variant="dashed"
+                color="primary"
+                component={materialId ? Link : undefined}
+                href={materialId ? `/material/${materialId}` : undefined}
+                disabled={!materialId}
+              >
                 <Edit2 />
               </IconButton>
             </Box>

@@ -23,6 +23,7 @@ export default function FilterLokasiKerja({ count, open, onClose, data, setData,
       cabang_id: '',
       type: '',
       abbr: '',
+      area: '',
       page: 1,
       perPages: 25
     });
@@ -75,6 +76,20 @@ export default function FilterLokasiKerja({ count, open, onClose, data, setData,
                   label="Nama Cabang"
                   startAdornment={<Building3 size={20} />}
                   setData={setData}
+                />
+              </Grid>
+              <Grid item xs={12} sm={12} lg={12}>
+                <InputSearch
+                  label="Area"
+                  size="medium"
+                  type="text"
+                  value={data['area']}
+                  onChange={(e) => setData({ ...data, area: e.target.value })}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Location size={20} />
+                    </InputAdornment>
+                  }
                 />
               </Grid>
                <Grid item xs={12} sm={12} lg={12}>

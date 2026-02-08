@@ -22,6 +22,17 @@ axiosServices.interceptors.request.use(
       config.headers["Authorization"] = `Bearer ${token}`;
     }
 
+    // Prevent double "/api/api" when baseURL already has /api and url also starts with /api/
+    const base = config.baseURL || axiosServices.defaults.baseURL || "";
+    if (base?.endsWith("/api") && config.url?.startsWith("/api/")) {
+      config.url = config.url.replace(/^\/api\//, "/");
+    }
+
+    // Normalize accidental double slashes
+    if (config.url?.startsWith("//")) {
+      config.url = config.url.replace(/^\/+/, "/");
+    }
+
     if (
       typeof window !== "undefined" &&
       window.location.hostname === "localhost"

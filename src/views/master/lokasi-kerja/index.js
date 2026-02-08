@@ -26,16 +26,14 @@ const LokasiKerjaScreen = () => {
     nama: '',
     cabang_id: '',
     type: '',
-    abbr: ''
+    abbr: '',
+    area: ''
   });
   const { lokasiKerja, lokasiKerjaLoading, lokasiKerjaError, page, perPage, total, lastPage } = useGetLokasiKerja(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
-
-  if (lokasiKerjaLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (lokasiKerjaError) return <p>Error fetching data</p>;
 
   return (
     <MainCard
@@ -56,17 +54,29 @@ const LokasiKerjaScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableLokasiKerja data={{ data: lokasiKerja || [] }} />
+        {lokasiKerjaError ? (
+          <Typography variant="body2" color="error">
+            Error fetching data: {JSON.stringify(lokasiKerjaError)}
+          </Typography>
+        ) : null}
 
-        <Stack sx={{ p: 2 }}>
-          <Paginate
-            page={page || 1}
-            total={total || 0}
-            lastPage={lastPage || 1}
-            perPage={perPage || 25}
-            onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
-          />
-        </Stack>
+        {lokasiKerjaLoading ? <Typography variant="body2">Loading...</Typography> : null}
+
+        {!lokasiKerjaError && (
+          <>
+            <ListTableLokasiKerja data={{ data: lokasiKerja || [] }} />
+
+            <Stack sx={{ p: 2 }}>
+              <Paginate
+                page={page || params.page}
+                total={total || 0}
+                lastPage={lastPage || 1}
+                perPage={perPage || params.perPages}
+                onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+              />
+            </Stack>
+          </>
+        )}
       </Stack>
 
       <FilterLokasiKerja 

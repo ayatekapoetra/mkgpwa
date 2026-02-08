@@ -67,7 +67,7 @@ export default function ShowLokasiKerjaScreen() {
     console.log('Sending data:', cleanValues);
     
     const config = {
-      url: `/api/master/lokasi-kerja/${id}/update`,
+      url: `/master/lokasi-kerja/${id}/update`,
       method: 'POST',
       data: cleanValues,
       headers: { 'Content-Type': 'application/json' },
@@ -94,7 +94,7 @@ export default function ShowLokasiKerjaScreen() {
 
   const onDeleteHandle = async () => {
     const config = {
-      url: `/api/master/lokasi-kerja/${id}/destroy`,
+      url: `/master/lokasi-kerja/${id}/destroy`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       status: 'pending',

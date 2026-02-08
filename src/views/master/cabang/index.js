@@ -29,17 +29,11 @@ const CabangScreen = () => {
     bisnis_id: '',
     tipe: ''
   });
-  const { cabang, cabangLoading, cabangError } = useGetCabang(params);
+  const { cabang, cabangLoading, cabangError, page, perPage, total, lastPage } = useGetCabang(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
-
-  if (cabangLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (cabangError) {
-    console.log('Data error details:', cabangError);
-    return <p>Error fetching data: {JSON.stringify(cabangError)}</p>;
-  }
 
   return (
     <MainCard
@@ -60,17 +54,29 @@ const CabangScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableCabang data={{ data: cabang?.rows || [] }} />
+        {cabangError ? (
+          <Typography variant="body2" color="error">
+            Error fetching data: {JSON.stringify(cabangError)}
+          </Typography>
+        ) : null}
 
-        <Stack sx={{ p: 2 }}>
-          <Paginate
-            page={cabang?.page || 1}
-            total={cabang?.total || 0}
-            lastPage={cabang?.lastPage || 1}
-            perPage={cabang?.perPage || 25}
-            onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
-          />
-        </Stack>
+        {cabangLoading ? <Typography variant="body2">Loading...</Typography> : null}
+
+        {!cabangError && (
+          <>
+            <ListTableCabang data={{ data: cabang?.rows || [] }} />
+
+            <Stack sx={{ p: 2 }}>
+              <Paginate
+                page={page || params.page}
+                total={total ?? cabang?.rows?.length ?? 0}
+                lastPage={lastPage || 1}
+                perPage={perPage || params.perPages}
+                onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+              />
+            </Stack>
+          </>
+        )}
       </Stack>
 
       <FilterCabang 

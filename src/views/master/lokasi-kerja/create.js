@@ -55,7 +55,7 @@ export default function AddLokasiKerjaScreen() {
 
   const onSubmitHandle = async (values) => {
     const config = {
-      url: `/api/master/lokasi-kerja/create`,
+      url: `/master/lokasi-kerja/create`,
       method: 'POST',
       data: values,
       headers: { 'Content-Type': 'application/json' },

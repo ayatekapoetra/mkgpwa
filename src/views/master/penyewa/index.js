@@ -34,12 +34,6 @@ const PenyewaScreen = () => {
     setOpenFilter(!openFilter);
   };
 
-  if (penyewaLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (penyewaError) {
-    console.log('Data error details:', penyewaError);
-    return <p>Error fetching data: {JSON.stringify(penyewaError)}</p>;
-  }
-
   return (
     <MainCard
       title={
@@ -59,17 +53,29 @@ const PenyewaScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTablePenyewa data={{ data: penyewa || [] }} />
+        {penyewaError ? (
+          <Typography variant="body2" color="error">
+            Error fetching data: {JSON.stringify(penyewaError)}
+          </Typography>
+        ) : null}
 
-        <Stack sx={{ p: 2 }}>
-          <Paginate
-            page={page || 1}
-            total={total || 0}
-            lastPage={lastPage || 1}
-            perPage={perPage || 25}
-            onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
-          />
-        </Stack>
+        {penyewaLoading ? <Typography variant="body2">Loading...</Typography> : null}
+
+        {!penyewaError && (
+          <>
+            <ListTablePenyewa data={{ data: penyewa || [] }} />
+
+            <Stack sx={{ p: 2 }}>
+              <Paginate
+                page={page || params.page}
+                total={total || 0}
+                lastPage={lastPage || 1}
+                perPage={perPage || params.perPages}
+                onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+              />
+            </Stack>
+          </>
+        )}
       </Stack>
 
       <FilterPenyewa 

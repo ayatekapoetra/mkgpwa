@@ -103,7 +103,7 @@ export const generateHeavyEquipmentTimesheetExcel = (data, filename) => {
       });
 
       sortedItems.forEach((item, index) => {
-        const tools = getToolsName(item.kegiatan_id);
+        const tools = getToolsName(timesheet?.equipment?.tipe, item.kegiatan_id);
         const kdunit = timesheet.kdunit || timesheet.equipment?.kode || '-';
         const namaPenyewa = timesheet.penyewa?.nama || '-';
         const activityDuration = calculateActivityDuration(item.starttime, item.endtime);
@@ -194,11 +194,18 @@ function getShiftName(shiftId) {
   return '-';
 }
 
-function getToolsName(kegiatanId) {
-  if (kegiatanId === 15 || kegiatanId === 24) {
-    return 'breaker';
+function getToolsName(equipmentType, kegiatanId) {
+  
+  const isExcavator = (equipmentType || '').toLowerCase() === 'excavator';
+
+  if (isExcavator) {
+    if (kegiatanId === 15 || kegiatanId === 24) {
+      return 'breaker';
+    }
+    return 'bucket';
   }
-  return 'bucket';
+
+  return equipmentType || 'bucket';
 }
 
 export const generateDumptruckTimesheetExcel = (data, filename) => {
@@ -363,11 +370,6 @@ export const generateAllTimesheetExcel = (data, filename) => {
     throw new Error('Tidak ada data untuk di-export');
   }
 
-  console.log('All Excel Export - Sample Data:', data[0]);
-  console.log('All Excel Export - kdunit:', data[0]?.kdunit);
-  console.log('All Excel Export - penyewa:', data[0]?.penyewa);
-  console.log('All Excel Export - equipment:', data[0]?.equipment);
-
   const rows = [];
 
   const headers = [
@@ -447,7 +449,8 @@ export const generateAllTimesheetExcel = (data, filename) => {
       });
 
       sortedItems.forEach((item, index) => {
-        const tools = isHE ? getToolsName(item.kegiatan_id) : '-';
+        
+        const tools = getToolsName(timesheet?.equipment?.tipe, item.kegiatan_id);
         const lokasiTujuan = !isHE ? (item.lokasiTujuan?.nama || '-') : '-';
         const ritase = !isHE ? (item.ritase || 0) : '-';
         const istirahat = isHE ? 1 : '-';

@@ -42,7 +42,7 @@ const initialValues = {
   kode: '',
   initial: '',
   nama: '',
-  tipe: 'CABANG',
+  tipe: 'CAB',
   email: '',
   phone: '',
   alamat: '',
@@ -189,7 +189,7 @@ export default function AddCabangScreen() {
                       helperText={touched.tipe && errors.tipe}
                     >
                       <MenuItem value="PUSAT">PUSAT</MenuItem>
-                      <MenuItem value="CABANG">CABANG</MenuItem>
+                      <MenuItem value="CAB">CABANG</MenuItem>
                     </TextField>
                   </Grid>
                   <Grid item xs={12} sm={6} sx={{ mb: 4 }}>

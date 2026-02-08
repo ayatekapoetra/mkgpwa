@@ -74,9 +74,13 @@ export const useGetCabang = (params) => {
       cabangError: error,
       cabangValidating: isValidating,
       cabangEmpty: !isLoading && (!data?.rows || data?.rows?.length === 0),
-      cabangMutate: mutate
+      cabangMutate: mutate,
+      page: data?.page || 1,
+      perPage: data?.perPage || params?.perPages || 25,
+      total: data?.total ?? data?.rows?.length ?? 0,
+      lastPage: data?.lastPage || 1
     }),
-    [data, error, isLoading, isValidating, mutate]
+    [data, error, isLoading, isValidating, mutate, params?.perPages]
   );
 
   return memoizedValue;
