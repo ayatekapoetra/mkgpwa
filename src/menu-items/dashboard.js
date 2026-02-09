@@ -101,8 +101,6 @@ const icons = {
   documentText: DocumentText,
   building: Buildings,
   FingerScan: FingerScan,
-  'human capital': Android,
-  'human-capital': Android,
   humancapital: Android
 };
 

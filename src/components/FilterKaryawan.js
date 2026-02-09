@@ -1,8 +1,9 @@
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment } from '@mui/material';
-import { useGetKaryawanSection } from 'api/karyawan';
+import { useGetKaryawanSection, useGetKaryawan } from 'api/karyawan';
 
 const FilterKaryawan = ({ value = '', label = 'Karyawan', name = 'karyawan_id', startAdornment = null, params = null, setData }) => {
-  const { data: array, dataLoading } = useGetKaryawanSection(params);
+  // const { data: array, dataLoading } = useGetKaryawanSection(params);
+  const { data: array, dataLoading } = useGetKaryawan(params);
   if (dataLoading || !array) {
     return <div>Loading...</div>;
   }

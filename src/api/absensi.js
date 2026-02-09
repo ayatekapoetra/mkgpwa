@@ -19,12 +19,13 @@ export const useMonthlyAttendance = (params) => {
       attendance: data?.data?.rows || [],
       periode: data?.data?.periode || params?.periode || '',
       total: data?.data?.count || 0,
+      lastPage: params?.perPages ? Math.max(1, Math.ceil((data?.data?.count || 0) / params.perPages)) : 1,
       attendanceLoading: isLoading,
       attendanceError: error,
       attendanceValidating: isValidating,
       attendanceMutate: mutate
     }),
-    [data, error, isLoading, isValidating, mutate, params?.periode]
+    [data, error, isLoading, isValidating, mutate, params?.periode, params?.perPages]
   );
 
   return memoized;

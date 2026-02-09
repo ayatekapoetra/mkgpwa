@@ -1,5 +1,6 @@
 // Icon imports from iconsax-react
 import {
+  Android,
   Diagram,
   Building,
   Truck,
@@ -34,7 +35,12 @@ import {
   Radar2,
   Setting2,
   PresentionChart,
-  Avalanche
+  Avalanche,
+  FingerScan,
+  Building4,
+  Building3,
+  ProgrammingArrows,
+  FavoriteChart
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -84,6 +90,13 @@ const iconMap = {
   presentionChart: PresentionChart,
   smartcar: SmartCar,
   avalanche: Avalanche,
+  android: Android,
+  Building4: Building4,
+  Building3: Building3,
+  FingerScan: FingerScan,
+  ProgrammingArrows: ProgrammingArrows,
+  FavoriteChart: FavoriteChart,
+  BoxTime: BoxTime,
 
   // Aliases for common names
   dom: Diagram,
@@ -96,7 +109,6 @@ const iconMap = {
   cabang: Buildings,
   'delivery-order': TruckFast,
   do: TruckFast,
-  'pickup-order': BoxTime,
   'shipping-order': Ship,
   so: BoxTime,
   'penugasan-kerja': ClipboardText,

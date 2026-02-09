@@ -6,7 +6,7 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  key: '/master/karyawan/list',
+  key: '/master/karyawan',
   section: '/master/karyawan/section',
   oprdrv: '/master/karyawan/oprdrv',
   assigner: '/master/karyawan/assigner'
