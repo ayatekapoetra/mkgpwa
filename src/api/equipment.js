@@ -35,7 +35,7 @@ export const useGetEquipment = (params) => {
 };
 
 export const useShowEquipment = (id) => {
-  const { data, isLoading, error, isValidating } = useSWR(`${endpoints.key}/${id}/show`, fetcher, {
+  const { data, isLoading, error, isValidating } = useSWR(id ? `${endpoints.key}/${id}` : null, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: false
