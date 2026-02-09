@@ -135,7 +135,6 @@ const loadingMenu = {
 export const MenuFromAPI = () => {
   // const { data: session, status } = useSession();
   const { menu, menuLoading } = useGetMenu();
-
   if (menuLoading) return loadingMenu;
 
   const subChildrenList = (children) => {
