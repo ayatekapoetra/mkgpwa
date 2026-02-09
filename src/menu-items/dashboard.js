@@ -5,6 +5,7 @@ import { FormattedMessage } from 'react-intl';
 
 // assets
 import {
+  Android,
   Windows,
   Home3,
   Home2,
@@ -44,7 +45,8 @@ import {
   NoteText,
   ClipboardText,
   ShieldTick,
-  DocumentText
+  DocumentText,
+  FingerScan
 } from 'iconsax-react';
 
 import { useGetMenu } from 'api/menu';
@@ -52,6 +54,7 @@ import { getMenuIcon } from 'utils/getMenuIcon';
 // import { useSession } from 'next-auth/react';
 
 const icons = {
+  android: Android,
   windows: Windows,
   home: Home2,
   home2: Home2,
@@ -96,7 +99,11 @@ const icons = {
   clipboardText: ClipboardText,
   shieldTick: ShieldTick,
   documentText: DocumentText,
-  building: Buildings
+  building: Buildings,
+  FingerScan: FingerScan,
+  'human capital': Android,
+  'human-capital': Android,
+  humancapital: Android
 };
 
 const loadingMenu = {
@@ -128,8 +135,6 @@ const loadingMenu = {
 export const MenuFromAPI = () => {
   // const { data: session, status } = useSession();
   const { menu, menuLoading } = useGetMenu();
-  // console.log('useSession---', session, status);
-  // console.log('MENU---**************************', menu);
 
   if (menuLoading) return loadingMenu;
 
