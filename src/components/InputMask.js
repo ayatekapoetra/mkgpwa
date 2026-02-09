@@ -1,4 +1,3 @@
-import InputMask from 'react-input-mask';
 import Stack from '@mui/material/Stack';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
@@ -16,29 +15,30 @@ export default function InputMaskForm({
 }) {
   const hasError = touched && errors && errors[name];
 
+  const formatValue = (val) => {
+    const digits = String(val || '').replace(/[^0-9]/g, '').slice(0, 6);
+    if (digits.length <= 4) return digits;
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  };
+
+  const handleChange = (e) => {
+    const next = formatValue(e.target.value);
+    onChange({ target: { name, value: next } });
+  };
+
   return (
     <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <InputLabel htmlFor={name}>{label}</InputLabel>
-        <InputMask
-          mask={mask}
-          value={value}
+        <OutlinedInput
+          label="Periode (YYYY-MM)"
+          placeholder="2025-09"
           name={name}
-          onChange={(e) => {
-            const newEvent = {
-              target: {
-                name,
-                value: e.target.value
-              }
-            };
-            onChange(newEvent);
-          }}
-          maskChar="_"
-        >
-          {(inputProps) => (
-            <OutlinedInput {...inputProps} inputRef={inputProps.ref} label="Periode (YYYY-MM)" placeholder="2025-09" fullWidth />
-          )}
-        </InputMask>
+          value={formatValue(value)}
+          onChange={handleChange}
+          inputProps={{ inputMode: 'numeric', pattern: '\\d{4}-\\d{2}' }}
+          fullWidth
+        />
       </FormControl>
       {hasError && (
         <FormHelperText error id={`${name}-helper-text`}>
