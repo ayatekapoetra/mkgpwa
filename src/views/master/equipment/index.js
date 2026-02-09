@@ -35,14 +35,11 @@ const EquipmentScreen = () => {
     tipe: '',
     partner_id: ''
   });
-  const { data, dataLoading, dataError } = useGetEquipment(params);
+  const { data, dataLoading, dataError, page, perPage, total, lastPage } = useGetEquipment(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
-
-  if (dataLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (dataError) return <p>Error fetching data</p>;
 
   return (
     <MainCard
@@ -64,18 +61,31 @@ const EquipmentScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <FilterEquipment data={params} setData={setParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
-        {isCard ? <CardListEquipment data={data} /> : <ListTableEquipment data={data} />}
+        <FilterEquipment data={params} setData={setParams} open={openFilter} count={total || data?.total} onClose={toggleFilterHandle} />
 
-        <Stack sx={{ p: 2 }}>
-          <Paginate
-            page={data?.page}
-            total={data?.total || 0}
-            lastPage={data?.lastPage || 1}
-            perPage={data?.perPage || 30}
-            onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
-          />
-        </Stack>
+        {dataError ? (
+          <Typography variant="body2" color="error">
+            Error fetching data
+          </Typography>
+        ) : null}
+
+        {dataLoading ? <Typography variant="body2">Loading...</Typography> : null}
+
+        {!dataError && (
+          <>
+            {isCard ? <CardListEquipment data={data} /> : <ListTableEquipment data={data} />}
+
+            <Stack sx={{ p: 2 }}>
+              <Paginate
+                page={page || params.page}
+                total={total ?? data?.rows?.length ?? 0}
+                lastPage={lastPage || 1}
+                perPage={perPage || params.perPages}
+                onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+              />
+            </Stack>
+          </>
+        )}
       </Stack>
     </MainCard>
   );

@@ -26,9 +26,13 @@ export const useGetEquipment = (params) => {
       data: data?.rows,
       dataLoading: isLoading,
       dataError: error,
-      dataEmpty: !isLoading && !data?.data?.length
+      dataEmpty: !isLoading && !data?.rows?.length,
+      page: data?.page || 1,
+      perPage: data?.perPage || params?.perPages || 25,
+      total: data?.total ?? data?.rows?.length ?? 0,
+      lastPage: data?.lastPage || 1
     }),
-    [data, error, isLoading]
+    [data, error, isLoading, params?.perPages]
   );
 
   return memoizedValue;
