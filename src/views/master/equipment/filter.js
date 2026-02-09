@@ -14,7 +14,7 @@ import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import MainCard from 'components/MainCard';
 
 // ASSETS
-import { Add, Building3, Award, UserTag } from 'iconsax-react';
+import { Add, Building3, Award, UserTag, Truck } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 import FilterCabang from 'components/FilterCabang';
 import FilterSysOption from 'components/FilterSysOption';
@@ -41,8 +41,13 @@ export default function FilterEquipment({ count, open, onClose, data, setData, a
           <MainCard content={true} title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
               <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="start-adornment-partnumber">Kode</InputLabel>
-                <InputSearch size="medium" type="text" value={data['kode']} onChange={(e) => setData({ ...data, kode: e.target.value })} />
+                <InputSearch 
+                  size="medium" 
+                  type="text" 
+                  label="Kode Equipment"
+                  value={data['kode']} 
+                  startAdornment={<Truck/>}
+                  onChange={(e) => setData({ ...data, kode: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
                 <FilterCabang

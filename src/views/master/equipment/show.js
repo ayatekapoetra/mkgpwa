@@ -1,13 +1,13 @@
 'use client';
 
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
-import { CardActions, Grid, Button, Typography } from '@mui/material';
+import { CardActions, Grid, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 // THIRD - PARTY
-import { Building3, Weight, Send2, Code, Code1, UserTag, Award, Barcode } from 'iconsax-react';
+import { Building3, Weight, Send2, Code, Code1, UserTag, Award, Barcode, Trash } from 'iconsax-react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup'; // ⬅ WAJIB
 // import { replayRequests, saveRequest } from 'lib/offlineFetch';
@@ -36,6 +36,12 @@ const msgSuccess = {
   message: 'Equipment berhasil diupdate...',
   alert: { color: 'success' }
 };
+const msgDeleteSuccess = {
+  open: true,
+  title: 'success',
+  message: 'Equipment berhasil dihapus...',
+  alert: { color: 'success' }
+};
 const msgError = {
   open: true,
   title: 'error',
@@ -54,6 +60,7 @@ export default function ShowEquipmentScreen() {
   const route = useRouter();
   const { id } = useParams();
   const { data: initialValues, dataLoading } = useShowEquipment(id);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   // console.log('initialValues--', initialValues);
 
@@ -116,6 +123,31 @@ export default function ShowEquipmentScreen() {
     } catch (err) {
       console.error('Submit error:', err);
       openNotification({ ...msgError, message: err?.message || 'Gagal mengirim data' });
+    }
+  };
+
+  const onDeleteHandle = async () => {
+    const config = {
+      url: `/api/master/equipment/${id}/destroy`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      status: 'pending',
+      pesan: `DELETE EQUIPMENT ${initialValues?.kode || ''}`
+    };
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      await saveRequest(config);
+      openNotification({ ...msgError, message: 'Offline: data disimpan ke antrian' });
+      return;
+    }
+
+    try {
+      await axiosServices(config);
+      route.push('/equipment');
+      openNotification(msgDeleteSuccess);
+    } catch (err) {
+      console.error('Delete error:', err);
+      openNotification({ ...msgError, message: err?.message || 'Gagal menghapus data' });
     }
   };
 
@@ -307,6 +339,9 @@ export default function ShowEquipmentScreen() {
                       <Button component={Link} href="/dom" variant="outlined" color="secondary">
                         Batal
                       </Button>
+                      <Button onClick={() => setOpenDeleteDialog(true)} variant="outlined" color="error" startIcon={<Trash />}>
+                        Hapus
+                      </Button>
                       <Button type="submit" variant="contained" startIcon={<Send2 />}>
                         Simpan
                       </Button>
@@ -318,6 +353,24 @@ export default function ShowEquipmentScreen() {
           }}
         </Formik>
       </MainCard>
+
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+        <DialogTitle>Konfirmasi Hapus</DialogTitle>
+        <DialogContent>
+          <Typography>Apakah Anda yakin ingin menghapus Equipment "{initialValues?.kode}"?</Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            Tindakan ini tidak dapat dibatalkan.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)} color="secondary">
+            Batal
+          </Button>
+          <Button onClick={onDeleteHandle} color="error" variant="contained">
+            Hapus
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Fragment>
   );
 }
