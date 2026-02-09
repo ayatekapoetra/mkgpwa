@@ -55,7 +55,7 @@ export default function ShowEquipmentScreen() {
   const { id } = useParams();
   const { data: initialValues, dataLoading } = useShowEquipment(id);
 
-  //   console.log('initialValues--', initialValues);
+  // console.log('initialValues--', initialValues);
 
   const validationSchema = Yup.object({
     cabang_id: Yup.number().required('Cabang wajib diisi'),
