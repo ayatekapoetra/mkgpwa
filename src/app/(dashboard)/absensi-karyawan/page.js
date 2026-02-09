@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import dayjs from 'dayjs';
+import moment from 'moment';
 import MainCard from 'components/MainCard';
 import {
   Card,
@@ -24,7 +24,7 @@ import { Calendar } from 'iconsax-react';
 import { useMonthlyAttendance } from 'api/absensi';
 
 const AbsensiKaryawanPage = () => {
-  const defaultPeriode = dayjs().format('YYYY-MM');
+  const defaultPeriode = moment().format('YYYY-MM');
   const [filters, setFilters] = useState({ periode: defaultPeriode });
 
   const { attendance, attendanceLoading, attendanceError, total } = useMonthlyAttendance(filters);
