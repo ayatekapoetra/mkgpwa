@@ -893,6 +893,7 @@ const ShowTimesheetScreen = () => {
                               variant="shadow"
                               startIcon={<Autobrightness />}
                               onClick={onApproveHandle}
+                              sx={{ color: '#FFF' }}
                             >
                               Approve
                             </Button>

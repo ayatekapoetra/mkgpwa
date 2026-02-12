@@ -62,6 +62,7 @@ export default function DailyTimesheetScreen() {
   const defaultParams = {
     page: 1,
     perPage: 25,
+    id: '',
     site_id: '',
     karyawan_id: '',
     penyewa_id: '',

@@ -41,6 +41,7 @@ export default function FilterTimesheet({
     setParams((prev) => ({
       page: 1,
       perPage: prev.perPage || 25,
+      id: '',
       site_id: "",
       karyawan_id: "",
       penyewa_id: "",
@@ -65,6 +66,22 @@ export default function FilterTimesheet({
               alignItems="flex-start"
               justifyContent="flex-start"
             >
+              <Grid item xs={12} sm={12} lg={12}>
+                <InputSearch
+                  label="ID Timesheet"
+                  name="id"
+                  size="medium"
+                  type="text"
+                  startAdornment={<TagUser />}
+                  value={params["id"]}
+                  onChange={(e) => {
+                    setParams((prev) => ({
+                      ...prev,
+                      id: e.target.value || "",
+                    }));
+                  }}
+                />
+              </Grid>
               <Grid item xs={12} sm={12} lg={12}>
                 <SelectSearch
                   name={"hmkm"}
