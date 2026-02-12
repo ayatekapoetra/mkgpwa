@@ -12,9 +12,12 @@ const kegiatanKerjaStore = createLocalStore('kegiatan-mining');
  * contoh data object
  * { type: 'DT' } atau { type: 'HE' }
  * **/
+export const endpoints = {
+  option: '/public/kegiatan/list',
+}
 
 export const useGetKegiatanKerja = (params) => {
-  const url = params ? `/master/kegiatan-kerja/list?${new URLSearchParams(params)}` : `/master/kegiatan-kerja/list`;
+  const url = params ? endpoints.option + `?${new URLSearchParams(params)}` : endpoints.option
 
   const { data, error, isLoading } = useSWR(url, fetcher, {
     revalidateIfStale: false,

@@ -33,6 +33,7 @@ import {
 
 // THIRD - PARTY
 import {
+  Key,
   Timer1,
   Edit,
   Calendar,
@@ -345,6 +346,24 @@ export default function ListTimesheetDesktop({
       {
         header: () => (
           <Stack direction="col" gap={1} alignItems="center">
+            <Key size={16} />
+            <Typography variant="subtitle">ID</Typography>
+          </Stack>
+        ),
+        accessorKey: "id",
+        size: 100,
+        cell: ({ row }) => {
+          const { id } = row.original;
+          return (
+            <div style={{ textAlign: "center" }}>
+              <Typography>#{id}</Typography>
+            </div>
+          );
+        },
+      },
+      {
+        header: () => (
+          <Stack direction="col" gap={1} alignItems="center">
             <Building4 size={16} />
             <Typography variant="subtitle">Bisnis</Typography>
           </Stack>
@@ -629,12 +648,22 @@ export default function ListTimesheetDesktop({
                         <TimeCell timeString={item.endtime} />
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {item.timetot
-                            ? safeNumberFormat(item.timetot / 60, 2)
-                            : "-"}{" "}
-                          jam
-                        </Typography>
+                        {
+                          item.kegiatan_id == 3 ?
+                          <Typography variant="body2" fontWeight="medium" color={'red'}>
+                            {item.timetot
+                              ? safeNumberFormat(item.timetot, 2)
+                              : "-"}{" "}
+                            jam
+                          </Typography>
+                          :
+                          <Typography variant="body2" fontWeight="medium">
+                            {item.timetot
+                              ? safeNumberFormat(item.timetot, 2)
+                              : "-"}{" "}
+                            jam
+                          </Typography>
+                        }
                       </TableCell>
                       <TableCell>
                         <TextCell text={item.smustart} />

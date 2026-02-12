@@ -66,7 +66,7 @@ export default function FilterTimesheet({
               alignItems="flex-start"
               justifyContent="flex-start"
             >
-              <Grid item xs={12} sm={12} lg={12}>
+              <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
                 <InputSearch
                   label="ID Timesheet"
                   name="id"

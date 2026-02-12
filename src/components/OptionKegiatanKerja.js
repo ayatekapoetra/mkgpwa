@@ -12,6 +12,7 @@ const OptionKegiatanKerja = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetKegiatanKerja(searchParams);
+  console.log('KEGIATAN-----', array);
   
   const options = Array.isArray(array) ? array : [];
 
@@ -35,7 +36,7 @@ const OptionKegiatanKerja = ({
             <li {...props} key={`${option.id}-${option.label}`}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1 }}>
                 <Typography variant="body1">{option.nama}</Typography>
-                <Typography variant="caption">{option.level}</Typography>
+                <Typography variant="caption">{option.grpequipment}</Typography>
               </Box>
             </li>
           )}
