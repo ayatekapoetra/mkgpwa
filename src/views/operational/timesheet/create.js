@@ -113,7 +113,7 @@ export default function CreateTimesheet() {
 
     penyewa_id: Yup.string().required('Penyewa wajib dipilih'),
 
-    activity: Yup.string().oneOf(['mining', 'barging', 'rental'], 'Pilih salah satu aktivitas').required('Group Aktivitas wajib dipilih'),
+    activity: Yup.string().oneOf(["mining", "barging", "rental", "explorasi"], 'Pilih salah satu aktivitas').required('Group Aktivitas wajib dipilih'),
 
     overtime: Yup.string().oneOf(['ls0', 'ls1', 'ls2'], 'Pilih salah satu status longshift').required('Status Longshift wajib diisi'),
 

@@ -124,7 +124,7 @@ const ShowTimesheetScreen = () => {
     penyewa_id: Yup.string().required("Penyewa wajib dipilih"),
 
     mainact: Yup.string()
-      .oneOf(["mining", "barging", "rental"], "Pilih salah satu aktivitas")
+      .oneOf(["mining", "barging", "rental", "explorasi"], "Pilih salah satu aktivitas")
       .required("Group Aktivitas wajib dipilih"),
 
     longshift: Yup.string()
@@ -441,8 +441,8 @@ const ShowTimesheetScreen = () => {
               values,
               setFieldValue,
             }) => {
-              console.log("values---", values);
-              console.log("errors---", errors);
+              // console.log("values---", values);
+              // console.log("errors---", errors);
 
               return (
                 <Form noValidate onSubmit={handleSubmit}>
