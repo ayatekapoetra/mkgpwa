@@ -351,7 +351,7 @@ export default function PurchaseTrendChart({ data, loading, refreshKey }) {
     labels: labels,
     datasets: [
       {
-        label: `Nilai Pembelian (${displayUnit})`,
+        label: `Nilai RO (${displayUnit})`,
         data: totalValues, // Raw values
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -468,7 +468,7 @@ export default function PurchaseTrendChart({ data, loading, refreshKey }) {
         position: 'left',
         title: {
           display: true,
-          text: 'Nilai Pembelian',
+          text: 'Nilai RO',
           font: {
             size: 12,
             weight: 'bold'

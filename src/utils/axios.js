@@ -33,17 +33,6 @@ axiosServices.interceptors.request.use(
       config.url = config.url.replace(/^\/+/, "/");
     }
 
-    if (
-      typeof window !== "undefined" &&
-      window.location.hostname === "localhost"
-    ) {
-      console.log(
-        "🚀 [axios] Request:",
-        config.method?.toUpperCase(),
-        config.url,
-      );
-    }
-
     return config;
   },
   (error) => Promise.reject(error),
@@ -51,31 +40,9 @@ axiosServices.interceptors.request.use(
 
 axiosServices.interceptors.response.use(
   (response) => {
-    if (
-      typeof window !== "undefined" &&
-      window.location.hostname === "localhost"
-    ) {
-      console.log(
-        "✅ [axios] Response:",
-        response.config.url,
-        response.status,
-        response.data,
-      );
-    }
     return response;
   },
   async (error) => {
-    if (
-      typeof window !== "undefined" &&
-      window.location.hostname === "localhost"
-    ) {
-      console.log(
-        "❌ [axios] Error:",
-        error.config?.url,
-        error.response?.status,
-        error.response?.data || error.message,
-      );
-    }
     if (
       typeof window !== "undefined" &&
       typeof navigator !== "undefined" &&

@@ -19,7 +19,11 @@ import {
   useGetTopPemasok,
   useGetEquipmentSpending,
   useGetApprovalRate,
-  useGetMetodeDistribution
+  useGetMetodeDistribution,
+  useGetStatusDistribution,
+  useGetTopPrCreators,
+  useGetPrApprovalTrend,
+  useGetUsiaBerkas
 } from 'api/purchasing-charts';
 
 // DATE UTILS
@@ -36,6 +40,10 @@ import TopPemasokChart from './TopPemasokChart';
 import EquipmentSpendingChart from './EquipmentSpendingChart';
 // import ApprovalRateCard from './ApprovalRateCard';
 import MetodeDistributionChart from './MetodeDistributionChart';
+import StatusDistributionChart from './StatusDistributionChart';
+import Top10CreatorsChart from './Top10CreatorsChart';
+import PrApprovalTrendChart from './PrApprovalTrendChart';
+import UsiaBerikasChart from './UsiaBerikasChart';
 
 // Helper function untuk safe number formatting
 const safeToFixed = (value, decimals = 1) => {
@@ -122,6 +130,27 @@ export default function PurchasingRequestScreen() {
     enddate: dateRange.end
   });
 
+  const { data: statusDistributionData, loading: statusDistributionLoading } = useGetStatusDistribution({
+    startdate: dateRange.start,
+    enddate: dateRange.end,
+    group_by: 'daily'
+  });
+
+  const { data: usiaBerkasData, meta: usiaBerkasMeta, loading: usiaBerkasLoading } = useGetUsiaBerkas({
+    startdate: dateRange.start,
+    enddate: dateRange.end
+  });
+
+  const { data: topCreatorsData, users: topCreatorsUsers, loading: topCreatorsLoading } = useGetTopPrCreators({
+    startdate: dateRange.start,
+    enddate: dateRange.end
+  });
+
+  const { data: approvalTrendData, loading: approvalTrendLoading } = useGetPrApprovalTrend({
+    startdate: dateRange.start,
+    enddate: dateRange.end
+  });
+
   // Clock update
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -132,30 +161,11 @@ export default function PurchasingRequestScreen() {
     return () => clearTimeout(timeout);
   }, [clock]);
 
-  // Debug logging - hanya di localhost
   useEffect(() => {
     if (trendData) {
       setTrendVersion(prev => prev + 1);
     }
   }, [trendData]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      console.log('🔍 Debug - Purchasing Request Dashboard:', {
-        trendData: trendData?.length || 0,
-        topBarangData: topBarangData?.length || 0,
-        prioritasData: prioritasData?.length || 0,
-        approvalDurationData: approvalDurationData?.length || 0,
-        qtyComparisonData: qtyComparisonData?.length || 0,
-        spendingCabangData: spendingCabangData?.length || 0,
-        topPemasokData: topPemasokData?.length || 0,
-        equipmentSpendingData: equipmentSpendingData?.length || 0,
-        approvalRateData: approvalRateData ? 'Object' : null,
-        metodeData: metodeData?.length || 0,
-        dateRange
-      });
-    }
-  }, [trendData, topBarangData, prioritasData, approvalDurationData, qtyComparisonData, spendingCabangData, topPemasokData, equipmentSpendingData, approvalRateData, metodeData]);
 
   const handleDateChange = (field, value) => {
     setDateRange(prev => ({ ...prev, [field]: value }));
@@ -282,6 +292,44 @@ export default function PurchasingRequestScreen() {
               <h3>Purchase Trend</h3>
                 <div style={{ height: '290px' }}>
                 <PurchaseTrendChart data={trendData} loading={trendLoading} refreshKey={trendVersion} />
+              </div>
+            </Paper>
+          </Grid>
+
+          {/* Row 3: Status Distribution & Usia Berkas */}
+          <Grid item xs={8}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>Status Distribution (Baru, Approved, Finish)</h3>
+              <div style={{ height: '290px' }}>
+                <StatusDistributionChart data={statusDistributionData} loading={statusDistributionLoading} />
+              </div>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={4}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>Usia Berkas</h3>
+              <div style={{ height: '290px' }}>
+                <UsiaBerikasChart data={usiaBerkasData} meta={usiaBerkasMeta} loading={usiaBerkasLoading} />
+              </div>
+            </Paper>
+          </Grid>
+
+          {/* Row 3b: Top 10 PR Creators & PR Approval Trend */}
+          <Grid item xs={6}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>Top 10 PR Creators</h3>
+              <div style={{ height: '290px' }}>
+                <Top10CreatorsChart data={topCreatorsData} users={topCreatorsUsers} loading={topCreatorsLoading} />
+              </div>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={6}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>PR Approval Trend</h3>
+              <div style={{ height: '290px' }}>
+                <PrApprovalTrendChart data={approvalTrendData} loading={approvalTrendLoading} />
               </div>
             </Paper>
           </Grid>

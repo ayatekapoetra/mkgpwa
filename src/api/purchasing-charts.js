@@ -12,7 +12,11 @@ export const endpoints = {
   topPemasok: '/monitoring/signages/purchasing/top-pemasok',
   equipmentSpending: '/monitoring/signages/purchasing/equipment-spending',
   approvalRate: '/monitoring/signages/purchasing/approval-rate',
-  metodeDistribution: '/monitoring/signages/purchasing/metode-distribution'
+  metodeDistribution: '/monitoring/signages/purchasing/metode-distribution',
+  statusDistribution: '/monitoring/signages/purchasing/status-distribution',
+  topPrCreators: '/monitoring/signages/purchasing/top-pr-creators',
+  prApprovalTrend: '/monitoring/signages/purchasing/pr-approval-trend',
+  usiaBerkas: '/monitoring/signages/purchasing/usia-berkas'
 };
 
 // Debug helper
@@ -43,6 +47,7 @@ export const useGetPurchaseTrend = (params) => {
   const memoized = useMemo(
     () => ({
       data: data?.data || [],
+      meta: data?.meta || null,
       loading: isLoading,
       error,
       validating: isValidating
@@ -242,7 +247,34 @@ export const useGetApprovalRate = (params) => {
 
   const memoized = useMemo(
     () => ({
-      data: data?.data || null,
+      data: data?.data || [],
+      loading: isLoading,
+      error,
+      validating: isValidating
+    }),
+    [data, isLoading, error, isValidating]
+  );
+
+  return memoized;
+};
+
+// 11. Status Distribution
+export const useGetStatusDistribution = (params) => {
+  const url = params ? endpoints.statusDistribution + `?${new URLSearchParams(params)}` : endpoints.statusDistribution;
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+    refreshInterval: 180000,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  if (error) logError('Status Distribution', error, data);
+
+  const memoized = useMemo(
+    () => ({
+      data: data?.data || [],
+      summary: data?.summary || null,
+      meta: data?.meta || null,
       loading: isLoading,
       error,
       validating: isValidating
@@ -264,6 +296,82 @@ export const useGetMetodeDistribution = (params) => {
   });
 
   if (error) logError('Metode Distribution', error, data);
+
+  const memoized = useMemo(
+    () => ({
+      data: data?.data || [],
+      loading: isLoading,
+      error,
+      validating: isValidating
+    }),
+    [data, isLoading, error, isValidating]
+  );
+
+  return memoized;
+};
+
+// 12. Top 10 PR Creators
+export const useGetTopPrCreators = (params) => {
+  const url = params ? endpoints.topPrCreators + `?${new URLSearchParams(params)}` : endpoints.topPrCreators;
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+    refreshInterval: 180000,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  if (error) logError('Top PR Creators', error, data);
+
+  const memoized = useMemo(
+    () => ({
+      data: data?.data || [],
+      users: data?.users || [],
+      loading: isLoading,
+      error,
+      validating: isValidating
+    }),
+    [data, isLoading, error, isValidating]
+  );
+
+  return memoized;
+};
+
+// 13. PR Approval Trend
+export const useGetPrApprovalTrend = (params) => {
+  const url = params ? endpoints.prApprovalTrend + `?${new URLSearchParams(params)}` : endpoints.prApprovalTrend;
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+    refreshInterval: 180000,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  if (error) logError('PR Approval Trend', error, data);
+
+  const memoized = useMemo(
+    () => ({
+      data: data?.data || [],
+      loading: isLoading,
+      error,
+      validating: isValidating
+    }),
+    [data, isLoading, error, isValidating]
+  );
+
+  return memoized;
+};
+
+// 14. Usia Berkas
+export const useGetUsiaBerkas = (params) => {
+  const url = params ? endpoints.usiaBerkas + `?${new URLSearchParams(params)}` : endpoints.usiaBerkas;
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+    refreshInterval: 180000,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  if (error) logError('Usia Berkas', error, data);
 
   const memoized = useMemo(
     () => ({
