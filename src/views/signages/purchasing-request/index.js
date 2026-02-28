@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 // MATERIAL - UI
 import Paper from '@mui/material/Paper';
@@ -67,6 +67,9 @@ export default function PurchasingRequestScreen() {
   const downSM = useMediaQuery(theme.breakpoints.down('sm'));
   const [clock, setClock] = useState(moment().format('HH:mm:ss'));
   const [tanggal, setTanggal] = useState(moment().format('dddd, DD MMMM YYYY'));
+  const [isSlideshow, setIsSlideshow] = useState(false);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(300);
 
   // Date Range Filter State
   const [dateRange, setDateRange] = useState({
@@ -167,6 +170,100 @@ export default function PurchasingRequestScreen() {
     }
   }, [trendData]);
 
+  // Slides definition (order matters for slideshow)
+  const slides = useMemo(() => [
+    {
+      key: 'purchase-trend',
+      title: 'Purchase Trend',
+      content: <PurchaseTrendChart data={trendData} loading={trendLoading} refreshKey={trendVersion} />
+    },
+    {
+      key: 'status-distribution',
+      title: 'Status Distribution (Baru, Approved, Finish)',
+      content: <StatusDistributionChart data={statusDistributionData} loading={statusDistributionLoading} />
+    },
+    {
+      key: 'usia-berkas',
+      title: 'Usia Berkas',
+      content: <UsiaBerikasChart data={usiaBerkasData} meta={usiaBerkasMeta} loading={usiaBerkasLoading} />
+    },
+    {
+      key: 'top-creators',
+      title: 'Top 10 PR Creators',
+      content: <Top10CreatorsChart data={topCreatorsData} users={topCreatorsUsers} loading={topCreatorsLoading} />
+    },
+    {
+      key: 'approval-trend',
+      title: 'PR Approval Trend',
+      content: <PrApprovalTrendChart data={approvalTrendData} loading={approvalTrendLoading} />
+    },
+    {
+      key: 'spending-cabang',
+      title: 'Spending per Cabang',
+      content: <SpendingPerCabangChart data={spendingCabangData} loading={spendingCabangLoading} />
+    },
+    {
+      key: 'qty-comparison',
+      title: 'Qty Request vs Approved',
+      content: <QtyComparisonChart data={qtyComparisonData} loading={qtyComparisonLoading} />
+    },
+    {
+      key: 'approval-duration',
+      title: 'Approval Duration (Days)',
+      content: <ApprovalDurationChart data={approvalDurationData} loading={approvalDurationLoading} />
+    },
+    {
+      key: 'equipment-spending',
+      title: 'Equipment Spending',
+      content: <EquipmentSpendingChart data={equipmentSpendingData} loading={equipmentSpendingLoading} />
+    },
+    {
+      key: 'top-barang',
+      title: 'Top 10 Barang',
+      content: <TopBarangChart data={topBarangData} loading={topBarangLoading} />
+    },
+    {
+      key: 'top-pemasok',
+      title: 'Top 10 Pemasok',
+      content: <TopPemasokChart data={topPemasokData} loading={topPemasokLoading} />
+    },
+    {
+      key: 'prioritas-distribution',
+      title: 'Prioritas Distribution',
+      content: <PrioritasDistributionChart data={prioritasData} loading={prioritasLoading} />
+    },
+    {
+      key: 'metode-distribution',
+      title: 'Metode Distribution',
+      content: <MetodeDistributionChart data={metodeData} loading={metodeLoading} />
+    }
+  ], [trendData, trendLoading, trendVersion, statusDistributionData, statusDistributionLoading, usiaBerkasData, usiaBerkasMeta, usiaBerkasLoading, topCreatorsData, topCreatorsUsers, topCreatorsLoading, approvalTrendData, approvalTrendLoading, spendingCabangData, spendingCabangLoading, qtyComparisonData, qtyComparisonLoading, approvalDurationData, approvalDurationLoading, equipmentSpendingData, equipmentSpendingLoading, topBarangData, topBarangLoading, topPemasokData, topPemasokLoading, prioritasData, prioritasLoading, metodeData, metodeLoading]);
+
+  // Countdown + slide rotation when slideshow is active
+  useEffect(() => {
+    if (!isSlideshow) return undefined;
+
+    setRemainingSeconds(300);
+
+    const interval = setInterval(() => {
+      setRemainingSeconds(prev => {
+        if (prev <= 1) {
+          setCurrentSlideIndex(idx => (idx + 1) % slides.length);
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSlideshow, slides.length]);
+
+  const formatCountdown = (secs) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   const handleDateChange = (field, value) => {
     setDateRange(prev => ({ ...prev, [field]: value }));
   };
@@ -176,11 +273,10 @@ export default function PurchasingRequestScreen() {
     console.log('Apply filter:', dateRange);
   };
 
-  const handleResetFilter = () => {
-    setDateRange({
-      start: moment().subtract(31, 'days').format('YYYY-MM-DD'),
-      end: moment().format('YYYY-MM-DD')
-    });
+  const handleToggleSlideshow = () => {
+    setIsSlideshow(prev => !prev);
+    setCurrentSlideIndex(0);
+    setRemainingSeconds(300);
   };
 
   return (
@@ -230,10 +326,10 @@ export default function PurchasingRequestScreen() {
             Apply
           </button>
           <button
-            onClick={handleResetFilter}
-            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: 'white', cursor: 'pointer' }}
+            onClick={handleToggleSlideshow}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer' }}
           >
-            Reset
+            {isSlideshow ? 'Stop Slideshow' : 'Start Slideshow'}
           </button>
         </Stack>
       </Stack>
@@ -242,12 +338,13 @@ export default function PurchasingRequestScreen() {
       <Paper
         sx={{
           flex: 1,
-          m: 2,
+          p: 1,
           overflow: 'auto',
           backgroundColor: 'background.default'
         }}
       >
 
+        {!isSlideshow ? (
         <Grid container spacing={2}>
           {/* Row 1: Summary Cards - 3 Panel Berdampingan */}
           <Grid item xs={2}>
@@ -287,7 +384,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 2: Purchase Trend */}
-          <Grid item xs={12}>
+          <Grid item md={12} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Purchase Trend</h3>
                 <div style={{ height: '290px' }}>
@@ -297,7 +394,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 3: Status Distribution & Usia Berkas */}
-          <Grid item xs={8}>
+          <Grid item md={8} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Status Distribution (Baru, Approved, Finish)</h3>
               <div style={{ height: '290px' }}>
@@ -306,7 +403,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={4}>
+          <Grid item md={4} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Usia Berkas</h3>
               <div style={{ height: '290px' }}>
@@ -316,7 +413,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 3b: Top 10 PR Creators & PR Approval Trend */}
-          <Grid item xs={6}>
+          <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Top 10 PR Creators</h3>
               <div style={{ height: '290px' }}>
@@ -325,7 +422,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={6}>
+          <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>PR Approval Trend</h3>
               <div style={{ height: '290px' }}>
@@ -335,7 +432,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 4: Spending per Cabang */}
-          <Grid item xs={12}>
+          <Grid item md={12} xs={12}>
             <Paper sx={{ p: 2, height: '300px' }}>
               <h3>Spending per Cabang</h3>
               <div style={{ height: '240px' }}>
@@ -345,7 +442,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 5: Qty Comparison & Approval Duration */}
-          <Grid item xs={6}>
+          <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Qty Request vs Approved</h3>
               <div style={{ height: '290px' }}>
@@ -354,7 +451,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={6}>
+          <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Approval Duration (Days)</h3>
               <div style={{ height: '290px' }}>
@@ -364,7 +461,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 6: Equipment Spending (Full Width) */}
-          <Grid item xs={12}>
+          <Grid item md={12} xs={12}>
             <Paper sx={{ p: 2, height: '300px' }}>
               <h3>Equipment Spending</h3>
               <div style={{ height: '240px' }}>
@@ -374,7 +471,7 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 3: Top Barang & Top Pemasok */}
-          <Grid item xs={6}>
+          <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Top 10 Barang</h3>
               <div style={{ height: '290px' }}>
@@ -383,7 +480,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={6}>
+          <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Top 10 Pemasok</h3>
               <div style={{ height: '290px' }}>
@@ -392,6 +489,38 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
         </Grid>
+        ) : (
+          <div style={{ padding: '16px', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <h3 style={{ margin: 0 }}>{slides[currentSlideIndex]?.title || 'Slideshow'}</h3>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Next in</span>
+                <span style={{ fontWeight: 600 }}>{formatCountdown(remainingSeconds)}</span>
+              </Stack>
+            </Stack>
+            <div style={{ flex: 1, minHeight: '60vh' }}>
+              {slides[currentSlideIndex]?.content}
+            </div>
+            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
+              {slides.map((slide, idx) => (
+                <button
+                  key={slide.key}
+                  onClick={() => { setCurrentSlideIndex(idx); setRemainingSeconds(300); }}
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    border: 'none',
+                    margin: 4,
+                    background: idx === currentSlideIndex ? '#3b82f6' : '#d1d5db',
+                    cursor: 'pointer'
+                  }}
+                  aria-label={`Go to slide ${slide.title}`}
+                />
+              ))}
+            </Stack>
+          </div>
+        )}
       </Paper>
     </Stack>
   );
