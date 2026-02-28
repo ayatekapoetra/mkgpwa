@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
+import { mutate } from 'swr';
 
 // MATERIAL - UI
 import Paper from '@mui/material/Paper';
@@ -10,6 +11,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 
 // API HOOKS
 import {
+  endpoints,
   useGetPurchaseTrend,
   useGetTopBarang,
   useGetPrioritasDistribution,
@@ -248,7 +250,9 @@ export default function PurchasingRequestScreen() {
     const interval = setInterval(() => {
       setRemainingSeconds(prev => {
         if (prev <= 1) {
-          setCurrentSlideIndex(idx => (idx + 1) % slides.length);
+          const nextIndex = (currentSlideIndex + 1) % slides.length;
+          refreshSlideData(slides[nextIndex]?.key);
+          setCurrentSlideIndex(nextIndex);
           return 300;
         }
         return prev - 1;
@@ -256,7 +260,7 @@ export default function PurchasingRequestScreen() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isSlideshow, slides.length]);
+  }, [isSlideshow, slides, currentSlideIndex]);
 
   const formatCountdown = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -277,6 +281,58 @@ export default function PurchasingRequestScreen() {
     setIsSlideshow(prev => !prev);
     setCurrentSlideIndex(0);
     setRemainingSeconds(300);
+  };
+
+  // Build SWR keys for refetch
+  const buildUrl = (endpoint, params) => {
+    if (!params) return endpoint;
+    return `${endpoint}?${new URLSearchParams(params).toString()}`;
+  };
+
+  const refreshSlideData = (slideKey) => {
+    switch (slideKey) {
+      case 'purchase-trend':
+        mutate(buildUrl(endpoints.trend, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'status-distribution':
+        mutate(buildUrl(endpoints.statusDistribution, { startdate: dateRange.start, enddate: dateRange.end, group_by: 'daily' }));
+        break;
+      case 'usia-berkas':
+        mutate(buildUrl(endpoints.usiaBerkas, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'top-creators':
+        mutate(buildUrl(endpoints.topPrCreators, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'approval-trend':
+        mutate(buildUrl(endpoints.prApprovalTrend, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'spending-cabang':
+        mutate(buildUrl(endpoints.spendingPerCabang, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'qty-comparison':
+        mutate(buildUrl(endpoints.qtyComparison, { startdate: dateRange.start, enddate: dateRange.end, group_by: 'barang' }));
+        break;
+      case 'approval-duration':
+        mutate(buildUrl(endpoints.approvalDuration, { startdate: dateRange.start, enddate: dateRange.end, group_by: 'cabang' }));
+        break;
+      case 'equipment-spending':
+        mutate(buildUrl(endpoints.equipmentSpending, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'top-barang':
+        mutate(buildUrl(endpoints.topBarang, { startdate: dateRange.start, enddate: dateRange.end, limit: 10 }));
+        break;
+      case 'top-pemasok':
+        mutate(buildUrl(endpoints.topPemasok, { startdate: dateRange.start, enddate: dateRange.end, limit: 10 }));
+        break;
+      case 'prioritas-distribution':
+        mutate(buildUrl(endpoints.prioritasDistribution, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      case 'metode-distribution':
+        mutate(buildUrl(endpoints.metodeDistribution, { startdate: dateRange.start, enddate: dateRange.end }));
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -505,7 +561,7 @@ export default function PurchasingRequestScreen() {
               {slides.map((slide, idx) => (
                 <button
                   key={slide.key}
-                  onClick={() => { setCurrentSlideIndex(idx); setRemainingSeconds(300); }}
+                  onClick={() => { refreshSlideData(slide.key); setCurrentSlideIndex(idx); setRemainingSeconds(300); }}
                   style={{
                     width: 12,
                     height: 12,
