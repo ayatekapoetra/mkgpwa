@@ -336,8 +336,8 @@ export const useGetTopPrCreators = (params) => {
   return memoized;
 };
 
-// 13. PR Approval Trend
-export const useGetPrApprovalTrend = (params) => {
+// 13. PR Checked Trend
+export const useGetPrCheckedTrend = (params) => {
   const url = params ? endpoints.prApprovalTrend + `?${new URLSearchParams(params)}` : endpoints.prApprovalTrend;
   const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
     refreshInterval: 180000,
@@ -346,7 +346,7 @@ export const useGetPrApprovalTrend = (params) => {
     revalidateOnReconnect: false
   });
 
-  if (error) logError('PR Approval Trend', error, data);
+  if (error) logError('PR Checked Trend', error, data);
 
   const memoized = useMemo(
     () => ({

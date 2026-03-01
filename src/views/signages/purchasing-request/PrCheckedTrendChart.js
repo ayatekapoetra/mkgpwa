@@ -27,8 +27,8 @@ ChartJS.register(
 );
 
 // Plugin for data labels on line chart points
-const approvalTrendLabelsPlugin = {
-  id: 'approvalTrendLabelsPlugin',
+const checkedTrendLabelsPlugin = {
+  id: 'checkedTrendLabelsPlugin',
   afterDatasetsDraw(chart) {
     const ctx = chart.ctx;
     const dataset = chart.data.datasets[0];
@@ -50,7 +50,7 @@ const approvalTrendLabelsPlugin = {
   }
 };
 
-export default function PrApprovalTrendChart({ data, loading }) {
+export default function PrCheckedTrendChart({ data, loading }) {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -97,7 +97,7 @@ export default function PrApprovalTrendChart({ data, loading }) {
     labels: labels,
     datasets: [
       {
-        label: 'PR Approved',
+        label: 'PR Checked',
         data: approvedCounts,
         borderColor: '#10b981', // Green
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -181,7 +181,7 @@ export default function PrApprovalTrendChart({ data, loading }) {
         },
         title: {
           display: true,
-          text: 'Jumlah PR Approved',
+           text: 'Jumlah PR Checked',
           font: {
             size: 11,
             weight: 'bold'
@@ -193,7 +193,7 @@ export default function PrApprovalTrendChart({ data, loading }) {
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
-      <Line data={chartData} options={options} plugins={[approvalTrendLabelsPlugin]} />
+      <Line data={chartData} options={options} plugins={[checkedTrendLabelsPlugin]} />
     </div>
   );
 }

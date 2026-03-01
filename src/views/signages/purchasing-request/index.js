@@ -24,7 +24,7 @@ import {
   useGetMetodeDistribution,
   useGetStatusDistribution,
   useGetTopPrCreators,
-  useGetPrApprovalTrend,
+  useGetPrCheckedTrend,
   useGetUsiaBerkas
 } from 'api/purchasing-charts';
 
@@ -44,7 +44,7 @@ import EquipmentSpendingChart from './EquipmentSpendingChart';
 import MetodeDistributionChart from './MetodeDistributionChart';
 import StatusDistributionChart from './StatusDistributionChart';
 import Top10CreatorsChart from './Top10CreatorsChart';
-import PrApprovalTrendChart from './PrApprovalTrendChart';
+import PrCheckedTrendChart from './PrCheckedTrendChart';
 import UsiaBerikasChart from './UsiaBerikasChart';
 
 // Helper function untuk safe number formatting
@@ -151,7 +151,7 @@ export default function PurchasingRequestScreen() {
     enddate: dateRange.end
   });
 
-  const { data: approvalTrendData, loading: approvalTrendLoading } = useGetPrApprovalTrend({
+  const { data: checkTrendData, loading: checkTrendLoading } = useGetPrCheckedTrend({
     startdate: dateRange.start,
     enddate: dateRange.end
   });
@@ -195,9 +195,9 @@ export default function PurchasingRequestScreen() {
       content: <Top10CreatorsChart data={topCreatorsData} users={topCreatorsUsers} loading={topCreatorsLoading} />
     },
     {
-      key: 'approval-trend',
-      title: 'PR Approval Trend',
-      content: <PrApprovalTrendChart data={approvalTrendData} loading={approvalTrendLoading} />
+      key: 'checked-trend',
+      title: 'PR Checked Trend',
+      content: <PrCheckedTrendChart data={checkTrendData} loading={checkTrendLoading} />
     },
     {
       key: 'spending-cabang',
@@ -239,7 +239,7 @@ export default function PurchasingRequestScreen() {
       title: 'Metode Distribution',
       content: <MetodeDistributionChart data={metodeData} loading={metodeLoading} />
     }
-  ], [trendData, trendLoading, trendVersion, statusDistributionData, statusDistributionLoading, usiaBerkasData, usiaBerkasMeta, usiaBerkasLoading, topCreatorsData, topCreatorsUsers, topCreatorsLoading, approvalTrendData, approvalTrendLoading, spendingCabangData, spendingCabangLoading, qtyComparisonData, qtyComparisonLoading, approvalDurationData, approvalDurationLoading, equipmentSpendingData, equipmentSpendingLoading, topBarangData, topBarangLoading, topPemasokData, topPemasokLoading, prioritasData, prioritasLoading, metodeData, metodeLoading]);
+  ], [trendData, trendLoading, trendVersion, statusDistributionData, statusDistributionLoading, usiaBerkasData, usiaBerkasMeta, usiaBerkasLoading, topCreatorsData, topCreatorsUsers, topCreatorsLoading, checkTrendData, checkTrendLoading, spendingCabangData, spendingCabangLoading, qtyComparisonData, qtyComparisonLoading, approvalDurationData, approvalDurationLoading, equipmentSpendingData, equipmentSpendingLoading, topBarangData, topBarangLoading, topPemasokData, topPemasokLoading, prioritasData, prioritasLoading, metodeData, metodeLoading]);
 
   // Countdown + slide rotation when slideshow is active
   useEffect(() => {
@@ -303,7 +303,7 @@ export default function PurchasingRequestScreen() {
       case 'top-creators':
         mutate(buildUrl(endpoints.topPrCreators, { startdate: dateRange.start, enddate: dateRange.end }));
         break;
-      case 'approval-trend':
+      case 'checked-trend':
         mutate(buildUrl(endpoints.prApprovalTrend, { startdate: dateRange.start, enddate: dateRange.end }));
         break;
       case 'spending-cabang':
@@ -468,7 +468,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          {/* Row 3b: Top 10 PR Creators & PR Approval Trend */}
+          {/* Row 3b: Top 10 PR Creators & PR Checked Trend */}
           <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Top 10 PR Creators</h3>
@@ -480,9 +480,9 @@ export default function PurchasingRequestScreen() {
 
           <Grid item md={6} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
-              <h3>PR Approval Trend</h3>
+              <h3>PR Checked Trend</h3>
               <div style={{ height: '290px' }}>
-                <PrApprovalTrendChart data={approvalTrendData} loading={approvalTrendLoading} />
+                <PrCheckedTrendChart data={checkTrendData} loading={checkTrendLoading} />
               </div>
             </Paper>
           </Grid>
