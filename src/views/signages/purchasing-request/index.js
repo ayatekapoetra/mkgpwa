@@ -352,7 +352,7 @@ export default function PurchasingRequestScreen() {
         }}
       >
         <Stack>
-          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Purchasing Request Dashboard</h2>
+          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Purchasing Request</h2>
           <Stack direction="row" spacing={2} sx={{ mt: 0.5, fontSize: '0.875rem', color: 'text.secondary' }}>
             <span>{tanggal}</span>
             <span>|</span>
@@ -384,8 +384,10 @@ export default function PurchasingRequestScreen() {
           <button
             onClick={handleToggleSlideshow}
             style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer' }}
+            aria-label={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
+            title={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
           >
-            {isSlideshow ? 'Stop Slideshow' : 'Start Slideshow'}
+            {isSlideshow ? '⏹' : '⏵'}
           </button>
         </Stack>
       </Stack>
