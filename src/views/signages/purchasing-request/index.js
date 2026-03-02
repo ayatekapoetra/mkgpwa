@@ -27,6 +27,7 @@ import {
   useGetPrCheckedTrend,
   useGetUsiaBerkas
 } from 'api/purchasing-charts';
+import { PresentionChart } from 'iconsax-react';
 
 // DATE UTILS
 import moment from 'moment';
@@ -383,11 +384,12 @@ export default function PurchasingRequestScreen() {
           </button>
           <button
             onClick={handleToggleSlideshow}
-            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer' }}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
             aria-label={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
             title={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
           >
-            {isSlideshow ? '⏹' : '⏵'}
+            <PresentionChart size={18} variant="Bold" />
+            {isSlideshow ? 'Stop' : 'Start'}
           </button>
         </Stack>
       </Stack>
