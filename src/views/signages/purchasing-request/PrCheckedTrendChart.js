@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 import moment from 'moment';
 import {
@@ -8,6 +8,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -20,6 +21,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -31,17 +33,18 @@ const checkedTrendLabelsPlugin = {
   id: 'checkedTrendLabelsPlugin',
   afterDatasetsDraw(chart) {
     const ctx = chart.ctx;
-    const dataset = chart.data.datasets[0];
-    const meta = chart.getDatasetMeta(0);
-    
-    meta.data.forEach((point, index) => {
-      const value = dataset.data[index];
-      if (value === 0) return; // Skip if no data
+    // Assume first dataset is line (total)
+    const lineMeta = chart.getDatasetMeta(0);
+    const lineDataset = chart.data.datasets[0];
+
+    lineMeta.data.forEach((point, index) => {
+      const value = lineDataset.data[index];
+      if (value === 0) return;
 
       const { x, y } = point;
       ctx.save();
       ctx.font = '600 10px Poppins, sans-serif';
-      ctx.fillStyle = '#059669'; // Green (matching line color)
+      ctx.fillStyle = '#059669';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.fillText(value.toString(), x, y - 8);
@@ -50,7 +53,7 @@ const checkedTrendLabelsPlugin = {
   }
 };
 
-export default function PrCheckedTrendChart({ data, loading }) {
+export default function PrCheckedTrendChart({ data, users = [], loading }) {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -78,12 +81,14 @@ export default function PrCheckedTrendChart({ data, loading }) {
   };
 
   // Sort data by date
-  const sortedData = [...data].sort((a, b) => {
-    const dateA = parseDateValue(a.date || a.date_validated);
-    const dateB = parseDateValue(b.date || b.date_validated);
-    if (!dateA || !dateB) return 0;
-    return dateA.valueOf() - dateB.valueOf();
-  });
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      const dateA = parseDateValue(a.date || a.date_validated);
+      const dateB = parseDateValue(b.date || b.date_validated);
+      if (!dateA || !dateB) return 0;
+      return dateA.valueOf() - dateB.valueOf();
+    });
+  }, [data]);
 
   // Extract labels and counts
   const labels = sortedData.map(item => {
@@ -93,13 +98,45 @@ export default function PrCheckedTrendChart({ data, loading }) {
 
   const approvedCounts = sortedData.map(item => item.approved_count || 0);
 
+  // Colors palette for users + others
+  const userColors = ['#2563eb', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#14b8a6'];
+
+  // Build bar datasets per user (top users) and one for others
+  const barDatasets = (users || []).map((u, idx) => {
+    const color = userColors[idx % userColors.length];
+    return {
+      type: 'bar',
+      label: u.name || `User ${u.user_id}`,
+      data: sortedData.map(item => {
+        const found = (item.users || []).find(x => x.user_id === u.user_id);
+        return found ? found.count || 0 : 0;
+      }),
+      backgroundColor: color,
+      borderColor: color,
+      borderWidth: 1,
+      stack: 'checked-users'
+    };
+  });
+
+  // Others stack
+  barDatasets.push({
+    type: 'bar',
+    label: 'Others',
+    data: sortedData.map(item => item.others || 0),
+    backgroundColor: '#9ca3af',
+    borderColor: '#6b7280',
+    borderWidth: 1,
+    stack: 'checked-users'
+  });
+
   const chartData = {
     labels: labels,
     datasets: [
       {
-        label: 'PR Checked',
+        type: 'line',
+        label: 'PR Checked (Total)',
         data: approvedCounts,
-        borderColor: '#10b981', // Green
+        borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         borderWidth: 3,
         tension: 0.4,
@@ -108,8 +145,10 @@ export default function PrCheckedTrendChart({ data, loading }) {
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 4,
-        pointHoverRadius: 6
-      }
+        pointHoverRadius: 6,
+        yAxisID: 'y'
+      },
+      ...barDatasets
     ]
   };
 
@@ -146,7 +185,8 @@ export default function PrCheckedTrendChart({ data, loading }) {
         callbacks: {
           label: function (context) {
             const value = context.raw || 0;
-            return `Approved: ${value} berkas`;
+            const label = context.dataset.label || 'Value';
+            return `${label}: ${value} berkas`;
           }
         }
       },
@@ -156,6 +196,7 @@ export default function PrCheckedTrendChart({ data, loading }) {
     },
     scales: {
       x: {
+        stacked: true,
         grid: {
           display: false
         },
@@ -168,6 +209,7 @@ export default function PrCheckedTrendChart({ data, loading }) {
         }
       },
       y: {
+        stacked: true,
         beginAtZero: true,
         grid: {
           color: 'rgba(0, 0, 0, 0.05)'
@@ -181,7 +223,7 @@ export default function PrCheckedTrendChart({ data, loading }) {
         },
         title: {
           display: true,
-           text: 'Jumlah PR Checked',
+          text: 'Jumlah PR Checked',
           font: {
             size: 11,
             weight: 'bold'

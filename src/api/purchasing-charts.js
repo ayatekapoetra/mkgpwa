@@ -351,6 +351,7 @@ export const useGetPrCheckedTrend = (params) => {
   const memoized = useMemo(
     () => ({
       data: data?.data || [],
+      users: data?.users || [],
       loading: isLoading,
       error,
       validating: isValidating

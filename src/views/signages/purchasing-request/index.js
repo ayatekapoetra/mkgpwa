@@ -152,7 +152,7 @@ export default function PurchasingRequestScreen() {
     enddate: dateRange.end
   });
 
-  const { data: checkTrendData, loading: checkTrendLoading } = useGetPrCheckedTrend({
+  const { data: checkTrendData, users: checkTrendUsers, loading: checkTrendLoading } = useGetPrCheckedTrend({
     startdate: dateRange.start,
     enddate: dateRange.end
   });
@@ -198,7 +198,7 @@ export default function PurchasingRequestScreen() {
     {
       key: 'checked-trend',
       title: 'PR Checked Trend',
-      content: <PrCheckedTrendChart data={checkTrendData} loading={checkTrendLoading} />
+      content: <PrCheckedTrendChart data={checkTrendData} users={checkTrendUsers} loading={checkTrendLoading} />
     },
     {
       key: 'spending-cabang',
@@ -477,7 +477,7 @@ export default function PurchasingRequestScreen() {
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>PR Checked Trend</h3>
               <div style={{ height: '290px' }}>
-                <PrCheckedTrendChart data={checkTrendData} loading={checkTrendLoading} />
+                <PrCheckedTrendChart data={checkTrendData} users={checkTrendUsers} loading={checkTrendLoading} />
               </div>
             </Paper>
           </Grid>
