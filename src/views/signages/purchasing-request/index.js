@@ -72,7 +72,7 @@ export default function PurchasingRequestScreen() {
   const [tanggal, setTanggal] = useState(moment().format('dddd, DD MMMM YYYY'));
   const [isSlideshow, setIsSlideshow] = useState(false);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [remainingSeconds, setRemainingSeconds] = useState(300);
+  const [remainingSeconds, setRemainingSeconds] = useState(30);
 
   // Date Range Filter State
   const [dateRange, setDateRange] = useState({
@@ -246,7 +246,7 @@ export default function PurchasingRequestScreen() {
   useEffect(() => {
     if (!isSlideshow) return undefined;
 
-    setRemainingSeconds(300);
+    setRemainingSeconds(30);
 
     const interval = setInterval(() => {
       setRemainingSeconds(prev => {
@@ -254,7 +254,7 @@ export default function PurchasingRequestScreen() {
           const nextIndex = (currentSlideIndex + 1) % slides.length;
           refreshSlideData(slides[nextIndex]?.key);
           setCurrentSlideIndex(nextIndex);
-          return 300;
+          return 30;
         }
         return prev - 1;
       });
@@ -281,7 +281,7 @@ export default function PurchasingRequestScreen() {
   const handleToggleSlideshow = () => {
     setIsSlideshow(prev => !prev);
     setCurrentSlideIndex(0);
-    setRemainingSeconds(300);
+    setRemainingSeconds(30);
   };
 
   // Build SWR keys for refetch
@@ -565,7 +565,7 @@ export default function PurchasingRequestScreen() {
               {slides.map((slide, idx) => (
                 <button
                   key={slide.key}
-                  onClick={() => { refreshSlideData(slide.key); setCurrentSlideIndex(idx); setRemainingSeconds(300); }}
+                  onClick={() => { refreshSlideData(slide.key); setCurrentSlideIndex(idx); setRemainingSeconds(30); }}
                   style={{
                     width: 12,
                     height: 12,
