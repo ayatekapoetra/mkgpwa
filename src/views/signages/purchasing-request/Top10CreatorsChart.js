@@ -24,16 +24,16 @@ ChartJS.register(
 
 // Predefined colors for different users
 const USER_COLORS = [
-  '#ef4444', // red
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#f59e0b', // amber
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#84cc16', // lime
-  '#f97316', // orange
-  '#6366f1'  // indigo
+  '#1F77B4', // Biru
+  '#FF7F0E', // Oranye
+  '#2CA02C', // Hijau
+  '#D62728', // Merah
+  '#9467BD', // purple
+  '#8C564B', // Coklat
+  '#E377C2', // Pink
+  '#7F7F7F', // Abu-abu
+  '#BCBD22', // Hijau muda
+  '#17BECF'  // Cyan
 ];
 
 // Plugin for data labels on top of stacked bars
@@ -142,7 +142,7 @@ export default function Top10CreatorsChart({ data, users, loading }) {
         position: 'top',
         labels: {
           font: {
-            size: 9,
+            size: 12,
             weight: 'bold'
           },
           padding: 8,

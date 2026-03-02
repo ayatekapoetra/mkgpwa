@@ -384,7 +384,7 @@ export default function PurchasingRequestScreen() {
           </button>
           <button
             onClick={handleToggleSlideshow}
-            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : '#1D2630', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
             aria-label={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
             title={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
           >
@@ -407,7 +407,7 @@ export default function PurchasingRequestScreen() {
         {!isSlideshow ? (
         <Grid container spacing={2}>
           {/* Row 1: Summary Cards - 3 Panel Berdampingan */}
-          <Grid item xs={2}>
+          <Grid item xs={4}>
             <Paper sx={{ p: 2, height: '200px' }}>
               <h3>Approval Rate</h3>
               {approvalRateLoading ? (
@@ -425,7 +425,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={5}>
+          <Grid item xs={4}>
             <Paper sx={{ p: 2, height: '200px' }}>
               <h3>Prioritas Distribution</h3>
               <div style={{ height: '140px' }}>
@@ -434,7 +434,7 @@ export default function PurchasingRequestScreen() {
             </Paper>
           </Grid>
 
-          <Grid item xs={5}>
+          <Grid item xs={4}>
             <Paper sx={{ p: 2, height: '200px' }}>
               <h3>Metode Distribution</h3>
               <div style={{ height: '140px' }}>
@@ -454,20 +454,11 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 3: Status Distribution & Usia Berkas */}
-          <Grid item md={8} xs={12}>
+          <Grid item md={12} xs={12}>
             <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Status Distribution (Baru, Approved, Finish)</h3>
               <div style={{ height: '290px' }}>
                 <StatusDistributionChart data={statusDistributionData} loading={statusDistributionLoading} />
-              </div>
-            </Paper>
-          </Grid>
-
-          <Grid item md={4} xs={12}>
-            <Paper sx={{ p: 2, height: '350px' }}>
-              <h3>Usia Berkas</h3>
-              <div style={{ height: '290px' }}>
-                <UsiaBerikasChart data={usiaBerkasData} meta={usiaBerkasMeta} loading={usiaBerkasLoading} />
               </div>
             </Paper>
           </Grid>
@@ -492,11 +483,20 @@ export default function PurchasingRequestScreen() {
           </Grid>
 
           {/* Row 4: Spending per Cabang */}
-          <Grid item md={12} xs={12}>
-            <Paper sx={{ p: 2, height: '300px' }}>
+          <Grid item md={8} xs={12}>
+            <Paper sx={{ p: 2, height: '350px' }}>
               <h3>Spending per Cabang</h3>
-              <div style={{ height: '240px' }}>
+              <div style={{ height: '290px' }}>
                 <SpendingPerCabangChart data={spendingCabangData} loading={spendingCabangLoading} />
+              </div>
+            </Paper>
+          </Grid>
+
+          <Grid item md={4} xs={12}>
+            <Paper sx={{ p: 2, height: '350px' }}>
+              <h3>Usia Berkas</h3>
+              <div style={{ height: '290px' }}>
+                <UsiaBerikasChart data={usiaBerkasData} meta={usiaBerkasMeta} loading={usiaBerkasLoading} />
               </div>
             </Paper>
           </Grid>
