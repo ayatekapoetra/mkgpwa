@@ -54,21 +54,7 @@ const checkedTrendLabelsPlugin = {
 };
 
 export default function PrCheckedTrendChart({ data, users = [], loading }) {
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <p style={{ color: '#ef4444' }}>No data available</p>
-      </div>
-    );
-  }
+  const safeData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   // Parse and format dates
   const parseDateValue = (value) => {
@@ -82,13 +68,29 @@ export default function PrCheckedTrendChart({ data, users = [], loading }) {
 
   // Sort data by date
   const sortedData = useMemo(() => {
-    return [...data].sort((a, b) => {
+    return [...safeData].sort((a, b) => {
       const dateA = parseDateValue(a.date || a.date_validated);
       const dateB = parseDateValue(b.date || b.date_validated);
       if (!dateA || !dateB) return 0;
       return dateA.valueOf() - dateB.valueOf();
     });
-  }, [data]);
+  }, [safeData]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!sortedData || sortedData.length === 0) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <p style={{ color: '#ef4444' }}>No data available</p>
+      </div>
+    );
+  }
 
   // Extract labels and counts
   const labels = sortedData.map(item => {
