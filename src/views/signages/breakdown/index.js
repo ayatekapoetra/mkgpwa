@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 import { PolarChartByCtEquipment } from './Charts';
 import { useGetBreakdownChartPolar, useGetBreakdownChartLineDuration, useGetBreakdownTrendMonthly, useGetRepairTimeDistribution, useGetEquipmentPerformanceMatrix } from 'api/breakdown-charts';
 import { useTheme } from '@mui/material/styles';
@@ -13,20 +12,24 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useGetSignages } from 'api/signages';
 import moment from 'moment';
 import { usePublicCabang } from 'api/cabang';
-
-// Refresh interval in milliseconds (3 minutes)
-const REFRESH_INTERVAL = 180000;
+import { PresentionChart } from 'iconsax-react';
 
 export default function BreakdownScreen() {
   const theme = useTheme();
   const downSM = useMediaQuery(theme.breakpoints.down('sm'));
   const [clock, setClock] = useState(moment().format('HH:mm:ss'));
   const [tanggal, setTanggal] = useState(moment().format('dddd, DD MMMM YYYY'));
-  const [countdown, setCountdown] = useState(REFRESH_INTERVAL / 1000); // in seconds
   const { data: cabang, dataLoading: isLoading } = usePublicCabang();
 
   // UI State (tidak dikirim ke API)
   const [isGrid, setIsGrid] = useState(true);
+
+  // Header filter + slideshow
+  const [dateRange, setDateRange] = useState({
+    start: moment().subtract(31, 'days').format('YYYY-MM-DD'),
+    end: moment().format('YYYY-MM-DD')
+  });
+  const [isSlideshow, setIsSlideshow] = useState(false);
 
   // API Params (hanya yang dibutuhkan backend)
   const [apiParams, setApiParams] = useState({
@@ -64,141 +67,73 @@ export default function BreakdownScreen() {
     return () => clearTimeout(timeout);
   }, [clock]);
 
-  // Countdown timer for refetch
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          return REFRESH_INTERVAL / 1000; // Reset to 3 minutes
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Format countdown as MM:SS
-  const formatCountdown = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const handleDateChange = (field, value) => {
+    setDateRange(prev => ({ ...prev, [field]: value }));
   };
 
-  // Calculate progress percentage for circular progress
-  const progressPercent = ((REFRESH_INTERVAL / 1000 - countdown) / (REFRESH_INTERVAL / 1000)) * 100;
+  const handleApplyFilter = () => {
+    // TODO: integrate with breakdown API when date filters are supported
+    console.log('Apply filter:', dateRange);
+  };
+
+  const handleToggleSlideshow = () => {
+    setIsSlideshow(prev => !prev);
+  };
 
   return (
     <Stack sx={{ height: '100vh', overflow: 'hidden' }}>
-      {/* Compact Header with Stats and Controls */}
+      {/* Header (mirrors Purchasing Request layout) */}
       <Stack
         direction="row"
-        spacing={1}
+        spacing={2}
         alignItems="center"
         justifyContent="space-between"
         sx={{
-          mx: 1,
-          mt: 1,
-          mb: 0.5,
-          flexWrap: 'wrap',
-          gap: 1
+          px: 2,
+          py: 1,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider'
         }}
       >
-        {/* Left Side - Date & Time */}
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            {clock}
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            {tanggal}
-          </Typography>
+        <Stack>
+          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Breakdown Dashboard</h2>
+          <Stack direction="row" spacing={2} sx={{ mt: 0.5, fontSize: '0.875rem', color: 'text.secondary' }}>
+            <span>{tanggal}</span>
+            <span>|</span>
+            <span>{clock}</span>
+          </Stack>
         </Stack>
 
-        {/* Right Side - Refetch Countdown Timer */}
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          sx={{
-            px: 2,
-            py: 1,
-            bgcolor: 'primary.main',
-            borderRadius: 2
-          }}
-        >
-          <Box
-            sx={{
-              position: 'relative',
-              display: 'inline-flex'
-            }}
+        <Stack direction="row" spacing={1} alignItems="center">
+          <input
+            type="date"
+            value={dateRange.start}
+            onChange={(e) => handleDateChange('start', e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+          <span>to</span>
+          <input
+            type="date"
+            value={dateRange.end}
+            onChange={(e) => handleDateChange('end', e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+          <button
+            onClick={handleApplyFilter}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: 'none', background: '#1976d2', color: 'white', cursor: 'pointer' }}
           >
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
-                position: 'relative'
-              }}
-            >
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  right: 0,
-                  borderRadius: '50%',
-                  background: `conic-gradient(rgba(255, 255, 255, 0.8) ${progressPercent}%, transparent ${progressPercent}%)`,
-                  animation: countdown <= 10 ? 'pulse 1s ease-in-out infinite' : 'none',
-                  '@keyframes pulse': {
-                    '0%, 100%': { opacity: 1 },
-                    '50%': { opacity: 0.7 }
-                  }
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 4,
-                  left: 4,
-                  right: 4,
-                  bottom: 4,
-                  borderRadius: '50%',
-                  bgcolor: 'primary.main',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 'bold',
-                    color: 'white',
-                    fontSize: countdown <= 10 ? '0.9rem' : '0.75rem',
-                    lineHeight: 1
-                  }}
-                >
-                  {formatCountdown(countdown)}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-          <Stack>
-            <Typography
-              variant="caption"
-              sx={{ color: 'white', fontWeight: 500, lineHeight: 1.2 }}
-            >
-              Auto-Refresh
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.7rem', lineHeight: 1.2 }}
-            >
-              Data update in
-            </Typography>
-          </Stack>
+            Apply
+          </button>
+          <button
+            onClick={handleToggleSlideshow}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            aria-label={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
+            title={isSlideshow ? 'Stop slideshow' : 'Start slideshow'}
+          >
+            <PresentionChart size={18} variant="Bold" />
+            {isSlideshow ? 'Stop' : 'Start'}
+          </button>
         </Stack>
       </Stack>
 
