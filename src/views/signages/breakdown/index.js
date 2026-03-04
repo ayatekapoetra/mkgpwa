@@ -121,35 +121,47 @@ export default function BreakdownScreen() {
       key: 'stacked-bar',
       title: 'Status Breakdown per Kategori',
       content: (
-        <StackedBarChartBreakdown
-          data={polarChartData}
-          validCategorySeries={validCategorySeries}
-          statusLabels={statusLabels}
-          statusPalette={statusPalette}
-        />
+        <div style={{ height: '100%', minHeight: '70vh' }}>
+          <StackedBarChartBreakdown
+            data={polarChartData}
+            validCategorySeries={validCategorySeries}
+            statusLabels={statusLabels}
+            statusPalette={statusPalette}
+          />
+        </div>
       )
     },
     {
       key: 'line-duration',
       title: 'Durasi Breakdown per Kategori',
-      content: <LineChartDurationBreakdown data={lineChartData} loading={lineChartLoading} />
+      content: (
+        <div style={{ height: '100%', minHeight: '70vh' }}>
+          <LineChartDurationBreakdown data={lineChartData} loading={lineChartLoading} />
+        </div>
+      )
     },
     {
       key: 'trend-monthly',
       title: 'Trend Bulanan & Distribusi Perbaikan',
       content: (
-        <BubbleChartDummy
-          trendMonthlyData={trendMonthlyData}
-          trendMonthlyLoading={trendMonthlyLoading}
-          repairTimeData={repairTimeData}
-          repairTimeLoading={repairTimeLoading}
-        />
+        <div style={{ height: '100%', minHeight: '70vh' }}>
+          <BubbleChartDummy
+            trendMonthlyData={trendMonthlyData}
+            trendMonthlyLoading={trendMonthlyLoading}
+            repairTimeData={repairTimeData}
+            repairTimeLoading={repairTimeLoading}
+          />
+        </div>
       )
     },
     {
       key: 'equipment-performance',
       title: 'Equipment Performance Matrix',
-      content: <EquipmentPerformanceBubbleChart bubbleData={bubbleData} loading={bubbleLoading} />
+      content: (
+        <div style={{ height: '100%', minHeight: '70vh' }}>
+          <EquipmentPerformanceBubbleChart bubbleData={bubbleData} loading={bubbleLoading} />
+        </div>
+      )
     }
   ], [polarChartData, validCategorySeries, lineChartData, lineChartLoading, trendMonthlyData, trendMonthlyLoading, repairTimeData, repairTimeLoading, bubbleData, bubbleLoading]);
 
@@ -268,7 +280,7 @@ export default function BreakdownScreen() {
                 <span style={{ fontWeight: 600 }}>{`${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`}</span>
               </Stack>
             </Stack>
-            <div style={{ flex: 1, minHeight: '60vh' }}>
+            <div style={{ flex: 1, minHeight: '75vh' }}>
               {slides[currentSlideIndex]?.content}
             </div>
             <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
