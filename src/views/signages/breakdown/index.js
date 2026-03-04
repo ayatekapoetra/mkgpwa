@@ -1,11 +1,15 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 // MATERIAL - UI
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { PolarChartByCtEquipment } from './Charts';
+import LineChartDurationBreakdown from './LineChartDurationBreakdown';
+import StackedBarChartBreakdown from './StackedBarChartBreakdown';
+import BubbleChartDummy from './BubbleChartDummy';
+import EquipmentPerformanceBubbleChart from './EquipmentPerformanceBubbleChart';
 import { useGetBreakdownChartPolar, useGetBreakdownChartLineDuration, useGetBreakdownTrendMonthly, useGetRepairTimeDistribution, useGetEquipmentPerformanceMatrix } from 'api/breakdown-charts';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -30,6 +34,8 @@ export default function BreakdownScreen() {
     end: moment().format('YYYY-MM-DD')
   });
   const [isSlideshow, setIsSlideshow] = useState(false);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(30);
 
   // API Params (hanya yang dibutuhkan backend)
   const [apiParams, setApiParams] = useState({
@@ -46,6 +52,33 @@ export default function BreakdownScreen() {
   const { data: repairTimeData, loading: repairTimeLoading } = useGetRepairTimeDistribution({ cabang_id: apiParams.cabang_id });
   const { data: bubbleData, loading: bubbleLoading } = useGetEquipmentPerformanceMatrix({ cabang_id: apiParams.cabang_id });
   const hasPolarData = polarChartData && Array.isArray(polarChartData) && polarChartData.length > 0;
+
+  // Derived for stacked bar (reuse from Charts)
+  const statusLabels = ['WT', 'WP', 'WS', 'WV', 'WTT', 'IP'];
+  const statusPalette = {
+    WT: '#1E88E5',
+    WP: '#FBC02D',
+    WS: '#43A047',
+    WV: '#E53935',
+    WTT: '#FB8C00',
+    IP: '#8E24AA'
+  };
+
+  const validCategorySeries = useMemo(() => {
+    if (!Array.isArray(polarChartData)) return [];
+    const grouped = polarChartData.map(item => ({
+      ctgequipment: item.ctgequipment,
+      total: item.total,
+      status_count: item.status_count || { WT: 0, WP: 0, WS: 0, WV: 0, WTT: 0, IP: 0 }
+    })).sort((a, b) => b.total - a.total);
+
+    const categorySeries = grouped.map(cat => ({
+      name: cat.ctgequipment,
+      data: statusLabels.map(s => cat.status_count?.[s] || 0)
+    }));
+
+    return categorySeries.filter(series => series.data.some(v => v > 0));
+  }, [polarChartData]);
 
   // Debug polar chart data
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
@@ -78,7 +111,67 @@ export default function BreakdownScreen() {
 
   const handleToggleSlideshow = () => {
     setIsSlideshow(prev => !prev);
+    setCurrentSlideIndex(0);
+    setRemainingSeconds(30);
   };
+
+  // Slideshow data (order of charts)
+  const slides = useMemo(() => [
+    {
+      key: 'stacked-bar',
+      title: 'Status Breakdown per Kategori',
+      content: (
+        <StackedBarChartBreakdown
+          data={polarChartData}
+          validCategorySeries={validCategorySeries}
+          statusLabels={statusLabels}
+          statusPalette={statusPalette}
+        />
+      )
+    },
+    {
+      key: 'line-duration',
+      title: 'Durasi Breakdown per Kategori',
+      content: <LineChartDurationBreakdown data={lineChartData} loading={lineChartLoading} />
+    },
+    {
+      key: 'trend-monthly',
+      title: 'Trend Bulanan & Distribusi Perbaikan',
+      content: (
+        <BubbleChartDummy
+          trendMonthlyData={trendMonthlyData}
+          trendMonthlyLoading={trendMonthlyLoading}
+          repairTimeData={repairTimeData}
+          repairTimeLoading={repairTimeLoading}
+        />
+      )
+    },
+    {
+      key: 'equipment-performance',
+      title: 'Equipment Performance Matrix',
+      content: <EquipmentPerformanceBubbleChart bubbleData={bubbleData} loading={bubbleLoading} />
+    }
+  ], [polarChartData, validCategorySeries, lineChartData, lineChartLoading, trendMonthlyData, trendMonthlyLoading, repairTimeData, repairTimeLoading, bubbleData, bubbleLoading]);
+
+  // Slideshow timer
+  useEffect(() => {
+    if (!isSlideshow) return undefined;
+
+    setRemainingSeconds(30);
+
+    const interval = setInterval(() => {
+      setRemainingSeconds(prev => {
+        if (prev <= 1) {
+          const nextIndex = (currentSlideIndex + 1) % slides.length;
+          setCurrentSlideIndex(nextIndex);
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSlideshow, currentSlideIndex, slides.length]);
 
   return (
     <Stack sx={{ height: '100vh', overflow: 'hidden' }}>
@@ -143,13 +236,13 @@ export default function BreakdownScreen() {
           flex: 1, 
           m: 1, 
           mt: 0,
-           maxHeight: 'calc(100vh - 16px)', 
+          maxHeight: 'calc(100vh - 16px)', 
           overflow: 'auto',
           backgroundColor: 'transparent',
           boxShadow: 'none'
         }}
       >
-        {!dataLoading && (
+        {!dataLoading && (!isSlideshow ? (
           <>
             {/* Polar Chart by CtgEquipment - Display above the list */}
             {hasPolarData && (
@@ -166,7 +259,38 @@ export default function BreakdownScreen() {
               />
             )}
           </>
-        )}
+        ) : (
+          <div style={{ padding: '16px', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <h3 style={{ margin: 0 }}>{slides[currentSlideIndex]?.title || 'Slideshow'}</h3>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Next in</span>
+                <span style={{ fontWeight: 600 }}>{`${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`}</span>
+              </Stack>
+            </Stack>
+            <div style={{ flex: 1, minHeight: '60vh' }}>
+              {slides[currentSlideIndex]?.content}
+            </div>
+            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
+              {slides.map((slide, idx) => (
+                <button
+                  key={slide.key}
+                  onClick={() => { setCurrentSlideIndex(idx); setRemainingSeconds(30); }}
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    border: 'none',
+                    margin: 4,
+                    background: idx === currentSlideIndex ? '#3b82f6' : '#d1d5db',
+                    cursor: 'pointer'
+                  }}
+                  aria-label={`Go to slide ${slide.title}`}
+                />
+              ))}
+            </Stack>
+          </div>
+        ))}
       </Paper>
     </Stack>
   );
