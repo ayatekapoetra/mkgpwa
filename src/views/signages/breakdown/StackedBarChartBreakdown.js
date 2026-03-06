@@ -11,49 +11,51 @@ import { useTheme } from '@mui/material/styles';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
-export default function StackedBarChartBreakdown({ data, validCategorySeries, statusLabels, statusPalette }) {
+export default function StackedBarChartBreakdown({ data, validCategorySeries, statusLabels, statusPalette, fullHeight = false, fullWidth = false }) {
   const theme = useTheme();
+
+  const Wrapper = fullWidth ? Box : Grid;
+  const wrapperProps = fullWidth ? { sx: { height: '100%', width: '100%' } } : { item: true, xs: 12, md: 6 };
 
   if (!validCategorySeries || validCategorySeries.length === 0) {
     return (
-      <Grid item xs={12} md={6}>
-        <Card>
+      <Wrapper {...wrapperProps}>
+        <Card sx={fullHeight ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}}>
           <CardHeader title="Breakdown per Kategori & Status" />
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 450 }}>
+          <CardContent sx={fullHeight ? { flex: 1, minHeight: 0 } : {}}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: fullHeight ? '100%' : 350 }}>
               <Typography variant="body1" color="text.secondary">
                 Tidak ada data breakdown
               </Typography>
             </Box>
           </CardContent>
         </Card>
-      </Grid>
+      </Wrapper>
     );
   }
 
-  // Safely calculate total
   const totalBreakdown = Array.isArray(data)
     ? data.reduce((sum, cat) => sum + (cat?.total || 0), 0)
     : 0;
 
   const baseChart = {
-    toolbar: { show: false },
+    toolbar: { show: true, tools: { download: true } },
     animations: { enabled: true, easing: 'easeinout', speed: 600 },
     foreColor: theme.palette.text.secondary,
     parentHeightOffset: 0
   };
 
   return (
-    <Grid item xs={12} md={6}>
-      <Card>
+    <Wrapper {...wrapperProps}>
+      <Card sx={fullHeight ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}}>
         <CardHeader
           title="Breakdown per Kategori & Status"
-          subheader={`Total: ${totalBreakdown} unit dalam 3 bulan terakhir`}
+          subheader={`Total: ${totalBreakdown} unit`}
         />
-        <CardContent>
+        <CardContent sx={fullHeight ? { flex: 1, minHeight: 0 } : {}}>
           <ReactApexChart
             type="bar"
-            height={350}
+            height={fullHeight ? '100%' : 350}
             series={statusLabels
               .filter(status =>
                 validCategorySeries.some(series => {
@@ -78,17 +80,17 @@ export default function StackedBarChartBreakdown({ data, validCategorySeries, st
                 bar: {
                   horizontal: true,
                   borderRadius: 6,
-                  barHeight: '65%',
+                  barHeight: '60%',
                   dataLabels: {
                     total: {
                       enabled: true,
                       style: {
-                        fontSize: '14px',
-                        fontWeight: 700,
+                        fontSize: '12px',
+                        fontWeight: 600,
                         colors: ['#ffffff']
                       },
                       offsetX: 0,
-                      formatter: (val) => val > 0 ? val : ''
+                      formatter: (val) => (val > 0 ? val : '')
                     }
                   }
                 }
@@ -153,6 +155,6 @@ export default function StackedBarChartBreakdown({ data, validCategorySeries, st
           />
         </CardContent>
       </Card>
-    </Grid>
+    </Wrapper>
   );
 }

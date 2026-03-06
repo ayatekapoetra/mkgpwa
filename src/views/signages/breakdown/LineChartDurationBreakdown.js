@@ -11,32 +11,26 @@ import { useTheme } from '@mui/material/styles';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
-// Color palette for categories
-const categoryPalette = {
-  LV: '#FFA726',
-  DT: '#29B6F6',
-  GS: '#66BB6A',
-  HE: '#AB47BC',
-  LT: '#EF5350',
-};
-
-export default function LineChartDurationBreakdown({ data, loading }) {
+export default function LineChartDurationBreakdown({ data, loading, fullHeight = false, fullWidth = false }) {
   const theme = useTheme();
+
+  const Wrapper = fullWidth ? Box : Grid;
+  const wrapperProps = fullWidth ? { sx: { height: '100%', width: '100%' } } : { item: true, xs: 12, md: 6 };
 
   if (loading) {
     return (
-      <Grid item xs={12} md={6}>
-        <Card>
-           <CardHeader title="Durasi Breakdown per Equipment (Hari) - Bar" />
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 350 }}>
+      <Wrapper {...wrapperProps}>
+        <Card sx={fullHeight ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}}>
+          <CardHeader title="Durasi Breakdown per Equipment (Hari) - Bar" />
+          <CardContent sx={fullHeight ? { flex: 1, minHeight: 0 } : {}}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: fullHeight ? '100%' : 350 }}>
               <Typography variant="body1" color="text.secondary">
                 Loading...
               </Typography>
             </Box>
           </CardContent>
         </Card>
-      </Grid>
+      </Wrapper>
     );
   }
 
@@ -48,50 +42,44 @@ export default function LineChartDurationBreakdown({ data, loading }) {
 
   if (!hasValidData) {
     return (
-      <Grid item xs={12} md={6}>
-        <Card>
-           <CardHeader title="Durasi Breakdown per Equipment (Hari) - Bar" />
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 350 }}>
+      <Wrapper {...wrapperProps}>
+        <Card sx={fullHeight ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}}>
+          <CardHeader title="Durasi Breakdown per Equipment (Hari) - Bar" />
+          <CardContent sx={fullHeight ? { flex: 1, minHeight: 0 } : {}}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: fullHeight ? '100%' : 350 }}>
               <Typography variant="body1" color="text.secondary">
                 Tidak ada data
               </Typography>
             </Box>
           </CardContent>
         </Card>
-      </Grid>
+      </Wrapper>
     );
   }
 
   const baseChart = {
-    toolbar: { show: false },
+    toolbar: { show: true, tools: { download: true } },
     animations: { enabled: true, easing: 'easeinout', speed: 600 },
     foreColor: theme.palette.text.secondary,
     parentHeightOffset: 0
   };
-
-  // Get colors for each series
-  const seriesColors = [theme.palette.primary.main];
-
-  const bubbleSeries = [];
-
   return (
-    <Grid item xs={12} md={6}>
-      <Card>
+    <Wrapper {...wrapperProps}>
+      <Card sx={fullHeight ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}}>
         <CardHeader
-           title="Durasi Breakdown per Equipment (Hari)"
+          title="Durasi Breakdown per Equipment (Hari)"
           subheader={`${data?.range?.start || ''} s.d ${data?.range?.end || ''}`}
         />
-        <CardContent>
+        <CardContent sx={fullHeight ? { flex: 1, minHeight: 0 } : {}}>
           <ReactApexChart
             type="bar"
-            height={350}
+            height={fullHeight ? '100%' : 350}
             series={data.barSeries}
             options={{
-               chart: {
-                 stacked: true,
-                 ...baseChart,
-                 background: 'transparent',
+              chart: {
+                stacked: true,
+                ...baseChart,
+                background: 'transparent',
                 zoom: {
                   enabled: true,
                   type: 'x',
@@ -102,37 +90,24 @@ export default function LineChartDurationBreakdown({ data, loading }) {
                       opacity: 0.25
                     }
                   }
-                },
-                toolbar: {
-                  show: true,
-                  tools: {
-                    download: true,
-                    selection: true,
-                    zoom: true,
-                    zoomin: true,
-                    zoomout: true,
-                    pan: true,
-                    reset: true
-                  },
-                  autoSelected: 'zoom'
                 }
               },
-                 xaxis: {
-                 categories: data?.categories || [],
-                 labels: { rotate: -45, style: { fontSize: '11px' } },
-                 tickAmount: 'dataPoints',
-                 title: { text: 'Equipment (Top 25)', style: { fontSize: '12px', fontWeight: 600 } }
-               },
-               yaxis: {
-                 show: true,
-                 labels: { formatter: (val) => `${val} h`, style: { fontSize: '11px' } },
-                 title: { text: 'Durasi (hari)', style: { fontSize: '12px', fontWeight: 600 } },
-                 min: 0
-               },
-                colors: [theme.palette.primary.main],
-                plotOptions: {
-                  bar: { horizontal: false, borderRadius: 4 }
-                },
+              xaxis: {
+                categories: data?.categories || [],
+                labels: { rotate: -45, style: { fontSize: '11px' } },
+                tickAmount: 'dataPoints',
+                title: { text: 'Equipment (Top 25)', style: { fontSize: '12px', fontWeight: 600 } }
+              },
+              yaxis: {
+                show: true,
+                labels: { formatter: (val) => `${val} hari`, style: { fontSize: '11px' } },
+                title: { text: 'Durasi (hari)', style: { fontSize: '12px', fontWeight: 600 } },
+                min: 0
+              },
+              colors: [theme.palette.primary.main],
+              plotOptions: {
+                bar: { horizontal: false, borderRadius: 4 }
+              },
               dataLabels: {
                 enabled: false
               },
@@ -141,10 +116,7 @@ export default function LineChartDurationBreakdown({ data, loading }) {
                    formatter: (val) => `${val} hari`
                 },
                 x: {
-                  formatter: (val) => {
-                  const date = new Date(val);
-                  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-                }
+                  formatter: (val, opts) => opts?.w?.globals?.labels?.[opts?.dataPointIndex] ?? val
                 },
                 marker: {
                   enabled: true,
@@ -169,14 +141,11 @@ export default function LineChartDurationBreakdown({ data, loading }) {
               grid: {
                 strokeDashArray: 4,
                 borderColor: theme.palette.divider
-              },
-              plotOptions: {
-                curve: 'smooth'
               }
             }}
           />
         </CardContent>
       </Card>
-    </Grid>
+    </Wrapper>
   );
 }

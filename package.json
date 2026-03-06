@@ -64,6 +64,7 @@
     "browser-image-compression": "^2.0.2",
     "chance": "^1.1.11",
     "chart.js": "^4.4.4",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "electron-updater": "^6.6.2",

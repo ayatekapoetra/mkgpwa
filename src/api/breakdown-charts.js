@@ -8,7 +8,8 @@ export const endpoints = {
   chartLineDuration: '/maintenance/signages/breakdown/chart-line-duration-breakdown',
   breakdownTrendMonthly: '/maintenance/signages/breakdown/breakdown-trend-monthly',
   repairTimeDistribution: '/maintenance/signages/breakdown/repair-time-distribution',
-  equipmentPerformanceMatrix: '/maintenance/signages/breakdown/equipment-performance-matrix'
+  equipmentPerformanceMatrix: '/maintenance/signages/breakdown/equipment-performance-matrix',
+  activeDurationStack: '/maintenance/signages/breakdown/active-duration-stack'
 };
 
 export const useGetBreakdownCharts = (params) => {
@@ -138,6 +139,29 @@ export const useGetEquipmentPerformanceMatrix = (params) => {
       validating: isValidating
     }),
     [data, isLoading, error, isValidating]
+  );
+
+  return memoized;
+};
+
+export const useGetBreakdownActiveDurationStack = (params) => {
+  const url = params ? endpoints.activeDurationStack + `?${new URLSearchParams(params)}` : endpoints.activeDurationStack;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, {
+    refreshInterval: 180000,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  const memoized = useMemo(
+    () => ({
+      data: data || { labels: [], datasets: [], meta: null },
+      loading: isLoading,
+      error,
+      validating: isValidating,
+      mutate
+    }),
+    [data, isLoading, error, isValidating, mutate]
   );
 
   return memoized;

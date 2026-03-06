@@ -13,19 +13,15 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 import LineChartDurationBreakdown from './LineChartDurationBreakdown';
 import StackedBarChartBreakdown from './StackedBarChartBreakdown';
 import BubbleChartDummy from './BubbleChartDummy';
-import EquipmentPerformanceBubbleChart from './EquipmentPerformanceBubbleChart';
 
 // Main component that orchestrates all breakdown charts
-export function PolarChartByCtEquipment({ data, lineChartData, lineChartLoading, trendMonthlyData, trendMonthlyLoading, repairTimeData, repairTimeLoading, bubbleData, bubbleLoading }) {
+export function PolarChartByCtEquipment({ data, lineChartData, lineChartLoading, trendMonthlyData, trendMonthlyLoading, repairTimeData, repairTimeLoading }) {
   // Data is already grouped from backend with structure:
   // { ctgequipment: "DT", total: 22, items: [...], status_count: { WT: 20, WP: 1, WS: 1 } }
 
   const groupedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
 
-    console.log('🔍 Data from API (already grouped):', data);
-
-    // Data is already grouped, just use it directly
     return data.map(item => ({
       ctgequipment: item.ctgequipment,
       total: item.total,
@@ -57,18 +53,14 @@ export function PolarChartByCtEquipment({ data, lineChartData, lineChartLoading,
     };
   });
 
-  console.log('📈 Category Series before filter:', categorySeries);
-
   // Filter out series with all zeros (no data)
   const validCategorySeries = categorySeries.filter(series =>
     series.data.some(value => value > 0)
   );
 
-  console.log('✅ Valid Category Series:', validCategorySeries);
-
   return (
     <Grid container spacing={1} sx={{ mt: 0.5 }}>
-      {/* Line Chart - Duration Breakdown per Category */}
+      {/* Line Chart - Duration Breakdown per Equipment */}
       <LineChartDurationBreakdown
         data={lineChartData}
         loading={lineChartLoading}
@@ -84,12 +76,16 @@ export function PolarChartByCtEquipment({ data, lineChartData, lineChartLoading,
       <BubbleChartDummy
         trendMonthlyData={trendMonthlyData}
         trendMonthlyLoading={trendMonthlyLoading}
+        repairTimeData={null}
+        repairTimeLoading={false}
+        mode="trend"
+      />
+      <BubbleChartDummy
+        trendMonthlyData={null}
+        trendMonthlyLoading={false}
         repairTimeData={repairTimeData}
         repairTimeLoading={repairTimeLoading}
-      />
-      <EquipmentPerformanceBubbleChart
-        bubbleData={bubbleData}
-        loading={bubbleLoading}
+        mode="repair"
       />
     </Grid>
   );

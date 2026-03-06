@@ -9,8 +9,7 @@ import { PolarChartByCtEquipment } from './Charts';
 import LineChartDurationBreakdown from './LineChartDurationBreakdown';
 import StackedBarChartBreakdown from './StackedBarChartBreakdown';
 import BubbleChartDummy from './BubbleChartDummy';
-import EquipmentPerformanceBubbleChart from './EquipmentPerformanceBubbleChart';
-import { useGetBreakdownChartPolar, useGetBreakdownChartLineDuration, useGetBreakdownTrendMonthly, useGetRepairTimeDistribution, useGetEquipmentPerformanceMatrix } from 'api/breakdown-charts';
+import { useGetBreakdownChartPolar, useGetBreakdownChartLineDuration, useGetBreakdownTrendMonthly, useGetRepairTimeDistribution } from 'api/breakdown-charts';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useGetSignages } from 'api/signages';
@@ -25,14 +24,7 @@ export default function BreakdownScreen() {
   const [tanggal, setTanggal] = useState(moment().format('dddd, DD MMMM YYYY'));
   const { data: cabang, dataLoading: isLoading } = usePublicCabang();
 
-  // UI State (tidak dikirim ke API)
-  const [isGrid, setIsGrid] = useState(true);
-
-  // Header filter + slideshow
-  const [dateRange, setDateRange] = useState({
-    start: moment().subtract(31, 'days').format('YYYY-MM-DD'),
-    end: moment().format('YYYY-MM-DD')
-  });
+  // Slideshow
   const [isSlideshow, setIsSlideshow] = useState(false);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(30);
@@ -50,7 +42,6 @@ export default function BreakdownScreen() {
   const { data: lineChartData, loading: lineChartLoading } = useGetBreakdownChartLineDuration({ cabang_id: apiParams.cabang_id });
   const { data: trendMonthlyData, loading: trendMonthlyLoading } = useGetBreakdownTrendMonthly({ cabang_id: apiParams.cabang_id });
   const { data: repairTimeData, loading: repairTimeLoading } = useGetRepairTimeDistribution({ cabang_id: apiParams.cabang_id });
-  const { data: bubbleData, loading: bubbleLoading } = useGetEquipmentPerformanceMatrix({ cabang_id: apiParams.cabang_id });
   const hasPolarData = polarChartData && Array.isArray(polarChartData) && polarChartData.length > 0;
 
   // Derived for stacked bar (reuse from Charts)
@@ -100,15 +91,6 @@ export default function BreakdownScreen() {
     return () => clearTimeout(timeout);
   }, [clock]);
 
-  const handleDateChange = (field, value) => {
-    setDateRange(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleApplyFilter = () => {
-    // TODO: integrate with breakdown API when date filters are supported
-    console.log('Apply filter:', dateRange);
-  };
-
   const handleToggleSlideshow = () => {
     setIsSlideshow(prev => !prev);
     setCurrentSlideIndex(0);
@@ -121,49 +103,62 @@ export default function BreakdownScreen() {
       key: 'stacked-bar',
       title: 'Status Breakdown per Kategori',
       content: (
-        <div style={{ height: '100%', minHeight: '70vh' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <StackedBarChartBreakdown
             data={polarChartData}
             validCategorySeries={validCategorySeries}
             statusLabels={statusLabels}
             statusPalette={statusPalette}
+            fullHeight
+            fullWidth
           />
         </div>
       )
     },
     {
       key: 'line-duration',
-      title: 'Durasi Breakdown per Kategori',
+      title: 'Durasi Breakdown per Equipment',
       content: (
-        <div style={{ height: '100%', minHeight: '70vh' }}>
-          <LineChartDurationBreakdown data={lineChartData} loading={lineChartLoading} />
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <LineChartDurationBreakdown data={lineChartData} loading={lineChartLoading} fullHeight fullWidth />
         </div>
       )
     },
     {
       key: 'trend-monthly',
-      title: 'Trend Bulanan & Distribusi Perbaikan',
+      title: 'Trend Bulanan',
       content: (
-        <div style={{ height: '100%', minHeight: '70vh' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <BubbleChartDummy
             trendMonthlyData={trendMonthlyData}
             trendMonthlyLoading={trendMonthlyLoading}
-            repairTimeData={repairTimeData}
-            repairTimeLoading={repairTimeLoading}
+            repairTimeData={null}
+            repairTimeLoading={false}
+            fullHeight
+            fullWidth
+            mode="trend"
           />
         </div>
       )
     },
     {
-      key: 'equipment-performance',
-      title: 'Equipment Performance Matrix',
+      key: 'repair-time',
+      title: 'Distribusi Waktu Perbaikan',
       content: (
-        <div style={{ height: '100%', minHeight: '70vh' }}>
-          <EquipmentPerformanceBubbleChart bubbleData={bubbleData} loading={bubbleLoading} />
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <BubbleChartDummy
+            trendMonthlyData={null}
+            trendMonthlyLoading={false}
+            repairTimeData={repairTimeData}
+            repairTimeLoading={repairTimeLoading}
+            fullHeight
+            fullWidth
+            mode="repair"
+          />
         </div>
       )
     }
-  ], [polarChartData, validCategorySeries, lineChartData, lineChartLoading, trendMonthlyData, trendMonthlyLoading, repairTimeData, repairTimeLoading, bubbleData, bubbleLoading]);
+  ], [polarChartData, validCategorySeries, lineChartData, lineChartLoading, trendMonthlyData, trendMonthlyLoading, repairTimeData, repairTimeLoading]);
 
   // Slideshow timer
   useEffect(() => {
@@ -211,25 +206,6 @@ export default function BreakdownScreen() {
         </Stack>
 
         <Stack direction="row" spacing={1} alignItems="center">
-          <input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => handleDateChange('start', e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-          <span>to</span>
-          <input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => handleDateChange('end', e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-          <button
-            onClick={handleApplyFilter}
-            style={{ padding: '8px 16px', borderRadius: '4px', border: 'none', background: '#1976d2', color: 'white', cursor: 'pointer' }}
-          >
-            Apply
-          </button>
           <button
             onClick={handleToggleSlideshow}
             style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
@@ -249,9 +225,11 @@ export default function BreakdownScreen() {
           m: 1, 
           mt: 0,
           maxHeight: 'calc(100vh - 16px)', 
-          overflow: 'auto',
+          overflow: isSlideshow ? 'hidden' : 'auto',
           backgroundColor: 'transparent',
-          boxShadow: 'none'
+          boxShadow: 'none',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {!dataLoading && (!isSlideshow ? (
@@ -266,13 +244,11 @@ export default function BreakdownScreen() {
                 trendMonthlyLoading={trendMonthlyLoading}
                 repairTimeData={repairTimeData}
                 repairTimeLoading={repairTimeLoading}
-                bubbleData={bubbleData}
-                bubbleLoading={bubbleLoading}
               />
             )}
           </>
         ) : (
-          <div style={{ padding: '16px', height: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '16px', flex: 1, minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <h3 style={{ margin: 0 }}>{slides[currentSlideIndex]?.title || 'Slideshow'}</h3>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -280,7 +256,7 @@ export default function BreakdownScreen() {
                 <span style={{ fontWeight: 600 }}>{`${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`}</span>
               </Stack>
             </Stack>
-            <div style={{ flex: 1, minHeight: '75vh' }}>
+            <div style={{ flex: 1, minHeight: 0 }}>
               {slides[currentSlideIndex]?.content}
             </div>
             <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
