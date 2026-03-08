@@ -171,7 +171,7 @@ function BreakdownTodayPage() {
         {!isSlideshow ? (
           <>
             {Array.isArray(stackDataHE?.labels) && stackDataHE.labels.map((area) => (
-              <Box key={`he-${area}`} sx={{ flex: 1, minHeight: 600 }}>
+              <Box key={`he-${area}`} sx={{ flex: 1, minHeight: 340 }}>
                 <ActiveDurationStackChart
                   data={stackDataHE}
                   loading={stackLoadingHE}
@@ -182,36 +182,36 @@ function BreakdownTodayPage() {
               </Box>
             ))}
 
-            {Array.isArray(stackDataDT?.labels) && stackDataDT.labels.map((area) => (
-              <Box key={`dt-${area}`} sx={{ flex: 1, minHeight: 600 }}>
-                <ActiveDurationStackChart
-                  data={stackDataDT}
-                  loading={stackLoadingDT}
-                  title={`BREAKDOWN DUMPTRUCK TERKINI AREA ${area}`}
-                  subheader="Durasi ongoing per area dan equipment (hari)"
-                  areaFilter={area}
-                />
-              </Box>
-            ))}
-          </>
-        ) : (
-          <Box sx={{ flex: 1, minHeight: 600, display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {slides[currentSlide]?.title || 'Slideshow'}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2" color="text.secondary">Next in</Typography>
-                <Typography variant="body1" fontWeight={700}>
-                  {String(remainingSeconds).padStart(2, '0')}s
-                </Typography>
-              </Stack>
-            </Stack>
-            <Box sx={{ flex: 1, minHeight: 520 }}>
-              {slides[currentSlide]?.component ? (
-                React.cloneElement(slides[currentSlide].component, { showTitle: false })
-              ) : (
-                <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {Array.isArray(stackDataDT?.labels) && stackDataDT.labels.map((area) => (
+          <Box key={`dt-${area}`} sx={{ flex: 1, minHeight: 340 }}>
+            <ActiveDurationStackChart
+              data={stackDataDT}
+              loading={stackLoadingDT}
+              title={`BREAKDOWN DUMPTRUCK TERKINI AREA ${area}`}
+              subheader="Durasi ongoing per area dan equipment (hari)"
+              areaFilter={area}
+            />
+          </Box>
+        ))}
+      </>
+    ) : (
+      <Box sx={{ flex: 1, minHeight: 400, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {slides[currentSlide]?.title || 'Slideshow'}
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2" color="text.secondary">Next in</Typography>
+            <Typography variant="body1" fontWeight={700}>
+              {String(remainingSeconds).padStart(2, '0')}s
+            </Typography>
+          </Stack>
+        </Stack>
+        <Box sx={{ flex: 1, minHeight: 340 }}>
+          {slides[currentSlide]?.component ? (
+            React.cloneElement(slides[currentSlide].component, { showTitle: false })
+          ) : (
+            <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Typography variant="body1" color="text.secondary">Tidak ada slide</Typography>
                 </Box>
               )}

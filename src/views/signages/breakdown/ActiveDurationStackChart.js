@@ -71,14 +71,6 @@ export default function ActiveDurationStackChart({ data, loading, title = 'BREAK
 
     if (!flatLabels.length) return { labels: [], datasets: [] };
 
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      // Debug log to inspect chart data
-      console.log('[ActiveDurationStackChart] areaFilter:', areaFilter);
-      console.log('[ActiveDurationStackChart] raw data:', data);
-      console.log('[ActiveDurationStackChart] computed labels:', flatLabels);
-      console.log('[ActiveDurationStackChart] computed data:', flatData);
-    }
-
     return {
       labels: flatLabels,
       datasets: [
@@ -122,7 +114,7 @@ export default function ActiveDurationStackChart({ data, loading, title = 'BREAK
             align: 'end',
             formatter: (val) => (val > 0 ? val : ''),
             color: textSecondary,
-            font: { size: 10, weight: '600' },
+            font: { size: 10, weight: '300' },
             clamp: true,
             clip: true
           },
@@ -147,8 +139,8 @@ export default function ActiveDurationStackChart({ data, loading, title = 'BREAK
               minRotation: 0,
               color: textSecondary
             },
-            barPercentage: 0.9,
-            categoryPercentage: 0.9,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
             title: {
               display: true,
               text: 'Equipment',
@@ -183,7 +175,7 @@ export default function ActiveDurationStackChart({ data, loading, title = 'BREAK
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {showTitle && <CardHeader title={title} subheader={subheader} />}
-      <CardContent sx={{ flex: 1, minHeight: 520, position: 'relative', pb: 4, pt: showTitle ? undefined : 2 }}>
+      <CardContent sx={{ flex: 1, minHeight: 360, position: 'relative', pb: 2, pt: showTitle ? undefined : 1 }}>
         {loading ? (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
             <Typography variant="body1" color="text.secondary">Memuat data...</Typography>
