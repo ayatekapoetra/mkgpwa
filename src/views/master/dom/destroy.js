@@ -1,26 +1,19 @@
 'use client';
 
-import { Fragment, useEffect } from 'react';
+import { Fragment } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
-import { CardActions, Grid, Button } from '@mui/material';
+import { CardActions, Grid, Button, Box, Typography, Alert, Stack, Chip } from '@mui/material';
 
 // THIRD - PARTY
-import { Layer, Building3, AlignVertically, BagHappy, Trash } from 'iconsax-react';
-import { Formik, Form } from 'formik';
-import * as Yup from 'yup'; // ⬅ WAJIB
-// import moment from 'moment';
+import { Trash, Warning2 } from 'iconsax-react';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import BtnBack from 'components/BtnBack';
-import OptionCabang from 'components/OptionCabang';
-import OptionLokasiKerja from 'components/OptionLokasiPit';
-import OptionMaterialMining from 'components/OptionMaterialMining';
-import InputForm from 'components/InputForm';
 import axiosServices from 'utils/axios';
 
 // HOOK
@@ -45,25 +38,15 @@ const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Dom'
 export default function DestroyDomScreen() {
   const route = useRouter();
   const { id } = useParams();
-  const { data: initialValues, dataLoading } = useShowDom(id);
+  const { data: domData, dataLoading } = useShowDom(id);
 
-  const validationSchema = Yup.object({
-    cabang_id: Yup.string().required('Cabang wajib dipilih'),
-
-    lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
-
-    material_id: Yup.string().required('Material wajib dipilih'),
-
-    no_dom: Yup.string().required('Nomor DOM wajib diisi').min(3, 'Minimal 3 karakter')
-  });
-
-  const onSubmitHandle = async (values) => {
+  const handleDelete = async () => {
     try {
-      await axiosServices.post(`/api/master/dom/${id}/destroy`, values);
+      await axiosServices.post(`/api/master/dom/${id}/destroy`);
       route.push('/dom');
       openNotification(msgSuccess);
     } catch (error) {
-      openNotification({ ...msgError, message: error?.diagnostic?.error || '...' });
+      openNotification({ ...msgError, message: error?.diagnostic?.error || 'Gagal menghapus DOM' });
     }
   };
 
@@ -71,94 +54,129 @@ export default function DestroyDomScreen() {
     return <div>Loading data...</div>;
   }
 
+  if (!domData) {
+    return <div>Data tidak ditemukan</div>;
+  }
+
+  const cargoDisplay = domData.cargo_type === 'MPR' ? 'MPR (Import)' : domData.cargo_type === 'B' ? 'IMN (Barge)' : domData.cargo_type;
+  const truckDisplay = domData.truck_type === '10_RODA' ? '10 Roda' : domData.truck_type === '12_RODA' ? '12 Roda' : domData.truck_type;
+
   return (
     <Fragment>
       <Breadcrumbs custom heading={'Delete Dom'} links={breadcrumbLinks} />
       <MainCard title={<BtnBack href={'/dom'} />} secondary={null} content={true}>
-        <Formik initialValues={initialValues} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
-          {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
-            return (
-              <Form noValidate onSubmit={handleSubmit}>
-                <HelperComponent values={values} setFieldValue={setFieldValue} />
-                <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
-                  <Grid item xs={12} sm={6}>
-                    <InputForm
-                      label="Nomor Dom"
-                      type="text"
-                      name="no_dom"
-                      errors={errors}
-                      touched={touched}
-                      value={values.no_dom}
-                      onChange={handleChange}
-                      startAdornment={<Layer />}
+        <Grid container spacing={3}>
+          {/* Warning Alert */}
+          <Grid item xs={12}>
+            <Alert 
+              severity="error" 
+              icon={<Warning2 variant="Bold" />}
+              sx={{ 
+                border: '2px solid',
+                borderColor: 'error.main',
+                backgroundColor: 'error.lighter'
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                ⚠️ Peringatan: Hapus DOM
+              </Typography>
+              <Typography variant="body2">
+                Anda akan menghapus DOM ini secara permanen. Data yang sudah dihapus <strong>tidak dapat dikembalikan</strong>.
+                <br />
+                Pastikan Anda yakin sebelum melanjutkan.
+              </Typography>
+            </Alert>
+          </Grid>
+
+          {/* DOM Info */}
+          <Grid item xs={12}>
+            <Box sx={{ 
+              p: 3, 
+              border: '1px solid', 
+              borderColor: 'divider',
+              borderRadius: 2,
+              backgroundColor: 'background.paper'
+            }}>
+              <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
+                Informasi DOM
+              </Typography>
+              
+              <Stack spacing={2}>
+                <InfoRow label="Kode DOM" value={domData.kode} highlight />
+                <InfoRow label="Tanggal Ops" value={domData.date_ops} />
+                <InfoRow label="Cargo Type" value={cargoDisplay} />
+                <InfoRow label="Contractor" value={domData.contractor_code} />
+                <InfoRow label="Cabang" value={domData.cabang?.nama || '-'} />
+                <InfoRow label="Pit Source" value={domData.pitSource?.nama || '-'} />
+                <InfoRow label="Material" value={domData.material?.nama || '-'} />
+                <InfoRow label="Truck Type" value={truckDisplay} />
+                <InfoRow 
+                  label="Ritase" 
+                  value={`${domData.current_ret || 0}/${domData.target_ret || 0}`} 
+                />
+                <InfoRow 
+                  label="Status" 
+                  value={
+                    <Chip 
+                      label={domData.status || '-'} 
+                      size="small"
+                      color={domData.status === 'OPEN' ? 'success' : 'default'}
+                      sx={{ fontWeight: 600 }}
                     />
-                    <span>
-                      <small>contoh format : IM.05.25.MTK.01</small>
-                    </span>
-                  </Grid>
-                </Grid>
-                <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
-                  <Grid item xs={12} sm={4} sx={{ mt: 3 }}>
-                    <OptionCabang
-                      value={values.cabang_id}
-                      name={'cabang_id'}
-                      label="Nama Cabang"
-                      error={errors.cabang_id}
-                      touched={touched.cabang_id}
-                      startAdornment={<Building3 />}
-                      helperText={touched.cabang_id && errors.cabang_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4} sx={{ mt: 1 }}>
-                    <OptionLokasiKerja
-                      value={values.lokasi_id}
-                      name={'lokasi_id'}
-                      label="Lokasi Kerja"
-                      error={errors.lokasi_id}
-                      touched={touched.lokasi_id}
-                      startAdornment={<AlignVertically />}
-                      helperText={touched.lokasi_id && errors.lokasi_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4} sx={{ mt: 1 }}>
-                    <OptionMaterialMining
-                      value={values.material_id}
-                      name={'material_id'}
-                      label="Jenis Material"
-                      error={errors.material_id}
-                      touched={touched.material_id}
-                      startAdornment={<BagHappy />}
-                      helperText={touched.material_id && errors.material_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <CardActions>
-                      <Button component={Link} href="/dom" variant="outlined" color="secondary">
-                        Batal
-                      </Button>
-                      <Button type="submit" variant="contained" color="error" startIcon={<Trash variant="Bold" />}>
-                        Hapus
-                      </Button>
-                    </CardActions>
-                  </Grid>
-                </Grid>
-              </Form>
-            );
-          }}
-        </Formik>
+                  } 
+                />
+              </Stack>
+            </Box>
+          </Grid>
+
+          {/* Actions */}
+          <Grid item xs={12}>
+            <CardActions sx={{ justifyContent: 'flex-end', gap: 1 }}>
+              <Button component={Link} href="/dom" variant="outlined" color="secondary" size="large">
+                Batal
+              </Button>
+              <Button 
+                onClick={handleDelete} 
+                variant="contained" 
+                color="error" 
+                size="large"
+                startIcon={<Trash variant="Bold" />}
+              >
+                Ya, Hapus DOM
+              </Button>
+            </CardActions>
+          </Grid>
+        </Grid>
       </MainCard>
     </Fragment>
   );
 }
 
-const HelperComponent = ({ values, setFieldValue }) => {
-  useEffect(() => {
-    if (values.no_dom) {
-      setFieldValue('no_dom', values.no_dom?.toUpperCase());
-    }
-  }, [values, setFieldValue]);
-  return null;
-};
+// Component untuk menampilkan info row
+function InfoRow({ label, value, highlight = false }) {
+  return (
+    <Box sx={{ display: 'flex', py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Typography 
+        variant="body2" 
+        sx={{ 
+          minWidth: 150, 
+          fontWeight: 600,
+          color: 'text.secondary' 
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography 
+        variant="body2" 
+        sx={{ 
+          flex: 1,
+          fontWeight: highlight ? 700 : 400,
+          fontFamily: highlight ? 'monospace' : 'inherit',
+          fontSize: highlight ? '1rem' : 'inherit'
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}

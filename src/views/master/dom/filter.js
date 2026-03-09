@@ -17,8 +17,9 @@ import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import MainCard from 'components/MainCard';
 
 // ASSETS
-import { Add, Building3, AlignVertically, BagHappy } from 'iconsax-react';
+import { Add, Building3, AlignVertically, BagHappy, Box as BoxIcon } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
+import SelectForm from 'components/SelectForm';
 import FilterCabang from 'components/FilterCabang';
 import FilterLokasiPit from 'components/FilterLokasiPit';
 import FilterMaterialMining from 'components/FilterMaterialMining';
@@ -26,9 +27,12 @@ import FilterMaterialMining from 'components/FilterMaterialMining';
 export default function FilterDom({ count, open, onClose, data, setData, anchor = 'right' }) {
   const onResetFilterHandle = () => {
     setData({
+      kode: '',
       cabang_id: '',
-      lokasi_id: '',
       material_id: '',
+      cargo_type: '',
+      contractor_code: '',
+      status: '',
       page: 1,
       perPages: 25
     });
@@ -41,8 +45,64 @@ export default function FilterDom({ count, open, onClose, data, setData, anchor 
           <MainCard content={true} title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
               <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="start-adornment-partnumber">Kode</InputLabel>
-                <InputSearch size="medium" type="text" value={data['kode']} onChange={(e) => setData({ ...data, kode: e.target.value })} />
+                <InputLabel htmlFor="kode-filter">Kode DOM</InputLabel>
+                <InputSearch 
+                  size="medium" 
+                  type="text" 
+                  value={data['kode'] || ''} 
+                  onChange={(e) => setData({ ...data, kode: e.target.value })} 
+                  placeholder="IM 1225 BTSI 01F"
+                />
+              </Grid>
+              <Grid item xs={12} sm={12} lg={12}>
+                <SelectForm
+                  array={[
+                    { key: '', teks: 'Semua Cargo Type' },
+                    { key: 'MPR', teks: 'MPR (Import)' },
+                    { key: 'IMN', teks: 'IMN (Barge)' }
+                  ]}
+                  label="Cargo Type"
+                  name="cargo_type"
+                  value={data.cargo_type || ''}
+                  onChange={(e) => setData({ ...data, cargo_type: e.target.value })}
+                  onBlur={() => {}}
+                  touched={{}}
+                  errors={{}}
+                  startAdornment={<BoxIcon />}
+                />
+              </Grid>
+              <Grid item xs={12} sm={12} lg={12}>
+                <SelectForm
+                  array={[
+                    { key: '', teks: 'Semua Contractor' },
+                    { key: 'BTSI', teks: 'BTSI' },
+                    { key: 'B', teks: 'B' }
+                  ]}
+                  label="Contractor"
+                  name="contractor_code"
+                  value={data.contractor_code || ''}
+                  onChange={(e) => setData({ ...data, contractor_code: e.target.value })}
+                  onBlur={() => {}}
+                  touched={{}}
+                  errors={{}}
+                  startAdornment={<Building3 />}
+                />
+              </Grid>
+              <Grid item xs={12} sm={12} lg={12}>
+                <SelectForm
+                  array={[
+                    { key: '', teks: 'Semua Status' },
+                    { key: 'OPEN', teks: 'OPEN' },
+                    { key: 'CLOSED', teks: 'CLOSED' }
+                  ]}
+                  label="Status"
+                  name="status"
+                  value={data.status || ''}
+                  onChange={(e) => setData({ ...data, status: e.target.value })}
+                  onBlur={() => {}}
+                  touched={{}}
+                  errors={{}}
+                />
               </Grid>
               <Grid item xs={12} sm={12} lg={12}>
                 <FilterCabang
@@ -50,15 +110,6 @@ export default function FilterDom({ count, open, onClose, data, setData, anchor 
                   name={'cabang_id'}
                   label="Nama Cabang"
                   startAdornment={<Building3 />}
-                  setData={setData}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} lg={12}>
-                <FilterLokasiPit
-                  value={data.lokasi_id}
-                  name={'lokasi_id'}
-                  label="Lokasi"
-                  startAdornment={<AlignVertically />}
                   setData={setData}
                 />
               </Grid>

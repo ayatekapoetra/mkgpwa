@@ -18,7 +18,7 @@ const OptionLokasiKerja = ({
 
   if (dataEmpty || !array || array.length === 0) {
     return (
-      <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
+      <Stack justifyContent="flex-start" alignItems="flex-start">
         <FormControl fullWidth variant="outlined">
           <TextField
             label={label}
@@ -36,7 +36,7 @@ const OptionLokasiKerja = ({
     );
   }
   return (
-    <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
+    <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth

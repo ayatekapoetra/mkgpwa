@@ -4,7 +4,7 @@ import Link from 'next/link';
 import React, { useState, useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
-import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, TableFooter, styled, IconButton } from '@mui/material';
+import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, TableFooter, styled, IconButton, Chip, Stack, Typography } from '@mui/material';
 
 import { Edit, Trash } from 'iconsax-react';
 import Paginate from 'components/Paginate';
@@ -35,7 +35,7 @@ export default function ListDom({ data = { data: [] }, setParams }) {
         header: 'ACT',
         accessorKey: 'index',
         size: 20,
-        minSize: 80,
+        minSize: 100,
         enableResizing: true,
         cell: ({ row }) => {
           const { id } = row.original;
@@ -52,28 +52,211 @@ export default function ListDom({ data = { data: [] }, setParams }) {
         }
       },
       {
-        header: 'Kode',
-        accessorKey: 'no_dom',
-        size: 150,
+        header: 'Kode DOM',
+        accessorKey: 'kode',
+        size: 200,
+        minSize: 150,
+        enableResizing: true,
+        cell: (info) => {
+          const kode = info.getValue();
+          return (
+            <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
+              {kode || '-'}
+            </Typography>
+          );
+        }
+      },
+      {
+        header: 'Tgl Ops',
+        accessorKey: 'date_ops',
+        size: 120,
+        minSize: 100,
+        enableResizing: true,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Cargo',
+        accessorKey: 'cargo_type',
+        size: 90,
         minSize: 80,
-        enableResizing: true
+        cell: (info) => {
+          const cargo = info.getValue();
+          const displayCargo = cargo === 'MPR' ? 'MPR' : cargo === 'B' ? 'IMN' : cargo;
+          return (
+            <Chip
+              label={displayCargo || '-'}
+              size="small"
+              variant="outlined"
+              color={cargo === 'MPR' ? 'primary' : 'secondary'}
+              sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+            />
+          );
+        }
+      },
+      {
+        header: 'Contractor',
+        accessorKey: 'contractor_code',
+        size: 100,
+        minSize: 80,
+        cell: (info) => {
+          const contractor = info.getValue();
+          return (
+            <Chip
+              label={contractor || '-'}
+              size="small"
+              variant="filled"
+              sx={{ 
+                fontWeight: 600, 
+                fontSize: '0.7rem',
+                backgroundColor: contractor === 'BTSI' ? 'success.lighter' : 'info.lighter',
+                color: contractor === 'BTSI' ? 'success.dark' : 'info.dark'
+              }}
+            />
+          );
+        }
       },
       {
         header: 'Cabang',
         accessorKey: 'cabang.nama',
-        size: 180
-      },
-      {
-        header: 'Lokasi',
-        accessorKey: 'lokasi.nama',
         size: 150,
+        minSize: 120,
         cell: (info) => info.getValue() || '-'
       },
       {
-        header: 'Jenis Material',
-        accessorKey: 'material.nama',
-        size: 120,
+        header: 'Pit Source',
+        accessorKey: 'pitSource.nama',
+        size: 150,
+        minSize: 120,
         cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Material',
+        accessorKey: 'material.nama',
+        size: 150,
+        minSize: 120,
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Truck',
+        accessorKey: 'truck_type',
+        size: 90,
+        minSize: 80,
+        cell: (info) => {
+          const truck = info.getValue();
+          const displayTruck = truck === '10_RODA' ? '10R' : truck === '12_RODA' ? '12R' : truck;
+          return (
+            <Chip
+              label={displayTruck || '-'}
+              size="small"
+              sx={{ 
+                fontWeight: 600, 
+                fontSize: '0.7rem',
+                backgroundColor: 'grey.200',
+                color: 'grey.800'
+              }}
+            />
+          );
+        }
+      },
+      {
+        header: 'Ritase',
+        accessorKey: 'target_ret',
+        size: 120,
+        minSize: 100,
+        cell: ({ row }) => {
+          const target = row.original.target_ret || 0;
+          const current = row.original.current_ret || 0;
+          const percentage = target > 0 ? Math.round((current / target) * 100) : 0;
+          
+          return (
+            <Stack spacing={0.5}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 60 }}>
+                  {current}/{target}
+                </Typography>
+                <Chip
+                  label={`${percentage}%`}
+                  size="small"
+                  sx={{
+                    fontSize: '0.65rem',
+                    height: 18,
+                    fontWeight: 700,
+                    backgroundColor: 
+                      percentage >= 100 ? 'success.lighter' :
+                      percentage >= 75 ? 'info.lighter' :
+                      percentage >= 50 ? 'warning.lighter' : 'error.lighter',
+                    color: 
+                      percentage >= 100 ? 'success.dark' :
+                      percentage >= 75 ? 'info.dark' :
+                      percentage >= 50 ? 'warning.dark' : 'error.dark'
+                  }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: 4,
+                  backgroundColor: 'grey.200',
+                  borderRadius: 2,
+                  overflow: 'hidden'
+                }}
+              >
+                <Box
+                  sx={{
+                    width: `${Math.min(percentage, 100)}%`,
+                    height: '100%',
+                    backgroundColor: 
+                      percentage >= 100 ? 'success.main' :
+                      percentage >= 75 ? 'info.main' :
+                      percentage >= 50 ? 'warning.main' : 'error.main',
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+              </Box>
+            </Stack>
+          );
+        }
+      },
+      {
+        header: 'Status',
+        accessorKey: 'status',
+        size: 100,
+        minSize: 90,
+        cell: (info) => {
+          const status = info.getValue();
+          return (
+            <Chip
+              label={status || '-'}
+              size="small"
+              icon={
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: status === 'OPEN' ? 'success.main' : 'error.main',
+                    animation: status === 'OPEN' ? 'pulse 2s infinite' : 'none',
+                    '@keyframes pulse': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0.5 }
+                    }
+                  }}
+                />
+              }
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                backgroundColor: status === 'OPEN' ? 'success.lighter' : 'grey.200',
+                color: status === 'OPEN' ? 'success.dark' : 'grey.700',
+                border: '1px solid',
+                borderColor: status === 'OPEN' ? 'success.main' : 'grey.400',
+                '& .MuiChip-icon': {
+                  ml: 1
+                }
+              }}
+            />
+          );
+        }
       }
     ],
     []

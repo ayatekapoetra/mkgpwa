@@ -29,9 +29,12 @@ const breadcrumbLinks = [
 const DomScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [params, setParams] = useState({
+    kode: '',
     cabang_id: '',
-    lokasi_id: '',
     material_id: '',
+    cargo_type: '',
+    contractor_code: '',
+    status: '',
     page: 1,
     perPages: 25
   });
