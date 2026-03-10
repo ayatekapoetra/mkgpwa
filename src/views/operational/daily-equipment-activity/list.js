@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import {
   Box,
   Table,
@@ -32,7 +33,7 @@ const shiftColors = {
   MALAM: 'secondary'
 };
 
-export default function ListActivity({ data, loading, error, params, setParams, onEdit }) {
+export default function ListActivity({ data, loading, error, params, setParams }) {
   const rows = data?.data || [];
   const meta = data?.meta || {};
 
@@ -125,7 +126,7 @@ export default function ListActivity({ data, loading, error, params, setParams, 
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Edit">
-                      <IconButton color="primary" onClick={() => onEdit(row)}>
+                      <IconButton color="primary" component={Link} href={`/daily-equipment-activity/${row.id}/show`}>
                         <Edit variant="Outline" size={18} />
                       </IconButton>
                     </Tooltip>

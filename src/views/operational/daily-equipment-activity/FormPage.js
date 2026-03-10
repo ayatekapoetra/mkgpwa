@@ -1,28 +1,24 @@
 "use client";
 
 import { useEffect, useMemo } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Grid,
-  Stack,
-  Typography
-} from '@mui/material';
+import Link from 'next/link';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
-import { Add, Edit, Calendar, Map, Driver } from 'iconsax-react';
 
+import { Grid, Stack, Button } from '@mui/material';
+import { Add, Edit, Calendar, Driver, Map } from 'iconsax-react';
+
+import MainCard from 'components/MainCard';
+import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import InputForm from 'components/InputForm';
-import SelectForm from 'components/SelectForm';
 import InputAreaForm from 'components/InputAreaForm';
+import SelectForm from 'components/SelectForm';
 import OptionEquipment from 'components/OptionEquipment';
 import OptionKaryawan from 'components/OptionKaryawan';
 import OptionKegiatanKerja from 'components/OptionKegiatanKerja';
 import OptionLokasiKerja from 'components/OptionLokasiPit';
 import OptionCabang from 'components/OptionCabang';
+import { APP_DEFAULT_PATH } from 'config';
 import axiosServices from 'utils/axios';
 import { openNotification } from 'api/notification';
 
@@ -86,27 +82,49 @@ const defaultValues = {
   aktif: 'Y'
 };
 
-export default function ActivityForm({ open, onClose, onSuccess, initialData }) {
-  const initialValues = useMemo(() => ({
-    ...defaultValues,
-    ...initialData,
-    equipment_id: initialData?.equipment_id || '',
-    ctg: initialData?.ctg || initialData?.equipment?.kategori || initialData?.equipment?.ctg || '',
-    cabang_id: initialData?.cabang_id || '',
-    karyawan_id: initialData?.karyawan_id || '',
-    lokasi_id: initialData?.lokasi_id || '',
-    lokasi_to: initialData?.lokasi_to || '',
-    kegiatan_id: initialData?.kegiatan_id || '',
-    shift: initialData?.shift || 'PAGI',
-    status: initialData?.status || 'BEROPERASI',
-    aktif: initialData?.aktif || 'Y'
-  }), [initialData]);
+export default function ActivityFormPage({
+  mode = 'create',
+  initialData = {},
+  heading = 'Aktivitas Harian',
+  backHref = '/daily-equipment-activity'
+}) {
+  const isEdit = mode === 'edit';
+
+  const initialValues = useMemo(
+    () => ({
+      ...defaultValues,
+      ...initialData,
+      id: initialData?.id || null,
+      equipment_id: initialData?.equipment_id || '',
+      equipment: initialData?.equipment || null,
+      ctg: initialData?.ctg || initialData?.equipment?.kategori || initialData?.equipment?.ctg || '',
+      cabang_id: initialData?.cabang_id || initialData?.equipment?.cabang_id || '',
+      karyawan_id: initialData?.karyawan_id || '',
+      lokasi_id: initialData?.lokasi_id || '',
+      lokasi_to: initialData?.lokasi_to || '',
+      kegiatan_id: initialData?.kegiatan_id || '',
+      shift: initialData?.shift || 'PAGI',
+      status: initialData?.status || 'BEROPERASI',
+      aktif: initialData?.aktif || 'Y'
+    }),
+    [initialData]
+  );
+
+  const breadcrumbLinks = [
+    { title: 'Home', to: APP_DEFAULT_PATH },
+    { title: 'Daily Equipment Activity', to: '/daily-equipment-activity' },
+    { title: isEdit ? 'Edit' : 'Create', to: '#' }
+  ];
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const url = values.id ? `/api/operation/activity-plan/${values.id}/update` : '/api/operation/activity-plan/create';
+      const url = isEdit && values.id
+        ? `/api/operation/activity-plan/${values.id}/update`
+        : '/api/operation/activity-plan/create';
+
       await axiosServices.post(url, values);
-      onSuccess?.();
+      openNotification({ open: true, title: 'success', message: 'Data tersimpan', alert: { color: 'success' } });
+      window.location.href = backHref;
     } catch (error) {
       openNotification({
         open: true,
@@ -120,13 +138,9 @@ export default function ActivityForm({ open, onClose, onSuccess, initialData }) 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          {initialData ? <Edit size={20} /> : <Add size={20} />}
-          <Typography variant="h5">{initialData ? 'Ubah Aktivitas' : 'Tambah Aktivitas'}</Typography>
-        </Stack>
-      </DialogTitle>
+    <Stack spacing={2}>
+      <Breadcrumbs heading={heading} links={breadcrumbLinks} />
+
       <Formik
         enableReinitialize
         initialValues={initialValues}
@@ -134,7 +148,6 @@ export default function ActivityForm({ open, onClose, onSuccess, initialData }) 
         onSubmit={handleSubmit}
       >
         {({ values, errors, touched, handleChange, setFieldValue, isSubmitting, validateForm }) => {
-          // Responsif rule: auto-null lokasi_to saat tidak wajib
           useEffect(() => {
             const needLokasiTo = values.ctg !== 'HE' && values.status === 'BEROPERASI';
             if (!needLokasiTo && values.lokasi_to) {
@@ -156,8 +169,21 @@ export default function ActivityForm({ open, onClose, onSuccess, initialData }) 
           }, [values.equipment, values.ctg, values.cabang_id, setFieldValue]);
 
           return (
-            <Form>
-              <DialogContent dividers>
+            <MainCard
+              title={heading}
+              secondary={
+                <Stack direction="row" spacing={1}>
+                  <Button component={Link} href={backHref} variant="outlined" color="secondary">
+                    Batal
+                  </Button>
+                  <Button type="submit" variant="contained" startIcon={isEdit ? <Edit /> : <Add />} disabled={isSubmitting}>
+                    {isEdit ? 'Simpan Perubahan' : 'Simpan'}
+                  </Button>
+                </Stack>
+              }
+              content
+            >
+              <Form>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={4}>
                     <InputForm
@@ -303,19 +329,11 @@ export default function ActivityForm({ open, onClose, onSuccess, initialData }) 
                     />
                   </Grid>
                 </Grid>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={onClose} color="secondary" variant="outlined">
-                  Batal
-                </Button>
-                <Button type="submit" variant="contained" disabled={isSubmitting}>
-                  {initialData ? 'Simpan Perubahan' : 'Simpan'}
-                </Button>
-              </DialogActions>
-            </Form>
+              </Form>
+            </MainCard>
           );
         }}
       </Formik>
-    </Dialog>
+    </Stack>
   );
 }

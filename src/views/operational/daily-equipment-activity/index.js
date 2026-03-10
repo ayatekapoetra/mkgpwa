@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-import { Stack, Button, Box } from '@mui/material';
+import { Stack, Button } from '@mui/material';
 import { Add, Filter, Refresh } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
@@ -14,7 +14,6 @@ import { openNotification } from 'api/notification';
 
 import ListActivity from './list';
 import FilterActivity from './filter';
-import ActivityForm from './form';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -41,29 +40,9 @@ const defaultParams = {
 export default function DailyEquipmentActivity() {
   const [params, setParams] = useState(defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
-  const [openForm, setOpenForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-
   const { data, dataLoading, dataError, mutate } = useActivityPlan(params);
 
   const handleRefresh = () => mutate();
-
-  const handleCreate = () => {
-    setEditing(null);
-    setOpenForm(true);
-  };
-
-  const handleEdit = (row) => {
-    setEditing(row);
-    setOpenForm(true);
-  };
-
-  const handleFormSuccess = () => {
-    setOpenForm(false);
-    setEditing(null);
-    mutate();
-    openNotification({ open: true, title: 'success', message: 'Data tersimpan', alert: { color: 'success' } });
-  };
 
   return (
     <Stack spacing={2}>
@@ -79,7 +58,7 @@ export default function DailyEquipmentActivity() {
             <Button variant="outlined" color="primary" startIcon={<Refresh />} onClick={handleRefresh}>
               Refresh
             </Button>
-            <Button variant="contained" startIcon={<Add />} onClick={handleCreate}>
+            <Button variant="contained" startIcon={<Add />} component={Link} href="/daily-equipment-activity/create">
               Tambah Aktivitas
             </Button>
           </Stack>
@@ -92,21 +71,11 @@ export default function DailyEquipmentActivity() {
           error={dataError}
           params={params}
           setParams={setParams}
-          onEdit={handleEdit}
+          onEdit={() => {}}
         />
       </MainCard>
 
       <FilterActivity open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} />
-
-      <ActivityForm
-        open={openForm}
-        onClose={() => {
-          setOpenForm(false);
-          setEditing(null);
-        }}
-        onSuccess={handleFormSuccess}
-        initialData={editing}
-      />
     </Stack>
   );
 }
