@@ -8,6 +8,7 @@ const OptionLokasiKerja = ({
   error = null, // Tambahkan prop error
   touched = false, // Tambahkan prop touched
   startAdornment = null,
+  disabled = false,
   setFieldValue
 }) => {
   const { data: array, dataLoading, dataEmpty } = useGetLokasiKerja();
@@ -42,6 +43,7 @@ const OptionLokasiKerja = ({
           fullWidth
           options={array}
           value={array.find((option) => option?.id == value) || null}
+          disabled={disabled}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
           }}
@@ -68,6 +70,7 @@ const OptionLokasiKerja = ({
               <TextField
                 {...params}
                 label={label}
+                disabled={disabled}
                 error={touched && Boolean(error)}
                 helperText={touched && error}
                 InputProps={{
