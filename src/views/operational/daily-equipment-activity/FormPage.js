@@ -149,7 +149,7 @@ export default function ActivityFormPage({
       <Formik
         enableReinitialize
         initialValues={initialValues}
-        validationSchema={(values) => buildValidationSchema(values.ctg, values.status)}
+        validationSchema={buildValidationSchema(initialValues.ctg, initialValues.status)}
         onSubmit={handleSubmit}
       >
         {({ values, errors, touched, handleChange, setFieldValue, isSubmitting, validateForm }) => {
