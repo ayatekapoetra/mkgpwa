@@ -9,9 +9,10 @@ const OptionEquipment = ({
   error = null, // Tambahkan prop error
   touched = false, // Tambahkan prop touched
   startAdornment = null,
+  filterParams = null,
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetEquipment();
+  const { data: array, dataLoading } = useGetEquipment(filterParams);
 
   const options = Array.isArray(array) ? array : [];
 

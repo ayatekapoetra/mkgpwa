@@ -36,6 +36,11 @@ const shiftOptions = [
   { key: 'MALAM', teks: 'MALAM' }
 ];
 
+const ctgOptions = [
+  { key: 'HE', teks: 'HE (Alat Berat)' },
+  { key: 'DT', teks: 'DT (Dumptruck)' }
+];
+
 const statusOptionalKaryawan = ['NO OPERATOR', 'NO DRIVER', 'BREAKDOWN', 'STANDBY'];
 
 const buildValidationSchema = (ctg, status) =>
@@ -199,6 +204,28 @@ export default function ActivityFormPage({
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <SelectForm
+                      array={ctgOptions}
+                      label="Kategori (ctg)"
+                      name="ctg"
+                      value={values.ctg}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFieldValue('ctg', val);
+                        // reset equipment & lokasi_to when kategori berubah
+                        setFieldValue('equipment_id', '');
+                        setFieldValue('equipment', null);
+                        if (val === 'HE') {
+                          setFieldValue('lokasi_to', '');
+                        }
+                      }}
+                      onBlur={() => validateForm()}
+                      touched={touched}
+                      errors={errors}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <SelectForm
                       array={shiftOptions}
                       label="Shift"
                       name="shift"
@@ -232,17 +259,7 @@ export default function ActivityFormPage({
                       touched={touched.equipment_id}
                       setFieldValue={setFieldValue}
                       startAdornment={<Map />}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <InputForm
-                      label="Kategori (ctg)"
-                      name="ctg"
-                      value={values.ctg}
-                      onChange={handleChange}
-                      errors={errors}
-                      touched={touched}
-                      disabled
+                      filterParams={{ ctg: values.ctg || undefined }}
                     />
                   </Grid>
 
