@@ -8,9 +8,10 @@ const OptionKaryawan = ({
   error = null, // Tambahkan prop error
   touched = false, // Tambahkan prop touched
   startAdornment = null,
+  searchParams = '',
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetKaryawan();
+  const { data: array, dataLoading } = useGetKaryawan(searchParams);
 
   const options = Array.isArray(array) ? array : [];
 
