@@ -14,7 +14,7 @@ import InputForm from 'components/InputForm';
 import InputAreaForm from 'components/InputAreaForm';
 import SelectForm from 'components/SelectForm';
 import OptionEquipment from 'components/OptionEquipment';
-import OptionKaryawan from 'components/OptionKaryawan';
+import OptionOperatorDriver from 'components/OptionOperatorDriver';
 import OptionKegiatanKerja from 'components/OptionKegiatanKerja';
 import OptionLokasiKerja from 'components/OptionLokasiPit';
 import OptionCabang from 'components/OptionCabang';
@@ -190,7 +190,7 @@ export default function ActivityFormPage({
           >
             <Form>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={3} mb={2}>
+                <Grid item xs={12} sm={2} mb={2}>
                   <InputForm
                     label="Tanggal Operasional"
                     name="date_ops"
@@ -202,7 +202,7 @@ export default function ActivityFormPage({
                     startAdornment={<Calendar />}
                   />
                 </Grid>
-                <Grid item xs={12} sm={5}>
+                <Grid item xs={12} sm={4}>
                   <OptionCabang
                     value={values.cabang_id}
                     name={'cabang_id'}
@@ -234,7 +234,7 @@ export default function ActivityFormPage({
                     errors={errors}
                   />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={2}>
                   <SelectForm
                     array={shiftOptions}
                     label="Shift"
@@ -254,14 +254,14 @@ export default function ActivityFormPage({
                     value={values.status}
                     onChange={(e) => {
                       handleChange(e);
-                      const newStatus = e.target.value;
-                      values.items?.forEach((_, idx) => {
-                        const needLokasiTo = values.ctg !== 'HE' && newStatus === 'BEROPERASI';
-                        if (!needLokasiTo) {
-                          setFieldValue(`items[${idx}].lokasi_to`, '');
-                        }
-                      });
-                    }}
+                        const newStatus = e.target.value;
+                        values.items?.forEach((item, idx) => {
+                          const needLokasiTo = values.ctg !== 'HE' && newStatus === 'BEROPERASI';
+                          if (!needLokasiTo) {
+                            setFieldValue(`items[${idx}].lokasi_to`, '');
+                          }
+                        });
+                      }}
                     onBlur={() => validateForm()}
                     touched={touched}
                     errors={errors}
@@ -307,17 +307,18 @@ export default function ActivityFormPage({
                                 touched={itemTouched?.equipment_id}
                                 setFieldValue={setFieldValue}
                                 startAdornment={<Truck />}
-                                filterParams={{ ctg: values.ctg || undefined }}
+                                filterParams={{ kategori: values.ctg || undefined, ctg: values.ctg || undefined }}
                               />
                             </Grid>
                             <Grid item xs={12} sm={8}>
-                              <OptionKaryawan
+                              <OptionOperatorDriver
                                 value={item.karyawan_id}
                                 name={`items[${idx}].karyawan_id`}
                                 label="Operator / Driver"
                                 error={itemErrors?.karyawan_id}
                                 touched={itemTouched?.karyawan_id}
                                 setFieldValue={setFieldValue}
+                                // params={{section: 'oprdrv'}}
                                 startAdornment={<TagUser />}
                                 />
                             </Grid>
