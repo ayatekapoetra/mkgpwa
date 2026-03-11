@@ -56,7 +56,7 @@ const itemSchema = Yup.object().shape({
     .nullable()
     .when(['$ctg', '$status'], (ctg, status, schema) => {
       const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
-      return needLokasiTo ? schema.required('Lokasi tujuan wajib diisi untuk DT beroperasi') : schema.nullable();
+      return needLokasiTo ? schema.required('Lokasi tujuan wajib diisi untuk DT beroperasi') : schema.nullable(true);
     }),
   keterangan: Yup.string().nullable(),
   aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi'),
