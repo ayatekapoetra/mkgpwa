@@ -18,13 +18,43 @@ export const useActivityPlan = (params) => {
   });
 
   const memoizedValue = useMemo(
-    () => ({
-      data: data?.rows || { data: [], meta: {} },
-      dataLoading: isLoading,
-      dataError: error,
-      dataValidating: isValidating,
-      mutate
-    }),
+    () => {
+      // Backend response structure: { diagnostic: { ver: 3.0, error: false }, rows: data }
+      const backendData = data?.rows || null;
+      
+      // Handle Lucid pagination structure: { data: [], total: 0, page: 1, lastPage: 1, perPage: 25 }
+      if (backendData && typeof backendData === 'object') {
+        return {
+          data: {
+            data: Array.isArray(backendData.data) ? backendData.data : (Array.isArray(backendData) ? backendData : []),
+            total: backendData.total || 0,
+            page: backendData.page || 1,
+            lastPage: backendData.lastPage || 1,
+            perPage: backendData.perPage || 25,
+            meta: backendData.meta || {}
+          },
+          dataLoading: isLoading,
+          dataError: error,
+          dataValidating: isValidating,
+          mutate
+        };
+      }
+      
+      return {
+        data: {
+          data: [],
+          total: 0,
+          page: 1,
+          lastPage: 1,
+          perPage: 25,
+          meta: {}
+        },
+        dataLoading: isLoading,
+        dataError: error,
+        dataValidating: isValidating,
+        mutate
+      };
+    },
     [data, error, isLoading, isValidating, mutate]
   );
 

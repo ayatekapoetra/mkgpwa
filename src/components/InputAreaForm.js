@@ -6,19 +6,19 @@ import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 
 const InputAreaForm = ({
-  rows,
-  touched,
-  errors,
-  label,
-  type,
-  name,
-  placeholder,
-  value,
-  startAdornment,
-  endAdornment,
-  onBlur,
-  onChange,
-  autoFocus
+  rows = 5,
+  touched = false,
+  errors = {},
+  label = 'No Label',
+  type = 'text',
+  name = 'NoName',
+  placeholder = 'No Teks...',
+  value = '',
+  startAdornment = null,
+  endAdornment = null,
+  onBlur = null,
+  onChange = null,
+  autoFocus = false
 }) => {
   const hasError = touched && errors && touched[name] && errors[name];
 
@@ -54,8 +54,7 @@ const InputAreaForm = ({
 };
 
 InputAreaForm.propTypes = {
-  multiline: PropTypes.bool,
-  row: PropTypes.number,
+  rows: PropTypes.number,
   touched: PropTypes.bool,
   errors: PropTypes.object,
   label: PropTypes.string,
@@ -63,30 +62,11 @@ InputAreaForm.propTypes = {
   name: PropTypes.string,
   placeholder: PropTypes.string,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  helperText: PropTypes.string,
   startAdornment: PropTypes.node,
   endAdornment: PropTypes.node,
   onBlur: PropTypes.func,
   onChange: PropTypes.func,
   autoFocus: PropTypes.bool
-};
-
-InputAreaForm.defaultProps = {
-  multiline: true,
-  rows: 5,
-  touched: false,
-  errors: {},
-  label: 'No Label',
-  type: 'text',
-  name: 'NoName',
-  placeholder: 'No Teks...',
-  value: '',
-  helperText: 'Incorrect entry.',
-  startAdornment: null,
-  endAdornment: null,
-  onBlur: null,
-  onChange: null,
-  autoFocus: false
 };
 
 export default InputAreaForm;

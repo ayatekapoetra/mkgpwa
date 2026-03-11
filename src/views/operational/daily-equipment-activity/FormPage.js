@@ -6,7 +6,7 @@ import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
 import { Grid, Stack, Button } from '@mui/material';
-import { Add, Edit, Calendar, TagUser, Truck, Alarm } from 'iconsax-react';
+import { Add, Edit, Calendar, TagUser, Truck, Alarm, Verify } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -45,19 +45,12 @@ const statusOptionalKaryawan = ['NO OPERATOR', 'NO DRIVER', 'BREAKDOWN', 'STANDB
 
 const itemSchema = Yup.object().shape({
   equipment_id: Yup.string().required('Equipment wajib dipilih'),
-  karyawan_id: Yup.string()
-    .nullable()
-    .when('$status', (status, schema) =>
-      statusOptionalKaryawan.includes(status) ? schema.nullable() : schema.required('Karyawan/Operator wajib diisi')
-    ),
-  kegiatan_id: Yup.string().nullable(),
+  karyawan_id: Yup.string(),
+  kegiatan_id: Yup.string(),
   lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
-  lokasi_to: Yup.mixed()
-    .transform((val, orig) => (orig === '' ? null : val))
-    .nullable(),
-  keterangan: Yup.string().nullable(),
-  aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi'),
-  equipment: Yup.mixed().nullable()
+  lokasi_to: Yup.string(),
+  keterangan: Yup.string(),
+  equipment: Yup.mixed()
 });
 
 const schemaEntries = Yup.object().shape({
@@ -77,8 +70,7 @@ const defaultItem = {
   kegiatan_id: '',
   lokasi_id: '',
   lokasi_to: '',
-  keterangan: '',
-  aktif: 'Y'
+  keterangan: ''
 };
 
 export default function ActivityFormPage({
@@ -88,11 +80,18 @@ export default function ActivityFormPage({
   backHref = '/daily-equipment-activity'
 }) {
   const isEdit = mode === 'edit';
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const initialValues = useMemo(() => {
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      // Handle ISO date strings and return only YYYY-MM-DD part
+      return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+    };
+    
     if (initialData && initialData.id) {
       return {
-        date_ops: initialData.date_ops || '',
+        date_ops: formatDate(initialData.date_ops || todayStr),
         shift: initialData.shift || 'PAGI',
         status: initialData.status || 'BEROPERASI',
         ctg: initialData.ctg || initialData?.equipment?.kategori || initialData?.equipment?.ctg || '',
@@ -107,21 +106,20 @@ export default function ActivityFormPage({
             kegiatan_id: initialData.kegiatan_id || '',
             lokasi_id: initialData.lokasi_id || '',
             lokasi_to: initialData.lokasi_to || '',
-            keterangan: initialData.keterangan || '',
-            aktif: initialData.aktif || 'Y'
+            keterangan: initialData.keterangan || ''
           }
         ]
       };
     }
     return {
-      date_ops: '',
+      date_ops: todayStr,
       shift: 'PAGI',
       status: 'BEROPERASI',
-      ctg: '',
+      ctg: 'DT',
       cabang_id: '',
       items: [defaultItem]
     };
-  }, [initialData]);
+  }, [initialData, todayStr]);
 
   const breadcrumbLinks = [
     { title: 'Home', to: APP_DEFAULT_PATH },
@@ -130,27 +128,60 @@ export default function ActivityFormPage({
   ];
 
   const handleSubmit = async (values, { setSubmitting }) => {
+    console.log('cncncnccn');
+    
     try {
-      const itemsWithCtg = (values.items || []).map((it) => ({
-        ...it,
-        ctg: values.ctg
-      }));
+      // Clean up the payload - remove any undefined/null values that might cause issues
+      const cleanPayload = (obj) => {
+        const cleaned = {};
+        Object.keys(obj).forEach(key => {
+          if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+            cleaned[key] = obj[key];
+          }
+        });
+        return cleaned;
+      };
 
-      const common = {
+      const common = cleanPayload({
         date_ops: values.date_ops,
         shift: values.shift,
         status: values.status,
         ctg: values.ctg,
         cabang_id: values.cabang_id
-      };
+      });
 
       if (isEdit) {
-        const [item] = itemsWithCtg;
+        const [item] = values.items;
+        const payload = {
+          ...common,
+          ...cleanPayload({
+            id: item.id,
+            equipment_id: item.equipment_id,
+            karyawan_id: item.karyawan_id,
+            kegiatan_id: item.kegiatan_id,
+            lokasi_id: item.lokasi_id,
+            lokasi_to: item.lokasi_to,
+            keterangan: item.keterangan
+          })
+        };
+        console.log('EDIT PAYLOAD:', JSON.stringify(payload, null, 2));
         const url = `/api/operation/activity-plan/${item.id}/update`;
-        await axiosServices.post(url, { ...common, ...item });
+        await axiosServices.post(url, payload);
       } else {
-        for (const item of itemsWithCtg) {
-          await axiosServices.post('/api/operation/activity-plan/create', { ...common, ...item });
+        for (const item of values.items) {
+          const payload = {
+            ...common,
+            ...cleanPayload({
+              equipment_id: item.equipment_id,
+              karyawan_id: item.karyawan_id,
+              kegiatan_id: item.kegiatan_id,
+              lokasi_id: item.lokasi_id,
+              lokasi_to: item.lokasi_to,
+              keterangan: item.keterangan
+            })
+          };
+          console.log('CREATE PAYLOAD:', JSON.stringify(payload, null, 2));
+          await axiosServices.post('/api/operation/activity-plan/create', payload);
         }
       }
 
@@ -172,23 +203,52 @@ export default function ActivityFormPage({
     <Stack spacing={2}>
       <Breadcrumbs heading={heading} links={breadcrumbLinks} />
 
-      <Formik enableReinitialize initialValues={initialValues} validationSchema={schemaEntries} onSubmit={handleSubmit}>
+      <Formik
+        enableReinitialize
+        initialValues={initialValues}
+        validateOnChange={false}
+        validateOnBlur={false}
+onSubmit={async (vals, helpers) => {
+          console.log('FORM SUBMIT TRIGGERED');
+          console.log('FORM VALUES:', vals);
+          
+          // Simple manual validation before submit
+          const errors = {};
+          if (!vals.date_ops) errors.date_ops = 'Tanggal wajib diisi';
+          if (!vals.shift) errors.shift = 'Shift wajib diisi';
+          if (!vals.status) errors.status = 'Status wajib diisi';
+          if (!vals.ctg) errors.ctg = 'Kategori equipment wajib';
+          if (!vals.cabang_id) errors.cabang_id = 'Cabang wajib dipilih';
+          
+          if (!vals.items || vals.items.length === 0) {
+            errors.items = 'Minimal 1 baris';
+          } else {
+            vals.items.forEach((item, idx) => {
+              if (!item.equipment_id) errors[`items[${idx}].equipment_id`] = 'Equipment wajib dipilih';
+              if (!item.lokasi_id) errors[`items[${idx}].lokasi_id`] = 'Lokasi wajib dipilih';
+            });
+          }
+          
+          if (Object.keys(errors).length > 0) {
+            console.log('VALIDATION ERRORS:', errors);
+            helpers.setErrors(errors);
+            helpers.setSubmitting(false);
+            openNotification({ open: true, title: 'error', message: 'Lengkapi field wajib', alert: { color: 'error' } });
+            return;
+          }
+          
+          console.log('VALIDATION PASSED, CALLING handleSubmit');
+          return handleSubmit(vals, helpers);
+        }}
+      >
         {({ values, errors, touched, handleChange, setFieldValue, isSubmitting, validateForm }) => {
-          console.log('VALUES----', values);
+          // console.log('VALUES----', values);
+          // console.log('ERRORS----', errors);
+          // console.log('SUBMITTING----', isSubmitting);
           
           return (
             <MainCard
             title={heading}
-            secondary={
-              <Stack direction="row" spacing={1}>
-                <Button component={Link} href={backHref} variant="outlined" color="secondary">
-                  Batal
-                </Button>
-                <Button type="submit" variant="contained" startIcon={isEdit ? <Edit /> : <Add />} disabled={isSubmitting}>
-                  {isEdit ? 'Simpan Perubahan' : 'Simpan'}
-                </Button>
-              </Stack>
-            }
             content
           >
             <Form>
@@ -198,8 +258,16 @@ export default function ActivityFormPage({
                     label="Tanggal Operasional"
                     name="date_ops"
                     type="date"
-                    value={values.date_ops}
-                    onChange={handleChange}
+                    value={values.date_ops ? values.date_ops.split('T')[0] : ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleChange({
+                        target: {
+                          name: 'date_ops',
+                          value: value
+                        }
+                      });
+                    }}
                     errors={errors}
                     touched={touched}
                     startAdornment={<Calendar />}
@@ -257,14 +325,14 @@ export default function ActivityFormPage({
                     value={values.status}
                     onChange={(e) => {
                       handleChange(e);
-                        const newStatus = e.target.value;
-                        values.items?.forEach((item, idx) => {
-                          const needLokasiTo = values.ctg !== 'HE' && newStatus === 'BEROPERASI';
-                          if (!needLokasiTo) {
-                            setFieldValue(`items[${idx}].lokasi_to`, '');
-                          }
-                        });
-                      }}
+                      const newStatus = e.target.value;
+                      values.items?.forEach((item, idx) => {
+                        const needLokasiTo = values.ctg !== 'HE' && newStatus === 'BEROPERASI';
+                        if (!needLokasiTo) {
+                          setFieldValue(`items[${idx}].lokasi_to`, '');
+                        }
+                      });
+                    }}
                     onBlur={() => validateForm()}
                     touched={touched}
                     errors={errors}
@@ -285,17 +353,29 @@ export default function ActivityFormPage({
                           key={idx}
                           title={`Data #${idx + 1}`}
                           secondary={
-                            !isEdit && (
-                              <Button
-                                color="error"
-                                variant="outlined"
-                                size="small"
-                                onClick={() => remove(idx)}
-                                disabled={(values.items?.length || 1) === 1}
-                              >
-                                Hapus
-                              </Button>
-                            )
+                            <Stack direction="row" spacing={1}>
+                              {!isEdit && (
+                                <Button
+                                  color="error"
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => remove(idx)}
+                                  disabled={(values.items?.length || 1) === 1}
+                                >
+                                  Hapus
+                                </Button>
+                              )}
+                              {!isEdit && (
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  startIcon={<Add />}
+                                  onClick={() => push({ ...defaultItem })}
+                                >
+                                  Tambah Baris
+                                </Button>
+                              )}
+                            </Stack>
                           }
                           content
                         >
@@ -374,17 +454,21 @@ export default function ActivityFormPage({
                         </MainCard>
                       );
                     })}
-
-                    {!isEdit && (
-                      <Stack direction="row" justifyContent="flex-start">
-                        <Button variant="outlined" startIcon={<Add />} onClick={() => push({ ...defaultItem })}>
-                          Tambah Baris
-                        </Button>
-                      </Stack>
-                    )}
                   </Stack>
                 )}
               />
+            <Grid container spacing={2} mt={2}>
+                <Grid item xs={12}>
+                  <Stack direction="row" justifyContent="flex-end" gap={1}>
+                    <Button component={Link} href={backHref} variant="outlined" color="secondary">
+                      Batal
+                    </Button>
+                    <Button type="submit" variant="contained" startIcon={isEdit ? <Edit /> : <Verify />} disabled={isSubmitting} onClick={() => console.log('BUTTON CLICKED')}>
+                      {isEdit ? 'Simpan Perubahan' : 'Simpan'}
+                    </Button>
+                  </Stack>
+                </Grid>
+              </Grid>
             </Form>
           </MainCard>
           )

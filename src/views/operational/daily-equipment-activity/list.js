@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { Edit } from 'iconsax-react';
 import Paginate from 'components/Paginate';
+import moment from 'moment';
 
 const statusColors = {
   BEROPERASI: 'success',
@@ -46,6 +47,7 @@ export default function ListActivity({ data, loading, error, params, setParams }
         <Table size="small">
           <TableHead>
             <TableRow>
+              <TableCell align="center">Aksi</TableCell>
               <TableCell>Tanggal</TableCell>
               <TableCell>Shift</TableCell>
               <TableCell>Equipment</TableCell>
@@ -55,8 +57,6 @@ export default function ListActivity({ data, loading, error, params, setParams }
               <TableCell>Kegiatan</TableCell>
               <TableCell>Operator/Driver</TableCell>
               <TableCell>Cabang</TableCell>
-              <TableCell>Keterangan</TableCell>
-              <TableCell align="center">Aksi</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -66,7 +66,14 @@ export default function ListActivity({ data, loading, error, params, setParams }
 
               return (
                 <TableRow key={row.id} hover>
-                  <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{row.date_ops}</TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Edit">
+                      <IconButton color="primary" component={Link} href={`/daily-equipment-activity/${row.id}/show`}>
+                        <Edit variant="Outline" size={18} />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{moment(row.date_ops).format('DD-MM-YYYY')}</TableCell>
                   <TableCell>
                     <Chip label={row.shift || '-'} size="small" color={shiftColor} variant="outlined" sx={{ fontWeight: 700 }} />
                   </TableCell>
@@ -75,15 +82,6 @@ export default function ListActivity({ data, loading, error, params, setParams }
                       <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                         {row.equipment?.kode || `EQ-${row.equipment_id}`}
                       </Typography>
-                      <Stack direction="row" spacing={0.5}>
-                        <Chip label={row.ctg || row.equipment?.kategori || '-'} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
-                        <Chip
-                          label={row.equipment?.model || row.equipment?.nama_unit || ''}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontWeight: 600, color: 'text.secondary' }}
-                        />
-                      </Stack>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -109,27 +107,10 @@ export default function ListActivity({ data, loading, error, params, setParams }
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {row.karyawan?.nama || '-'}
                       </Typography>
-                      {row.karyawan?.section && (
-                        <Typography variant="caption" color="text.secondary">
-                          {row.karyawan.section}
-                        </Typography>
-                      )}
                     </Stack>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">{row.cabang?.nama || '-'}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 200 }} noWrap>
-                      {row.keterangan || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Edit">
-                      <IconButton color="primary" component={Link} href={`/daily-equipment-activity/${row.id}/show`}>
-                        <Edit variant="Outline" size={18} />
-                      </IconButton>
-                    </Tooltip>
                   </TableCell>
                 </TableRow>
               );
@@ -147,7 +128,13 @@ export default function ListActivity({ data, loading, error, params, setParams }
         </Table>
       </TableContainer>
 
-      <Paginate meta={meta} setParams={setParams} />
+      <Paginate 
+  page={data?.page || 1}
+  total={data?.total || 0}
+  lastPage={data?.lastPage || 1}
+  perPage={data?.perPage || 25}
+  onPageChange={(newPage) => setParams(prev => ({ ...prev, page: newPage }))}
+/>
     </Stack>
   );
 }

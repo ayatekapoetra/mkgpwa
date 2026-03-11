@@ -12,7 +12,6 @@ const OptionKegiatanKerja = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetKegiatanKerja(searchParams);
-  console.log('KEGIATAN-----', array);
   
   const options = Array.isArray(array) ? array : [];
 
@@ -20,7 +19,7 @@ const OptionKegiatanKerja = ({
     return <div>Loading...</div>;
   }
   return (
-    <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
+    <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth

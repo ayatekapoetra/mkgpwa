@@ -12,7 +12,8 @@ const OptionKaryawan = ({
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetKaryawan(searchParams);
-
+  console.log('ARRAY KARYAWAN---', array);
+  
   const options = Array.isArray(array) ? array : [];
 
   if (dataLoading) {
