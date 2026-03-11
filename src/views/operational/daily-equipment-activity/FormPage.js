@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Formik, Form } from 'formik';
+import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
 import { Grid, Stack, Button } from '@mui/material';
@@ -43,34 +43,40 @@ const ctgOptions = [
 
 const statusOptionalKaryawan = ['NO OPERATOR', 'NO DRIVER', 'BREAKDOWN', 'STANDBY'];
 
-const buildValidationSchema = (ctg, status) =>
-  Yup.object().shape({
-    date_ops: Yup.string().required('Tanggal wajib diisi'),
-    shift: Yup.string().oneOf(['PAGI', 'MALAM']).required('Shift wajib diisi'),
-    status: Yup.string().oneOf(statusOptions.map((s) => s.key)).required('Status wajib diisi'),
-    equipment_id: Yup.string().required('Equipment wajib dipilih'),
-    ctg: Yup.string().required('Kategori equipment wajib'),
-    cabang_id: Yup.string().required('Cabang wajib dipilih'),
-    lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
-    lokasi_to: Yup.string()
-      .nullable()
-      .test('lokasi-to-rule', 'Lokasi tujuan wajib diisi untuk DT beroperasi', function (value) {
-        const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
-        if (!needLokasiTo) return true;
-        return !!value;
-      }),
-    karyawan_id: Yup.string()
-      .nullable()
-      .test('karyawan-rule', 'Karyawan/Operator wajib diisi', function (value) {
-        if (statusOptionalKaryawan.includes(status)) return true;
-        return !!value;
-      }),
-    kegiatan_id: Yup.string().nullable(),
-    keterangan: Yup.string().nullable(),
-    aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi')
-  });
+const entrySchema = Yup.object().shape({
+  date_ops: Yup.string().required('Tanggal wajib diisi'),
+  shift: Yup.string().oneOf(['PAGI', 'MALAM']).required('Shift wajib diisi'),
+  status: Yup.string().oneOf(statusOptions.map((s) => s.key)).required('Status wajib diisi'),
+  equipment_id: Yup.string().required('Equipment wajib dipilih'),
+  ctg: Yup.string().required('Kategori equipment wajib'),
+  cabang_id: Yup.string().required('Cabang wajib dipilih'),
+  lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
+  lokasi_to: Yup.string()
+    .nullable()
+    .test('lokasi-to-rule', 'Lokasi tujuan wajib diisi untuk DT beroperasi', function (value) {
+      const ctg = this.parent.ctg;
+      const status = this.parent.status;
+      const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
+      if (!needLokasiTo) return true;
+      return !!value;
+    }),
+  karyawan_id: Yup.string()
+    .nullable()
+    .test('karyawan-rule', 'Karyawan/Operator wajib diisi', function (value) {
+      const status = this.parent.status;
+      if (statusOptionalKaryawan.includes(status)) return true;
+      return !!value;
+    }),
+  kegiatan_id: Yup.string().nullable(),
+  keterangan: Yup.string().nullable(),
+  aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi')
+});
 
-const defaultValues = {
+const schemaEntries = Yup.object().shape({
+  entries: Yup.array().of(entrySchema).min(1, 'Minimal 1 baris')
+});
+
+const defaultEntry = {
   id: null,
   date_ops: '',
   shift: 'PAGI',
@@ -87,6 +93,41 @@ const defaultValues = {
   aktif: 'Y'
 };
 
+const schemaEntries = Yup.object().shape({
+  entries: Yup.array()
+    .of(
+      Yup.object().shape({
+        date_ops: Yup.string().required('Tanggal wajib diisi'),
+        shift: Yup.string().oneOf(['PAGI', 'MALAM']).required('Shift wajib diisi'),
+        status: Yup.string().oneOf(statusOptions.map((s) => s.key)).required('Status wajib diisi'),
+        equipment_id: Yup.string().required('Equipment wajib dipilih'),
+        ctg: Yup.string().required('Kategori equipment wajib'),
+        cabang_id: Yup.string().required('Cabang wajib dipilih'),
+        lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
+        lokasi_to: Yup.string()
+          .nullable()
+          .test('lokasi-to-rule', 'Lokasi tujuan wajib diisi untuk DT beroperasi', function (value) {
+            const ctg = this.parent.ctg;
+            const status = this.parent.status;
+            const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
+            if (!needLokasiTo) return true;
+            return !!value;
+          }),
+        karyawan_id: Yup.string()
+          .nullable()
+          .test('karyawan-rule', 'Karyawan/Operator wajib diisi', function (value) {
+            const status = this.parent.status;
+            if (statusOptionalKaryawan.includes(status)) return true;
+            return !!value;
+          }),
+        kegiatan_id: Yup.string().nullable(),
+        keterangan: Yup.string().nullable(),
+        aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi')
+      })
+    )
+    .min(1, 'Minimal 1 baris')
+});
+
 export default function ActivityFormPage({
   mode = 'create',
   initialData = {},
@@ -95,25 +136,33 @@ export default function ActivityFormPage({
 }) {
   const isEdit = mode === 'edit';
 
-  const initialValues = useMemo(
-    () => ({
-      ...defaultValues,
-      ...initialData,
-      id: initialData?.id || null,
-      equipment_id: initialData?.equipment_id || '',
-      equipment: initialData?.equipment || null,
-      ctg: initialData?.ctg || initialData?.equipment?.kategori || initialData?.equipment?.ctg || '',
-      cabang_id: initialData?.cabang_id || initialData?.equipment?.cabang_id || '',
-      karyawan_id: initialData?.karyawan_id || '',
-      lokasi_id: initialData?.lokasi_id || '',
-      lokasi_to: initialData?.lokasi_to || '',
-      kegiatan_id: initialData?.kegiatan_id || '',
-      shift: initialData?.shift || 'PAGI',
-      status: initialData?.status || 'BEROPERASI',
-      aktif: initialData?.aktif || 'Y'
-    }),
-    [initialData]
-  );
+  const initialValues = useMemo(() => {
+    if (initialData && initialData.id) {
+      return {
+        entries: [
+          {
+            ...defaultEntry,
+            ...initialData,
+            id: initialData.id,
+            equipment_id: initialData?.equipment_id || '',
+            equipment: initialData?.equipment || null,
+            ctg: initialData?.ctg || initialData?.equipment?.kategori || initialData?.equipment?.ctg || '',
+            cabang_id: initialData?.cabang_id || initialData?.equipment?.cabang_id || '',
+            karyawan_id: initialData?.karyawan_id || '',
+            lokasi_id: initialData?.lokasi_id || '',
+            lokasi_to: initialData?.lokasi_to || '',
+            kegiatan_id: initialData?.kegiatan_id || '',
+            shift: initialData?.shift || 'PAGI',
+            status: initialData?.status || 'BEROPERASI',
+            aktif: initialData?.aktif || 'Y'
+          }
+        ]
+      };
+    }
+    return {
+      entries: [defaultEntry]
+    };
+  }, [initialData]);
 
   const breadcrumbLinks = [
     { title: 'Home', to: APP_DEFAULT_PATH },
@@ -123,11 +172,15 @@ export default function ActivityFormPage({
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const url = isEdit && values.id
-        ? `/api/operation/activity-plan/${values.id}/update`
-        : '/api/operation/activity-plan/create';
-
-      await axiosServices.post(url, values);
+      if (isEdit) {
+        const [entry] = values.entries;
+        const url = `/api/operation/activity-plan/${entry.id}/update`;
+        await axiosServices.post(url, entry);
+      } else {
+        for (const entry of values.entries) {
+          await axiosServices.post('/api/operation/activity-plan/create', entry);
+        }
+      }
       openNotification({ open: true, title: 'success', message: 'Data tersimpan', alert: { color: 'success' } });
       window.location.href = backHref;
     } catch (error) {
@@ -149,29 +202,10 @@ export default function ActivityFormPage({
       <Formik
         enableReinitialize
         initialValues={initialValues}
-        validationSchema={buildValidationSchema(initialValues.ctg, initialValues.status)}
+        validationSchema={schemaEntries}
         onSubmit={handleSubmit}
       >
         {({ values, errors, touched, handleChange, setFieldValue, isSubmitting, validateForm }) => {
-          useEffect(() => {
-            const needLokasiTo = values.ctg !== 'HE' && values.status === 'BEROPERASI';
-            if (!needLokasiTo && values.lokasi_to) {
-              setFieldValue('lokasi_to', '');
-            }
-          }, [values.ctg, values.status, values.lokasi_to, setFieldValue]);
-
-          useEffect(() => {
-            if (values.equipment) {
-              const eq = values.equipment;
-              const derivedCtg = eq.kategori || eq.ctg || '';
-              if (derivedCtg && derivedCtg !== values.ctg) {
-                setFieldValue('ctg', derivedCtg);
-              }
-              if (!values.cabang_id && eq.cabang_id) {
-                setFieldValue('cabang_id', eq.cabang_id);
-              }
-            }
-          }, [values.equipment, values.ctg, values.cabang_id, setFieldValue]);
 
           return (
             <MainCard
@@ -190,7 +224,7 @@ export default function ActivityFormPage({
             >
               <Form>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={3}>
                     <InputForm
                       label="Tanggal Operasional"
                       name="date_ops"
@@ -202,7 +236,7 @@ export default function ActivityFormPage({
                       startAdornment={<Calendar />}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={2}>
                     <SelectForm
                       array={ctgOptions}
                       label="Kategori (ctg)"
@@ -224,7 +258,7 @@ export default function ActivityFormPage({
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={3}>
                     <SelectForm
                       array={shiftOptions}
                       label="Shift"
