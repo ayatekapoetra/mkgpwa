@@ -130,8 +130,12 @@ export default function ActivityFormPage({
   ];
 
   const handleSubmit = async (values, { setSubmitting }) => {
-    alert('xxxxx')
     try {
+      const itemsWithCtg = (values.items || []).map((it) => ({
+        ...it,
+        ctg: values.ctg
+      }));
+
       const common = {
         date_ops: values.date_ops,
         shift: values.shift,
@@ -141,11 +145,11 @@ export default function ActivityFormPage({
       };
 
       if (isEdit) {
-        const [item] = values.items;
+        const [item] = itemsWithCtg;
         const url = `/api/operation/activity-plan/${item.id}/update`;
         await axiosServices.post(url, { ...common, ...item });
       } else {
-        for (const item of values.items) {
+        for (const item of itemsWithCtg) {
           await axiosServices.post('/api/operation/activity-plan/create', { ...common, ...item });
         }
       }
@@ -169,8 +173,11 @@ export default function ActivityFormPage({
       <Breadcrumbs heading={heading} links={breadcrumbLinks} />
 
       <Formik enableReinitialize initialValues={initialValues} validationSchema={schemaEntries} onSubmit={handleSubmit}>
-        {({ values, errors, touched, handleChange, setFieldValue, isSubmitting, validateForm }) => (
-          <MainCard
+        {({ values, errors, touched, handleChange, setFieldValue, isSubmitting, validateForm }) => {
+          console.log('VALUES----', values);
+          
+          return (
+            <MainCard
             title={heading}
             secondary={
               <Stack direction="row" spacing={1}>
@@ -380,7 +387,8 @@ export default function ActivityFormPage({
               />
             </Form>
           </MainCard>
-        )}
+          )
+        }}
       </Formik>
     </Stack>
   );
