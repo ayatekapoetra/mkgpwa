@@ -55,7 +55,8 @@ const itemSchema = Yup.object().shape({
   lokasi_to: Yup.mixed()
     .transform((val, orig) => (orig === '' ? null : val))
     .nullable()
-    .when(['$ctg', '$status'], (ctg, status, schema) => {
+    .when(['$ctg', '$status'], (values, schema) => {
+      const [ctg, status] = values || [];
       const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
       return needLokasiTo ? schema.required('Lokasi tujuan wajib diisi untuk DT beroperasi') : schema.nullable();
     }),
