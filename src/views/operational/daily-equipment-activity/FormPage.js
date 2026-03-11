@@ -72,10 +72,6 @@ const entrySchema = Yup.object().shape({
   aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi')
 });
 
-const schemaEntries = Yup.object().shape({
-  entries: Yup.array().of(entrySchema).min(1, 'Minimal 1 baris')
-});
-
 const defaultEntry = {
   id: null,
   date_ops: '',
@@ -94,38 +90,7 @@ const defaultEntry = {
 };
 
 const schemaEntries = Yup.object().shape({
-  entries: Yup.array()
-    .of(
-      Yup.object().shape({
-        date_ops: Yup.string().required('Tanggal wajib diisi'),
-        shift: Yup.string().oneOf(['PAGI', 'MALAM']).required('Shift wajib diisi'),
-        status: Yup.string().oneOf(statusOptions.map((s) => s.key)).required('Status wajib diisi'),
-        equipment_id: Yup.string().required('Equipment wajib dipilih'),
-        ctg: Yup.string().required('Kategori equipment wajib'),
-        cabang_id: Yup.string().required('Cabang wajib dipilih'),
-        lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
-        lokasi_to: Yup.string()
-          .nullable()
-          .test('lokasi-to-rule', 'Lokasi tujuan wajib diisi untuk DT beroperasi', function (value) {
-            const ctg = this.parent.ctg;
-            const status = this.parent.status;
-            const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
-            if (!needLokasiTo) return true;
-            return !!value;
-          }),
-        karyawan_id: Yup.string()
-          .nullable()
-          .test('karyawan-rule', 'Karyawan/Operator wajib diisi', function (value) {
-            const status = this.parent.status;
-            if (statusOptionalKaryawan.includes(status)) return true;
-            return !!value;
-          }),
-        kegiatan_id: Yup.string().nullable(),
-        keterangan: Yup.string().nullable(),
-        aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi')
-      })
-    )
-    .min(1, 'Minimal 1 baris')
+  entries: Yup.array().of(entrySchema).min(1, 'Minimal 1 baris')
 });
 
 export default function ActivityFormPage({
