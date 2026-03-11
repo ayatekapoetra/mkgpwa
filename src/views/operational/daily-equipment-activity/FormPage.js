@@ -52,11 +52,12 @@ const itemSchema = Yup.object().shape({
     ),
   kegiatan_id: Yup.string().nullable(),
   lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
-  lokasi_to: Yup.string()
+  lokasi_to: Yup.mixed()
+    .transform((val, orig) => (orig === '' ? null : val))
     .nullable()
     .when(['$ctg', '$status'], (ctg, status, schema) => {
       const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
-      return needLokasiTo ? schema.required('Lokasi tujuan wajib diisi untuk DT beroperasi') : schema.nullable(true);
+      return needLokasiTo ? schema.required('Lokasi tujuan wajib diisi untuk DT beroperasi') : schema.nullable();
     }),
   keterangan: Yup.string().nullable(),
   aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi'),
