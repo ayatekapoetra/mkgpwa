@@ -6,7 +6,7 @@ import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
 import { Grid, Stack, Button } from '@mui/material';
-import { Add, Edit, Calendar, Driver, Map } from 'iconsax-react';
+import { Add, Edit, Calendar, TagUser, Truck, Alarm } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -306,11 +306,11 @@ export default function ActivityFormPage({
                                 error={itemErrors?.equipment_id}
                                 touched={itemTouched?.equipment_id}
                                 setFieldValue={setFieldValue}
-                                startAdornment={<Map />}
+                                startAdornment={<Truck />}
                                 filterParams={{ ctg: values.ctg || undefined }}
                               />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid item xs={12} sm={8}>
                               <OptionKaryawan
                                 value={item.karyawan_id}
                                 name={`items[${idx}].karyawan_id`}
@@ -318,8 +318,8 @@ export default function ActivityFormPage({
                                 error={itemErrors?.karyawan_id}
                                 touched={itemTouched?.karyawan_id}
                                 setFieldValue={setFieldValue}
-                                startAdornment={<Driver />}
-                              />
+                                startAdornment={<TagUser />}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={4}>
                               <OptionKegiatanKerja
@@ -330,6 +330,7 @@ export default function ActivityFormPage({
                                 touched={itemTouched?.kegiatan_id}
                                 setFieldValue={setFieldValue}
                                 searchParams={{ type: values.ctg === 'HE' ? 'HE' : 'DT' }}
+                                startAdornment={<Alarm />}
                               />
                             </Grid>
 
@@ -354,22 +355,6 @@ export default function ActivityFormPage({
                                 disabled={values.ctg === 'HE' || values.status !== 'BEROPERASI'}
                               />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
-                              <SelectForm
-                                array={[
-                                  { key: 'Y', teks: 'Aktif' },
-                                  { key: 'N', teks: 'Tidak Aktif' }
-                                ]}
-                                label="Aktif"
-                                name={`items[${idx}].aktif`}
-                                value={item.aktif}
-                                onChange={handleChange}
-                                onBlur={() => validateForm()}
-                                touched={itemTouched}
-                                errors={itemErrors}
-                              />
-                            </Grid>
-
                             <Grid item xs={12}>
                               <InputAreaForm
                                 label="Keterangan"
