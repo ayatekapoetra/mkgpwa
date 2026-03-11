@@ -54,12 +54,7 @@ const itemSchema = Yup.object().shape({
   lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
   lokasi_to: Yup.mixed()
     .transform((val, orig) => (orig === '' ? null : val))
-    .nullable()
-    .when(['$ctg', '$status'], (values, schema) => {
-      const [ctg, status] = values || [];
-      const needLokasiTo = ctg !== 'HE' && status === 'BEROPERASI';
-      return needLokasiTo ? schema.required('Lokasi tujuan wajib diisi untuk DT beroperasi') : schema.nullable();
-    }),
+    .nullable(),
   keterangan: Yup.string().nullable(),
   aktif: Yup.string().oneOf(['Y', 'N']).required('Aktif wajib diisi'),
   equipment: Yup.mixed().nullable()
@@ -135,6 +130,7 @@ export default function ActivityFormPage({
   ];
 
   const handleSubmit = async (values, { setSubmitting }) => {
+    alert('xxxxx')
     try {
       const common = {
         date_ops: values.date_ops,
