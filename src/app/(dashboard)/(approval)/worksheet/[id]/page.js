@@ -1,239 +1,118 @@
-import React, { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Card, Title, Paragraph, Button } from 'react-native-paper'
-import { colors } from '../../../../constants/colors'
-import CustomAlert from '../../../../components/common/CustomAlert'
-import { useCrewWorksheet } from '../../../../hooks/useCrewWorksheet'
+"use client";
 
-const ApprovalWorksheetDetail = () => {
-  const { id, data } = useLocalSearchParams()
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [showApproveAlert, setShowApproveAlert] = useState(false)
-  const [showRejectAlert, setShowRejectAlert] = useState(false)
-  
-  // Parse data if it's a string
-  const worksheetData = typeof data === 'string' ? JSON.parse(data) : data
-  
-  // Mock hook - replace with actual implementation
-  const { approveWorksheet, rejectWorksheet } = useCrewWorksheet()
+import { useMemo, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import {
+  Box,
+  Stack,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from '@mui/material';
+
+export default function ApprovalWorksheetDetail() {
+  const { id } = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [showApprove, setShowApprove] = useState(false);
+  const [showReject, setShowReject] = useState(false);
+
+  const worksheetData = useMemo(() => {
+    const raw = searchParams.get('data');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }, [searchParams]);
 
   const handleApprove = async () => {
-    try {
-      setLoading(true)
-      const response = await approveWorksheet(id)
-      
-      if (response.error) {
-        Alert.alert('Error', response.message || 'Failed to approve worksheet')
-      } else {
-        Alert.alert('Success', 'Worksheet approved successfully')
-        router.back()
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to approve worksheet')
-    } finally {
-      setLoading(false)
-      setShowApproveAlert(false)
-    }
-  }
+    setLoading(true);
+    // TODO: panggil API approve jika sudah tersedia
+    setLoading(false);
+    setShowApprove(false);
+    router.back();
+  };
 
   const handleReject = async () => {
-    try {
-      setLoading(true)
-      const response = await rejectWorksheet(id, { komentar_spv: '' })
-      
-      if (response.error) {
-        Alert.alert('Error', response.message || 'Failed to reject worksheet')
-      } else {
-        Alert.alert('Success', 'Worksheet rejected successfully')
-        router.back()
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to reject worksheet')
-    } finally {
-      setLoading(false)
-      setShowRejectAlert(false)
-    }
-  }
+    setLoading(true);
+    // TODO: panggil API reject jika sudah tersedia
+    setLoading(false);
+    setShowReject(false);
+    router.back();
+  };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={styles.title}>Worksheet Details</Title>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Tanggal:</Text>
-              <Text style={styles.value}>{worksheetData?.tanggal}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Crew:</Text>
-              <Text style={styles.value}>{worksheetData?.crew?.nama || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Supervisor:</Text>
-              <Text style={styles.value}>{worksheetData?.supervisor?.nama || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Cabang:</Text>
-              <Text style={styles.value}>{worksheetData?.cabang?.nama || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Status:</Text>
-              <View style={[styles.statusBadge, styles.pendingStatus]}>
-                <Text style={styles.statusText}>Pending</Text>
-              </View>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Keterangan:</Text>
-              <Text style={styles.value}>{worksheetData?.keterangan || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Jam Mulai:</Text>
-              <Text style={styles.value}>{worksheetData?.jam_mulai || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Jam Selesai:</Text>
-              <Text style={styles.value}>{worksheetData?.jam_selesai || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Istirahat Mulai:</Text>
-              <Text style={styles.value}>{worksheetData?.istirahat_mulai || '-'}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>Istirahat Selesai:</Text>
-              <Text style={styles.value}>{worksheetData?.istirahat_selesai || '-'}</Text>
-            </View>
-          </Card.Content>
-        </Card>
-      </ScrollView>
+    <Box p={2} maxWidth={900} mx="auto">
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5" fontWeight={700}>
+          Detail Worksheet #{id}
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" color="error" onClick={() => setShowReject(true)} disabled={loading}>
+            Tolak
+          </Button>
+          <Button variant="contained" onClick={() => setShowApprove(true)} disabled={loading}>
+            Setujui
+          </Button>
+        </Stack>
+      </Stack>
 
-      <View style={styles.footer}>
-        <Button
-          mode="outlined"
-          onPress={() => setShowRejectAlert(true)}
-          style={[styles.button, styles.rejectButton]}
-          textColor="#d32f2f"
-          disabled={loading}
-        >
-          Tolak
-        </Button>
-        
-        <Button
-          mode="contained"
-          onPress={() => setShowApproveAlert(true)}
-          style={[styles.button, styles.approveButton]}
-          disabled={loading}
-          loading={loading}
-        >
-          Setujui
-        </Button>
-      </View>
+      <Card>
+        <CardContent>
+          <Stack spacing={1.5}>
+            <DetailRow label="Tanggal" value={worksheetData?.tanggal || '-'} />
+            <DetailRow label="Crew" value={worksheetData?.crew?.nama || '-'} />
+            <DetailRow label="Supervisor" value={worksheetData?.supervisor?.nama || '-'} />
+            <DetailRow label="Cabang" value={worksheetData?.cabang?.nama || '-'} />
+            <DetailRow label="Status" value={worksheetData?.status || 'PENDING'} />
+            <DetailRow label="Keterangan" value={worksheetData?.keterangan || '-'} />
+            <DetailRow label="Jam Mulai" value={worksheetData?.jam_mulai || '-'} />
+            <DetailRow label="Jam Selesai" value={worksheetData?.jam_selesai || '-'} />
+            <DetailRow label="Istirahat Mulai" value={worksheetData?.istirahat_mulai || '-'} />
+            <DetailRow label="Istirahat Selesai" value={worksheetData?.istirahat_selesai || '-'} />
+          </Stack>
+        </CardContent>
+      </Card>
 
-      <CustomAlert
-        visible={showApproveAlert}
-        title="Konfirmasi Persetujuan"
-        message="Apakah Anda yakin ingin menyetujui worksheet ini?"
-        onConfirm={handleApprove}
-        onCancel={() => setShowApproveAlert(false)}
-        confirmText="Setujui"
-        cancelText="Batal"
-      />
+      <Dialog open={showApprove} onClose={() => setShowApprove(false)}>
+        <DialogTitle>Konfirmasi Persetujuan</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Apakah Anda yakin ingin menyetujui worksheet ini?</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowApprove(false)}>Batal</Button>
+          <Button onClick={handleApprove} disabled={loading} variant="contained">Setujui</Button>
+        </DialogActions>
+      </Dialog>
 
-      <CustomAlert
-        visible={showRejectAlert}
-        title="Konfirmasi Penolakan"
-        message="Apakah Anda yakin ingin menolak worksheet ini?"
-        onConfirm={handleReject}
-        onCancel={() => setShowRejectAlert(false)}
-        confirmText="Tolak"
-        cancelText="Batal"
-      />
-    </View>
-  )
+      <Dialog open={showReject} onClose={() => setShowReject(false)}>
+        <DialogTitle>Konfirmasi Penolakan</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Apakah Anda yakin ingin menolak worksheet ini?</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowReject(false)}>Batal</Button>
+          <Button onClick={handleReject} disabled={loading} color="error" variant="contained">Tolak</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  card: {
-    marginBottom: 16,
-    elevation: 2,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: colors.primary,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    flex: 1,
-  },
-  value: {
-    fontSize: 14,
-    color: '#333',
-    flex: 2,
-    textAlign: 'right',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  pendingStatus: {
-    backgroundColor: '#fff3cd',
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#856404',
-    fontWeight: 'bold',
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  button: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  rejectButton: {
-    borderColor: '#d32f2f',
-  },
-  approveButton: {
-    backgroundColor: colors.primary,
-  },
-})
-
-export default ApprovalWorksheetDetail
+function DetailRow({ label, value }) {
+  return (
+    <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+      <Typography variant="body2" fontWeight={600}>{label}</Typography>
+      <Typography variant="body2" textAlign="right">{value}</Typography>
+    </Stack>
+  );
+}
