@@ -43,7 +43,7 @@ const ctgOptions = [
   { key: 'DT', teks: 'DT (Dumptruck)' }
 ];
 
-const statusOptionalKaryawan = ['NO OPERATOR', 'NO DRIVER', 'BREAKDOWN', 'STANDBY'];
+// const statusOptionalKaryawan = ['NO OPERATOR', 'NO DRIVER', 'BREAKDOWN', 'STANDBY'];
 
 const itemSchema = Yup.object().shape({
   equipment_id: Yup.string().required('Equipment wajib dipilih'),

@@ -1,11 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Box,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TableFooter,
@@ -14,9 +12,7 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  LinearProgress,
-  Paper,
-  Divider
+  Paper
 } from '@mui/material';
 import { Edit } from 'iconsax-react';
 import Paginate from 'components/Paginate';
