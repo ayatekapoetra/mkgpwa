@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup';
+import moment from 'moment';
 
 import { Grid, Stack, Button } from '@mui/material';
 import { Add, Edit, Calendar, TagUser, Truck, Alarm, Verify } from 'iconsax-react';
@@ -18,6 +19,7 @@ import OptionOperatorDriver from 'components/OptionOperatorDriver';
 import OptionKegiatanKerja from 'components/OptionKegiatanKerja';
 import OptionLokasiKerja from 'components/OptionLokasiPit';
 import OptionCabang from 'components/OptionCabang';
+import OptionMaterialMining from 'components/OptionMaterialMining';
 import { APP_DEFAULT_PATH } from 'config';
 import axiosServices from 'utils/axios';
 import { openNotification } from 'api/notification';
@@ -47,6 +49,7 @@ const itemSchema = Yup.object().shape({
   equipment_id: Yup.string().required('Equipment wajib dipilih'),
   karyawan_id: Yup.string(),
   kegiatan_id: Yup.string(),
+  material_id: Yup.string(),
   lokasi_id: Yup.string().required('Lokasi wajib dipilih'),
   lokasi_to: Yup.string(),
   keterangan: Yup.string(),
@@ -68,6 +71,7 @@ const defaultItem = {
   equipment: null,
   karyawan_id: '',
   kegiatan_id: '',
+  material_id: '',
   lokasi_id: '',
   lokasi_to: '',
   keterangan: ''
@@ -77,6 +81,8 @@ export default function ActivityFormPage({
   mode = 'create',
   initialData = {},
   heading = 'Aktivitas Harian',
+  breadcrumbHeading,
+  breadcrumbLinks: breadcrumbLinksProp,
   backHref = '/daily-equipment-activity'
 }) {
   const isEdit = mode === 'edit';
@@ -85,8 +91,8 @@ export default function ActivityFormPage({
   const initialValues = useMemo(() => {
     const formatDate = (dateStr) => {
       if (!dateStr) return '';
-      // Handle ISO date strings and return only YYYY-MM-DD part
-      return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+      // Use moment.js to format date as YYYY-MM-DD
+      return moment(dateStr).format('YYYY-MM-DD');
     };
     
     if (initialData && initialData.id) {
@@ -104,6 +110,7 @@ export default function ActivityFormPage({
             equipment: initialData.equipment || null,
             karyawan_id: initialData.karyawan_id || '',
             kegiatan_id: initialData.kegiatan_id || '',
+            material_id: initialData.material_id || '',
             lokasi_id: initialData.lokasi_id || '',
             lokasi_to: initialData.lokasi_to || '',
             keterangan: initialData.keterangan || ''
@@ -121,11 +128,12 @@ export default function ActivityFormPage({
     };
   }, [initialData, todayStr]);
 
-  const breadcrumbLinks = [
-    { title: 'Home', to: APP_DEFAULT_PATH },
-    { title: 'Daily Equipment Activity', to: '/daily-equipment-activity' },
-    { title: isEdit ? 'Edit' : 'Create', to: '#' }
-  ];
+  const breadcrumbLinks =
+    breadcrumbLinksProp || [
+      { title: 'Home', to: APP_DEFAULT_PATH },
+      { title: 'Daily Equipment Activity', to: '/daily-equipment-activity' },
+      { title: isEdit ? 'Edit' : 'Create', to: '#' }
+    ];
 
   const handleSubmit = async (values, { setSubmitting }) => {
     console.log('cncncnccn');
@@ -159,6 +167,7 @@ export default function ActivityFormPage({
             equipment_id: item.equipment_id,
             karyawan_id: item.karyawan_id,
             kegiatan_id: item.kegiatan_id,
+            material_id: item.material_id,
             lokasi_id: item.lokasi_id,
             lokasi_to: item.lokasi_to,
             keterangan: item.keterangan
@@ -175,6 +184,7 @@ export default function ActivityFormPage({
               equipment_id: item.equipment_id,
               karyawan_id: item.karyawan_id,
               kegiatan_id: item.kegiatan_id,
+              material_id: item.material_id,
               lokasi_id: item.lokasi_id,
               lokasi_to: item.lokasi_to,
               keterangan: item.keterangan
@@ -201,7 +211,7 @@ export default function ActivityFormPage({
 
   return (
     <Stack spacing={2}>
-      <Breadcrumbs heading={heading} links={breadcrumbLinks} />
+      <Breadcrumbs custom heading={breadcrumbHeading ?? heading} links={breadcrumbLinks} />
 
       <Formik
         enableReinitialize
@@ -226,6 +236,9 @@ onSubmit={async (vals, helpers) => {
             vals.items.forEach((item, idx) => {
               if (!item.equipment_id) errors[`items[${idx}].equipment_id`] = 'Equipment wajib dipilih';
               if (!item.lokasi_id) errors[`items[${idx}].lokasi_id`] = 'Lokasi wajib dipilih';
+              if (vals.status === 'BEROPERASI' && !item.material_id) {
+                errors[`items[${idx}].material_id`] = 'Material wajib dipilih untuk status BEROPERASI';
+              }
             });
           }
           
@@ -393,7 +406,7 @@ onSubmit={async (vals, helpers) => {
                                 filterParams={{ kategori: values.ctg || undefined, ctg: values.ctg || undefined }}
                               />
                             </Grid>
-                            <Grid item xs={12} sm={8}>
+                            <Grid item xs={12} sm={5}>
                               <OptionOperatorDriver
                                 value={item.karyawan_id}
                                 name={`items[${idx}].karyawan_id`}
@@ -404,6 +417,16 @@ onSubmit={async (vals, helpers) => {
                                 // params={{section: 'oprdrv'}}
                                 startAdornment={<TagUser />}
                                 />
+                            </Grid>
+                            <Grid item xs={12} sm={3}>
+                              <OptionMaterialMining
+                                value={item.material_id}
+                                name={`items[${idx}].material_id`}
+                                label="Material"
+                                error={itemErrors?.material_id}
+                                touched={itemTouched?.material_id}
+                                setFieldValue={setFieldValue}
+                              />
                             </Grid>
                             <Grid item xs={12} sm={4}>
                               <OptionKegiatanKerja
@@ -458,8 +481,28 @@ onSubmit={async (vals, helpers) => {
                 )}
               />
             <Grid container spacing={2} mt={2}>
-                <Grid item xs={12}>
-                  <Stack direction="row" justifyContent="flex-end" gap={1}>
+              <Grid item xs={12}>
+                <Stack direction="row" justifyContent="space-between" gap={1}>
+                  <Stack direction="row" gap={1}>
+                    {isEdit && (
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        onClick={async () => {
+                          try {
+                            await axiosServices.post(`/api/operation/activity-plan/${values.items?.[0]?.id || initialData.id}/destroy`);
+                            openNotification({ open: true, title: 'success', message: 'Data dihapus', alert: { color: 'success' } });
+                            window.location.href = backHref;
+                          } catch (err) {
+                            openNotification({ open: true, title: 'error', message: 'Gagal menghapus data', alert: { color: 'error' } });
+                          }
+                        }}
+                      >
+                        Hapus
+                      </Button>
+                    )}
+                  </Stack>
+                  <Stack direction="row" gap={1}>
                     <Button component={Link} href={backHref} variant="outlined" color="secondary">
                       Batal
                     </Button>
@@ -467,8 +510,9 @@ onSubmit={async (vals, helpers) => {
                       {isEdit ? 'Simpan Perubahan' : 'Simpan'}
                     </Button>
                   </Stack>
-                </Grid>
+                </Stack>
               </Grid>
+            </Grid>
             </Form>
           </MainCard>
           )

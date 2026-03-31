@@ -5,6 +5,8 @@ import { CircularProgress, Box } from '@mui/material';
 
 import { useShowActivityPlan } from 'api/activity-plan';
 import ActivityFormPage from './FormPage';
+import BtnBack from 'components/BtnBack';
+import { APP_DEFAULT_PATH } from 'config';
 
 export default function ShowDailyEquipmentActivityPage() {
   const { id } = useParams();
@@ -18,5 +20,19 @@ export default function ShowDailyEquipmentActivityPage() {
     );
   }
 
-  return <ActivityFormPage mode="edit" heading="Edit Aktivitas Harian" initialData={data} />;
+  const breadcrumbLinks = [
+    { title: 'Home', to: APP_DEFAULT_PATH },
+    { title: 'Activity Equipment', to: '/daily-equipment-activity' },
+    { title: 'Show', to: '#' }
+  ];
+
+  return (
+    <ActivityFormPage
+      mode="edit"
+      heading={<BtnBack href={'/daily-equipment-activity'} />}
+      breadcrumbHeading="Daily Equipment Activity"
+      breadcrumbLinks={breadcrumbLinks}
+      initialData={data}
+    />
+  );
 }

@@ -8,6 +8,18 @@ import {
   Button
 } from '@mui/material';
 import { CloseCircle, TickCircle } from 'iconsax-react';
+import {
+  CalendarMonth,
+  AccessTime,
+  Flag,
+  Category as CategoryIcon,
+  LocalShipping,
+  Person,
+  Place,
+  Apartment,
+  Description,
+  DonutLarge
+} from '@mui/icons-material';
 
 import MainCard from 'components/MainCard';
 import InputSearch from 'components/InputSearch';
@@ -16,6 +28,7 @@ import FilterEquipment from 'components/FilterEquipment';
 import FilterKaryawan from 'components/FilterKaryawan';
 import FilterLokasiPit from 'components/FilterLokasiPit';
 import FilterCabang from 'components/FilterCabang';
+import OptionMaterialMining from 'components/OptionMaterialMining';
 
 const statusOptions = [
   { key: '', teks: 'Semua Status' },
@@ -48,6 +61,7 @@ export default function FilterActivity({ open, onClose, params, setParams, ancho
     ctg: '',
     equipment_id: '',
     karyawan_id: '',
+    material_id: '',
     kegiatan_id: '',
     lokasi_id: '',
     lokasi_to: '',
@@ -61,11 +75,13 @@ export default function FilterActivity({ open, onClose, params, setParams, ancho
         <MainCard title="Filter" content>
           <Grid container spacing={1.5}>
             <Grid item xs={12}>
-              <InputLabel>Tanggal Operasi</InputLabel>
               <InputSearch
                 type="date"
+                label="Tanggal"
+                size="md"
                 value={params.date_ops || ''}
                 onChange={(e) => setParams((prev) => ({ ...prev, date_ops: e.target.value, page: 1 }))}
+                startAdornment={<CalendarMonth fontSize="small" />}
               />
             </Grid>
             <Grid item xs={12}>
@@ -78,6 +94,7 @@ export default function FilterActivity({ open, onClose, params, setParams, ancho
                 onBlur={() => {}}
                 touched={{}}
                 errors={{}}
+                startAdornment={<AccessTime fontSize="small" />}
               />
             </Grid>
             <Grid item xs={12}>
@@ -90,6 +107,7 @@ export default function FilterActivity({ open, onClose, params, setParams, ancho
                 onBlur={() => {}}
                 touched={{}}
                 errors={{}}
+                startAdornment={<Flag fontSize="small" />}
               />
             </Grid>
             <Grid item xs={12}>
@@ -102,45 +120,72 @@ export default function FilterActivity({ open, onClose, params, setParams, ancho
                 onBlur={() => {}}
                 touched={{}}
                 errors={{}}
+                startAdornment={<CategoryIcon fontSize="small" />}
               />
             </Grid>
             <Grid item xs={12}>
-              <FilterEquipment value={params.equipment_id} name={'equipment_id'} label={'Equipment'} setData={setParams} />
+              <FilterEquipment
+                value={params.equipment_id}
+                name={'equipment_id'}
+                label={'Equipment'}
+                setData={setParams}
+                startAdornment={<LocalShipping fontSize="small" />}
+              />
             </Grid>
             <Grid item xs={12}>
-              <FilterKaryawan value={params.karyawan_id} name={'karyawan_id'} label={'Operator / Driver'} setData={setParams} />
+              <OptionMaterialMining
+                value={params.material_id}
+                name={'material_id'}
+                label={'Material'}
+                setFieldValue={(name, val) => setParams((prev) => ({ ...prev, material_id: val, page: 1 }))}
+                startAdornment={<DonutLarge fontSize="small" />}
+              />
             </Grid>
             <Grid item xs={12}>
-              <FilterLokasiPit value={params.lokasi_id} name={'lokasi_id'} label={'Lokasi'} setData={setParams} />
+              <FilterKaryawan
+                value={params.karyawan_id}
+                name={'karyawan_id'}
+                label={'Operator / Driver'}
+                setData={setParams}
+                startAdornment={<Person fontSize="small" />}
+              />
             </Grid>
             <Grid item xs={12}>
-              <FilterLokasiPit value={params.lokasi_to} name={'lokasi_to'} label={'Lokasi Tujuan'} setData={setParams} />
+              <FilterLokasiPit
+                value={params.lokasi_id}
+                name={'lokasi_id'}
+                label={'Lokasi'}
+                setData={setParams}
+                startAdornment={<Place fontSize="small" />}
+              />
             </Grid>
             <Grid item xs={12}>
-              <FilterCabang value={params.cabang_id} name={'cabang_id'} label={'Cabang'} setData={setParams} />
+              <FilterLokasiPit
+                value={params.lokasi_to}
+                name={'lokasi_to'}
+                label={'Lokasi Tujuan'}
+                setData={setParams}
+                startAdornment={<Place fontSize="small" />}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FilterCabang
+                value={params.cabang_id}
+                name={'cabang_id'}
+                label={'Cabang'}
+                setData={setParams}
+                startAdornment={<Apartment fontSize="small" />}
+              />
             </Grid>
 
             <Grid item xs={12}>
-              <InputLabel>Keterangan</InputLabel>
               <InputSearch
+                size="md"
+                label='Keterangan'
                 placeholder="Cari keterangan"
                 value={params.keterangan || ''}
                 onChange={(e) => setParams((prev) => ({ ...prev, keterangan: e.target.value, page: 1 }))}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <SelectForm
-                array={[
-                  { key: 'Y', teks: 'Aktif' },
-                  { key: 'N', teks: 'Tidak Aktif' }
-                ]}
-                label="Aktif"
-                name="aktif"
-                value={params.aktif || 'Y'}
-                onChange={(e) => setParams((prev) => ({ ...prev, aktif: e.target.value, page: 1 }))}
-                onBlur={() => {}}
-                touched={{}}
-                errors={{}}
+                startAdornment={<Description fontSize="small" />}
               />
             </Grid>
 

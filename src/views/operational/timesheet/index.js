@@ -29,7 +29,7 @@ import { useSnackbar } from 'notistack';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
-  { title: 'Daily Timesheet', to: '/penugasan-kerja' }
+  { title: 'Daily Timesheet', to: '/timesheet' }
 ];
 
 const STORAGE_KEY = 'timesheet_filter_params';
