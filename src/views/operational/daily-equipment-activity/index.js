@@ -12,6 +12,7 @@ import { APP_DEFAULT_PATH } from "config";
 import { useActivityPlan } from "api/activity-plan";
 import { openNotification } from "api/notification";
 import { generateDailyEquipmentActivityExcel, generateDailyEquipmentActivityPdfDT, generateDailyEquipmentActivityPdfHE } from "utils/excelExport";
+import axiosServices from "utils/axios";
 
 import ListActivity from "./list";
 import FilterActivity from "./filter";
@@ -45,19 +46,26 @@ export default function DailyEquipmentActivity() {
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const { data, dataLoading, dataError, mutate } = useActivityPlan(params);
 
-  const filteredData = useMemo(() => data?.data || [], [data]);
-
   const handleOpenDownloadMenu = (event) => setDownloadAnchorEl(event.currentTarget);
   const handleCloseDownloadMenu = () => setDownloadAnchorEl(null);
 
   const handleDownloadExcel = async (category) => {
     try {
       setDownloadingExcel(true);
-      let activities = filteredData;
+      const resp = await axiosServices.get("/api/operation/activity-plan/list", {
+        params: { ...params, page: 1, perPage: 100000 },
+      });
+
+      const rows = resp?.data?.rows;
+      let activities = Array.isArray(rows)
+        ? rows
+        : Array.isArray(rows?.data)
+          ? rows.data
+          : [];
 
       if (category && category !== "ALL") {
         const ctgKey = category.toUpperCase();
-        activities = filteredData.filter((a) => (a.ctg || "").toUpperCase() === ctgKey);
+        activities = activities.filter((a) => (a.ctg || "").toUpperCase() === ctgKey);
       }
 
       if (!activities || activities.length === 0) {
