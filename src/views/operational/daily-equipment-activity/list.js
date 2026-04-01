@@ -34,7 +34,7 @@ const shiftColors = {
 
 export default function ListActivity({ data, loading, error, params, setParams }) {
   const rows = data?.data || [];
-  const meta = data?.meta || data?.pagination || {};
+  const pagination = data || {};
 
   return (
     <Paper
@@ -197,10 +197,10 @@ export default function ListActivity({ data, loading, error, params, setParams }
           <TableRow>
             <TableCell colSpan={11}>
               <Paginate
-                page={meta?.page || meta?.currentPage || 1}
-                total={meta?.total || meta?.pagination?.total || 0}
-                lastPage={meta?.lastPage || meta?.pagination?.lastPage || 1}
-                perPage={meta?.perPage || meta?.pagination?.perPage || 25}
+                page={pagination?.page || 1}
+                total={pagination?.total || 0}
+                lastPage={pagination?.lastPage || 1}
+                perPage={pagination?.perPage || 25}
                 onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
               />
             </TableCell>
