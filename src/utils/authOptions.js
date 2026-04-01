@@ -147,7 +147,7 @@ export const authOptions = {
       }
     },
     csrfToken: {
-      name: `next-auth.csrf-token`,
+      name: process.env.NEXTAUTH_CSRF_NAME || 'mrtapp.csrf-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
