@@ -127,7 +127,7 @@ export const authOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: process.env.NEXTAUTH_SESSION_NAME || 'mrtapp.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
@@ -137,7 +137,7 @@ export const authOptions = {
       }
     },
     callbackUrl: {
-      name: `next-auth.callback-url`,
+      name: process.env.NEXTAUTH_CALLBACK_NAME || 'mrtapp.callback-url',
       options: {
         httpOnly: true,
         sameSite: 'lax',
