@@ -52,8 +52,8 @@ export default function DailyEquipmentActivity() {
   const handleDownloadExcel = async (category) => {
     try {
       setDownloadingExcel(true);
-      const resp = await axiosServices.get("/api/operation/activity-plan/list", {
-        params: { ...params, page: 1, perPage: 100000 },
+      const resp = await axiosServices.get("/api/operation/activity-plan/download", {
+        params,
       });
 
       const rows = resp?.data?.rows;
