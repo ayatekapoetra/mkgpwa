@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { CircularProgress, Box } from '@mui/material';
 
 import { useShowActivityPlan } from 'api/activity-plan';
-import ActivityFormPage from './FormPage';
+import EditFormPage from './EditFormPage';
 import BtnBack from 'components/BtnBack';
 import { APP_DEFAULT_PATH } from 'config';
 
@@ -27,8 +27,7 @@ export default function ShowDailyEquipmentActivityPage() {
   ];
 
   return (
-    <ActivityFormPage
-      mode="edit"
+    <EditFormPage
       heading={<BtnBack href={'/daily-equipment-activity'} />}
       breadcrumbHeading="Daily Equipment Activity"
       breadcrumbLinks={breadcrumbLinks}

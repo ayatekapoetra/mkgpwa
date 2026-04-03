@@ -2,7 +2,7 @@
 
 import BtnBack from 'components/BtnBack';
 import { APP_DEFAULT_PATH } from 'config';
-import ActivityFormPage from './FormPage';
+import CreateFormPage from './CreateFormPage';
 
 export default function CreateDailyEquipmentActivityPage() {
   const breadcrumbLinks = [
@@ -12,8 +12,7 @@ export default function CreateDailyEquipmentActivityPage() {
   ];
 
   return (
-    <ActivityFormPage
-      mode="create"
+    <CreateFormPage
       heading={<BtnBack href={'/daily-equipment-activity'} />}
       breadcrumbHeading="Daily Equipment Activity"
       breadcrumbLinks={breadcrumbLinks}

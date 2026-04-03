@@ -1,4 +1,4 @@
-import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment } from '@mui/material';
+import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment, Chip, Divider } from '@mui/material';
 import { useGetEquipment } from 'api/equipment';
 
 const OptionEquipment = ({
@@ -25,6 +25,17 @@ const OptionEquipment = ({
         <Autocomplete
           fullWidth
           options={options}
+          groupBy={(option) => option.manufaktur || 'Lainnya'}
+          renderGroup={(params) => (
+            <li key={params.key}>
+              <Box sx={{ p: 1, bgcolor: 'primary.main', mt: 0.5, mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: 'white' }}>
+                  MANUFAKTUR {(params.group || 'Lainnya').toUpperCase()}
+                </Typography>
+              </Box>
+              <ul style={{ paddingLeft: 0, marginTop: 2 }}>{params.children}</ul>
+            </li>
+          )}
           value={options.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
@@ -36,13 +47,21 @@ const OptionEquipment = ({
           renderOption={(props, option) => (
             <li {...props} key={`${option.id}-${option.label}`}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1 }}>
-                <Typography variant="body1" sx={{ fontWight: 700 }}>
-                  {option.kode}
-                </Typography>
-                <Typography variant="caption" color="text.primary">
-                  {option.model}
-                </Typography>
+                <Stack spacing={0.1} sx={{ width: '100%' }}>
+                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                      {option.kode}
+                    </Typography>
+                    {option.manufaktur && (
+                      <Chip label={option.manufaktur} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
+                    )}
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1 }}>
+                    {option.model || '-'}
+                  </Typography>
+                </Stack>
               </Box>
+              <Divider sx={{ my: 0.5 }} />
             </li>
           )}
           renderInput={(params) => {
