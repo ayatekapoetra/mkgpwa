@@ -2,6 +2,7 @@
 
 import moment from 'moment';
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { getTimesheetReconcilDetail } from 'api/timesheet-reconcil';
 import {
   Alert,
@@ -18,6 +19,10 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import MainCard from 'components/MainCard';
+import BtnBack from 'components/BtnBack';
+import Breadcrumbs from 'components/@extended/Breadcrumbs';
+import { APP_DEFAULT_PATH } from 'config';
 
 const formatCurrency = (value) => {
   const num = Number(value || 0);
@@ -47,7 +52,8 @@ const cardStyle = {
 };
 
 const TimesheetReconcilShow = ({ params }) => {
-  const id = params?.id;
+  const { id: routeId } = useParams();
+  const id = params?.id || routeId;
   const [row, setRow] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,7 +65,7 @@ const TimesheetReconcilShow = ({ params }) => {
       setError('');
       try {
         const res = await getTimesheetReconcilDetail(id);
-        console.log('RES---', res);
+        console.log('RES-------------------------', res);
         
         if (res?.diagnostic?.error) {
           setError(res.diagnostic.error);
@@ -90,19 +96,42 @@ const TimesheetReconcilShow = ({ params }) => {
     grand: normalized.grandtotal_earning,
   };
 
+  const breadcrumbLinks = [
+    { title: 'Home', to: APP_DEFAULT_PATH },
+    { title: 'Timesheet-Reconcil', to: '/timesheet-reconcil' },
+    { title: 'Show', to: `/timesheet-reconcil/${id || ''}` },
+  ];
+
   if (loading) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <MainCard title={<BtnBack href={'/timesheet'} />} content>
+        <Typography>Loading...</Typography>
+      </MainCard>
+    );
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return (
+      <MainCard title={<BtnBack href={'/timesheet'} />} content>
+        <Alert severity="error">{error}</Alert>
+      </MainCard>
+    );
   }
 
   if (!row) {
-    return <Alert severity="info">Data tidak tersedia</Alert>;
+    return (
+      <MainCard title={<BtnBack href={'/timesheet'} />} content>
+        <Alert severity="info">Data tidak tersedia</Alert>
+      </MainCard>
+    );
   }
 
   return (
+    <MainCard
+      title={<BtnBack href={'/timesheet'} />}
+      content
+      secondary={<Breadcrumbs custom heading={'Show Daily Timesheet'} links={breadcrumbLinks} />}
+    >
     <Stack spacing={3}>
       <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e6eef8', borderRadius: 3 }}>
         <Grid container spacing={2} alignItems="center">
@@ -249,6 +278,7 @@ const TimesheetReconcilShow = ({ params }) => {
         </TableContainer>
       </Paper>
     </Stack>
+    </MainCard>
   );
 };
 
