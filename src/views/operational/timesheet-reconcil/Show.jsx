@@ -7,7 +7,6 @@ import {
   Alert,
   Box,
   Chip,
-  Divider,
   Grid,
   Paper,
   Stack,
@@ -60,6 +59,8 @@ const TimesheetReconcilShow = ({ params }) => {
       setError('');
       try {
         const res = await getTimesheetReconcilDetail(id);
+        console.log('RES---', res);
+        
         if (res?.diagnostic?.error) {
           setError(res.diagnostic.error);
           setRow(null);
@@ -76,19 +77,18 @@ const TimesheetReconcilShow = ({ params }) => {
     fetchDetail();
   }, [id]);
 
-  const totals = row
-    ? {
-        work: row.totworktime,
-        rest: row.totresttime,
-        overtime: row.totovertime,
-        earningWork: row.totworkhours_earning,
-        earningOT: row.totovertime_earning,
-        earningAges: row.totinsentifages_earning,
-        earningTipes: row.totinsentiftipes_earning,
-        earningTools: row.totinsentiftools_earning,
-        grand: row.grandtotal_earning,
-      }
-    : {};
+  const normalized = row || {};
+  const totals = {
+    work: normalized.totworktime,
+    rest: normalized.totresttime,
+    overtime: normalized.totovertime,
+    earningWork: normalized.totworkhours_earning,
+    earningOT: normalized.totovertime_earning,
+    earningAges: normalized.totinsentifages_earning,
+    earningTipes: normalized.totinsentiftipes_earning,
+    earningTools: normalized.totinsentiftools_earning,
+    grand: normalized.grandtotal_earning,
+  };
 
   if (loading) {
     return <Typography>Loading...</Typography>;
