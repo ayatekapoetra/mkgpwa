@@ -1,6 +1,8 @@
 "use client";
 
 import moment from 'moment';
+import { useEffect, useState } from 'react';
+import { getTimesheetReconcilDetail } from 'api/timesheet-reconcil';
 import {
   Alert,
   Box,
@@ -38,67 +40,6 @@ const formatNumber = (value, digits = 2) => {
 const formatDate = (value) => (value ? moment(value).format('dddd, DD MMM YYYY') : '-');
 const formatTime = (value) => (value ? moment(value).format('HH:mm') : '-');
 
-// Mock detail data (from sample)
-const mockRow = {
-  id: 26040402832,
-  kode: 'Timesheet #26033102083',
-  date_ops: '2026-03-30T16:00:00.000Z',
-  nmkaryawan: 'Albar',
-  karyawan_id: '7409070610980001',
-  starttime: '2026-03-31T06:00:00.000Z',
-  endtime: '2026-03-31T17:00:00.000Z',
-  totworktime: '11.00',
-  totresttime: '1.00',
-  totovertime: '0.00',
-  totworkhours_earning: '220000',
-  totinsentifages_earning: '0',
-  totinsentiftipes_earning: '0',
-  totinsentiftools_earning: '0',
-  totritasetrip: 0,
-  grandtotal_earning: '220000',
-  narasi: '',
-  iserr: 'A',
-  errmsg: 'material_id wajib di isi kecuali standby/breakdown atau kegiatan mobilisasi',
-  items: [
-    {
-      id: 1,
-      kdequipment: 'M63',
-      nmkegiatan: 'TUNGGU ARAHAN',
-      kategori: 'RENTAL',
-      starttime: '2026-03-31T06:00:00.000Z',
-      endtime: '2026-03-31T09:00:00.000Z',
-      startlokasi: '[Tapunopaka] Pit Asaki',
-      endlokasi: '',
-      workhours: '3.00',
-      resthours: '0.00',
-      overtime: '0.00',
-      totritasetrip: 0,
-      bonusritase: 0,
-      inswork: '60000',
-      insritase: '0',
-      totalearning: '60000',
-    },
-    {
-      id: 2,
-      kdequipment: 'M63',
-      nmkegiatan: 'GETTING',
-      kategori: 'RENTAL',
-      starttime: '2026-03-31T09:00:00.000Z',
-      endtime: '2026-03-31T18:00:00.000Z',
-      startlokasi: '[Tapunopaka] Pit Asaki',
-      endlokasi: '',
-      workhours: '8.00',
-      resthours: '1.00',
-      overtime: '0.00',
-      totritasetrip: 0,
-      bonusritase: 0,
-      inswork: '160000',
-      insritase: '0',
-      totalearning: '160000',
-    },
-  ],
-};
-
 const cardStyle = {
   p: 2,
   borderRadius: 2,
@@ -106,20 +47,60 @@ const cardStyle = {
   border: '1px solid #e6eef8',
 };
 
-const TimesheetReconcilShow = ({ data = mockRow }) => {
-  const row = data || mockRow;
+const TimesheetReconcilShow = ({ params }) => {
+  const id = params?.id;
+  const [row, setRow] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const totals = {
-    work: row.totworktime,
-    rest: row.totresttime,
-    overtime: row.totovertime,
-    earningWork: row.totworkhours_earning,
-    earningOT: row.totovertime_earning,
-    earningAges: row.totinsentifages_earning,
-    earningTipes: row.totinsentiftipes_earning,
-    earningTools: row.totinsentiftools_earning,
-    grand: row.grandtotal_earning,
-  };
+  useEffect(() => {
+    const fetchDetail = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError('');
+      try {
+        const res = await getTimesheetReconcilDetail(id);
+        if (res?.diagnostic?.error) {
+          setError(res.diagnostic.error);
+          setRow(null);
+        } else {
+          setRow(res?.rows || res?.data || res);
+        }
+      } catch (err) {
+        setError(err?.message || 'Gagal memuat data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetail();
+  }, [id]);
+
+  const totals = row
+    ? {
+        work: row.totworktime,
+        rest: row.totresttime,
+        overtime: row.totovertime,
+        earningWork: row.totworkhours_earning,
+        earningOT: row.totovertime_earning,
+        earningAges: row.totinsentifages_earning,
+        earningTipes: row.totinsentiftipes_earning,
+        earningTools: row.totinsentiftools_earning,
+        grand: row.grandtotal_earning,
+      }
+    : {};
+
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
+
+  if (!row) {
+    return <Alert severity="info">Data tidak tersedia</Alert>;
+  }
 
   return (
     <Stack spacing={3}>

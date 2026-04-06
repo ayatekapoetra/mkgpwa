@@ -38,7 +38,7 @@ const formatNumber = (value, digits = 2) => {
   return num.toLocaleString('id-ID', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 };
 
-const formatDate = (value) => (value ? moment(value).format('DD MMM YYYY') : '-');
+const formatDate = (value) => (value ? moment(value).format('DD-MM-YYYY') : '-');
 const formatTime = (value) => (value ? moment(value).format('HH:mm') : '-');
 
 const defaultRange = () => {
@@ -336,7 +336,7 @@ const TimesheetReconcil = () => {
               <TableHead>
                 <TableRow>
                   <TableCell />
-                  <TableCell>Tanggal</TableCell>
+                  <TableCell sx={{ minWidth: 120 }}>Tanggal</TableCell>
                   <TableCell sx={{ minWidth: 180 }}>Karyawan</TableCell>
                   <TableCell sx={{ minWidth: 160 }}>Jam</TableCell>
                   <TableCell sx={{ minWidth: 140 }}>Smu Start</TableCell>

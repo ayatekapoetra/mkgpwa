@@ -5,4 +5,9 @@ export const postTimesheetReconcil = async (payload) => {
   return response.data;
 };
 
+export const getTimesheetReconcilDetail = async (id) => {
+  const response = await axiosServices.get(`/api/operation/timesheet/reconcil/${id}`);
+  return response.data;
+};
+
 export default postTimesheetReconcil;
