@@ -181,24 +181,77 @@ const TimesheetReconcil = () => {
                   Detail Items ({row.items?.length || 0})
                 </Typography>
                 <Divider sx={{ mb: 1 }} />
-                <Stack spacing={1} direction="column">
-                  {(row.items || []).map((item) => (
-                    <Paper key={item.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'background.default' }}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
-                        <Stack spacing={0.3}>
-                          <Typography variant="subtitle2">{item.nmkegiatan || '-'}</Typography>
-                          <Typography variant="caption" color="text.secondary">{item.kdequipment || ''} • {item.nmmaterial || ''}</Typography>
-                          <Typography variant="caption" color="text.secondary">{item.startlokasi || ''}</Typography>
-                        </Stack>
-                        <Stack spacing={0.3} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
-                          <Typography variant="body2">{formatTime(item.starttime)} - {formatTime(item.endtime)}</Typography>
-                          <Typography variant="caption" color="text.secondary">Work: {item.workhours}h • OT: {item.overtime}h</Typography>
-                          <Typography variant="body2" fontWeight={700}>{formatCurrency(item.totalearning)}</Typography>
-                        </Stack>
-                      </Stack>
-                    </Paper>
-                  ))}
-                </Stack>
+                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 420 }}>
+                  <Table size="small" stickyHeader sx={{ minWidth: 1100 }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>#</TableCell>
+                        <TableCell sx={{ minWidth: 120 }}>Equipment</TableCell>
+                        <TableCell sx={{ minWidth: 120 }}>Kategori</TableCell>
+                        <TableCell sx={{ minWidth: 180 }}>Material & Kegiatan</TableCell>
+                        <TableCell sx={{ minWidth: 160 }}>Waktu Start</TableCell>
+                        <TableCell sx={{ minWidth: 160 }}>Waktu Finish</TableCell>
+                        <TableCell sx={{ minWidth: 160 }}>Lokasi Start</TableCell>
+                        <TableCell sx={{ minWidth: 160 }}>Lokasi Finish</TableCell>
+                        <TableCell align="right">Durasi</TableCell>
+                        <TableCell align="right">Rest</TableCell>
+                        <TableCell align="right">Lembur</TableCell>
+                        <TableCell align="right">Trip Rit</TableCell>
+                        <TableCell align="right">Bonus Rit</TableCell>
+                        <TableCell align="right">Tot.Ritase</TableCell>
+                        <TableCell align="right">Ins.Ritase</TableCell>
+                        <TableCell align="right">Ins.Work</TableCell>
+                        <TableCell align="right">Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {(row.items || []).map((item, idx) => (
+                        <TableRow key={item.id} hover>
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell>
+                            <Stack spacing={0.3}>
+                              <Typography fontWeight={700}>{item.kdequipment || '-'}</Typography>
+                              <Typography variant="caption" color="text.secondary">{item.kode || ''}</Typography>
+                            </Stack>
+                          </TableCell>
+                          <TableCell>{item.kategori || '-'}</TableCell>
+                          <TableCell>
+                            <Stack spacing={0.3}>
+                              <Typography variant="body2">{item.nmkegiatan || '-'}</Typography>
+                              <Typography variant="caption" color="text.secondary">{item.nmmaterial || '-'}</Typography>
+                            </Stack>
+                          </TableCell>
+                          <TableCell>{`${formatDate(item.starttime)} ${formatTime(item.starttime)}`}</TableCell>
+                          <TableCell>{`${formatDate(item.endtime)} ${formatTime(item.endtime)}`}</TableCell>
+                          <TableCell>{item.startlokasi || '-'}</TableCell>
+                          <TableCell>{item.endlokasi || '-'}</TableCell>
+                          <TableCell align="right">{formatNumber(item.workhours, 2)}</TableCell>
+                          <TableCell align="right">{formatNumber(item.resthours, 2)}</TableCell>
+                          <TableCell align="right">{formatNumber(item.overtime, 2)}</TableCell>
+                          <TableCell align="right">{item.totritasetrip || 0}</TableCell>
+                          <TableCell align="right">{item.bonusritase || 0}</TableCell>
+                          <TableCell align="right">{item.totritasetrip || 0}</TableCell>
+                          <TableCell align="right">{formatCurrency(item.insritase)}</TableCell>
+                          <TableCell align="right">{formatCurrency(item.inswork)}</TableCell>
+                          <TableCell align="right">{formatCurrency(item.totalearning)}</TableCell>
+                        </TableRow>
+                      ))}
+                      {row.items?.length ? (
+                        <TableRow>
+                          <TableCell colSpan={8} align="right" sx={{ fontWeight: 800 }}>Total</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totworktime, 2)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totresttime, 2)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totovertime, 2)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{row.totritasetrip}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(row.grandtotal_earning)}</TableCell>
+                        </TableRow>
+                      ) : null}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
             </Collapse>
           </TableCell>
@@ -286,7 +339,9 @@ const TimesheetReconcil = () => {
                   <TableCell>Tanggal</TableCell>
                   <TableCell sx={{ minWidth: 180 }}>Karyawan</TableCell>
                   <TableCell sx={{ minWidth: 160 }}>Jam</TableCell>
-                  <TableCell>SMU</TableCell>
+                  <TableCell sx={{ minWidth: 140 }}>Smu Start</TableCell>
+                  <TableCell sx={{ minWidth: 140 }}>Smu Finish</TableCell>
+                  <TableCell sx={{ minWidth: 140 }}>Smu Used</TableCell>
                   <TableCell sx={{ minWidth: 140 }}>Durasi</TableCell>
                   <TableCell sx={{ minWidth: 120 }} align="right">Earning Kerja</TableCell>
                   <TableCell sx={{ minWidth: 120 }} align="right">Earning OT</TableCell>
