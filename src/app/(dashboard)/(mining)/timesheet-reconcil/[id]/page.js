@@ -1,4 +1,4 @@
-import TimesheetReconcilShow from 'views/operational/timesheet-reconcil/Show';
+import TimesheetReconcilShow from 'views/operational/timesheet-reconcil/show';
 
 const TimesheetReconcilShowPage = () => {
   return <TimesheetReconcilShow />;

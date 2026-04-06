@@ -128,9 +128,9 @@ const TimesheetReconcilShow = ({ params }) => {
 
   return (
     <MainCard
-      title={<BtnBack href={'/timesheet'} />}
+      title={<BtnBack href={'/timesheet-reconcil'} />}
       content
-      secondary={<Breadcrumbs custom heading={'Show Daily Timesheet'} links={breadcrumbLinks} />}
+      secondary={<Breadcrumbs custom heading={'Detail Reconcil Timesheet'} links={breadcrumbLinks} />}
     >
     <Stack spacing={3}>
       <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e6eef8', borderRadius: 3 }}>

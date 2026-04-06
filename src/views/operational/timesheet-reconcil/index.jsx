@@ -285,7 +285,7 @@ const TimesheetReconcil = () => {
           value={filters.endDate}
           onChange={(e) => handleField('endDate', e.target.value)}
         />
-        <Box sx={{ flex: 1, minWidth: 260 }}>
+        <Box sx={{ flex: 1, minWidth: 360 }}>
           <OptionOperatorDriver
             value={filters.karyawan_id}
             setFieldValue={(name, value) => handleField(name, value)}
@@ -294,6 +294,8 @@ const TimesheetReconcil = () => {
             label="Pilih Karyawan"
           />
         </Box>
+      </Stack>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'flex-end' }}>
         <Stack direction={{ xs: 'row', md: 'row' }} spacing={1}>
           <Button variant="contained" startIcon={<Refresh />} onClick={handleApply} disabled={loading}>
             Terapkan
