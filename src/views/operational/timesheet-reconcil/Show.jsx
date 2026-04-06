@@ -154,7 +154,16 @@ const TimesheetReconcilShow = ({ data = mockRow }) => {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e6eef8', borderRadius: 3 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2.5,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: (theme) => theme.palette.divider,
+          background: (theme) => (theme.palette.mode === 'dark' ? '#0f172a' : '#f8fbff'),
+        }}
+      >
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="subtitle1" fontWeight={800}>Ringkasan Earning</Typography>
           <Typography variant="caption" color="text.secondary">
@@ -162,54 +171,34 @@ const TimesheetReconcilShow = ({ data = mockRow }) => {
           </Typography>
         </Stack>
         <Grid container spacing={1.5}>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Jam Kerja</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatNumber(totals.work, 2)} jam</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Istirahat</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatNumber(totals.rest, 2)} jam</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Overtime</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatNumber(totals.overtime, 2)} jam</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Earning Work</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatCurrency(totals.earningWork)}</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Earning Ritase</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatCurrency(0)}</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Earning OT</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatCurrency(totals.earningOT)}</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Earning Ages</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatCurrency(totals.earningAges)}</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={cardStyle}>
-              <Typography variant="caption" color="text.secondary">Earning Tools</Typography>
-              <Typography variant="body1" fontWeight={800}>{formatCurrency(totals.earningTools)}</Typography>
-            </Box>
-          </Grid>
+          {[{ label: 'Jam Kerja', value: `${formatNumber(totals.work, 2)} jam` },
+            { label: 'Istirahat', value: `${formatNumber(totals.rest, 2)} jam` },
+            { label: 'Overtime', value: `${formatNumber(totals.overtime, 2)} jam` },
+            { label: 'Earning Work', value: formatCurrency(totals.earningWork) },
+            { label: 'Earning Ritase', value: formatCurrency(0) },
+            { label: 'Earning OT', value: formatCurrency(totals.earningOT) },
+            { label: 'Earning Ages', value: formatCurrency(totals.earningAges) },
+            { label: 'Earning Tools', value: formatCurrency(totals.earningTools) }
+          ].map((card, idx) => (
+            <Grid item xs={12} sm={6} md={3} key={idx}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.05)' : '#eef5ff'),
+                  border: '1px solid',
+                  borderColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.15)' : '#dbeafe'),
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+                  minHeight: 90,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  {card.label}
+                </Typography>
+                <Typography variant="body1" fontWeight={800}>{card.value}</Typography>
+              </Box>
+            </Grid>
+          ))}
         </Grid>
       </Paper>
 
