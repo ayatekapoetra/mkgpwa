@@ -174,7 +174,7 @@ const TimesheetReconcil = () => {
         </TableRow>
 
         <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={13}>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={17}>
             <Collapse in={isOpen} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
                 <Typography variant="subtitle2" gutterBottom>
