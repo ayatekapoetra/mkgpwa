@@ -26,6 +26,7 @@ import { KeyboardArrowDown, KeyboardArrowUp, Refresh, RestartAlt } from '@mui/ic
 import OptionOperatorDriver from 'components/OptionOperatorDriver';
 import postTimesheetReconcil from 'api/timesheet-reconcil';
 import { APP_DEFAULT_PATH } from 'config';
+import Link from 'next/link';
 
 const formatCurrency = (value) => {
   const num = Number(value || 0);
@@ -171,6 +172,11 @@ const TimesheetReconcil = () => {
               {row.errmsg && <Typography variant="caption" color="error">{row.errmsg}</Typography>}
             </Stack>
           </TableCell>
+          <TableCell align="right">
+            <Button component={Link} href={`/timesheet-reconcil/${row.id}`} size="small" variant="outlined">
+              Show
+            </Button>
+          </TableCell>
         </TableRow>
 
         <TableRow>
@@ -279,7 +285,7 @@ const TimesheetReconcil = () => {
           </Stack>
 
           <TableContainer component={Box} sx={{ overflowX: 'auto' }}>
-            <Table stickyHeader size="small" sx={{ minWidth: 1200 }}>
+            <Table stickyHeader size="small" sx={{ minWidth: 1250 }}>
               <TableHead>
                 <TableRow>
                   <TableCell />
@@ -296,6 +302,7 @@ const TimesheetReconcil = () => {
                   <TableCell align="center">Trip</TableCell>
                   <TableCell align="right">Grand Total</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell align="right">Aksi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
