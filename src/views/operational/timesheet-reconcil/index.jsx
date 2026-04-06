@@ -164,12 +164,11 @@ const TimesheetReconcil = () => {
               {row.iserr && (
                 <Chip
                   size="small"
-                  label={row.iserr === 'A' ? 'Valid' : 'Err'}
+                  label={row.iserr}
                   color={row.iserr === 'A' ? 'success' : 'error'}
                   variant="outlined"
                 />
               )}
-              {row.errmsg && <Typography variant="caption" color="error">{row.errmsg}</Typography>}
             </Stack>
           </TableCell>
           <TableCell align="right">
@@ -285,23 +284,23 @@ const TimesheetReconcil = () => {
           </Stack>
 
           <TableContainer component={Box} sx={{ overflowX: 'auto' }}>
-            <Table stickyHeader size="small" sx={{ minWidth: 1250 }}>
+            <Table stickyHeader size="small" sx={{ minWidth: 1450 }}>
               <TableHead>
                 <TableRow>
                   <TableCell />
                   <TableCell>Tanggal</TableCell>
-                  <TableCell>Karyawan</TableCell>
-                  <TableCell>Jam</TableCell>
+                  <TableCell sx={{ minWidth: 180 }}>Karyawan</TableCell>
+                  <TableCell sx={{ minWidth: 160 }}>Jam</TableCell>
                   <TableCell>SMU</TableCell>
-                  <TableCell>Durasi</TableCell>
-                  <TableCell align="right">Earning Kerja</TableCell>
-                  <TableCell align="right">Earning OT</TableCell>
-                  <TableCell align="right">Insentif Ages</TableCell>
-                  <TableCell align="right">Insentif Tipes</TableCell>
-                  <TableCell align="right">Insentif Tools</TableCell>
-                  <TableCell align="center">Trip</TableCell>
-                  <TableCell align="right">Grand Total</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell sx={{ minWidth: 140 }}>Durasi</TableCell>
+                  <TableCell sx={{ minWidth: 120 }} align="right">Earning Kerja</TableCell>
+                  <TableCell sx={{ minWidth: 120 }} align="right">Earning OT</TableCell>
+                  <TableCell sx={{ minWidth: 120 }} align="right">Insentif Ages</TableCell>
+                  <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tipes</TableCell>
+                  <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tools</TableCell>
+                  <TableCell sx={{ minWidth: 90 }} align="center">Trip</TableCell>
+                  <TableCell sx={{ minWidth: 140 }} align="right">Grand Total</TableCell>
+                  <TableCell sx={{ minWidth: 80 }}>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
               </TableHead>
