@@ -136,13 +136,9 @@ const TimesheetReconcil = () => {
               <Typography variant="caption" color="text.secondary">Rest: {formatNumber(row.totresttime, 2)} jam</Typography>
             </Stack>
           </TableCell>
-          <TableCell>
-            <Stack spacing={0.3}>
-              <Typography variant="body2">Start: {row.smustart}</Typography>
-              <Typography variant="body2">Finish: {row.smufinish}</Typography>
-              <Typography variant="caption" color="text.secondary">Used: {row.usedsmu}</Typography>
-            </Stack>
-          </TableCell>
+          <TableCell>{row.smustart}</TableCell>
+          <TableCell>{row.smufinish}</TableCell>
+          <TableCell>{row.usedsmu}</TableCell>
           <TableCell>
             <Stack spacing={0.3}>
               <Typography variant="body2">Kerja: {formatNumber(row.totworktime, 2)}h</Typography>
@@ -160,7 +156,6 @@ const TimesheetReconcil = () => {
           </TableCell>
           <TableCell>
             <Stack spacing={0.5}>
-              {row.narasi ? <Chip size="small" label={row.narasi} color="info" variant="outlined" /> : null}
               {row.iserr && (
                 <Chip
                   size="small"
