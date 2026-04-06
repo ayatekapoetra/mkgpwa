@@ -300,7 +300,7 @@ const TimesheetReconcil = () => {
                   <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tools</TableCell>
                   <TableCell sx={{ minWidth: 90 }} align="center">Trip</TableCell>
                   <TableCell sx={{ minWidth: 140 }} align="right">Grand Total</TableCell>
-                  <TableCell sx={{ minWidth: 80 }}>Status</TableCell>
+                  <TableCell sx={{ width: 70 }}>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
               </TableHead>
