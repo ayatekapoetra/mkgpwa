@@ -182,15 +182,15 @@ const TimesheetReconcil = () => {
   const handleExportPdf = () => {
     if (!rows.length) return;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.setFontSize(12);
+    doc.text(`Timesheet Reconcil ${filters.startDate} s/d ${filters.endDate}`, 20, 24);
+
+    let cursorY = 40;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const bottomMargin = 40;
+
     rows.forEach((r, idx) => {
       const items = r.items || [];
-      if (idx > 0) doc.addPage();
-
-      // Header text
-      doc.setFontSize(12);
-      doc.text(`Timesheet Reconcil ${filters.startDate} s/d ${filters.endDate}`, 20, 24);
-      doc.setFontSize(10);
-      doc.text(`${idx + 1}. ${r.nmkaryawan} • ${formatDate(r.date_ops)}`, 20, 38);
 
       // Summary table per row
       autoTable(doc, {
@@ -214,13 +214,18 @@ const TimesheetReconcil = () => {
         headStyles: { fillColor: [59, 130, 246], textColor: 255 },
         alternateRowStyles: { fillColor: [245, 247, 250] },
         theme: 'striped',
-        startY: 46,
+        startY: cursorY,
         margin: { left: 20, right: 20 },
       });
 
-      let cursorY = doc.lastAutoTable.finalY + 10;
+      cursorY = doc.lastAutoTable.finalY + 10;
 
-      // Items table nested
+      // Check space before items table
+      if (cursorY > pageHeight - bottomMargin) {
+        doc.addPage();
+        cursorY = 40;
+      }
+
       autoTable(doc, {
         head: [['#', 'Equipment', 'Kategori', 'Kegiatan', 'Material', 'Start', 'Finish', 'Lokasi Start', 'Lokasi Finish', 'Work', 'Rest', 'OT', 'Trip']],
         body: items.map((it, i) => [
@@ -242,10 +247,15 @@ const TimesheetReconcil = () => {
         styles: { fontSize: 7, cellPadding: 3 },
         headStyles: { fillColor: [226, 239, 255], textColor: 20 },
         margin: { left: 20, right: 20 },
-        didDrawPage: (data) => {
-          // Ensure page breaks handled by jsPDF-Autotable
-        },
       });
+
+      cursorY = doc.lastAutoTable.finalY + 16;
+
+      // add spacing between groups, add page if running out of space
+      if (cursorY > pageHeight - bottomMargin && idx < rows.length - 1) {
+        doc.addPage();
+        cursorY = 40;
+      }
     });
 
     doc.save(`timesheet-reconcil-${filters.startDate}-${filters.endDate}.pdf`);
