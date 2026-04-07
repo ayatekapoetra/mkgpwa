@@ -163,7 +163,7 @@ const TimesheetReconcil = () => {
     const infoRows = [
       ['Nama Karyawan', filters.karyawan?.nama || 'Semua'],
       ['Total Jam', formatNumber(agg.work, 2)],
-      ['Bonus Lembur', formatCurrency(agg.overtimeEarn)],
+      ['Bonus Lembur (jam)', formatNumber(agg.overtime, 2)],
       ['Total Jam + Lembur', formatNumber(agg.work + agg.overtime, 2)],
       ['Ritase', formatNumber(agg.trip, 0)],
       ['Bonus Ritase', formatNumber(agg.bonusTrip, 0)],
