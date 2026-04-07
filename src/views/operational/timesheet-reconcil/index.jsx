@@ -128,19 +128,32 @@ const TimesheetReconcil = () => {
 
   const handleExportExcel = () => {
     if (!rows.length) return;
-    const data = rows.map((r) => ({
-      Tanggal: formatDate(r.date_ops),
-      Karyawan: r.nmkaryawan,
-      Jam: `${formatTime(r.starttime)} - ${formatTime(r.endtime)}`,
-      SmuStart: r.smustart,
-      SmuFinish: r.smufinish,
-      SmuUsed: r.usedsmu,
-      Rest: formatNumber(r.totresttime, 2),
-      WorkHours: formatNumber(r.totworktime, 2),
-      Overtime: formatNumber(r.totovertime, 2),
-      Trip: r.totritasetrip,
-      Status: r.iserr || '',
-    }));
+    const data = rows.flatMap((r) => {
+      const items = r.items && r.items.length ? r.items : [{}];
+      return items.map((it, idx) => ({
+        Tanggal: formatDate(r.date_ops),
+        Karyawan: r.nmkaryawan,
+        Jam: `${formatTime(r.starttime)} - ${formatTime(r.endtime)}`,
+        SmuStart: r.smustart,
+        SmuFinish: r.smufinish,
+        SmuUsed: r.usedsmu,
+        Rest: formatNumber(r.totresttime, 2),
+        WorkHours: formatNumber(r.totworktime, 2),
+        Overtime: formatNumber(r.totovertime, 2),
+        Trip: r.totritasetrip,
+        Status: r.iserr || '',
+        ItemNo: items.length > 1 ? idx + 1 : '',
+        ItemKegiatan: it.nmkegiatan || '',
+        ItemMaterial: it.nmmaterial || '',
+        ItemLokasiStart: it.startlokasi || '',
+        ItemLokasiFinish: it.endlokasi || '',
+        ItemWorkHour: it.workhours || '',
+        ItemRest: it.resthours || '',
+        ItemOT: it.overtime || '',
+        ItemTrip: it.totritasetrip || '',
+        ItemBonus: it.bonusritase || '',
+      }));
+    });
 
     const sheet = xlsxUtils.json_to_sheet(data);
     const wb = xlsxUtils.book_new();
@@ -151,8 +164,8 @@ const TimesheetReconcil = () => {
   const handleExportPdf = () => {
     if (!rows.length) return;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    const headers = [['Tanggal', 'Karyawan', 'Jam', 'Smu Start', 'Smu Finish', 'Smu Used', 'Rest', 'WorkHours', 'Overtime', 'Trip', 'Status']];
-    const body = rows.map((r) => [
+    const mainHeaders = [['Tanggal', 'Karyawan', 'Jam', 'Smu Start', 'Smu Finish', 'Smu Used', 'Rest', 'Work', 'OT', 'Trip', 'Status']];
+    const mainBody = rows.map((r) => [
       formatDate(r.date_ops),
       r.nmkaryawan,
       `${formatTime(r.starttime)} - ${formatTime(r.endtime)}`,
@@ -167,9 +180,9 @@ const TimesheetReconcil = () => {
     ]);
 
     autoTable(doc, {
-      head: headers,
-      body,
-      styles: { fontSize: 9, cellPadding: 5 },
+      head: mainHeaders,
+      body: mainBody,
+      styles: { fontSize: 8, cellPadding: 4 },
       headStyles: { fillColor: [59, 130, 246], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 247, 250] },
       theme: 'striped',
@@ -179,6 +192,43 @@ const TimesheetReconcil = () => {
         doc.setFontSize(12);
         doc.text(`Timesheet Reconcil ${filters.startDate} s/d ${filters.endDate}`, data.settings.margin.left, 24);
       },
+    });
+
+    // Nested tables per row
+    let cursorY = doc.lastAutoTable.finalY + 10;
+    rows.forEach((r, idx) => {
+      const items = r.items || [];
+      if (!items.length) return;
+      if (cursorY > doc.internal.pageSize.getHeight() - 120) {
+        doc.addPage();
+        cursorY = 40;
+      }
+      doc.setFontSize(10);
+      doc.text(`${idx + 1}. ${r.nmkaryawan} - ${formatDate(r.date_ops)}`, 20, cursorY);
+      cursorY += 6;
+      autoTable(doc, {
+        head: [['#', 'Equipment', 'Kategori', 'Kegiatan', 'Material', 'Start', 'Finish', 'Lokasi Start', 'Lokasi Finish', 'Work', 'Rest', 'OT', 'Trip']],
+        body: items.map((it, i) => [
+          i + 1,
+          it.kdequipment || '-',
+          it.kategori || '-',
+          it.nmkegiatan || '-',
+          it.nmmaterial || '-',
+          `${formatTime(it.starttime)}`,
+          `${formatTime(it.endtime)}`,
+          it.startlokasi || '-',
+          it.endlokasi || '-',
+          it.workhours || '-',
+          it.resthours || '-',
+          it.overtime || '-',
+          it.totritasetrip || 0,
+        ]),
+        startY: cursorY,
+        styles: { fontSize: 7, cellPadding: 3 },
+        headStyles: { fillColor: [226, 239, 255], textColor: 20 },
+        margin: { left: 20, right: 20 },
+      });
+      cursorY = doc.lastAutoTable.finalY + 12;
     });
 
     doc.save(`timesheet-reconcil-${filters.startDate}-${filters.endDate}.pdf`);
