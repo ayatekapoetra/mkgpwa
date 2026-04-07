@@ -140,6 +140,7 @@ const TimesheetReconcil = () => {
         Nama: r.nmkaryawan,
         Start: it.starttime ? moment(it.starttime).format('YYYY-MM-DD HH:mm') : '',
         Finish: it.endtime ? moment(it.endtime).format('YYYY-MM-DD HH:mm') : '',
+        Durasi: it.opsduration || '',
         Break: it.resthours || '',
         Total: it.workhours || '',
         Overtime: it.overtime || '',
@@ -153,7 +154,6 @@ const TimesheetReconcil = () => {
         Longshift: it.longshift || '',
         Nmbisnis: it.kdcorp || '',
         Nmsite: it.nmsite || '',
-        Penyewa: it.nmpenyewa || '',
         'Pesan Error': r.errmsg || '',
       }));
     });
