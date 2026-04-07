@@ -121,8 +121,10 @@ const TimesheetReconcil = () => {
         work: acc.work + Number(r?.totworktime || 0),
         overtime: acc.overtime + Number(r?.totovertime || 0),
         trip: acc.trip + Number(r?.totritasetrip || 0),
+        overtimeEarn: acc.overtimeEarn + Number(r?.totovertime_earning || 0),
+        bonusTrip: acc.bonusTrip + Number(r?.totbonustrip || 0),
       }),
-      { usedsmu: 0, rest: 0, work: 0, overtime: 0, trip: 0 }
+      { usedsmu: 0, rest: 0, work: 0, overtime: 0, trip: 0, overtimeEarn: 0, bonusTrip: 0 }
     );
   }, [rows]);
 
@@ -140,7 +142,7 @@ const TimesheetReconcil = () => {
         Nama: r.nmkaryawan,
         Start: it.starttime ? moment(it.starttime).format('YYYY-MM-DD HH:mm') : '',
         Finish: it.endtime ? moment(it.endtime).format('YYYY-MM-DD HH:mm') : '',
-        Durasi: it.opsduration || '',
+        'Durasi Kerja': it.opsduration || '',
         Break: it.resthours || '',
         Total: it.workhours || '',
         Overtime: it.overtime || '',
@@ -158,7 +160,20 @@ const TimesheetReconcil = () => {
       }));
     });
 
-    const sheet = xlsxUtils.json_to_sheet(data);
+    const infoRows = [
+      ['Nama Karyawan', filters.karyawan?.nama || 'Semua'],
+      ['Total Jam', formatNumber(agg.work, 2)],
+      ['Bonus Lembur', formatCurrency(agg.overtimeEarn)],
+      ['Total Jam + Lembur', formatNumber(agg.work + agg.overtime, 2)],
+      ['Ritase', formatNumber(agg.trip, 0)],
+      ['Bonus Ritase', formatNumber(agg.bonusTrip, 0)],
+      ['Total Ritase + Bonus Ritase', formatNumber(agg.trip + agg.bonusTrip, 0)],
+      [],
+    ];
+
+    const header = Object.keys(data[0] || {});
+    const dataRows = data.map((row) => header.map((h) => row[h]));
+    const sheet = xlsxUtils.aoa_to_sheet([...infoRows, header, ...dataRows]);
     const wb = xlsxUtils.book_new();
     xlsxUtils.book_append_sheet(wb, sheet, 'Reconcil');
     writeXlsxFile(wb, `timesheet-reconcil-${filters.startDate}-${filters.endDate}.xlsx`);
