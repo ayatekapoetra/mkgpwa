@@ -275,7 +275,7 @@ const TimesheetReconcil = () => {
     const isOpen = expanded[row.id];
     return (
       <>
-        <TableRow hover key={row.id} sx={{ '& > *': { borderBottom: 'unset' } }}>
+        <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
           <TableCell padding="checkbox">
             <IconButton size="small" onClick={() => toggleExpand(row.id)}>
               {isOpen ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
@@ -502,7 +502,11 @@ const TimesheetReconcil = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row) => renderRow(row))}
+                {rows.map((row) => (
+                  <React.Fragment key={row.id}>
+                    {renderRow(row)}
+                  </React.Fragment>
+                ))}
               </TableBody>
               <TableFooter>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
