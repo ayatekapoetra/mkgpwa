@@ -128,30 +128,33 @@ const TimesheetReconcil = () => {
 
   const handleExportExcel = () => {
     if (!rows.length) return;
+    const shiftLabel = (id) => (id === 1 ? 'pagi' : id === 2 ? 'siang' : id === 3 ? 'malam' : '');
+
     const data = rows.flatMap((r) => {
       const items = r.items && r.items.length ? r.items : [{}];
-      return items.map((it, idx) => ({
+      return items.map((it) => ({
         Tanggal: formatDate(r.date_ops),
-        Karyawan: r.nmkaryawan,
-        Jam: `${formatTime(r.starttime)} - ${formatTime(r.endtime)}`,
-        SmuStart: r.smustart,
-        SmuFinish: r.smufinish,
-        SmuUsed: r.usedsmu,
-        Rest: formatNumber(r.totresttime, 2),
-        WorkHours: formatNumber(r.totworktime, 2),
-        Overtime: formatNumber(r.totovertime, 2),
-        Trip: r.totritasetrip,
-        Status: r.iserr || '',
-        ItemNo: items.length > 1 ? idx + 1 : '',
-        ItemKegiatan: it.nmkegiatan || '',
-        ItemMaterial: it.nmmaterial || '',
-        ItemLokasiStart: it.startlokasi || '',
-        ItemLokasiFinish: it.endlokasi || '',
-        ItemWorkHour: it.workhours || '',
-        ItemRest: it.resthours || '',
-        ItemOT: it.overtime || '',
-        ItemTrip: it.totritasetrip || '',
-        ItemBonus: it.bonusritase || '',
+        Shift: shiftLabel(it.shift_id),
+        Rent: it.nmpenyewa || '',
+        Unit: it.kdequipment || '',
+        Nama: r.nmkaryawan,
+        Start: it.starttime ? moment(it.starttime).format('YYYY-MM-DD HH:mm') : '',
+        Finish: it.endtime ? moment(it.endtime).format('YYYY-MM-DD HH:mm') : '',
+        Break: it.resthours || '',
+        Total: it.workhours || '',
+        Overtime: it.overtime || '',
+        Material: it.nmmaterial || '',
+        Kegiatan: it.nmkegiatan || '',
+        'Lokasi Awal': it.startlokasi || '',
+        'Lokasi Akhir': it.endlokasi || '',
+        Ritase: it.ritasetrip || it.totritasetrip || '',
+        Bonus: it.bonusritase || '',
+        Group: it.mainact || '',
+        Longshift: it.longshift || '',
+        Nmbisnis: it.kdcorp || '',
+        Nmsite: it.nmsite || '',
+        Penyewa: it.nmpenyewa || '',
+        'Pesan Error': r.errmsg || '',
       }));
     });
 
