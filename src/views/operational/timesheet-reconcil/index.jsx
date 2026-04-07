@@ -31,6 +31,7 @@ import Link from 'next/link';
 import { utils as xlsxUtils, writeFile as writeXlsxFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import useUser from 'hooks/useUser';
 
 const formatCurrency = (value) => {
   const num = Number(value || 0);
@@ -52,12 +53,17 @@ const defaultRange = () => {
 };
 
 const TimesheetReconcil = () => {
-  const [filters, setFilters] = useState(() => ({ ...defaultRange(), karyawan_id: '', karyawan: null }));
+  const user = useUser();
+  const isOprDrv = ['operator', 'driver'].includes(user.role)
+  const [filters, setFilters] = useState(() => ({ ...defaultRange(), karyawan_id: isOprDrv ? user.employee_id:'' , karyawan: null }));
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [applied, setApplied] = useState(false);
   const [expanded, setExpanded] = useState({});
+
+  // console.log('XMXMXMXMX------', user);
+  
 
   const handleField = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -296,6 +302,8 @@ const TimesheetReconcil = () => {
           </TableCell>
           <TableCell>{formatNumber(row.totovertime, 2)} Jam</TableCell>
           <TableCell align="center">{row.totritasetrip}</TableCell>
+          <TableCell align="center">{row.totbonustrip || 0}</TableCell>
+          <TableCell align="center">{(Number(row.totritasetrip || 0) + Number(row.totbonustrip || 0))}</TableCell>
           <TableCell>
             <Stack spacing={0.5}>
               {row.iserr && (
@@ -316,7 +324,7 @@ const TimesheetReconcil = () => {
         </TableRow>
 
         <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={13}>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={15}>
             <Collapse in={isOpen} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -473,7 +481,7 @@ const TimesheetReconcil = () => {
           </Stack>
 
           <TableContainer component={Box} sx={{ overflowX: 'auto' }}>
-            <Table stickyHeader size="small" sx={{ minWidth: 1450 }}>
+            <Table stickyHeader size="small" sx={{ minWidth: 1650 }}>
               <TableHead>
                 <TableRow>
                   <TableCell />
@@ -487,6 +495,8 @@ const TimesheetReconcil = () => {
                   <TableCell sx={{ minWidth: 140 }}>WorkHours</TableCell>
                   <TableCell sx={{ minWidth: 140 }}>Overtime</TableCell>
                   <TableCell sx={{ minWidth: 90 }} align="center">Trip</TableCell>
+                  <TableCell sx={{ minWidth: 90 }} align="center">Bonus</TableCell>
+                  <TableCell sx={{ minWidth: 140 }} align="center">Total Trip+Bonus</TableCell>
                   <TableCell sx={{ width: 70 }}>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
@@ -507,6 +517,8 @@ const TimesheetReconcil = () => {
                   <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.work, 2)} jam</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.overtime, 2)} jam</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip, 0)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.bonusTrip, 0)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip + agg.bonusTrip, 0)}</TableCell>
                   <TableCell />
                   <TableCell />
                 </TableRow>
