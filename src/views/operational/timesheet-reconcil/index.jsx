@@ -61,7 +61,7 @@ const TimesheetReconcil = () => {
   const [error, setError] = useState('');
   const [applied, setApplied] = useState(false);
   const [expanded, setExpanded] = useState({});
-  
+
   const handleField = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
@@ -153,8 +153,9 @@ const TimesheetReconcil = () => {
         Kegiatan: it.nmkegiatan || '',
         'Lokasi Awal': it.startlokasi || '',
         'Lokasi Akhir': it.endlokasi || '',
-        Ritase: it.ritasetrip || it.totritasetrip || '',
+        Ritase: it.ritasetrip || '',
         Bonus: it.bonusritase || '',
+        'Tot.Ritase': it.ritasetrip + it.bonusritase || '',
         Group: it.mainact || '',
         Longshift: it.longshift || '',
         Nmbisnis: it.kdcorp || '',
@@ -168,9 +169,9 @@ const TimesheetReconcil = () => {
       ['Total Jam', formatNumber(agg.work, 2)],
       ['Bonus Lembur (jam)', formatNumber(agg.overtime, 2)],
       ['Total Jam + Lembur', formatNumber(agg.work + agg.overtime, 2)],
-      ['Ritase', formatNumber(agg.trip, 0)],
+      ['Ritase', formatNumber(agg.trip - agg.bonusTrip, 0)],
       ['Bonus Ritase', formatNumber(agg.bonusTrip, 0)],
-      ['Total Ritase + Bonus Ritase', formatNumber(agg.trip + agg.bonusTrip, 0)],
+      ['Total Ritase + Bonus Ritase', formatNumber(agg.trip, 0)],
       [],
     ];
 
@@ -272,9 +273,9 @@ const TimesheetReconcil = () => {
       formatNumber(agg.rest, 2),
       formatNumber(agg.work, 2),
       formatNumber(agg.overtime, 2),
-      formatNumber(agg.trip, 0),
+      formatNumber(agg.trip - agg.bonusTrip, 0),
       formatNumber(agg.bonusTrip, 0),
-      formatNumber(agg.trip + agg.bonusTrip, 0),
+      formatNumber(agg.trip, 0),
     ]];
 
     if (cursorY > pageHeight - bottomMargin) {
@@ -288,7 +289,7 @@ const TimesheetReconcil = () => {
       ]],
       body: footerData,
       styles: { fontSize: 9, cellPadding: 4, fontStyle: 'bold' },
-      headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+      headStyles: { fillColor: [4, 180, 19], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 247, 250] },
       startY: cursorY,
       margin: { left: 20, right: 20 },
@@ -303,6 +304,7 @@ const TimesheetReconcil = () => {
 
   const renderRow = (row) => {
     const isOpen = expanded[row.id];
+    const countRitase = row?.items?.reduce((total, item) => total + item.ritasetrip, 0);
     return (
       <>
         <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
@@ -331,9 +333,9 @@ const TimesheetReconcil = () => {
             </Stack>
           </TableCell>
           <TableCell>{formatNumber(row.totovertime, 2)} Jam</TableCell>
-          <TableCell align="center">{row.totritasetrip}</TableCell>
+          <TableCell align="center">{(Number(row.totritasetrip || 0)) - (Number(row.totbonustrip || 0))}</TableCell>
           <TableCell align="center">{row.totbonustrip || 0}</TableCell>
-          <TableCell align="center">{(Number(row.totritasetrip || 0) + Number(row.totbonustrip || 0))}</TableCell>
+          <TableCell align="center">{(Number(row.totritasetrip || 0))}</TableCell>
           <TableCell>
             <Stack spacing={0.5}>
               {row.iserr && (
@@ -405,7 +407,7 @@ const TimesheetReconcil = () => {
                           <TableCell align="right">{formatNumber(item.workhours, 2)}</TableCell>
                           <TableCell align="right">{formatNumber(item.resthours, 2)}</TableCell>
                           <TableCell align="right">{formatNumber(item.overtime, 2)}</TableCell>
-                          <TableCell align="right">{item.totritasetrip || 0}</TableCell>
+                          <TableCell align="right">{item.ritasetrip || 0}</TableCell>
                           <TableCell align="right">{item.bonusritase || 0}</TableCell>
                           <TableCell align="right">{item.totritasetrip || 0}</TableCell>
                         </TableRow>
@@ -416,9 +418,9 @@ const TimesheetReconcil = () => {
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totworktime, 2)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totresttime, 2)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totovertime, 2)}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 800 }}>{row.totritasetrip}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{countRitase}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{row.totbonustrip}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 800 }}>{parseInt(row.totbonustrip) + parseInt(row.totritasetrip)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{parseInt(row.totbonustrip) + parseInt(countRitase)}</TableCell>
                         </TableRow>
                       ) : null}
                     </TableBody>
@@ -550,9 +552,9 @@ const TimesheetReconcil = () => {
                   <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.rest, 2)} jam</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.work, 2)} jam</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.overtime, 2)} jam</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip, 0)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip - agg.bonusTrip, 0)}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.bonusTrip, 0)}</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip + agg.bonusTrip, 0)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip, 0)}</TableCell>
                   <TableCell />
                   <TableCell />
                 </TableRow>
