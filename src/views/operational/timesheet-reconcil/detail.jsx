@@ -41,7 +41,7 @@ const formatNumber = (value, digits = 2) => {
   });
 };
 
-const formatDate = (value) => (value ? moment(value).format('dddd, DD MMM YYYY') : '-');
+const formatDate = (value) => (value ? moment(value).format('DD-MM-YYYY') : '-');
 const formatTime = (value) => (value ? moment(value).format('HH:mm') : '-');
 
 const cardStyle = {
@@ -144,15 +144,16 @@ const TimesheetReconcilShow = ({ params }) => {
           </Grid>
           <Grid item xs={12} md={6}>
             <Stack spacing={0.5}>
-              <Typography variant="subtitle1" fontWeight={700}>{row.kode || `Timesheet #${row.id}`}</Typography>
               <Typography variant="body1" fontWeight={700}>{row.nmkaryawan}</Typography>
               <Typography variant="body2" color="text.secondary">{row.karyawan_id}</Typography>
               <Typography variant="body2" color="text.secondary">MTK TAPUNOPAKA</Typography>
+              <Typography variant="subtitle">{row.kode || `Timesheet #${row.id}`}</Typography>
             </Stack>
           </Grid>
           <Grid item xs={12} md={3} textAlign={{ xs: 'left', md: 'right' }}>
             <Typography variant="caption" color="text.secondary">Potensi Pendapatan</Typography>
-            <Typography variant="h5" fontWeight={800}>{formatCurrency(totals.grand)}</Typography>
+            <Typography variant="h5" fontWeight={800}>Rp. -</Typography>
+            {/* <Typography variant="h5" fontWeight={800}>{formatCurrency(totals.grand)}</Typography> */}
             <Typography variant="caption" color="text.secondary">{formatCurrency(20000)}/ Jam</Typography>
           </Grid>
         </Grid>
@@ -164,7 +165,7 @@ const TimesheetReconcilShow = ({ params }) => {
         </Alert>
       )}
 
-      <Paper
+      {/* <Paper
         elevation={0}
         sx={{
           p: 2.5,
@@ -210,7 +211,7 @@ const TimesheetReconcilShow = ({ params }) => {
             </Grid>
           ))}
         </Grid>
-      </Paper>
+      </Paper> */}
 
       <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e6eef8', borderRadius: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
@@ -232,8 +233,8 @@ const TimesheetReconcilShow = ({ params }) => {
                 <TableCell align="right">Rest</TableCell>
                 <TableCell align="right">Lembur</TableCell>
                 <TableCell align="right">Trip Rit</TableCell>
-                <TableCell align="right">Ins.Ritase</TableCell>
-                <TableCell align="right">Ins.Work</TableCell>
+                {/* <TableCell align="right">Ins.Ritase</TableCell>
+                <TableCell align="right">Ins.Work</TableCell> */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -247,7 +248,7 @@ const TimesheetReconcilShow = ({ params }) => {
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">{item.kategori}</Typography>
+                    <Typography variant="body2">{item.mainact}</Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">{item.nmkegiatan}</Typography>
@@ -260,11 +261,11 @@ const TimesheetReconcilShow = ({ params }) => {
                   <TableCell align="right">{formatNumber(item.resthours, 2)}</TableCell>
                   <TableCell align="right">{formatNumber(item.overtime, 2)}</TableCell>
                   <TableCell align="right">{item.totritasetrip}</TableCell>
-                  <TableCell align="right">{formatCurrency(item.insritase)}</TableCell>
-                  <TableCell align="right">{formatCurrency(item.inswork)}</TableCell>
+                  {/* <TableCell align="right">{formatCurrency(item.insritase)}</TableCell>
+                  <TableCell align="right">{formatCurrency(item.inswork)}</TableCell> */}
                 </TableRow>
               ))}
-              <TableRow>
+              {/* <TableRow>
                 <TableCell colSpan={8} align="right" sx={{ fontWeight: 800 }}>Total</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totworktime, 2)}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totresttime, 2)}</TableCell>
@@ -272,7 +273,7 @@ const TimesheetReconcilShow = ({ params }) => {
                 <TableCell align="right" sx={{ fontWeight: 800 }}>{row.totritasetrip}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(row.grandtotal_earning)}</TableCell>
-              </TableRow>
+              </TableRow> */}
             </TableBody>
           </Table>
         </TableContainer>

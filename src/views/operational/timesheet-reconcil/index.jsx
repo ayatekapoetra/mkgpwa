@@ -151,9 +151,9 @@ const TimesheetReconcil = () => {
           <TableCell align="right">{formatCurrency(row.totinsentiftipes_earning)}</TableCell>
           <TableCell align="right">{formatCurrency(row.totinsentiftools_earning)}</TableCell>
           <TableCell align="center">{row.totritasetrip}</TableCell>
-          <TableCell align="right">
+          {/* <TableCell align="right">
             <Typography fontWeight={700}>{formatCurrency(row.grandtotal_earning)}</Typography>
-          </TableCell>
+          </TableCell> */}
           <TableCell>
             <Stack spacing={0.5}>
               {row.iserr && (
@@ -199,9 +199,9 @@ const TimesheetReconcil = () => {
                         <TableCell align="right">Trip Rit</TableCell>
                         <TableCell align="right">Bonus Rit</TableCell>
                         <TableCell align="right">Tot.Ritase</TableCell>
-                        <TableCell align="right">Ins.Ritase</TableCell>
+                        {/* <TableCell align="right">Ins.Ritase</TableCell>
                         <TableCell align="right">Ins.Work</TableCell>
-                        <TableCell align="right">Total</TableCell>
+                        <TableCell align="right">Total</TableCell> */}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -231,12 +231,12 @@ const TimesheetReconcil = () => {
                           <TableCell align="right">{item.totritasetrip || 0}</TableCell>
                           <TableCell align="right">{item.bonusritase || 0}</TableCell>
                           <TableCell align="right">{item.totritasetrip || 0}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.insritase)}</TableCell>
+                          {/* <TableCell align="right">{formatCurrency(item.insritase)}</TableCell>
                           <TableCell align="right">{formatCurrency(item.inswork)}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.totalearning)}</TableCell>
+                          <TableCell align="right">{formatCurrency(item.totalearning)}</TableCell> */}
                         </TableRow>
                       ))}
-                      {row.items?.length ? (
+                      {/* {row.items?.length ? (
                         <TableRow>
                           <TableCell colSpan={8} align="right" sx={{ fontWeight: 800 }}>Total</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totworktime, 2)}</TableCell>
@@ -248,7 +248,7 @@ const TimesheetReconcil = () => {
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(row.grandtotal_earning)}</TableCell>
                         </TableRow>
-                      ) : null}
+                      ) : null} */}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -328,8 +328,8 @@ const TimesheetReconcil = () => {
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1}>
-              <Chip label={`Baris: ${totals.count}`} color="primary" variant="outlined" />
-              <Chip label={`Grand Total: ${formatCurrency(totals.grand)}`} color="success" variant="filled" />
+              <Chip label={`Baris: ${totals.count} rows`} color="primary" variant="outlined" />
+              {/* <Chip label={`Grand Total: ${formatCurrency(totals.grand)}`} color="success" variant="filled" /> */}
             </Stack>
           </Stack>
 
@@ -351,7 +351,7 @@ const TimesheetReconcil = () => {
                   <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tipes</TableCell>
                   <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tools</TableCell>
                   <TableCell sx={{ minWidth: 90 }} align="center">Trip</TableCell>
-                  <TableCell sx={{ minWidth: 140 }} align="right">Grand Total</TableCell>
+                  {/* <TableCell sx={{ minWidth: 140 }} align="right">Grand Total</TableCell> */}
                   <TableCell sx={{ width: 70 }}>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>

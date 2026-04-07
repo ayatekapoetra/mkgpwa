@@ -46,7 +46,8 @@ const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Equi
 
 const groupDT = [
   { id: '1', key: 'A', teks: '12 Roda' },
-  { id: '2', key: 'B', teks: '10 Roda' }
+  { id: '2', key: 'B', teks: '10 Roda' },
+  { id: '3', key: 'C', teks: '6 Roda' }
 ];
 
 const initialValues = {
