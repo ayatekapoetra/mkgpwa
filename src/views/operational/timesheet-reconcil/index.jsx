@@ -182,48 +182,45 @@ const TimesheetReconcil = () => {
   const handleExportPdf = () => {
     if (!rows.length) return;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    const mainHeaders = [['Tanggal', 'Karyawan', 'Jam', 'Smu Start', 'Smu Finish', 'Smu Used', 'Rest', 'Work', 'OT', 'Trip', 'Status']];
-    const mainBody = rows.map((r) => [
-      formatDate(r.date_ops),
-      r.nmkaryawan,
-      `${formatTime(r.starttime)} - ${formatTime(r.endtime)}`,
-      r.smustart,
-      r.smufinish,
-      r.usedsmu,
-      formatNumber(r.totresttime, 2),
-      formatNumber(r.totworktime, 2),
-      formatNumber(r.totovertime, 2),
-      r.totritasetrip,
-      r.iserr || '',
-    ]);
-
-    autoTable(doc, {
-      head: mainHeaders,
-      body: mainBody,
-      styles: { fontSize: 8, cellPadding: 4 },
-      headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-      alternateRowStyles: { fillColor: [245, 247, 250] },
-      theme: 'striped',
-      startY: 40,
-      margin: { left: 20, right: 20 },
-      didDrawPage: (data) => {
-        doc.setFontSize(12);
-        doc.text(`Timesheet Reconcil ${filters.startDate} s/d ${filters.endDate}`, data.settings.margin.left, 24);
-      },
-    });
-
-    // Nested tables per row
-    let cursorY = doc.lastAutoTable.finalY + 10;
     rows.forEach((r, idx) => {
       const items = r.items || [];
-      if (!items.length) return;
-      if (cursorY > doc.internal.pageSize.getHeight() - 120) {
-        doc.addPage();
-        cursorY = 40;
-      }
+      if (idx > 0) doc.addPage();
+
+      // Header text
+      doc.setFontSize(12);
+      doc.text(`Timesheet Reconcil ${filters.startDate} s/d ${filters.endDate}`, 20, 24);
       doc.setFontSize(10);
-      doc.text(`${idx + 1}. ${r.nmkaryawan} - ${formatDate(r.date_ops)}`, 20, cursorY);
-      cursorY += 6;
+      doc.text(`${idx + 1}. ${r.nmkaryawan} • ${formatDate(r.date_ops)}`, 20, 38);
+
+      // Summary table per row
+      autoTable(doc, {
+        head: [[
+          'Tanggal', 'Karyawan', 'Jam', 'Smu Start', 'Smu Finish', 'Smu Used', 'Rest', 'Work', 'OT', 'Trip', 'Status',
+        ]],
+        body: [[
+          formatDate(r.date_ops),
+          r.nmkaryawan,
+          `${formatTime(r.starttime)} - ${formatTime(r.endtime)}`,
+          r.smustart,
+          r.smufinish,
+          r.usedsmu,
+          formatNumber(r.totresttime, 2),
+          formatNumber(r.totworktime, 2),
+          formatNumber(r.totovertime, 2),
+          r.totritasetrip,
+          r.iserr || '',
+        ]],
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        theme: 'striped',
+        startY: 46,
+        margin: { left: 20, right: 20 },
+      });
+
+      let cursorY = doc.lastAutoTable.finalY + 10;
+
+      // Items table nested
       autoTable(doc, {
         head: [['#', 'Equipment', 'Kategori', 'Kegiatan', 'Material', 'Start', 'Finish', 'Lokasi Start', 'Lokasi Finish', 'Work', 'Rest', 'OT', 'Trip']],
         body: items.map((it, i) => [
@@ -232,8 +229,8 @@ const TimesheetReconcil = () => {
           it.kategori || '-',
           it.nmkegiatan || '-',
           it.nmmaterial || '-',
-          `${formatTime(it.starttime)}`,
-          `${formatTime(it.endtime)}`,
+          `${formatDate(it.starttime)} ${formatTime(it.starttime)}`,
+          `${formatDate(it.endtime)} ${formatTime(it.endtime)}`,
           it.startlokasi || '-',
           it.endlokasi || '-',
           it.workhours || '-',
@@ -245,8 +242,10 @@ const TimesheetReconcil = () => {
         styles: { fontSize: 7, cellPadding: 3 },
         headStyles: { fillColor: [226, 239, 255], textColor: 20 },
         margin: { left: 20, right: 20 },
+        didDrawPage: (data) => {
+          // Ensure page breaks handled by jsPDF-Autotable
+        },
       });
-      cursorY = doc.lastAutoTable.finalY + 12;
     });
 
     doc.save(`timesheet-reconcil-${filters.startDate}-${filters.endDate}.pdf`);
