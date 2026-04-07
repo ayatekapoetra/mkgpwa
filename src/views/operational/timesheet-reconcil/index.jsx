@@ -17,6 +17,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
   TableRow,
   TextField,
@@ -109,12 +110,27 @@ const TimesheetReconcil = () => {
     return { count, grand };
   }, [rows]);
 
+  const agg = useMemo(() => {
+    return rows.reduce(
+      (acc, r) => ({
+        usedsmu: acc.usedsmu + Number(r?.usedsmu || 0),
+        rest: acc.rest + Number(r?.totresttime || 0),
+        work: acc.work + Number(r?.totworktime || 0),
+        overtime: acc.overtime + Number(r?.totovertime || 0),
+        trip: acc.trip + Number(r?.totritasetrip || 0),
+      }),
+      { usedsmu: 0, rest: 0, work: 0, overtime: 0, trip: 0 }
+    );
+  }, [rows]);
+
   const toggleExpand = (id) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const renderRow = (row) => {
     const isOpen = expanded[row.id];
+    console.log('ROW------', row);
+    
     return (
       <>
         <TableRow hover key={row.id} sx={{ '& > *': { borderBottom: 'unset' } }}>
@@ -127,33 +143,23 @@ const TimesheetReconcil = () => {
           <TableCell>
             <Stack spacing={0.5}>
               <Typography fontWeight={700}>{row.nmkaryawan}</Typography>
-              <Typography variant="caption" color="text.secondary">ID: {row.karyawan_id}</Typography>
+              <Typography variant="caption" color="text.secondary">ID: {row.id}</Typography>
             </Stack>
           </TableCell>
           <TableCell>
-            <Stack spacing={0.3}>
-              <Typography variant="body2">{`${formatTime(row.starttime)} - ${formatTime(row.endtime)}`}</Typography>
-              <Typography variant="caption" color="text.secondary">Rest: {formatNumber(row.totresttime, 2)} jam</Typography>
-            </Stack>
+            {`${formatTime(row.starttime)} - ${formatTime(row.endtime)}`}
           </TableCell>
           <TableCell>{row.smustart}</TableCell>
           <TableCell>{row.smufinish}</TableCell>
           <TableCell>{row.usedsmu}</TableCell>
+          <TableCell>{formatNumber(row.totresttime, 2)} jam</TableCell>
           <TableCell>
             <Stack spacing={0.3}>
-              <Typography variant="body2">Kerja: {formatNumber(row.totworktime, 2)}h</Typography>
-              <Typography variant="body2">OT: {formatNumber(row.totovertime, 2)}h</Typography>
+              <Typography variant="subtitle1">{formatNumber(row.totworktime, 2)} Jam</Typography>
             </Stack>
           </TableCell>
-          <TableCell align="right">{formatCurrency(row.totworkhours_earning)}</TableCell>
-          <TableCell align="right">{formatCurrency(row.totovertime_earning)}</TableCell>
-          <TableCell align="right">{formatCurrency(row.totinsentifages_earning)}</TableCell>
-          <TableCell align="right">{formatCurrency(row.totinsentiftipes_earning)}</TableCell>
-          <TableCell align="right">{formatCurrency(row.totinsentiftools_earning)}</TableCell>
+          <TableCell>{formatNumber(row.totovertime, 2)} Jam</TableCell>
           <TableCell align="center">{row.totritasetrip}</TableCell>
-          {/* <TableCell align="right">
-            <Typography fontWeight={700}>{formatCurrency(row.grandtotal_earning)}</Typography>
-          </TableCell> */}
           <TableCell>
             <Stack spacing={0.5}>
               {row.iserr && (
@@ -193,15 +199,12 @@ const TimesheetReconcil = () => {
                         <TableCell sx={{ minWidth: 160 }}>Waktu Finish</TableCell>
                         <TableCell sx={{ minWidth: 160 }}>Lokasi Start</TableCell>
                         <TableCell sx={{ minWidth: 160 }}>Lokasi Finish</TableCell>
-                        <TableCell align="right">Durasi</TableCell>
+                        <TableCell align="right">WorkHour</TableCell>
                         <TableCell align="right">Rest</TableCell>
-                        <TableCell align="right">Lembur</TableCell>
-                        <TableCell align="right">Trip Rit</TableCell>
-                        <TableCell align="right">Bonus Rit</TableCell>
+                        <TableCell align="right">OT</TableCell>
+                        <TableCell align="right">TripRit</TableCell>
+                        <TableCell align="right">BonusRit</TableCell>
                         <TableCell align="right">Tot.Ritase</TableCell>
-                        {/* <TableCell align="right">Ins.Ritase</TableCell>
-                        <TableCell align="right">Ins.Work</TableCell>
-                        <TableCell align="right">Total</TableCell> */}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -211,7 +214,7 @@ const TimesheetReconcil = () => {
                           <TableCell>
                             <Stack spacing={0.3}>
                               <Typography fontWeight={700}>{item.kdequipment || '-'}</Typography>
-                              <Typography variant="caption" color="text.secondary">{item.kode || ''}</Typography>
+                              <Typography variant="caption" color="text.secondary">#{item.tsitem_id || ''}</Typography>
                             </Stack>
                           </TableCell>
                           <TableCell>{item.kategori || '-'}</TableCell>
@@ -231,24 +234,19 @@ const TimesheetReconcil = () => {
                           <TableCell align="right">{item.totritasetrip || 0}</TableCell>
                           <TableCell align="right">{item.bonusritase || 0}</TableCell>
                           <TableCell align="right">{item.totritasetrip || 0}</TableCell>
-                          {/* <TableCell align="right">{formatCurrency(item.insritase)}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.inswork)}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.totalearning)}</TableCell> */}
                         </TableRow>
                       ))}
-                      {/* {row.items?.length ? (
+                      {row.items?.length ? (
                         <TableRow>
                           <TableCell colSpan={8} align="right" sx={{ fontWeight: 800 }}>Total</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totworktime, 2)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totresttime, 2)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{formatNumber(row.totovertime, 2)}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 800 }}>{row.totritasetrip}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(0)}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 800 }}>{formatCurrency(row.grandtotal_earning)}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{row.totbonustrip}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 800 }}>{parseInt(row.totbonustrip) + parseInt(row.totritasetrip)}</TableCell>
                         </TableRow>
-                      ) : null} */}
+                      ) : null}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -329,7 +327,6 @@ const TimesheetReconcil = () => {
             </Stack>
             <Stack direction="row" spacing={1}>
               <Chip label={`Baris: ${totals.count} rows`} color="primary" variant="outlined" />
-              {/* <Chip label={`Grand Total: ${formatCurrency(totals.grand)}`} color="success" variant="filled" /> */}
             </Stack>
           </Stack>
 
@@ -344,14 +341,10 @@ const TimesheetReconcil = () => {
                   <TableCell sx={{ minWidth: 140 }}>Smu Start</TableCell>
                   <TableCell sx={{ minWidth: 140 }}>Smu Finish</TableCell>
                   <TableCell sx={{ minWidth: 140 }}>Smu Used</TableCell>
-                  <TableCell sx={{ minWidth: 140 }}>Durasi</TableCell>
-                  <TableCell sx={{ minWidth: 120 }} align="right">Earning Kerja</TableCell>
-                  <TableCell sx={{ minWidth: 120 }} align="right">Earning OT</TableCell>
-                  <TableCell sx={{ minWidth: 120 }} align="right">Insentif Ages</TableCell>
-                  <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tipes</TableCell>
-                  <TableCell sx={{ minWidth: 120 }} align="right">Insentif Tools</TableCell>
+                  <TableCell sx={{ minWidth: 100 }}>Rest</TableCell>
+                  <TableCell sx={{ minWidth: 140 }}>WorkHours</TableCell>
+                  <TableCell sx={{ minWidth: 140 }}>Overtime</TableCell>
                   <TableCell sx={{ minWidth: 90 }} align="center">Trip</TableCell>
-                  {/* <TableCell sx={{ minWidth: 140 }} align="right">Grand Total</TableCell> */}
                   <TableCell sx={{ width: 70 }}>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
@@ -359,6 +352,23 @@ const TimesheetReconcil = () => {
               <TableBody>
                 {rows.map((row) => renderRow(row))}
               </TableBody>
+              <TableFooter>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell />
+                  <TableCell>Totals</TableCell>
+                  <TableCell />
+                  <TableCell />
+                  <TableCell />
+                  <TableCell />
+                  <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.usedsmu, 2)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.rest, 2)} jam</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.work, 2)} jam</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{formatNumber(agg.overtime, 2)} jam</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">{formatNumber(agg.trip, 0)}</TableCell>
+                  <TableCell />
+                  <TableCell />
+                </TableRow>
+              </TableFooter>
             </Table>
           </TableContainer>
         </Paper>
