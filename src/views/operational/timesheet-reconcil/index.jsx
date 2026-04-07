@@ -264,6 +264,39 @@ const TimesheetReconcil = () => {
       }
     });
 
+    // Footer summary totals
+    const footerData = [[
+      'TOTAL',
+      '',
+      '',
+      '',
+      '',
+      formatNumber(agg.usedsmu, 2),
+      formatNumber(agg.rest, 2),
+      formatNumber(agg.work, 2),
+      formatNumber(agg.overtime, 2),
+      formatNumber(agg.trip, 0),
+      formatNumber(agg.bonusTrip, 0),
+      formatNumber(agg.trip + agg.bonusTrip, 0),
+    ]];
+
+    if (cursorY > pageHeight - bottomMargin) {
+      doc.addPage();
+      cursorY = 40;
+    }
+
+    autoTable(doc, {
+      head: [[
+        'Total', '', '', '', '', 'Smu Used', 'Rest', 'Work', 'OT', 'Trip', 'Bonus', 'Trip+Bonus',
+      ]],
+      body: footerData,
+      styles: { fontSize: 9, cellPadding: 4, fontStyle: 'bold' },
+      headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      startY: cursorY,
+      margin: { left: 20, right: 20 },
+    });
+
     doc.save(`timesheet-reconcil-${filters.startDate}-${filters.endDate}.pdf`);
   };
 
