@@ -26,7 +26,6 @@ import {
 import { KeyboardArrowDown, KeyboardArrowUp, Refresh, RestartAlt, PictureAsPdf, GridOn } from '@mui/icons-material';
 import OptionOperatorDriver from 'components/OptionOperatorDriver';
 import postTimesheetReconcil from 'api/timesheet-reconcil';
-import { APP_DEFAULT_PATH } from 'config';
 import Link from 'next/link';
 import { utils as xlsxUtils, writeFile as writeXlsxFile } from 'xlsx';
 import jsPDF from 'jspdf';
@@ -117,26 +116,29 @@ const TimesheetReconcil = () => {
   }, [rows]);
 
   const agg = useMemo(() => {
-    return rows.reduce(
-      (acc, r) => ({
+    return rows.reduce((acc, r) => {
+      const workFromItems = (r?.items || []).reduce((sum, item) => sum + Number(item?.workhours || 0), 0);
+
+      return {
         usedsmu: acc.usedsmu + Number(r?.usedsmu || 0),
         rest: acc.rest + Number(r?.totresttime || 0),
-        work: acc.work + Number(r?.totworktime || 0),
+        work: acc.work + workFromItems,
         overtime: acc.overtime + Number(r?.totovertime || 0),
         trip: acc.trip + Number(r?.totritasetrip || 0),
         overtimeEarn: acc.overtimeEarn + Number(r?.totovertime_earning || 0),
         bonusTrip: acc.bonusTrip + Number(r?.totbonustrip || 0),
-      }),
-      { usedsmu: 0, rest: 0, work: 0, overtime: 0, trip: 0, overtimeEarn: 0, bonusTrip: 0 }
-    );
+      };
+    }, { usedsmu: 0, rest: 0, work: 0, overtime: 0, trip: 0, overtimeEarn: 0, bonusTrip: 0 });
   }, [rows]);
 
   const handleExportExcel = () => {
     if (!rows.length) return;
     const shiftLabel = (id) => (id === 1 ? 'pagi' : id === 2 ? 'siang' : id === 3 ? 'malam' : '');
 
+    let totalHM = 0
     const data = rows.flatMap((r) => {
       const items = r.items && r.items.length ? r.items : [{}];
+      totalHM += items?.reduce((a, b) => a + Number(b.workhours || 0), 0);
       return items.map((it) => ({
         Tanggal: formatDate(r.date_ops),
         Shift: shiftLabel(it.shift_id),
@@ -164,11 +166,12 @@ const TimesheetReconcil = () => {
       }));
     });
 
+    
     const infoRows = [
       ['Nama Karyawan', filters.karyawan?.nama || 'Semua'],
-      ['Total Jam', formatNumber(agg.work, 2)],
-      ['Bonus Lembur (jam)', formatNumber(agg.overtime, 2)],
-      ['Total Jam + Lembur', formatNumber(agg.work + agg.overtime, 2)],
+      ['Jam Kerja', parseFloat(agg.work)],
+      ['Bonus Lembur (jam)', parseFloat(agg.overtime)],
+      ['Total Jam', parseFloat(totalHM)],
       ['Ritase', formatNumber(agg.trip - agg.bonusTrip, 0)],
       ['Bonus Ritase', formatNumber(agg.bonusTrip, 0)],
       ['Total Ritase + Bonus Ritase', formatNumber(agg.trip, 0)],
