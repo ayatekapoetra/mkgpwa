@@ -15,6 +15,7 @@ import OutlinedInput from "@mui/material/OutlinedInput";
 import TextField from "@mui/material/TextField";
 
 import MainCard from "components/MainCard";
+import FilterMaterialMining from "components/FilterMaterialMining";
 
 import { Add, Tag2, TickCircle } from "iconsax-react";
 
@@ -30,6 +31,7 @@ export default function FilterGroupTagKegiatan({
     setParams({
       search: "",
       ctg: "",
+      material_id: "",
       aktif: "",
       page: 1,
       perPage: params.perPage || 25,
@@ -71,6 +73,15 @@ export default function FilterGroupTagKegiatan({
                     startAdornment={<Tag2 size={18} style={{ marginRight: 8 }} />}
                   />
                 </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={12} lg={12}>
+                <FilterMaterialMining
+                  label="Material"
+                  value={params.material_id || ""}
+                  name="material_id"
+                  onChange={(val) => setParams({ ...params, material_id: val || "", page: 1 })}
+                />
               </Grid>
 
               <Grid item xs={12} sm={12} lg={12}>
