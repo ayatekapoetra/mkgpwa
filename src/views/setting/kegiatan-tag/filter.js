@@ -16,6 +16,7 @@ import TextField from "@mui/material/TextField";
 
 import MainCard from "components/MainCard";
 import FilterMaterialMining from "components/FilterMaterialMining";
+import FilterKegiatanKerja from "components/FilterKegiatanKerja";
 
 import { Add, Tag2, TickCircle } from "iconsax-react";
 
@@ -31,6 +32,7 @@ export default function FilterGroupTagKegiatan({
     setParams({
       search: "",
       ctg: "",
+      kegiatan_id: "",
       material_id: "",
       aktif: "",
       page: 1,
@@ -81,6 +83,19 @@ export default function FilterGroupTagKegiatan({
                   value={params.material_id || ""}
                   name="material_id"
                   onChange={(val) => setParams({ ...params, material_id: val || "", page: 1 })}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={12} lg={12}>
+                <FilterKegiatanKerja
+                  label="Kegiatan"
+                  value={params.kegiatan_id || ""}
+                  name="kegiatan_id"
+                  ctg={params.ctg}
+                  setData={(updater) => {
+                    const next = typeof updater === "function" ? updater(params) : updater;
+                    setParams({ ...params, ...next, page: 1 });
+                  }}
                 />
               </Grid>
 
