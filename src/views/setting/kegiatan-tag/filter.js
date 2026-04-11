@@ -30,7 +30,6 @@ export default function FilterGroupTagKegiatan({
 }) {
   const onResetFilterHandle = () => {
     setParams({
-      search: "",
       ctg: "",
       kegiatan_id: "",
       material_id: "",
@@ -47,33 +46,23 @@ export default function FilterGroupTagKegiatan({
           <MainCard content title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
               <Grid item xs={12} sm={12} lg={12}>
-                <TextField
-                  fullWidth
-                  label="Cari (kegiatan/material)"
-                  value={params.search || ""}
-                  onChange={(e) => setParams({ ...params, search: e.target.value, page: 1 })}
-                  InputProps={{
-                    startAdornment: (
-                      <OutlinedInput
-                        startAdornment={<Tag2 size={18} />}
-                        sx={{ display: "none" }}
-                      />
-                    ),
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={12} lg={12}>
                 <InputLabel htmlFor="ctg">Kategori (ctg)</InputLabel>
                 <FormControl fullWidth>
-                  <OutlinedInput
-                    id="ctg"
+                  <Select
                     name="ctg"
-                    placeholder="Isi kode ctg (opsional)"
                     value={params.ctg || ""}
                     onChange={(e) => setParams({ ...params, ctg: e.target.value, page: 1 })}
-                    startAdornment={<Tag2 size={18} style={{ marginRight: 8 }} />}
-                  />
+                    displayEmpty
+                    input={<OutlinedInput startAdornment={<Tag2 size={18} />} />}
+                  >
+                    <MenuItem value="">Semua</MenuItem>
+                    <MenuItem value="HE">HE</MenuItem>
+                    <MenuItem value="DT">DT</MenuItem>
+                    <MenuItem value="WT">WT</MenuItem>
+                    <MenuItem value="FT">FT</MenuItem>
+                    <MenuItem value="LT">LT</MenuItem>
+                    <MenuItem value="LV">LV</MenuItem>
+                  </Select>
                 </FormControl>
               </Grid>
 
@@ -84,7 +73,8 @@ export default function FilterGroupTagKegiatan({
                   name="material_id"
                   setData={(updater) =>
                     setParams((prev) => {
-                      const next = typeof updater === "function" ? updater(prev) : updater;
+                      const next =
+                        typeof updater === "function" ? updater(prev) : updater;
                       return { ...prev, ...next, page: 1 };
                     })
                   }
@@ -99,7 +89,8 @@ export default function FilterGroupTagKegiatan({
                   ctg={params.ctg}
                   setData={(updater) =>
                     setParams((prev) => {
-                      const next = typeof updater === "function" ? updater(prev) : updater;
+                      const next =
+                        typeof updater === "function" ? updater(prev) : updater;
                       return { ...prev, ...next, page: 1 };
                     })
                   }
