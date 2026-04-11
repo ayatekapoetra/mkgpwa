@@ -82,7 +82,12 @@ export default function FilterGroupTagKegiatan({
                   label="Material"
                   value={params.material_id || ""}
                   name="material_id"
-                  onChange={(val) => setParams({ ...params, material_id: val || "", page: 1 })}
+                  setData={(updater) =>
+                    setParams((prev) => {
+                      const next = typeof updater === "function" ? updater(prev) : updater;
+                      return { ...prev, ...next, page: 1 };
+                    })
+                  }
                 />
               </Grid>
 
@@ -92,10 +97,12 @@ export default function FilterGroupTagKegiatan({
                   value={params.kegiatan_id || ""}
                   name="kegiatan_id"
                   ctg={params.ctg}
-                  setData={(updater) => {
-                    const next = typeof updater === "function" ? updater(params) : updater;
-                    setParams({ ...params, ...next, page: 1 });
-                  }}
+                  setData={(updater) =>
+                    setParams((prev) => {
+                      const next = typeof updater === "function" ? updater(prev) : updater;
+                      return { ...prev, ...next, page: 1 };
+                    })
+                  }
                 />
               </Grid>
 
