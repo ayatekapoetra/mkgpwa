@@ -31,9 +31,9 @@ export default function GroupTagKegiatanScreen() {
   const [params, setParams] = useState({
     page: 1,
     perPage: 25,
-    search: "",
     ctg: "",
-    aktif: "",
+    kegiatan_id: "",
+    material_id: "",
   });
   const [openFilter, setOpenFilter] = useState(false);
   const { data, dataLoading } = useGetGroupTagKegiatan(params);

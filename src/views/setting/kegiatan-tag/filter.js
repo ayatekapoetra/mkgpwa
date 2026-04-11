@@ -32,7 +32,6 @@ export default function FilterGroupTagKegiatan({
       ctg: "",
       kegiatan_id: "",
       material_id: "",
-      aktif: "",
       page: 1,
       perPage: params.perPage || 25,
     });
@@ -71,13 +70,8 @@ export default function FilterGroupTagKegiatan({
                   value={params.kegiatan_id || ""}
                   name="kegiatan_id"
                   ctg={params.ctg}
-                  setData={(updater) =>
-                    setParams((prev) => {
-                      const next =
-                        typeof updater === "function" ? updater(prev) : updater;
-                      return { ...prev, ...next, page: 1 };
-                    })
-                  }
+                  setData={setParams}
+                  startAdornment={<Tag2 size={18} />}
                 />
               </Grid>
 
@@ -86,31 +80,9 @@ export default function FilterGroupTagKegiatan({
                   label="Material"
                   value={params.material_id || ""}
                   name="material_id"
-                  setData={(updater) =>
-                    setParams((prev) => {
-                      const next =
-                        typeof updater === "function" ? updater(prev) : updater;
-                      return { ...prev, ...next, page: 1 };
-                    })
-                  }
+                  setData={setParams}
+                  startAdornment={<Tag2 size={18} />}
                 />
-              </Grid>
-
-              <Grid item xs={12} sm={12} lg={12}>
-                <InputLabel htmlFor="aktif">Status</InputLabel>
-                <FormControl fullWidth>
-                  <Select
-                    name="aktif"
-                    value={params.aktif || ""}
-                    onChange={(e) => setParams({ ...params, aktif: e.target.value, page: 1 })}
-                    displayEmpty
-                    input={<OutlinedInput startAdornment={<TickCircle size={18} />} />}
-                  >
-                    <MenuItem value="">Semua</MenuItem>
-                    <MenuItem value="Y">Aktif</MenuItem>
-                    <MenuItem value="N">Non-aktif</MenuItem>
-                  </Select>
-                </FormControl>
               </Grid>
             </Grid>
           </MainCard>

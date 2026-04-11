@@ -23,7 +23,7 @@ const FilterKegiatanKerja = ({
     return <div>Loading...</div>;
   }
   return (
-    <Stack justifyContent="flex-start" alignItems="flex-start">
+    <Stack justifyContent="flex-start" alignItems="flex-start" mt={2}>
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
