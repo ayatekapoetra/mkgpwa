@@ -12,7 +12,6 @@ import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import OutlinedInput from "@mui/material/OutlinedInput";
-import TextField from "@mui/material/TextField";
 
 import MainCard from "components/MainCard";
 import FilterMaterialMining from "components/FilterMaterialMining";
@@ -67,10 +66,11 @@ export default function FilterGroupTagKegiatan({
               </Grid>
 
               <Grid item xs={12} sm={12} lg={12}>
-                <FilterMaterialMining
-                  label="Material"
-                  value={params.material_id || ""}
-                  name="material_id"
+                <FilterKegiatanKerja
+                  label="Kegiatan"
+                  value={params.kegiatan_id || ""}
+                  name="kegiatan_id"
+                  ctg={params.ctg}
                   setData={(updater) =>
                     setParams((prev) => {
                       const next =
@@ -82,11 +82,10 @@ export default function FilterGroupTagKegiatan({
               </Grid>
 
               <Grid item xs={12} sm={12} lg={12}>
-                <FilterKegiatanKerja
-                  label="Kegiatan"
-                  value={params.kegiatan_id || ""}
-                  name="kegiatan_id"
-                  ctg={params.ctg}
+                <FilterMaterialMining
+                  label="Material"
+                  value={params.material_id || ""}
+                  name="material_id"
                   setData={(updater) =>
                     setParams((prev) => {
                       const next =
