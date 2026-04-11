@@ -4,6 +4,7 @@ import { useGetKegiatanKerja } from 'api/kegiatan-mining';
 const OptionKegiatanKerja = ({
   value = '',
   searchParams = '', // { type: 'DT' } atau { type: 'HE' }
+  ctg = '', // filter by equipment category (HE/DT/WT/FT/LT/LV)
   label = 'Kegiatan',
   name = 'kegiatan_id',
   error = null, // Tambahkan prop error
@@ -11,7 +12,12 @@ const OptionKegiatanKerja = ({
   startAdornment = null,
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetKegiatanKerja(searchParams);
+  const params = searchParams || {};
+  if (ctg) {
+    params.type = ctg;
+  }
+
+  const { data: array, dataLoading } = useGetKegiatanKerja(params);
   
   const options = Array.isArray(array) ? array : [];
 
