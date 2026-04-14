@@ -43,7 +43,7 @@ export default function FilterGroupTagKegiatan({
         <Stack p={1} sx={{ maxWidth: anchor == "right" ? "400px" : "100vw" }}>
           <MainCard content title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
-              <Grid item xs={12} sm={12} lg={12}>
+              <Grid item xs={12} sm={12} lg={12} >
                 <InputLabel htmlFor="ctg">Kategori (ctg)</InputLabel>
                 <FormControl fullWidth>
                   <Select

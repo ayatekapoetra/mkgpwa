@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Box, Card, CardContent, Chip, Divider, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, Chip, Divider, Stack, Typography, Button } from "@mui/material";
 import { Tag2, TickCircle, Calendar } from "iconsax-react";
 import moment from "moment";
 
@@ -56,7 +56,16 @@ export default function ListGroupTagKegiatanMobile({ data }) {
               </Stack>
             </Stack>
 
-            {/* Action placeholder (edit/delete) can be added here if needed */}
+            <Stack direction="row" justifyContent="flex-end" mt={1}>
+              <Button
+                component={Link}
+                href={`/kegiatan-tag/${row.id}`}
+                variant="outlined"
+                size="small"
+              >
+                Detail
+              </Button>
+            </Stack>
           </CardContent>
         </Card>
       ))}

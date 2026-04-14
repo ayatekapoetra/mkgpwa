@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   useReactTable,
   getCoreRowModel,
@@ -21,6 +22,7 @@ import {
   Typography,
   Chip,
   Stack,
+  Button,
 } from "@mui/material";
 
 import {
@@ -76,6 +78,23 @@ export default function ListGroupTagKegiatanDesktop({ data, setParams }) {
 
   const columns = useMemo(
     () => [
+      {
+        header: () => <Typography variant="subtitle">Aksi</Typography>,
+        id: "actions",
+        size: 100,
+        cell: ({ row }) => (
+          <Stack direction="row" spacing={1}>
+            <Button
+              component={Link}
+              href={`/kegiatan-tag/${row.original.id}`}
+              variant="outlined"
+              size="small"
+            >
+              Detail
+            </Button>
+          </Stack>
+        ),
+      },
       {
         header: () => (
           <Stack direction="row" gap={1} alignItems="center">

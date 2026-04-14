@@ -47,7 +47,11 @@ export default function ShowPenyewaScreen() {
     bisnis_id: Yup.number().required('Bisnis Unit wajib diisi'),
     kode: Yup.string().required('Kode wajib diisi'),
     abbr: Yup.string().required('Abbr wajib diisi'),
-    nama: Yup.string().required('Nama wajib diisi')
+    nama: Yup.string().required('Nama wajib diisi'),
+    cp: Yup.string().required('Nama CP wajib diisi'),
+    cpphone: Yup.string()
+      .matches(/^62\d+$/, 'No HP harus diawali 62 dan hanya angka')
+      .required('No HP wajib diisi')
   });
 
   useEffect(() => {
@@ -123,7 +127,14 @@ export default function ShowPenyewaScreen() {
     <Fragment>
       <Breadcrumbs custom heading={'Edit Penyewa'} links={breadcrumbLinks} />
       <MainCard title={<BtnBack href={'/penyewa'} />} secondary={null} content={true}>
-        <Formik initialValues={initialValues || { bisnis_id: '', kode: '', abbr: '', nama: '' }} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
+        <Formik
+          initialValues={
+            initialValues || { bisnis_id: '', kode: '', abbr: '', nama: '', cp: '', cpphone: '' }
+          }
+          enableReinitialize={true}
+          validationSchema={validationSchema}
+          onSubmit={onSubmitHandle}
+        >
           {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
             return (
               <Form noValidate onSubmit={handleSubmit}>
@@ -187,6 +198,40 @@ export default function ShowPenyewaScreen() {
                     {Boolean(errors.nama) && (
                       <Typography variant="body2" color="error" gutterBottom>
                         {errors.nama}
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
+                    <InputForm
+                      label="Nama CP"
+                      type="text"
+                      name="cp"
+                      errors={errors.cp}
+                      touched={touched.cp}
+                      value={values.cp || ''}
+                      onChange={handleChange}
+                      startAdornment={<User />}
+                    />
+                    {Boolean(errors.cp) && (
+                      <Typography variant="body2" color="error" gutterBottom>
+                        {errors.cp}
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
+                    <InputForm
+                      label="No HP CP (diawali 62)"
+                      type="text"
+                      name="cpphone"
+                      errors={errors.cpphone}
+                      touched={touched.cpphone}
+                      value={values.cpphone || ''}
+                      onChange={handleChange}
+                      startAdornment={<Code />}
+                    />
+                    {Boolean(errors.cpphone) && (
+                      <Typography variant="body2" color="error" gutterBottom>
+                        {errors.cpphone}
                       </Typography>
                     )}
                   </Grid>

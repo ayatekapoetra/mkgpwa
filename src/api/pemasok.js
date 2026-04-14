@@ -11,8 +11,9 @@ export const endpoints = {
   prepOrder: '/list-prepare-delor'
 };
 
-export const useGetPemasok = () => {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.list, fetcher, {
+export const useGetPemasok = (params) => {
+  const qs = params ? `?${new URLSearchParams(params)}` : '';
+  const { data, isLoading, error, isValidating, mutate } = useSWR(endpoints.key + endpoints.list + qs, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: true
@@ -22,11 +23,36 @@ export const useGetPemasok = () => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows || [],
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length
+      dataEmpty: !isLoading && !(data?.rows?.length || 0),
+      page: data?.page || 1,
+      perPage: data?.perPage || params?.perPages || 25,
+      total: data?.total || 0,
+      lastPage: data?.lastPage || 1,
+      dataMutate: mutate
+    }),
+    [data, error, isLoading, isValidating, mutate, params?.perPages]
+  );
+
+  return memoizedValue;
+};
+
+export const useShowPemasok = (id) => {
+  const { data, isLoading, error, isValidating } = useSWR(id ? `${endpoints.key}/${id}` : null, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  const memoizedValue = useMemo(
+    () => ({
+      pemasok: data?.rows || null,
+      pemasokLoading: isLoading,
+      pemasokError: error,
+      pemasokValidating: isValidating
     }),
     [data, error, isLoading, isValidating]
   );
