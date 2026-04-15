@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import moment from 'moment';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 
-import { Grid, Stack, Button } from '@mui/material';
+import { Grid, Stack, Button, Typography, Box, Chip, Divider, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Add, Calendar, TagUser, Truck, Alarm, Verify } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
@@ -76,6 +77,19 @@ const defaultItem = {
   keterangan: ''
 };
 
+function PreviewInfo({ label, value }) {
+  return (
+    <Stack spacing={0.25}>
+      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        {value || '-'}
+      </Typography>
+    </Stack>
+  );
+}
+
 function FormFields({
   values,
   errors,
@@ -92,6 +106,68 @@ function FormFields({
   heading
 }) {
   const comboKey = `${loadMode}|${values.cabang_id || ''}|${values.ctg || ''}|${values.shift || ''}`;
+  const [expandedRows, setExpandedRows] = useState({});
+  const [expandAllLastRows, setExpandAllLastRows] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const getEquipmentLabel = useCallback((item) => {
+    if (!item) return '-';
+    return item.equipment?.teks || item.equipment?.name || item.equipment?.kode || item.equipment_id || '-';
+  }, []);
+
+  const getEntityLabel = useCallback((entity, fallbackValue) => {
+    if (!entity) return fallbackValue || '-';
+    return entity.nama || entity.teks || entity.name || entity.kode || fallbackValue || '-';
+  }, []);
+
+  const getKaryawanLabel = useCallback((item) => {
+    if (!item) return '-';
+    return getEntityLabel(item.karyawan, item.karyawan_id);
+  }, [getEntityLabel]);
+
+  const getMaterialLabel = useCallback((item) => {
+    if (!item) return '-';
+    return getEntityLabel(item.material, item.material_id);
+  }, [getEntityLabel]);
+
+  const getKegiatanLabel = useCallback((item) => {
+    if (!item) return '-';
+    return getEntityLabel(item.kegiatan, item.kegiatan_id);
+  }, [getEntityLabel]);
+
+  const getLokasiLabel = useCallback((item) => {
+    if (!item) return '-';
+    return getEntityLabel(item.lokasi, item.lokasi_id);
+  }, [getEntityLabel]);
+
+  const getLokasiToLabel = useCallback((item) => {
+    if (!item) return '-';
+    return getEntityLabel(item.lokasi_to_obj, item.lokasi_to);
+  }, [getEntityLabel]);
+
+  const getStatusColor = useCallback((status) => {
+    if (status === 'BEROPERASI') return 'success';
+    if (status === 'STANDBY') return 'warning';
+    if (status === 'BREAKDOWN') return 'error';
+    return 'default';
+  }, []);
+
+  const openDeleteDialog = useCallback((idx, item) => {
+    setDeleteTarget({
+      idx,
+      equipmentLabel: getEquipmentLabel(item)
+    });
+  }, [getEquipmentLabel]);
+
+  const closeDeleteDialog = useCallback(() => {
+    setDeleteTarget(null);
+  }, []);
+
+  useEffect(() => {
+    if (loadMode !== 'last') return;
+    setExpandedRows({});
+    setExpandAllLastRows(false);
+  }, [loadMode, values.cabang_id, values.ctg, values.shift]);
 
   useEffect(() => {
     const hasAllFilters = values.cabang_id && values.ctg && values.shift;
@@ -120,10 +196,15 @@ function FormFields({
             equipment_id: item.equipment_id || '',
             equipment: item.equipment || null,
             karyawan_id: item.karyawan_id || '',
+            karyawan: item.karyawan || null,
             kegiatan_id: item.kegiatan_id || '',
+            kegiatan: item.kegiatan || null,
             material_id: item.material_id || '',
+            material: item.material || null,
             lokasi_id: item.lokasi_id || '',
+            lokasi: item.lokasi || null,
             lokasi_to: item.lokasi_to || '',
+            lokasi_to_obj: item.lokasi_to_obj || item.lokasi_to_data || item.lokasi_tujuan || null,
             keterangan: item.keterangan || ''
           }));
 
@@ -161,6 +242,9 @@ function FormFields({
     (mode) => {
       setLoadMode(mode);
       prefetchedKey.current = null;
+      setExpandedRows({});
+      setExpandAllLastRows(false);
+      setDeleteTarget(null);
       if (mode === 'manual') {
         setFieldValue('items', [defaultItem], false);
       } else if (mode === 'last') {
@@ -249,6 +333,15 @@ function FormFields({
               >
                 Load Data Terakhir
               </Button>
+              {loadMode === 'last' && values.items?.length > 0 && (
+                <Button
+                  variant={expandAllLastRows ? 'contained' : 'outlined'}
+                  color="info"
+                  onClick={() => setExpandAllLastRows((prev) => !prev)}
+                >
+                  {expandAllLastRows ? 'Sembunyikan Detail' : 'Edit Semua'}
+                </Button>
+              )}
             </Stack>
           </Grid>
         </Grid>
@@ -257,148 +350,314 @@ function FormFields({
           <FieldArray
             name="items"
             render={({ push, remove }) => (
-              <Stack spacing={2} sx={{ mt: 2 }}>
-                {values.items?.map((item, idx) => {
-                  const itemErrors = errors.items?.[idx] || {};
-                  const itemTouched = touched.items?.[idx] || {};
+              <>
+                <Stack spacing={2} sx={{ mt: 2 }}>
+                  {values.items?.map((item, idx) => {
+                    const itemErrors = errors.items?.[idx] || {};
+                    const itemTouched = touched.items?.[idx] || {};
 
-                  const allowAddRemove = loadMode === 'manual';
+                    const allowAddRemove = loadMode === 'manual';
+                    const showPreviewOnly = loadMode === 'last' && !expandAllLastRows && !expandedRows[idx];
 
-                  return (
-                    <MainCard
-                      key={idx}
-                      title={`Data #${idx + 1}`}
-                      secondary={
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            color="error"
-                            variant="outlined"
-                            size="small"
-                            onClick={() => remove(idx)}
-                            disabled={(values.items?.length || 1) === 1}
-                          >
-                            Hapus
-                          </Button>
-                          {allowAddRemove && (
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<Add />}
-                              onClick={() => push({ ...defaultItem })}
-                            >
-                              Tambah Baris
-                            </Button>
-                          )}
-                        </Stack>
-                      }
-                      content
-                    >
-                      <Grid container spacing={1.5} mb={2}>
-                        <Grid item xs={12} sm={3}>
-                          <SelectForm
-                            array={statusOptions}
-                            label="Status"
-                            name={`items[${idx}].status`}
-                            value={item.status}
-                            onChange={(e) => {
-                              const newStatus = e.target.value;
-                              setFieldValue(`items[${idx}].status`, newStatus);
-                              const needLokasiTo = values.ctg !== 'HE' && newStatus === 'BEROPERASI';
-                              if (!needLokasiTo) {
-                                setFieldValue(`items[${idx}].lokasi_to`, '');
-                              }
+                    if (showPreviewOnly) {
+                      return (
+                        <MainCard
+                          key={idx}
+                          title={`Data #${idx + 1}`}
+                          secondary={
+                            <Stack direction="row" spacing={1}>
+                              <Button variant="outlined" size="small" onClick={() => setExpandedRows((prev) => ({ ...prev, [idx]: true }))}>
+                                Edit
+                              </Button>
+                              <Button
+                                color="error"
+                                variant="outlined"
+                                size="small"
+                                onClick={() => openDeleteDialog(idx, item)}
+                                disabled={(values.items?.length || 1) === 1}
+                              >
+                                Hapus
+                              </Button>
+                            </Stack>
+                          }
+                          content
+                        >
+                          <Stack
+                            spacing={1.25}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 2,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              background: 'linear-gradient(135deg, rgba(34,197,94,0.08), rgba(59,130,246,0.04) 60%, rgba(255,255,255,0) 100%)'
                             }}
-                            onBlur={() => validateForm()}
-                            touched={itemTouched?.status}
-                            errors={itemErrors?.status}
-                          />
-                        </Grid>
-                      </Grid>
-                      <Grid container spacing={1.5}>
-                        <Grid item xs={12} sm={4}>
-                          <OptionEquipment
-                            value={item.equipment_id}
-                            label="Equipment"
-                            name={`items[${idx}].equipment_id`}
-                            objValue={`items[${idx}].equipment`}
-                            error={itemErrors?.equipment_id}
-                            touched={itemTouched?.equipment_id}
-                            setFieldValue={setFieldValue}
-                            startAdornment={<Truck />}
-                            filterParams={{ kategori: values.ctg || undefined, ctg: values.ctg || undefined }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={5}>
-                          <OptionOperatorDriver
-                            value={item.karyawan_id}
-                            name={`items[${idx}].karyawan_id`}
-                            label="Operator / Driver"
-                            error={itemErrors?.karyawan_id}
-                            touched={itemTouched?.karyawan_id}
-                            setFieldValue={setFieldValue}
-                            startAdornment={<TagUser />}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <OptionMaterialMining
-                            value={item.material_id}
-                            name={`items[${idx}].material_id`}
-                            label="Material"
-                            error={itemErrors?.material_id}
-                            touched={itemTouched?.material_id}
-                            setFieldValue={setFieldValue}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <OptionKegiatanKerja
-                            value={item.kegiatan_id}
-                            name={`items[${idx}].kegiatan_id`}
-                            label="Kegiatan"
-                            error={itemErrors?.kegiatan_id}
-                            touched={itemTouched?.kegiatan_id}
-                            setFieldValue={setFieldValue}
-                            searchParams={{ type: values.ctg === 'HE' ? 'HE' : 'DT' }}
-                            startAdornment={<Alarm />}
-                          />
-                        </Grid>
+                          >
+                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                              <Stack spacing={0.25}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                  {getEquipmentLabel(item)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Equipment ID: {item.equipment_id || '-'}
+                                </Typography>
+                              </Stack>
+                              <Chip
+                                size="small"
+                                color={getStatusColor(item.status)}
+                                label={item.status || '-'}
+                                sx={{ fontWeight: 700 }}
+                              />
+                            </Stack>
 
-                        <Grid item xs={12} sm={4}>
-                          <OptionLokasiKerja
-                            value={item.lokasi_id}
-                            name={`items[${idx}].lokasi_id`}
-                            label="Lokasi"
-                            error={itemErrors?.lokasi_id}
-                            touched={itemTouched?.lokasi_id}
-                            setFieldValue={setFieldValue}
-                          />
+                            <Divider />
+
+                            <Grid container spacing={1.5}>
+                              <Grid item xs={12} sm={6}>
+                                <PreviewInfo label="Operator / Driver" value={getKaryawanLabel(item)} />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <PreviewInfo label="Kegiatan" value={getKegiatanLabel(item)} />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <PreviewInfo label="Material" value={getMaterialLabel(item)} />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <PreviewInfo label="Lokasi" value={getLokasiLabel(item)} />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <PreviewInfo label="Lokasi Tujuan" value={getLokasiToLabel(item)} />
+                              </Grid>
+                            </Grid>
+
+                            {item.keterangan ?
+                              <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'background.paper', border: '1px dashed', borderColor: 'divider' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                                  Keterangan
+                                </Typography>
+                                <Typography variant="body2">{item.keterangan}</Typography>
+                              </Box>
+                            : null}
+
+                            <Typography variant="caption" color="text.secondary">
+                              Klik <strong>Edit</strong> untuk membuka detail form baris ini.
+                            </Typography>
+                          </Stack>
+                        </MainCard>
+                      );
+                    }
+
+                    return (
+                      <MainCard
+                        key={idx}
+                        title={`Data #${idx + 1}`}
+                        secondary={
+                          <Stack direction="row" spacing={1}>
+                            {loadMode === 'last' && !expandAllLastRows && (
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setExpandedRows((prev) => ({ ...prev, [idx]: false }))}
+                              >
+                                Sembunyikan
+                              </Button>
+                            )}
+                            {allowAddRemove && (
+                              <Button
+                                color="error"
+                                variant="outlined"
+                                size="small"
+                                onClick={() => openDeleteDialog(idx, item)}
+                                disabled={(values.items?.length || 1) === 1}
+                              >
+                                Hapus
+                              </Button>
+                            )}
+                            {allowAddRemove && (
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<Add />}
+                                onClick={() => push({ ...defaultItem })}
+                              >
+                                Tambah Baris
+                              </Button>
+                            )}
+                          </Stack>
+                        }
+                        content
+                      >
+                        <Grid container spacing={1.5} mb={2}>
+                          <Grid item xs={12} sm={3}>
+                            <SelectForm
+                              array={statusOptions}
+                              label="Status"
+                              name={`items[${idx}].status`}
+                              value={item.status}
+                              onChange={(e) => {
+                                const newStatus = e.target.value;
+                                setFieldValue(`items[${idx}].status`, newStatus);
+                                const needLokasiTo = values.ctg !== 'HE' && newStatus === 'BEROPERASI';
+                                if (!needLokasiTo) {
+                                  setFieldValue(`items[${idx}].lokasi_to`, '');
+                                }
+                              }}
+                              onBlur={() => validateForm()}
+                              touched={itemTouched?.status}
+                              errors={itemErrors?.status}
+                            />
+                          </Grid>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <OptionLokasiKerja
-                            value={item.lokasi_to}
-                            name={`items[${idx}].lokasi_to`}
-                            label="Lokasi Tujuan"
-                            error={itemErrors?.lokasi_to}
-                            touched={itemTouched?.lokasi_to}
-                            setFieldValue={setFieldValue}
-                            disabled={values.ctg === 'HE' || item.status !== 'BEROPERASI'}
-                          />
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={12} sm={4}>
+                            <OptionEquipment
+                              value={item.equipment_id}
+                              label="Equipment"
+                              name={`items[${idx}].equipment_id`}
+                              objValue={`items[${idx}].equipment`}
+                              error={itemErrors?.equipment_id}
+                              touched={itemTouched?.equipment_id}
+                              setFieldValue={setFieldValue}
+                              startAdornment={<Truck />}
+                              filterParams={{ kategori: values.ctg || undefined, ctg: values.ctg || undefined }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={5}>
+                            <OptionOperatorDriver
+                              value={item.karyawan_id}
+                              name={`items[${idx}].karyawan_id`}
+                              label="Operator / Driver"
+                              error={itemErrors?.karyawan_id}
+                              touched={itemTouched?.karyawan_id}
+                              setFieldValue={setFieldValue}
+                              startAdornment={<TagUser />}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={3}>
+                            <OptionMaterialMining
+                              value={item.material_id}
+                              name={`items[${idx}].material_id`}
+                              label="Material"
+                              error={itemErrors?.material_id}
+                              touched={itemTouched?.material_id}
+                              setFieldValue={setFieldValue}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <OptionKegiatanKerja
+                              value={item.kegiatan_id}
+                              name={`items[${idx}].kegiatan_id`}
+                              label="Kegiatan"
+                              error={itemErrors?.kegiatan_id}
+                              touched={itemTouched?.kegiatan_id}
+                              setFieldValue={setFieldValue}
+                              searchParams={{ type: values.ctg === 'HE' ? 'HE' : 'DT' }}
+                              startAdornment={<Alarm />}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={4}>
+                            <OptionLokasiKerja
+                              value={item.lokasi_id}
+                              name={`items[${idx}].lokasi_id`}
+                              label="Lokasi"
+                              error={itemErrors?.lokasi_id}
+                              touched={itemTouched?.lokasi_id}
+                              setFieldValue={setFieldValue}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <OptionLokasiKerja
+                              value={item.lokasi_to}
+                              name={`items[${idx}].lokasi_to`}
+                              label="Lokasi Tujuan"
+                              error={itemErrors?.lokasi_to}
+                              touched={itemTouched?.lokasi_to}
+                              setFieldValue={setFieldValue}
+                              disabled={values.ctg === 'HE' || item.status !== 'BEROPERASI'}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <InputAreaForm
+                              label="Keterangan"
+                              name={`items[${idx}].keterangan`}
+                              value={item.keterangan}
+                              onChange={handleChange}
+                              errors={itemErrors}
+                              touched={itemTouched}
+                              rows={3}
+                            />
+                          </Grid>
                         </Grid>
-                        <Grid item xs={12}>
-                          <InputAreaForm
-                            label="Keterangan"
-                            name={`items[${idx}].keterangan`}
-                            value={item.keterangan}
-                            onChange={handleChange}
-                            errors={itemErrors}
-                            touched={itemTouched}
-                            rows={3}
-                          />
-                        </Grid>
-                      </Grid>
-                    </MainCard>
-                  );
-                })}
-              </Stack>
+                      </MainCard>
+                    );
+                  })}
+                </Stack>
+
+                <Dialog open={Boolean(deleteTarget)} onClose={closeDeleteDialog} maxWidth="xs" fullWidth>
+                  <DialogTitle sx={{ pb: 1 }}>
+                    <Stack direction="row" spacing={1.25} alignItems="center">
+                      <Box
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: 'error.lighter',
+                          color: 'error.main'
+                        }}
+                      >
+                        <WarningAmberRoundedIcon fontSize="small" />
+                      </Box>
+                      <Typography variant="h5">Konfirmasi Hapus Item</Typography>
+                    </Stack>
+                  </DialogTitle>
+                  <DialogContent>
+                    <Stack spacing={1.25}>
+                      <Typography variant="body2" color="text.secondary">
+                        Item yang akan dihapus dari daftar aktivitas:
+                      </Typography>
+                      <Box
+                        sx={{
+                          p: 1.25,
+                          borderRadius: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'background.default'
+                        }}
+                      >
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          {deleteTarget?.equipmentLabel || '-'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Row #{typeof deleteTarget?.idx === 'number' ? deleteTarget.idx + 1 : '-'}
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
+                        Aksi ini tidak bisa dibatalkan.
+                      </Typography>
+                    </Stack>
+                  </DialogContent>
+                  <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                    <Button variant="outlined" color="secondary" onClick={closeDeleteDialog}>
+                      Batal
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      onClick={() => {
+                        if (typeof deleteTarget?.idx === 'number') {
+                          remove(deleteTarget.idx);
+                        }
+                        closeDeleteDialog();
+                      }}
+                    >
+                      Ya, Hapus
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+              </>
             )}
           />
         )}
