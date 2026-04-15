@@ -58,8 +58,6 @@ export const useGetDelorByPemasok = () => {
 export const useGetDeliveryOrder = (params) => {
   const key = params ? `${endpoints.key}${endpoints.list}?${new URLSearchParams(params)}` : `${endpoints.key}${endpoints.list}`;
 
-  console.log('KEY-----------', key);
-  
   const { data, isLoading, error, isValidating } = useSWR(key, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
