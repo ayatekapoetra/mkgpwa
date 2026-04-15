@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/msc/delivery-order',
+  key: '/scm/delivery-order',
   keypemasok: '/master/pemasok',
   list: '/list', // server URL
   show: '/show', // server URL
@@ -58,6 +58,8 @@ export const useGetDelorByPemasok = () => {
 export const useGetDeliveryOrder = (params) => {
   const key = params ? `${endpoints.key}${endpoints.list}?${new URLSearchParams(params)}` : `${endpoints.key}${endpoints.list}`;
 
+  console.log('KEY-----------', key);
+  
   const { data, isLoading, error, isValidating } = useSWR(key, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
