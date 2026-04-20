@@ -4,13 +4,14 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Stack, Button, Chip, Alert, CircularProgress, Box } from '@mui/material';
-import { Add, Filter, Refresh, Warning2 } from 'iconsax-react';
+import { Add, DocumentDownload, Filter, Warning2 } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
 import { useCheckerStockpileGroups, useCheckerStockpileUnmatchedCount } from 'api/checker-stockpile';
+import axiosServices from 'utils/axios';
 
 import CheckerStockpileFilter from './filter';
 import CheckerStockpileList from './list';
@@ -33,7 +34,8 @@ export default function DailyCheckerStockpilePage() {
   const router = useRouter();
   const [params, setParams] = useState(defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
-  const { grouped, dataLoading, dataError, mutate } = useCheckerStockpileGroups({
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const { grouped, dataLoading, dataError } = useCheckerStockpileGroups({
     date_ops: params.date_ops,
     shift_id: params.shift_id
   });
@@ -58,9 +60,50 @@ export default function DailyCheckerStockpilePage() {
     });
   }, [grouped, params]);
 
-  const handleRefresh = async () => {
-    await mutate();
-    openNotification({ message: 'Data Checker Stockpile di-refresh', type: 'success' });
+  const handleDownloadPdf = async () => {
+    const date = params.date_ops || '';
+
+    if (!date) {
+      openNotification({
+        type: 'warning',
+        message: 'Pilih tanggal operasional terlebih dahulu untuk download PDF.'
+      });
+      return;
+    }
+
+    try {
+      setDownloadingPdf(true);
+
+      const response = await axiosServices.get('/api/ritase/sample-download-pdf', {
+        params: {
+          startDate: date,
+          endDate: date
+        },
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sample-stockpile-${date}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      openNotification({
+        type: 'success',
+        message: 'PDF sample stockpile berhasil di-download.'
+      });
+    } catch (error) {
+      openNotification({
+        type: 'error',
+        message: error?.message || 'Gagal download PDF sample stockpile.'
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const handleOpenCreate = () => {
@@ -112,8 +155,8 @@ export default function DailyCheckerStockpilePage() {
             <Button variant="outlined" color="secondary" startIcon={<Filter />} onClick={() => setOpenFilter(true)}>
               Filter
             </Button>
-            <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>
-              Refresh
+            <Button variant="outlined" startIcon={<DocumentDownload />} onClick={handleDownloadPdf} disabled={downloadingPdf}>
+              Download
             </Button>
           </Stack>
         }
