@@ -8,7 +8,7 @@ import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, TableFoot
 
 import { Edit, Trash } from 'iconsax-react';
 import Paginate from 'components/Paginate';
-import moment from '../../../../node_modules/moment/moment';
+import moment from 'moment';
 
 const ResizeHandle = styled('div')(({ theme, isresizing }) => ({
   position: 'absolute',
