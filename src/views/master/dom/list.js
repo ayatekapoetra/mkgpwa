@@ -8,6 +8,7 @@ import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, TableFoot
 
 import { Edit, Trash } from 'iconsax-react';
 import Paginate from 'components/Paginate';
+import moment from '../../../../node_modules/moment/moment';
 
 const ResizeHandle = styled('div')(({ theme, isresizing }) => ({
   position: 'absolute',
@@ -72,7 +73,7 @@ export default function ListDom({ data = { data: [] }, setParams }) {
         size: 120,
         minSize: 100,
         enableResizing: true,
-        cell: (info) => info.getValue() || '-'
+        cell: (info) => moment(info.getValue()).format('DD MMMM YYYY') || '-'
       },
       {
         header: 'Cargo',
@@ -137,13 +138,13 @@ export default function ListDom({ data = { data: [] }, setParams }) {
         cell: (info) => info.getValue() || '-'
       },
       {
-        header: 'Truck',
-        accessorKey: 'truck_type',
+        header: 'Ritase',
+        accessorKey: 'current_ret',
         size: 90,
         minSize: 80,
         cell: (info) => {
-          const truck = info.getValue();
-          const displayTruck = truck === '10_RODA' ? '10R' : truck === '12_RODA' ? '12R' : truck;
+          const current_ret = info.getValue();
+          const displayTruck = current_ret
           return (
             <Chip
               label={displayTruck || '-'}
@@ -159,13 +160,13 @@ export default function ListDom({ data = { data: [] }, setParams }) {
         }
       },
       {
-        header: 'Ritase',
+        header: 'Sample',
         accessorKey: 'target_ret',
         size: 120,
         minSize: 100,
         cell: ({ row }) => {
           const target = row.original.target_ret || 0;
-          const current = row.original.current_ret || 0;
+          const current = row.original.count || 0;
           const percentage = target > 0 ? Math.round((current / target) * 100) : 0;
           
           return (
