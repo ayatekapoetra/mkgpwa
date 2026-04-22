@@ -2,7 +2,7 @@
 import { FormattedMessage } from 'react-intl';
 
 // ASSETS
-import { Book1, I24Support, MessageProgramming, TruckFast, TruckTime, Ship, Truck } from 'iconsax-react';
+import { Book1, I24Support, MessageProgramming, TruckFast, TruckTime, Ship, Truck, TaskSquare } from 'iconsax-react';
 
 // ICONS
 const icons = {
@@ -12,7 +12,8 @@ const icons = {
   do: TruckFast,
   so: TruckTime,
   ship: Ship,
-  checker: Truck
+  checker: Truck,
+  plan: TaskSquare
 };
 
 // ==============================|| MENU ITEMS - PAGES ||============================== //
@@ -46,6 +47,14 @@ const MiningPage = {
       type: 'item',
       url: '/daily-checker-stockpile',
       icon: icons.ship,
+      breadcrumbs: false
+    },
+    {
+      id: 'mining-production-plan',
+      title: <FormattedMessage id="Mining Production Plan" />,
+      type: 'item',
+      url: '/mining-production-plan',
+      icon: icons.plan,
       breadcrumbs: false
     }
   ]
