@@ -141,8 +141,6 @@ export const useShowDeliveryOrder = (id) => {
 };
 
 export const useGetPrepareDo = (pemasok_id) => {
-  console.log('URL---', endpoints.key + endpoints.prepOrder + '?pemasok_id=' + pemasok_id);
-  
   const { data, isLoading, error, isValidating, mutate } = useSWR(
     endpoints.key + endpoints.prepOrder + '?pemasok_id=' + pemasok_id,
     fetcher,
@@ -152,9 +150,6 @@ export const useGetPrepareDo = (pemasok_id) => {
       revalidateOnReconnect: false
     }
   );
-
-  console.log('DATA-API', data);
-  
 
   const memoizedValue = useMemo(
     () => ({
