@@ -83,7 +83,7 @@ export default function FormCreateScreen() {
       const resp = await axiosServices.post('/msc/delivery-order/create', values);
       console.log('resp-api.', resp);
       openNotification(msgSuccess);
-      router.push('/logistik/delivery-order');
+      router.push('/delivery-order');
     } catch (error) {
       // console.log('err-api.', error);
       openNotification(msgError);

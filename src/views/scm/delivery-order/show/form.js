@@ -31,7 +31,8 @@ import TableItems from './table';
 
 export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBlur, handleChange, values, touched, errors }) {
   const { bisnisOptions, jenisItemOptions, typeKirimOptions, viaKirimOptions } = useDropdownOptions();
-  console.log('errors.', errors);
+  // console.log('errors.', errors);
+  console.log('values.', values);
 
   const [openOption, setOpenOption] = useState();
   const { data, mutate } = useGetPrepareDo(values?.pemasok_id);

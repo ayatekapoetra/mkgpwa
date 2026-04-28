@@ -27,7 +27,7 @@ import { useShowDeliveryOrder } from 'api/delivery-order';
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
   { title: 'Delivery Order', to: '/delivery-order' },
-  { title: 'Create', to: '/delivery-order/create' }
+  { title: 'Detail' }
 ];
 
 export default function FormShowScreen() {
@@ -72,7 +72,7 @@ export default function FormShowScreen() {
 
   return (
     <Fragment>
-      <Breadcrumbs custom heading={'Create Delivery Order'} links={breadcrumbLinks} />
+      <Breadcrumbs custom heading={'Detail Delivery Order'} links={breadcrumbLinks} />
       <MainCard title={<BtnBack href={'/delivery-order'} />} content={true}>
         <AlertNotification />
         <Formik initialValues={initialValues} validationSchema={validationSchema} enableReinitialize={true} onSubmit={onSubmitHandle}>

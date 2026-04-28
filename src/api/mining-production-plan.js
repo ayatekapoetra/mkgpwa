@@ -74,7 +74,14 @@ export const deleteMiningProductionPlan = async (id) => {
 };
 
 export const reactivateMiningProductionPlan = async (id) => {
-  const res = await axiosServices.post(`${endpoints.key}/${id}/reactivate`, null, {
+  const res = await axiosServices.post(`${endpoints.key}/${id}/reactivate`, {}, {
+    headers: { 'Content-Type': 'application/json' }
+  });
+  return res.data;
+};
+
+export const fetchRitaseMiningProductionPlan = async (id) => {
+  const res = await axiosServices.post(`${endpoints.key}/${id}/fetch-ritase`, {}, {
     headers: { 'Content-Type': 'application/json' }
   });
   return res.data;

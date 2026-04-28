@@ -6,9 +6,8 @@ import { fetcher } from 'utils/axios';
 
 export const endpoints = {
   key: '/scm/delivery-order',
-  keypemasok: '/master/pemasok',
+  keypemasok: '/list-prepare-delor',
   list: '/list', // server URL
-  show: '/show', // server URL
   prepPickup: '/list-prepare-pickup', // Data prepare for pickup
   prepOrder: '/list-prepare-delor' // Data prepare for delivery order
 };
@@ -121,7 +120,7 @@ export const useGetDeliveryOrder = (params) => {
 // };
 
 export const useShowDeliveryOrder = (id) => {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + `/${id}` + endpoints.show, fetcher, {
+  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + `/${id}`, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: false
@@ -142,6 +141,8 @@ export const useShowDeliveryOrder = (id) => {
 };
 
 export const useGetPrepareDo = (pemasok_id) => {
+  console.log('URL---', endpoints.key + endpoints.prepOrder + '?pemasok_id=' + pemasok_id);
+  
   const { data, isLoading, error, isValidating, mutate } = useSWR(
     endpoints.key + endpoints.prepOrder + '?pemasok_id=' + pemasok_id,
     fetcher,
@@ -151,6 +152,9 @@ export const useGetPrepareDo = (pemasok_id) => {
       revalidateOnReconnect: false
     }
   );
+
+  console.log('DATA-API', data);
+  
 
   const memoizedValue = useMemo(
     () => ({

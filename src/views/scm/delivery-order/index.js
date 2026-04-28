@@ -16,7 +16,7 @@ import MainCard from 'components/MainCard';
 
 // THIRD - PARTY
 import moment from 'moment';
-import { Filter, Trash } from 'iconsax-react';
+import { Eye, Filter } from 'iconsax-react';
 import ListDeliveryOrder from './list';
 import { useGetDeliveryOrder } from 'api/delivery-order';
 import LinearWithLabel from 'components/@extended/progress/LinearWithLabel';
@@ -108,8 +108,8 @@ function DataColumn() {
           const { id } = row.original;
           return (
             <Box sx={{ width: 15, textAlign: 'center' }}>
-              <IconButton component={Link} href={`/delivery-order/${id}/show`} variant="dashed" color="error">
-                <Trash />
+              <IconButton component={Link} href={`/delivery-order/${id}/show`} variant="dashed" color="primary">
+                <Eye />
               </IconButton>
             </Box>
           );

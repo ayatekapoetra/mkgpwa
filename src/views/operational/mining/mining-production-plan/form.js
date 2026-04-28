@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { Button, CardActions, Grid } from '@mui/material';
-import { Building, Calendar, Location, Profile2User, Send2, Trash } from 'iconsax-react';
+import { Building, Calendar, Location, Profile2User, Send2 } from 'iconsax-react';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
 
@@ -29,9 +29,7 @@ export default function MiningProductionPlanForm({
   initialValues,
   loading = false,
   onSubmit,
-  submitLabel = 'Simpan',
-  onDelete,
-  onReactivate
+  submitLabel = 'Simpan'
 }) {
   return (
     <MainCard title={<BtnBack href="/mining-production-plan" />} content>
@@ -149,16 +147,6 @@ export default function MiningProductionPlanForm({
                   <Button component={Link} href="/mining-production-plan" variant="outlined" color="secondary">
                     Batal
                   </Button>
-                  {onDelete && (
-                    <Button variant="outlined" color="error" startIcon={<Trash />} onClick={onDelete}>
-                      Nonaktifkan
-                    </Button>
-                  )}
-                  {onReactivate && (
-                    <Button variant="outlined" color="success" onClick={onReactivate}>
-                      Aktifkan Kembali
-                    </Button>
-                  )}
                   <Button type="submit" variant="contained" startIcon={<Send2 />} disabled={isSubmitting || loading}>
                     {submitLabel}
                   </Button>

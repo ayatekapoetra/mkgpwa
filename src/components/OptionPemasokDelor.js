@@ -1,5 +1,6 @@
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete } from '@mui/material';
-import { useGetPemasokDelor } from 'api/pemasok';
+// import { useGetPemasokDelor } from 'api/pemasok';
+import { useGetPrepareDo } from 'api/delivery-order';
 import InputSkeleton from './InputSkeleton';
 
 const OptionPemasokDelor = ({
@@ -7,11 +8,12 @@ const OptionPemasokDelor = ({
   label = 'Pemasok',
   name = 'pemasok_id',
   error = null, // Tambahkan prop error
-  //   helperText = null, // Tambahkan prop helperText
   touched = false, // Tambahkan prop touched
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetPemasokDelor();
+  const { data: array, dataLoading } = useGetPrepareDo(value);
+  console.log('ARRAY---', array);
+  
   if (dataLoading || !array) {
     return <InputSkeleton height={30} />;
   }
