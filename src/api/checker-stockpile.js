@@ -147,9 +147,10 @@ const countUniqueDumptruckPerGroup = (rows, groupedRows) => {
 };
 
 export const useCheckerStockpileGroups = (params = {}) => {
+  const limitValue = params.limit === 0 ? 0 : params.limit || 500;
   const query = new URLSearchParams({
     aktif: 'Y',
-    limit: String(params.limit || 500),
+    limit: String(limitValue),
     ...(params.date_ops ? { date_ops: params.date_ops } : {}),
     ...(params.shift_id ? { shift_id: params.shift_id } : {}),
     ...(params.cabang_id ? { cabang_id: params.cabang_id } : {})

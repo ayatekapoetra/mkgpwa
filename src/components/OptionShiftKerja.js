@@ -1,4 +1,4 @@
-import { Stack, Typography, FormControl, TextField, Autocomplete } from '@mui/material';
+import { Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment } from '@mui/material';
 import { useGetShiftKerja } from 'api/shiftkerja';
 
 import moment from 'moment';
@@ -10,6 +10,7 @@ const OptionShiftKerja = ({
   error = null, // Tambahkan prop error
   // helperText = null, // Tambahkan prop helperText
   touched = false, // Tambahkan prop touched
+  startAdornment = null,
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useGetShiftKerja();
@@ -17,7 +18,7 @@ const OptionShiftKerja = ({
     return <div>Loading...</div>;
   }
   return (
-    <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
+    <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
@@ -41,7 +42,25 @@ const OptionShiftKerja = ({
               </Stack>
             </li>
           )}
-          renderInput={(params) => <TextField {...params} label={label} error={touched && Boolean(error)} helperText={touched && error} />}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={label}
+              error={touched && Boolean(error)}
+              helperText={touched && error}
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: startAdornment ? (
+                  <>
+                    <InputAdornment position="start">{startAdornment}</InputAdornment>
+                    {params.InputProps.startAdornment}
+                  </>
+                ) : (
+                  params.InputProps.startAdornment
+                )
+              }}
+            />
+          )}
         />
       </FormControl>
     </Stack>

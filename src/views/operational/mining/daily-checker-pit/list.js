@@ -11,17 +11,35 @@ import {
   Chip,
   Button,
   Typography,
-  Paper
+  Paper,
+  TablePagination
 } from '@mui/material';
+import moment from 'moment';
+import 'moment/locale/id';
 
 const shiftLabel = (shiftId) => {
-  if (String(shiftId) === '1') return 'Pagi';
-  if (String(shiftId) === '2') return 'Siang';
-  if (String(shiftId) === '3') return 'Malam';
+  if (String(shiftId) === '1') return 'Siang';
+  if (String(shiftId) === '2') return 'Malam';
+  if (String(shiftId) === '3') return 'Offices';
   return '-';
 };
 
-export default function CheckerPitList({ rows, onOpenDetail }) {
+export default function CheckerPitList({
+  rows,
+  totalCount,
+  onOpenDetail,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange
+}) {
+  const formatTanggal = (value) => {
+    if (!value) return '-';
+    const parsed = moment(value);
+    if (!parsed.isValid()) return value;
+    return parsed.locale('id').format('DD MMMM YYYY');
+  };
+  
   if (!rows || rows.length === 0) {
     return (
       <Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
@@ -52,7 +70,7 @@ export default function CheckerPitList({ rows, onOpenDetail }) {
         <TableBody>
           {rows.map((row) => (
             <TableRow hover key={row.key}>
-              <TableCell>{row.date_ops || '-'}</TableCell>
+              <TableCell>{formatTanggal(row.date_ops)}</TableCell>
               <TableCell>{shiftLabel(row.shift_id)}</TableCell>
               <TableCell>{row.excavator_kode || '-'}</TableCell>
               <TableCell>{row.pit_nama || '-'}</TableCell>
@@ -79,6 +97,16 @@ export default function CheckerPitList({ rows, onOpenDetail }) {
           ))}
         </TableBody>
       </Table>
+      <TablePagination
+        component="div"
+        count={totalCount}
+        page={page}
+        onPageChange={onPageChange}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={onRowsPerPageChange}
+        rowsPerPageOptions={[10, 25, 50, 100]}
+        labelRowsPerPage="Baris per halaman"
+      />
     </TableContainer>
   );
 }

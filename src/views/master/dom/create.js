@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect } from 'react';
+import { Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -60,7 +60,7 @@ const initialValues = {
 export default function CreateDom() {
   const route = useRouter();
   const validationSchema = Yup.object({
-    kode: Yup.string().required('Kode DOM wajib diisi').min(5, 'Minimal 5 karakter'),
+    kode: Yup.string().required('Kode DOM wajib diisi').min(3, 'Minimal 3 karakter'),
     date_ops: Yup.string().required('Tanggal operasional wajib diisi'),
     cabang_id: Yup.string().required('Cabang wajib dipilih'),
     material_id: Yup.string().required('Material wajib dipilih'),
@@ -107,7 +107,6 @@ export default function CreateDom() {
           {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
             return (
               <Form noValidate onSubmit={handleSubmit}>
-                <HelperComponent values={values} setFieldValue={setFieldValue} />
                 <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
                   <Grid item xs={12} sm={6} md={6}>
                     <InputForm
@@ -119,7 +118,7 @@ export default function CreateDom() {
                       value={values.kode}
                       onChange={handleChange}
                       startAdornment={<Layer />}
-                      placeholder="IM 1225 BTSI 01F"
+                      placeholder="IM 0426 BTSI 01"
                     />
                     <span>
                       <small>
@@ -267,17 +266,3 @@ export default function CreateDom() {
     </Fragment>
   );
 }
-
-const HelperComponent = ({ values, setFieldValue }) => {
-  useEffect(() => {
-    // Auto uppercase kode DOM dan normalize spaces (hanya 1 spasi)
-    if (values.kode) {
-      const cleaned = values.kode
-        .toUpperCase()
-        .replace(/\s+/g, ' ')  // Replace multiple spaces dengan 1 space
-        .trim();
-      setFieldValue('kode', cleaned);
-    }
-  }, [values.kode, setFieldValue]);
-  return null;
-};

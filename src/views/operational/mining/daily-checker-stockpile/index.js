@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Stack, Button, Chip, Alert, CircularProgress, Box } from '@mui/material';
@@ -34,10 +34,13 @@ export default function DailyCheckerStockpilePage() {
   const router = useRouter();
   const [params, setParams] = useState(defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const { grouped, dataLoading, dataError } = useCheckerStockpileGroups({
     date_ops: params.date_ops,
-    shift_id: params.shift_id
+    shift_id: params.shift_id,
+    limit: 0
   });
   const { total: unmatchedCount = 0 } = useCheckerStockpileUnmatchedCount();
 
@@ -59,6 +62,24 @@ export default function DailyCheckerStockpilePage() {
       return matchDate && matchShift && matchSync && matchStockpile && matchMaterial && matchDom;
     });
   }, [grouped, params]);
+
+  const pagedRows = useMemo(() => {
+    const start = page * rowsPerPage;
+    return rows.slice(start, start + rowsPerPage);
+  }, [rows, page, rowsPerPage]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [params]);
+
+  const handlePageChange = (_event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleDownloadPdf = async () => {
     const date = params.date_ops || '';
@@ -143,7 +164,7 @@ export default function DailyCheckerStockpilePage() {
       <MainCard
         title={
           <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate}>
-            Tambah Scope Stockpile
+            Ritase Stockpile
           </Button>
         }
         secondary={
@@ -169,7 +190,15 @@ export default function DailyCheckerStockpilePage() {
           </Box>
         )}
         {!dataLoading && (
-          <CheckerStockpileList rows={rows} onOpenDetail={handleOpenDetail}/>
+          <CheckerStockpileList
+            rows={pagedRows}
+            totalCount={rows.length}
+            onOpenDetail={handleOpenDetail}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+          />
         )}
       </MainCard>
 

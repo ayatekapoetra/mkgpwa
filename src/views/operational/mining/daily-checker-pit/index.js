@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Stack, Button, Alert, CircularProgress, Box } from '@mui/material';
@@ -33,9 +33,12 @@ export default function DailyCheckerPitPage() {
   const router = useRouter();
   const [params, setParams] = useState(defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const { grouped, dataLoading, dataError, mutate } = useCheckerPitGroups({
     date_ops: params.date_ops,
-    shift_id: params.shift_id
+    shift_id: params.shift_id,
+    limit: 0
   });
   
 
@@ -58,9 +61,27 @@ export default function DailyCheckerPitPage() {
     });
   }, [grouped, params]);
 
+  const pagedRows = useMemo(() => {
+    const start = page * rowsPerPage;
+    return rows.slice(start, start + rowsPerPage);
+  }, [rows, page, rowsPerPage]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [params]);
+
   const handleRefresh = async () => {
     await mutate();
     openNotification({ message: 'Data Checker PIT di-refresh', type: 'success' });
+  };
+
+  const handlePageChange = (_event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const handleOpenCreate = () => {
@@ -96,7 +117,7 @@ export default function DailyCheckerPitPage() {
       <MainCard
         title={
           <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate}>
-            Tambah Checker PIT
+            Ritase PIT
           </Button>
         }
         secondary={
@@ -118,7 +139,15 @@ export default function DailyCheckerPitPage() {
           </Box>
         )}
         {!dataLoading && (
-          <CheckerPitList rows={rows} onOpenDetail={handleOpenDetail} />
+          <CheckerPitList
+            rows={pagedRows}
+            totalCount={rows.length}
+            onOpenDetail={handleOpenDetail}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+          />
         )}
       </MainCard>
 

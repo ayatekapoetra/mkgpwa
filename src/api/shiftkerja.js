@@ -6,7 +6,8 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
-  key: '/master/shift-kerja/list'
+  key: '/master/shift/list',
+  // key: '/master/shift-kerja/list'
 };
 
 export const useGetShiftKerja = () => {

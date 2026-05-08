@@ -11,7 +11,8 @@ import {
   Chip,
   Button,
   Typography,
-  Paper
+  Paper,
+  TablePagination
 } from '@mui/material';
 
 const shiftLabel = (shiftId) => {
@@ -21,7 +22,15 @@ const shiftLabel = (shiftId) => {
   return '-';
 };
 
-export default function CheckerStockpileList({ rows, onOpenDetail }) {
+export default function CheckerStockpileList({
+  rows,
+  totalCount,
+  onOpenDetail,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange
+}) {
   if (!rows || rows.length === 0) {
     return (
       <Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
@@ -81,6 +90,16 @@ export default function CheckerStockpileList({ rows, onOpenDetail }) {
           ))}
         </TableBody>
       </Table>
+      <TablePagination
+        component="div"
+        count={totalCount}
+        page={page}
+        onPageChange={onPageChange}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={onRowsPerPageChange}
+        rowsPerPageOptions={[10, 25, 50, 100]}
+        labelRowsPerPage="Baris per halaman"
+      />
     </TableContainer>
   );
 }

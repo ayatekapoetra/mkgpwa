@@ -23,14 +23,14 @@ export const useGetEquipment = (params) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows?.data || [],
       dataLoading: isLoading,
       dataError: error,
-      dataEmpty: !isLoading && !data?.rows?.length,
-      page: data?.page || 1,
-      perPage: data?.perPage || params?.perPages || 25,
-      total: data?.total ?? data?.rows?.length ?? 0,
-      lastPage: data?.lastPage || 1
+      dataEmpty: !isLoading && !(data?.rows?.data || []).length,
+      page: data?.rows?.page || 1,
+      perPage: data?.rows?.perPage || params?.perPages || 25,
+      total: data?.rows?.total ?? (data?.rows?.data || []).length ?? 0,
+      lastPage: data?.rows?.lastPage || 1
     }),
     [data, error, isLoading, params?.perPages]
   );

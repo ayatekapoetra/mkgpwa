@@ -26,6 +26,7 @@ import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import { useCheckerPitDetailScope } from 'api/checker-pit';
+import BtnBack from 'components/BtnBack';
 
 const shiftLabel = (shiftId) => {
   if (String(shiftId) === '1') return 'Shift 1';
@@ -70,11 +71,7 @@ export default function DailyCheckerPitDetailView() {
       <Breadcrumbs custom heading="Detail Checker PIT" links={breadcrumbLinks} />
 
       <MainCard
-        title={
-          <Button component={Link} href="/daily-checker-pit" variant="outlined" startIcon={<ArrowLeft />}>
-            Kembali
-          </Button>
-        }
+        title={<BtnBack href={'/daily-checker-pit'} />}
         secondary={
           <Button variant="outlined" startIcon={<Refresh />} onClick={mutate}>
             Refresh

@@ -26,7 +26,11 @@ const ResizeHandle = styled('div')(({ theme, isresizing }) => ({
 }));
 
 export default function ListTableEquipment({ data = { data: [] } }) {
-  const tableData = useMemo(() => (Array.isArray(data.data) ? data.data : []), [data]);
+  const tableData = useMemo(() => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    return [];
+  }, [data]);
 
   const columns = useMemo(
     () => [

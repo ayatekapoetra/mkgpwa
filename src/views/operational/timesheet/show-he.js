@@ -62,6 +62,22 @@ import { openNotification } from 'api/notification';
 import { useGetHEDailyTimesheet } from 'api/daily-timesheet';
 
 const BASEURI = 'https://cdn.makkuragatama.id';
+
+const resolvePhotoSrc = (photo, baseUri = BASEURI) => {
+  if (!photo || typeof photo !== 'string') return `${baseUri}/not-available.png`;
+
+  const trimmed = photo.trim();
+  if (!trimmed) return `${baseUri}/not-available.png`;
+
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  const cleanBase = baseUri.replace(/\/+$/, '');
+  const cleanPath = trimmed.replace(/^\/+/, '');
+  return `${cleanBase}/${cleanPath}`;
+};
+
 import { APP_DEFAULT_PATH } from 'config';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import CircularLoader from 'components/CircularLoader';
@@ -579,7 +595,7 @@ const ShowHETimesheetScreen = () => {
                         <Card sx={{ width: '100%' }}>
                           <CardMedia
                             component="img"
-                            src={`${BASEURI}/${values.photo || 'not-available.png'}`}
+                            src={resolvePhotoSrc(values.photo)}
                             alt="Paella dish"
                             sx={{
                               width: '100%',

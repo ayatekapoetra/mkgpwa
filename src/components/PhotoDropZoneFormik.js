@@ -32,6 +32,16 @@ const PhotoContainer = styled(Box)(({ theme }) => ({
   overflow: 'hidden'
 }));
 
+const ActionButtons = styled(Stack)(({ theme }) => ({
+  position: 'absolute',
+  top: theme.spacing(1),
+  right: theme.spacing(1),
+  zIndex: 2,
+  backgroundColor: 'rgba(255, 255, 255, 0.88)',
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(0.25)
+}));
+
 const PhotoDropZoneFormik = ({
   name,
   baseUri = '',
@@ -42,6 +52,26 @@ const PhotoDropZoneFormik = ({
   const { setFieldValue } = useFormikContext();
   const [dragActive, setDragActive] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const getPhotoSrc = useCallback(
+    (value) => {
+      if (!value || typeof value !== 'string') return '';
+
+      const trimmed = value.trim();
+      if (!trimmed) return '';
+
+      if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+        return trimmed;
+      }
+
+      if (!baseUri) return trimmed;
+
+      const cleanBase = baseUri.replace(/\/+$/, '');
+      const cleanPath = trimmed.replace(/^\/+/, '');
+      return `${cleanBase}/${cleanPath}`;
+    },
+    [baseUri]
+  );
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -74,16 +104,31 @@ const PhotoDropZoneFormik = ({
     [maxSize, setFieldValue, name]
   );
 
-  const handleChangePhoto = () => {
+  const handleChangePhoto = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     document.getElementById(`${name}-input-file`).click();
   };
 
-  const handleViewPhoto = () => {
+  const handleViewPhoto = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setViewDialogOpen(true);
   };
 
   const handleCloseView = () => {
     setViewDialogOpen(false);
+  };
+
+  const handleDropzoneClick = () => {
+    document.getElementById(`${name}-input-file`).click();
+  };
+
+  const handleDropzoneKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      document.getElementById(`${name}-input-file`).click();
+    }
   };
 
   const renderContent = () => {
@@ -92,33 +137,35 @@ const PhotoDropZoneFormik = ({
       return (
         <PhotoContainer>
           <Avatar src={URL.createObjectURL(field.value)} variant="rounded" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <Stack direction="row" spacing={1} sx={{ position: 'absolute', top: 8, right: 8 }}>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.8)' }} onClick={handleChangePhoto}>
+          <ActionButtons direction="row" spacing={0.5}>
+            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleChangePhoto}>
               <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.8)' }} onClick={handleViewPhoto}>
+            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleViewPhoto}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
-          </Stack>
+          </ActionButtons>
         </PhotoContainer>
       );
     } else if (field.value && typeof field.value === 'string') {
       // Existing photo URL
+      const existingPhotoSrc = getPhotoSrc(field.value);
+
       return (
         <PhotoContainer>
           <Avatar
-            src={typeof field.value === 'string' ? `${baseUri}/${field.value}` : field.value}
+            src={existingPhotoSrc}
             variant="rounded"
             sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
-          <Stack direction="row" spacing={1} sx={{ position: 'absolute', top: 8, right: 8 }}>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.8)' }} onClick={handleChangePhoto}>
+          <ActionButtons direction="row" spacing={0.5}>
+            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleChangePhoto}>
               <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.8)' }} onClick={handleViewPhoto}>
+            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleViewPhoto}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
-          </Stack>
+          </ActionButtons>
         </PhotoContainer>
       );
     } else {
@@ -146,12 +193,8 @@ const PhotoDropZoneFormik = ({
         tabIndex={0}
         aria-label={label}
         isDragActive={dragActive}
-        onClick={() => document.getElementById(`${name}-input-file`).click()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            document.getElementById(`${name}-input-file`).click();
-          }
-        }}
+        onClick={handleDropzoneClick}
+        onKeyDown={handleDropzoneKeyDown}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -169,7 +212,7 @@ const PhotoDropZoneFormik = ({
       <Dialog open={viewDialogOpen} onClose={handleCloseView} maxWidth="lg" fullWidth>
         <DialogContent sx={{ p: 0 }}>
           <img
-            src={typeof field.value === 'string' ? `${baseUri}/${field.value}` : URL.createObjectURL(field.value)}
+            src={typeof field.value === 'string' ? getPhotoSrc(field.value) : URL.createObjectURL(field.value)}
             alt="Full view"
             style={{ width: '100%', height: 'auto' }}
           />
