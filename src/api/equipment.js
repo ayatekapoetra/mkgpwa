@@ -6,6 +6,7 @@ import { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
+  public: '/public/equipment',
   key: '/master/equipment',
   list: '/list'
 };
@@ -18,7 +19,7 @@ export const useGetEquipment = (params) => {
     revalidateOnFocus: false,
     revalidateOnReconnect: true
   });
-
+  
   useOfflineStorage('equipment', 'equipment', data);
 
   const memoizedValue = useMemo(
@@ -27,6 +28,34 @@ export const useGetEquipment = (params) => {
       dataLoading: isLoading,
       dataError: error,
       dataEmpty: !isLoading && !(data?.rows?.data || []).length,
+      page: data?.rows?.page || 1,
+      perPage: data?.rows?.perPage || params?.perPages || 25,
+      total: data?.rows?.total ?? (data?.rows?.data || []).length ?? 0,
+      lastPage: data?.rows?.lastPage || 1
+    }),
+    [data, error, isLoading, params?.perPages]
+  );
+
+  return memoizedValue;
+};
+
+export const usePublicEquipment = (params) => {
+  const url = params ? `${endpoints.public}/list?${new URLSearchParams(params)}` : `${endpoints.public}/list`;
+
+  const { data, error, isLoading } = useSWR(url, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+  
+  useOfflineStorage('equipment', 'equipment', data);
+
+  const memoizedValue = useMemo(
+    () => ({
+      data: data?.rows || [],
+      dataLoading: isLoading,
+      dataError: error,
+      dataEmpty: !isLoading && !(data?.rows || []).length,
       page: data?.rows?.page || 1,
       perPage: data?.rows?.perPage || params?.perPages || 25,
       total: data?.rows?.total ?? (data?.rows?.data || []).length ?? 0,
