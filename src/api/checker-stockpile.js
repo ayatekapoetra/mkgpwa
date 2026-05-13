@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { fetcher } from 'utils/axios';
 
@@ -43,6 +43,8 @@ const normalizeDomToken = (value) => {
 };
 
 const normalizeStockpileRow = (item = {}) => {
+  // console.log('normalizeStockpileRow---', item);
+  
   const domId = normalizeId(pickFirst(item.dom_id, item.dom?.id));
   const domCode = String(pickFirst(item.dom_code, item.dom_number, item.no_dom, item.dom?.no_dom, item.dom?.nama, domId, '-') || '-');
 
@@ -88,6 +90,7 @@ const groupStockpileRows = (rows) => {
         shift_id: shiftId,
         material_id: materialId,
         material_nama: item?.material_nama || '-',
+        kondisi_material: item?.kondisi_material || '-',
         stockpile_id: stockpileId,
         stockpile_nama: item?.stockpile_nama || '-',
         dom_id: domId,
@@ -162,6 +165,16 @@ export const useCheckerStockpileGroups = (params = {}) => {
     revalidateOnFocus: true,
     revalidateOnReconnect: true
   });
+
+  useEffect(() => {
+    if (!data) return;
+
+    const rows = asArrayRows(data).map(normalizeStockpileRow);
+    const groupedBase = groupStockpileRows(rows);
+    const grouped = countUniqueDumptruckPerGroup(rows, groupedBase);
+
+
+  }, [data]);
 
   const memoizedValue = useMemo(() => {
     const rows = asArrayRows(data).map(normalizeStockpileRow);

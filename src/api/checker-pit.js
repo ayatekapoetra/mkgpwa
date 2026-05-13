@@ -103,6 +103,7 @@ const groupPitRows = (rows) => {
         material_id: materialId,
         material_nama: item?.material_nama || '-',
         total_ritase: 0,
+        total_dumptruck: 0,
         pending: 0,
         synced: 0,
         conflict: 0,
@@ -132,6 +133,28 @@ const groupPitRows = (rows) => {
     });
 };
 
+const countUniqueDumptruckPerGroup = (rows, groupedRows) => {
+  const dumptruckSets = new Map();
+  rows.forEach((item) => {
+    const key = [
+      toDateKey(item?.date_ops),
+      normalizeId(item?.shift_id),
+      normalizeId(item?.excavator_id),
+      normalizeId(item?.startpit_id),
+      normalizeId(item?.material_id)
+    ].join('|');
+
+    if (!dumptruckSets.has(key)) dumptruckSets.set(key, new Set());
+    const dumptruckId = normalizeId(item?.dumptruck_id);
+    if (dumptruckId) dumptruckSets.get(key).add(dumptruckId);
+  });
+
+  return groupedRows.map((item) => ({
+    ...item,
+    total_dumptruck: dumptruckSets.get(item.key)?.size || 0
+  }));
+};
+
 export const useCheckerPitGroups = (params = {}) => {
   const limitValue = params.limit === 0 ? 0 : params.limit || 500;
   const query = new URLSearchParams({
@@ -151,7 +174,8 @@ export const useCheckerPitGroups = (params = {}) => {
 
   const memoizedValue = useMemo(() => {
     const rows = asArrayRows(data).map(normalizePitRow);
-    const grouped = groupPitRows(rows);
+    const groupedBase = groupPitRows(rows);
+    const grouped = countUniqueDumptruckPerGroup(rows, groupedBase);
     const meta = getMeta(data);
 
     return {

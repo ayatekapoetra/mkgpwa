@@ -8,7 +8,7 @@ const color = (v, max) => {
   return `rgba(14, 116, 144, ${alpha})`;
 };
 
-export default function GudangHeatmapCategoryChart({ data, loading }) {
+export default function GudangHeatmapCategoryChart({ data, average, loading }) {
   if (loading) return <p>Loading...</p>;
   if (!data?.length) return <p>No data available</p>;
 
@@ -22,6 +22,9 @@ export default function GudangHeatmapCategoryChart({ data, loading }) {
 
   return (
     <div style={{ overflow: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: 8, padding: '6px 10px', border: '1px dashed #ef4444', borderRadius: 8, fontSize: 12, color: '#475569' }}>
+        Avg Nilai: {(Number(average?.total_value || 0) / 1000000).toFixed(1)} Juta
+      </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
           <tr>

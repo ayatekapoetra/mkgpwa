@@ -29,7 +29,7 @@ const pointLabelPlugin = {
   }
 };
 
-export default function GudangRadarNullKdunitChart({ data, loading }) {
+export default function GudangRadarNullKdunitChart({ data, average, loading }) {
   if (loading) return <p>Loading...</p>;
   if (!data?.length) return <p>No data kdunit null</p>;
 
@@ -37,6 +37,8 @@ export default function GudangRadarNullKdunitChart({ data, loading }) {
   const labels = rows.map((r) => r.kdgudang || 'UNASSIGNED');
   const values = rows.map((r) => Number(r.total_value || 0) / 1000000);
   const frequencyItems = rows.map((r) => Number(r.frequency || 0));
+  const avgValue = Number(average?.total_value || 0) / 1000000;
+  const avgFreq = Number(average?.frequency || 0);
 
   return (
     <Line
@@ -65,7 +67,9 @@ export default function GudangRadarNullKdunitChart({ data, loading }) {
             pointHoverRadius: 0,
             tension: 0.25,
             yAxisID: 'y1'
-          }
+          },
+          ...(avgValue > 0 ? [{ label: 'Avg Nilai', data: labels.map(() => avgValue), borderColor: '#991b1b', borderDash: [6, 6], borderWidth: 2, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, yAxisID: 'y' }] : []),
+          ...(avgFreq > 0 ? [{ label: 'Avg Frekuensi', data: labels.map(() => avgFreq), borderColor: '#4338ca', borderDash: [6, 6], borderWidth: 2, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, yAxisID: 'y1' }] : [])
         ]
       }}
       options={{

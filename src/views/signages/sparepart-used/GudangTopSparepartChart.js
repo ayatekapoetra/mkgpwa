@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export default function GudangTopSparepartChart({ data, loading }) {
+export default function GudangTopSparepartChart({ data, average, loading }) {
   if (loading) return <p>Loading...</p>;
   if (!data?.length) return <p>No data available</p>;
 
@@ -10,6 +10,9 @@ export default function GudangTopSparepartChart({ data, loading }) {
 
   return (
     <div style={{ overflow: 'auto', height: '100%' }}>
+      <div style={{ marginBottom: 8, padding: '6px 10px', border: '1px dashed #ef4444', borderRadius: 8, fontSize: 12, color: '#475569' }}>
+        Avg Frekuensi: {Number(average?.frequency || 0).toFixed(1)}
+      </div>
       {rows.map((g) => (
         <div key={g.kdgudang} style={{ marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>{g.kdgudang}</div>

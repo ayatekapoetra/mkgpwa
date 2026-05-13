@@ -150,26 +150,26 @@ export default function SparepartUsedScreen() {
   const paramsDtCabang = useMemo(() => ({ ...paramsCabang, ctgunit: 'DT' }), [paramsCabang]);
   const paramsHeCabang = useMemo(() => ({ ...paramsCabang, ctgunit: 'HE' }), [paramsCabang]);
 
-  const { data: topFrequencyHeData, loading: topFrequencyHeLoading, error: topFrequencyHeError } = useGetPartUsedTopFrequencyHe(params);
-  const { data: topFrequencyDtData, loading: topFrequencyDtLoading, error: topFrequencyDtError } = useGetPartUsedTopFrequencyDt(params);
-  const { data: topValueHeData, loading: topValueHeLoading, error: topValueHeError } = useGetPartUsedTopValueHe(params);
-  const { data: topValueDtData, loading: topValueDtLoading, error: topValueDtError } = useGetPartUsedTopValueDt(params);
-  const { data: dailyTrendData, loading: dailyTrendLoading, error: dailyTrendError } = useGetPartUsedDailyTrend(params);
-  const { data: byUnitDtData, loading: byUnitDtLoading, error: byUnitDtError } = useGetPartUsedByUnit(paramsDt);
-  const { data: byUnitHeData, loading: byUnitHeLoading, error: byUnitHeError } = useGetPartUsedByUnit(paramsHe);
-  const { data: byCategoryDtData, loading: byCategoryDtLoading, error: byCategoryDtError } = useGetPartUsedByCategory(paramsDt);
-  const { data: byCategoryHeData, loading: byCategoryHeLoading, error: byCategoryHeError } = useGetPartUsedByCategory(paramsHe);
+  const { data: topFrequencyHeData, average: topFrequencyHeAverage, loading: topFrequencyHeLoading, error: topFrequencyHeError } = useGetPartUsedTopFrequencyHe(params);
+  const { data: topFrequencyDtData, average: topFrequencyDtAverage, loading: topFrequencyDtLoading, error: topFrequencyDtError } = useGetPartUsedTopFrequencyDt(params);
+  const { data: topValueHeData, average: topValueHeAverage, loading: topValueHeLoading, error: topValueHeError } = useGetPartUsedTopValueHe(params);
+  const { data: topValueDtData, average: topValueDtAverage, loading: topValueDtLoading, error: topValueDtError } = useGetPartUsedTopValueDt(params);
+  const { data: dailyTrendData, average: dailyTrendAverage, loading: dailyTrendLoading, error: dailyTrendError } = useGetPartUsedDailyTrend(params);
+  const { data: byUnitDtData, average: byUnitDtAverage, loading: byUnitDtLoading, error: byUnitDtError } = useGetPartUsedByUnit(paramsDt);
+  const { data: byUnitHeData, average: byUnitHeAverage, loading: byUnitHeLoading, error: byUnitHeError } = useGetPartUsedByUnit(paramsHe);
+  const { data: byCategoryDtData, average: byCategoryDtAverage, loading: byCategoryDtLoading, error: byCategoryDtError } = useGetPartUsedByCategory(paramsDt);
+  const { data: byCategoryHeData, average: byCategoryHeAverage, loading: byCategoryHeLoading, error: byCategoryHeError } = useGetPartUsedByCategory(paramsHe);
   const { data: byUnitDtCabangData, loading: byUnitDtCabangLoading, error: byUnitDtCabangError } = useGetPartUsedByUnit(paramsDtCabang);
   const { data: byUnitHeCabangData, loading: byUnitHeCabangLoading, error: byUnitHeCabangError } = useGetPartUsedByUnit(paramsHeCabang);
-  const { data: gudangTopValueData, loading: gudangTopValueLoading, error: gudangTopValueError } = useGetPartUsedGudangTopValue(params);
-  const { data: gudangTopFrequencyData, loading: gudangTopFrequencyLoading, error: gudangTopFrequencyError } = useGetPartUsedGudangTopFrequency(params);
-  const { data: gudangDailyTrendData, loading: gudangDailyTrendLoading, error: gudangDailyTrendError } = useGetPartUsedGudangDailyTrend(params);
-  const { data: gudangHeatmapCategoryData, loading: gudangHeatmapCategoryLoading, error: gudangHeatmapCategoryError } = useGetPartUsedGudangHeatmapCategory(params);
-  const { data: gudangTopSparepartData, loading: gudangTopSparepartLoading, error: gudangTopSparepartError } = useGetPartUsedGudangTopSparepart(params);
-  const { data: cabangBubbleAllData, loading: cabangBubbleAllLoading, error: cabangBubbleAllError } = useGetPartUsedCabangBubbleAll(params);
-  const { data: cabangDtBarData, loading: cabangDtBarLoading, error: cabangDtBarError } = useGetPartUsedCabangDtBar(params);
-  const { data: cabangHeBarData, loading: cabangHeBarLoading, error: cabangHeBarError } = useGetPartUsedCabangHeBar(params);
-  const { data: gudangRadarNullKdunitData, loading: gudangRadarNullKdunitLoading, error: gudangRadarNullKdunitError } = useGetPartUsedGudangRadarNullKdunit(params);
+  const { data: gudangTopValueData, average: gudangTopValueAverage, loading: gudangTopValueLoading, error: gudangTopValueError } = useGetPartUsedGudangTopValue(params);
+  const { data: gudangTopFrequencyData, average: gudangTopFrequencyAverage, loading: gudangTopFrequencyLoading, error: gudangTopFrequencyError } = useGetPartUsedGudangTopFrequency(params);
+  const { data: gudangDailyTrendData, average: gudangDailyTrendAverage, loading: gudangDailyTrendLoading, error: gudangDailyTrendError } = useGetPartUsedGudangDailyTrend(params);
+  const { data: gudangHeatmapCategoryData, average: gudangHeatmapCategoryAverage, loading: gudangHeatmapCategoryLoading, error: gudangHeatmapCategoryError } = useGetPartUsedGudangHeatmapCategory(params);
+  const { data: gudangTopSparepartData, average: gudangTopSparepartAverage, loading: gudangTopSparepartLoading, error: gudangTopSparepartError } = useGetPartUsedGudangTopSparepart(params);
+  const { data: cabangBubbleAllData, average: cabangBubbleAllAverage, loading: cabangBubbleAllLoading, error: cabangBubbleAllError } = useGetPartUsedCabangBubbleAll(params);
+  const { data: cabangDtBarData, average: cabangDtBarAverage, loading: cabangDtBarLoading, error: cabangDtBarError } = useGetPartUsedCabangDtBar(params);
+  const { data: cabangHeBarData, average: cabangHeBarAverage, loading: cabangHeBarLoading, error: cabangHeBarError } = useGetPartUsedCabangHeBar(params);
+  const { data: gudangRadarNullKdunitData, average: gudangRadarNullKdunitAverage, loading: gudangRadarNullKdunitLoading, error: gudangRadarNullKdunitError } = useGetPartUsedGudangRadarNullKdunit(params);
 
   const hasApiError = Boolean(topFrequencyHeError || topFrequencyDtError || topValueHeError || topValueDtError || dailyTrendError || byUnitDtError || byUnitHeError || byCategoryDtError || byCategoryHeError || byUnitDtCabangError || byUnitHeCabangError || gudangTopValueError || gudangTopFrequencyError || gudangDailyTrendError || gudangHeatmapCategoryError || gudangTopSparepartError || cabangBubbleAllError || cabangDtBarError || cabangHeBarError || gudangRadarNullKdunitError);
 
@@ -188,24 +188,24 @@ export default function SparepartUsedScreen() {
 
   const slides = useMemo(
     () => [
-      { key: 'daily-trend', title: 'Tren Harian Pemakaian', content: <DailyTrendChart data={dailyTrendData} loading={dailyTrendLoading} /> },
-      { key: 'top-frequency-he', title: 'Top 20 Frekuensi (HE)', content: <TopFrequencyChart data={topFrequencyHeData} loading={topFrequencyHeLoading} /> },
-      { key: 'top-frequency-dt', title: 'Top 20 Frekuensi (DT)', content: <TopFrequencyChart data={topFrequencyDtData} loading={topFrequencyDtLoading} /> },
-      { key: 'top-value-he', title: 'Top 20 Nilai Pemakaian (HE)', content: <TopValueChart data={topValueHeData} loading={topValueHeLoading} /> },
-      { key: 'top-value-dt', title: 'Top 20 Nilai Pemakaian (DT)', content: <TopValueChart data={topValueDtData} loading={topValueDtLoading} /> },
-      { key: 'by-unit-dt', title: 'Pemakaian per Unit Kategori DT', content: <ByUnitChart data={byUnitDtData} loading={byUnitDtLoading} /> },
-      { key: 'by-unit-he', title: 'Pemakaian per Unit Kategori HE', content: <ByUnitChart data={byUnitHeData} loading={byUnitHeLoading} /> },
-      { key: 'by-category-dt', title: 'Pemakaian per Kategori Barang DT', content: <ByCategoryChart data={byCategoryDtData} loading={byCategoryDtLoading} /> },
-      { key: 'by-category-he', title: 'Pemakaian per Kategori Barang HE', content: <ByCategoryChart data={byCategoryHeData} loading={byCategoryHeLoading} /> },
-      { key: 'gudang-top-value', title: 'Top Gudang by Nilai', content: <GudangTopValueChart data={gudangTopValueData} loading={gudangTopValueLoading} /> },
-      { key: 'gudang-top-frequency', title: 'Top Gudang by Frekuensi', content: <GudangTopFrequencyChart data={gudangTopFrequencyData} loading={gudangTopFrequencyLoading} /> },
-      { key: 'gudang-daily-trend', title: 'Tren Harian per Gudang', content: <GudangDailyTrendChart data={gudangDailyTrendData} loading={gudangDailyTrendLoading} /> },
-      { key: 'gudang-heatmap-category', title: 'Heatmap Gudang vs Kategori', content: <GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} loading={gudangHeatmapCategoryLoading} /> },
-      { key: 'gudang-top-sparepart', title: 'Top Sparepart per Gudang', content: <GudangTopSparepartChart data={gudangTopSparepartData} loading={gudangTopSparepartLoading} /> },
-      { key: 'cabang-bubble-all', title: 'Pemakaian Semua Unit per Cabang', content: <CabangBubbleAllChart data={cabangBubbleAllData} loading={cabangBubbleAllLoading} /> },
-      { key: 'cabang-dt-bar', title: 'Pemakaian Unit DT per Cabang', content: <CabangDtBarChart data={cabangDtBarData} loading={cabangDtBarLoading} /> },
-      { key: 'cabang-he-bar', title: 'Pemakaian Unit HE per Cabang', content: <CabangHeBarChart data={cabangHeBarData} loading={cabangHeBarLoading} /> },
-      { key: 'gudang-radar-null-kdunit', title: 'Radar kdunit null per Gudang', content: <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} loading={gudangRadarNullKdunitLoading} /> }
+      { key: 'daily-trend', title: 'Tren Harian Pemakaian', content: <DailyTrendChart data={dailyTrendData} average={dailyTrendAverage} loading={dailyTrendLoading} /> },
+      { key: 'top-frequency-he', title: 'Top 20 Frekuensi (HE)', content: <TopFrequencyChart data={topFrequencyHeData} average={topFrequencyHeAverage} loading={topFrequencyHeLoading} /> },
+      { key: 'top-frequency-dt', title: 'Top 20 Frekuensi (DT)', content: <TopFrequencyChart data={topFrequencyDtData} average={topFrequencyDtAverage} loading={topFrequencyDtLoading} /> },
+      { key: 'top-value-he', title: 'Top 20 Nilai Pemakaian (HE)', content: <TopValueChart data={topValueHeData} average={topValueHeAverage} loading={topValueHeLoading} /> },
+      { key: 'top-value-dt', title: 'Top 20 Nilai Pemakaian (DT)', content: <TopValueChart data={topValueDtData} average={topValueDtAverage} loading={topValueDtLoading} /> },
+      { key: 'by-unit-dt', title: 'Pemakaian per Unit Kategori DT', content: <ByUnitChart data={byUnitDtData} average={byUnitDtAverage} loading={byUnitDtLoading} /> },
+      { key: 'by-unit-he', title: 'Pemakaian per Unit Kategori HE', content: <ByUnitChart data={byUnitHeData} average={byUnitHeAverage} loading={byUnitHeLoading} /> },
+      { key: 'by-category-dt', title: 'Pemakaian per Kategori Barang DT', content: <ByCategoryChart data={byCategoryDtData} average={byCategoryDtAverage} loading={byCategoryDtLoading} /> },
+      { key: 'by-category-he', title: 'Pemakaian per Kategori Barang HE', content: <ByCategoryChart data={byCategoryHeData} average={byCategoryHeAverage} loading={byCategoryHeLoading} /> },
+      { key: 'gudang-top-value', title: 'Top Gudang by Nilai', content: <GudangTopValueChart data={gudangTopValueData} average={gudangTopValueAverage} loading={gudangTopValueLoading} /> },
+      { key: 'gudang-top-frequency', title: 'Top Gudang by Frekuensi', content: <GudangTopFrequencyChart data={gudangTopFrequencyData} average={gudangTopFrequencyAverage} loading={gudangTopFrequencyLoading} /> },
+      { key: 'gudang-daily-trend', title: 'Tren Harian per Gudang', content: <GudangDailyTrendChart data={gudangDailyTrendData} average={gudangDailyTrendAverage} loading={gudangDailyTrendLoading} /> },
+      { key: 'gudang-heatmap-category', title: 'Heatmap Gudang vs Kategori', content: <GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} average={gudangHeatmapCategoryAverage} loading={gudangHeatmapCategoryLoading} /> },
+      { key: 'gudang-top-sparepart', title: 'Top Sparepart per Gudang', content: <GudangTopSparepartChart data={gudangTopSparepartData} average={gudangTopSparepartAverage} loading={gudangTopSparepartLoading} /> },
+      { key: 'cabang-bubble-all', title: 'Pemakaian Semua Unit per Cabang', content: <CabangBubbleAllChart data={cabangBubbleAllData} average={cabangBubbleAllAverage} loading={cabangBubbleAllLoading} /> },
+      { key: 'cabang-dt-bar', title: 'Pemakaian Unit DT per Cabang', content: <CabangDtBarChart data={cabangDtBarData} average={cabangDtBarAverage} loading={cabangDtBarLoading} /> },
+      { key: 'cabang-he-bar', title: 'Pemakaian Unit HE per Cabang', content: <CabangHeBarChart data={cabangHeBarData} average={cabangHeBarAverage} loading={cabangHeBarLoading} /> },
+      { key: 'gudang-radar-null-kdunit', title: 'Radar kdunit null per Gudang', content: <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} average={gudangRadarNullKdunitAverage} loading={gudangRadarNullKdunitLoading} /> }
     ],
     [
       byCategoryDtData,
@@ -336,7 +336,7 @@ export default function SparepartUsedScreen() {
               <Paper sx={{ p: 2, height: '340px' }}>
                 <h3>Tren Harian Pemakaian</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perubahan intensitas pemakaian part dari hari ke hari dan titik lonjakan utama.</p>
-                <div style={{ height: '250px' }}><DailyTrendChart data={dailyTrendData} loading={dailyTrendLoading} /></div>
+                <div style={{ height: '250px' }}><DailyTrendChart data={dailyTrendData} average={dailyTrendAverage} loading={dailyTrendLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightDailyTrend(dailyTrendData)}</p>
               </Paper>
             </Grid>
@@ -348,14 +348,14 @@ export default function SparepartUsedScreen() {
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>HE</h4>
-                      <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyHeData} loading={topFrequencyHeLoading} /></div>
+                      <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyHeData} average={topFrequencyHeAverage} loading={topFrequencyHeLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopFrequency(topFrequencyHeData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>DT</h4>
-                      <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyDtData} loading={topFrequencyDtLoading} /></div>
+                      <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyDtData} average={topFrequencyDtAverage} loading={topFrequencyDtLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopFrequency(topFrequencyDtData)}</p>
                     </Paper>
                   </Grid>
@@ -370,14 +370,14 @@ export default function SparepartUsedScreen() {
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>HE</h4>
-                      <div style={{ height: '430px' }}><TopValueChart data={topValueHeData} loading={topValueHeLoading} /></div>
+                      <div style={{ height: '430px' }}><TopValueChart data={topValueHeData} average={topValueHeAverage} loading={topValueHeLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopValue(topValueHeData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>DT</h4>
-                      <div style={{ height: '430px' }}><TopValueChart data={topValueDtData} loading={topValueDtLoading} /></div>
+                      <div style={{ height: '430px' }}><TopValueChart data={topValueDtData} average={topValueDtAverage} loading={topValueDtLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopValue(topValueDtData)}</p>
                     </Paper>
                   </Grid>
@@ -388,7 +388,7 @@ export default function SparepartUsedScreen() {
               <Paper sx={{ p: 2, height: '360px' }}>
                 <h3>Pemakaian per Unit Kategori DT</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: unit DT dengan konsumsi part tertinggi untuk deteksi beban maintenance armada DT.</p>
-                <div style={{ height: '270px' }}><ByUnitChart data={byUnitDtData} loading={byUnitDtLoading} /></div>
+                <div style={{ height: '270px' }}><ByUnitChart data={byUnitDtData} average={byUnitDtAverage} loading={byUnitDtLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByUnit(byUnitDtData)}</p>
               </Paper>
             </Grid>
@@ -396,7 +396,7 @@ export default function SparepartUsedScreen() {
               <Paper sx={{ p: 2, height: '360px' }}>
                 <h3>Pemakaian per Unit Kategori HE</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: unit HE dengan konsumsi part tertinggi untuk deteksi beban maintenance alat berat.</p>
-                <div style={{ height: '270px' }}><ByUnitChart data={byUnitHeData} loading={byUnitHeLoading} /></div>
+                <div style={{ height: '270px' }}><ByUnitChart data={byUnitHeData} average={byUnitHeAverage} loading={byUnitHeLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByUnit(byUnitHeData)}</p>
               </Paper>
             </Grid>
@@ -404,7 +404,7 @@ export default function SparepartUsedScreen() {
               <Paper sx={{ p: 2, height: '420px' }}>
                 <h3>Pemakaian per Kategori Barang DT</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori DT.</p>
-                <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryDtData} loading={byCategoryDtLoading} /></div>
+                <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryDtData} average={byCategoryDtAverage} loading={byCategoryDtLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByCategory(byCategoryDtData)}</p>
               </Paper>
             </Grid>
@@ -412,7 +412,7 @@ export default function SparepartUsedScreen() {
               <Paper sx={{ p: 2, height: '420px' }}>
                 <h3>Pemakaian per Kategori Barang HE</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori HE.</p>
-                <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryHeData} loading={byCategoryHeLoading} /></div>
+                <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryHeData} average={byCategoryHeAverage} loading={byCategoryHeLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByCategory(byCategoryHeData)}</p>
               </Paper>
             </Grid>
@@ -425,7 +425,7 @@ export default function SparepartUsedScreen() {
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Top Gudang by Nilai</h4>
                       <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: gudang dengan kontribusi biaya pemakaian terbesar.</p>
-                      <div style={{ height: '280px' }}><GudangTopValueChart data={gudangTopValueData} loading={gudangTopValueLoading} /></div>
+                      <div style={{ height: '280px' }}><GudangTopValueChart data={gudangTopValueData} average={gudangTopValueAverage} loading={gudangTopValueLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangTopValue(gudangTopValueData)}</p>
                     </Paper>
                   </Grid>
@@ -433,7 +433,7 @@ export default function SparepartUsedScreen() {
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Top Gudang by Frekuensi</h4>
                       <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: gudang paling aktif berdasarkan jumlah transaksi pemakaian part.</p>
-                      <div style={{ height: '280px' }}><GudangTopFrequencyChart data={gudangTopFrequencyData} loading={gudangTopFrequencyLoading} /></div>
+                      <div style={{ height: '280px' }}><GudangTopFrequencyChart data={gudangTopFrequencyData} average={gudangTopFrequencyAverage} loading={gudangTopFrequencyLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangTopFrequency(gudangTopFrequencyData)}</p>
                     </Paper>
                   </Grid>
@@ -441,7 +441,7 @@ export default function SparepartUsedScreen() {
                     <Paper variant="outlined" sx={{ p: 1.5, height: '480px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Tren Harian per Gudang</h4>
                       <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: dinamika nilai pemakaian per gudang untuk melihat pola beban harian.</p>
-                      <div style={{ height: '360px' }}><GudangDailyTrendChart data={gudangDailyTrendData} loading={gudangDailyTrendLoading} /></div>
+                      <div style={{ height: '360px' }}><GudangDailyTrendChart data={gudangDailyTrendData} average={gudangDailyTrendAverage} loading={gudangDailyTrendLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangDaily(gudangDailyTrendData)}</p>
                     </Paper>
                   </Grid>
@@ -449,7 +449,7 @@ export default function SparepartUsedScreen() {
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Heatmap Gudang vs Kategori</h4>
                       <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: kategori part dominan pada masing-masing gudang.</p>
-                      <div style={{ height: '300px' }}><GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} loading={gudangHeatmapCategoryLoading} /></div>
+                      <div style={{ height: '300px' }}><GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} average={gudangHeatmapCategoryAverage} loading={gudangHeatmapCategoryLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightHeatmap(gudangHeatmapCategoryData)}</p>
                     </Paper>
                   </Grid>
@@ -457,7 +457,7 @@ export default function SparepartUsedScreen() {
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Top Sparepart per Gudang</h4>
                       <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perbedaan pola part cepat habis antar gudang.</p>
-                      <div style={{ height: '300px' }}><GudangTopSparepartChart data={gudangTopSparepartData} loading={gudangTopSparepartLoading} /></div>
+                      <div style={{ height: '300px' }}><GudangTopSparepartChart data={gudangTopSparepartData} average={gudangTopSparepartAverage} loading={gudangTopSparepartLoading} /></div>
                       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopSparepartGudang(gudangTopSparepartData)}</p>
                     </Paper>
                   </Grid>
@@ -470,7 +470,7 @@ export default function SparepartUsedScreen() {
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perbandingan beban pemakaian part antar cabang untuk seluruh unit dan kategori unit spesifik.</p>
                 <Paper variant="outlined" sx={{ p: 1.5, height: '480px' }}>
                   <p style={{ margin: '8px 0 8px', fontSize: 12, color: '#64748b' }}>Insight: line menampilkan nilai pemakaian per unitcabang, dengan line frekuensi pada sumbu Y2.</p>
-                  <div style={{ height: '390px' }}><CabangBubbleAllChart data={cabangBubbleAllData} loading={cabangBubbleAllLoading} /></div>
+                  <div style={{ height: '390px' }}><CabangBubbleAllChart data={cabangBubbleAllData} average={cabangBubbleAllAverage} loading={cabangBubbleAllLoading} /></div>
                   <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightCabangBubble(cabangBubbleAllData)}</p>
                 </Paper>
               </Paper>
@@ -480,7 +480,7 @@ export default function SparepartUsedScreen() {
                 <h3 style={{ marginTop: 0 }}>Pemakaian kdunit null per Gudang</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: distribusi nilai pemakaian barang yang tidak memiliki kdunit pada setiap gudang.</p>
                 <div style={{ height: '470px' }}>
-                  <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} loading={gudangRadarNullKdunitLoading} />
+                  <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} average={gudangRadarNullKdunitAverage} loading={gudangRadarNullKdunitLoading} />
                 </div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangNullKdunit(gudangRadarNullKdunitData)}</p>
               </Paper>
@@ -489,7 +489,7 @@ export default function SparepartUsedScreen() {
               <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
                 <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori DT per Cabang</h4>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori DT.</p>
-                <div style={{ height: '290px' }}><CabangDtBarChart data={cabangDtBarData} loading={cabangDtBarLoading} /></div>
+                <div style={{ height: '290px' }}><CabangDtBarChart data={cabangDtBarData} average={cabangDtBarAverage} loading={cabangDtBarLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightCabangBar(cabangDtBarData, 'DT')}</p>
               </Paper>
             </Grid>
@@ -497,7 +497,7 @@ export default function SparepartUsedScreen() {
               <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
                 <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori HE per Cabang</h4>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori HE.</p>
-                <div style={{ height: '290px' }}><CabangHeBarChart data={cabangHeBarData} loading={cabangHeBarLoading} /></div>
+                <div style={{ height: '290px' }}><CabangHeBarChart data={cabangHeBarData} average={cabangHeBarAverage} loading={cabangHeBarLoading} /></div>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightCabangBar(cabangHeBarData, 'HE')}</p>
               </Paper>
             </Grid>

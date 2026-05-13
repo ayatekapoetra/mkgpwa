@@ -58,6 +58,7 @@ export default function CheckerPitList({
             <TableCell>Tanggal</TableCell>
             <TableCell>Shift</TableCell>
             <TableCell>Excavator</TableCell>
+            <TableCell align="right">DT</TableCell>
             <TableCell>PIT</TableCell>
             <TableCell>Material</TableCell>
             <TableCell align="right">Total</TableCell>
@@ -73,6 +74,7 @@ export default function CheckerPitList({
               <TableCell>{formatTanggal(row.date_ops)}</TableCell>
               <TableCell>{shiftLabel(row.shift_id)}</TableCell>
               <TableCell>{row.excavator_kode || '-'}</TableCell>
+              <TableCell align="right">{row.total_dumptruck || 0}</TableCell>
               <TableCell>{row.pit_nama || '-'}</TableCell>
               <TableCell>{row.material_nama || '-'}</TableCell>
               <TableCell align="right">{row.total_ritase || 0}</TableCell>

@@ -53,6 +53,7 @@ export default function DailyCheckerStockpilePage() {
         (params.sync_status === 'PENDING' ? item.pending > 0 : item.pending === 0);
       const stockpile = (item.stockpile_nama || '').toLowerCase();
       const material = (item.material_nama || '').toLowerCase();
+      // const materialtipe = (item.kondisi_material || '').toLowerCase();
       const dom = (item.dom_code || '').toLowerCase();
 
       const matchStockpile = !params.stockpile_keyword || stockpile.includes(params.stockpile_keyword.toLowerCase());
@@ -156,7 +157,8 @@ export default function DailyCheckerStockpilePage() {
     });
     router.push(`/daily-checker-stockpile/hitung-rit?${query.toString()}`);
   };
-
+  console.log('pagedRows----', pagedRows);
+  
   return (
     <>
       <Breadcrumbs custom heading="Daily Checker Stockpile" links={breadcrumbLinks} />

@@ -30,11 +30,13 @@ const pointLabelPlugin = {
   }
 };
 
-export default function CabangBubbleAllChart({ data, loading }) {
+export default function CabangBubbleAllChart({ data, average, loading }) {
   if (loading) return <p>Loading...</p>;
   if (!data?.length) return <p>No data available</p>;
 
   const cabangLabels = [...new Set(data.map((r) => r.unitcabang || r.kdcabang || 'UNASSIGNED'))];
+  const avgValue = Number(average?.total_value || 0) / 1000000;
+  const avgFreq = Number(average?.frequency || 0);
 
   const valueMap = {};
   const freqMap = {};
@@ -65,7 +67,9 @@ export default function CabangBubbleAllChart({ data, loading }) {
       pointHoverRadius: 0,
       fill: true,
       yAxisID: 'y1'
-    }
+    },
+    ...(avgValue > 0 ? [{ label: 'Avg Nilai', data: cabangLabels.map(() => avgValue), borderColor: '#ef4444', borderDash: [6, 6], borderWidth: 2, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, yAxisID: 'y' }] : []),
+    ...(avgFreq > 0 ? [{ label: 'Avg Frekuensi', data: cabangLabels.map(() => avgFreq), borderColor: '#7c3aed', borderDash: [6, 6], borderWidth: 2, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, yAxisID: 'y1' }] : [])
   ];
 
   return (

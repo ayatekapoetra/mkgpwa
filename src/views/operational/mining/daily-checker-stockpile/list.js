@@ -17,8 +17,7 @@ import {
 
 const shiftLabel = (shiftId) => {
   if (String(shiftId) === '1') return 'Pagi';
-  if (String(shiftId) === '2') return 'Siang';
-  if (String(shiftId) === '3') return 'Malam';
+  if (String(shiftId) === '2') return 'Malam';
   return '-';
 };
 
@@ -50,11 +49,12 @@ export default function CheckerStockpileList({
             <TableCell>Shift</TableCell>
             <TableCell>Stockpile</TableCell>
             <TableCell>Material</TableCell>
+            <TableCell>Tipe</TableCell>
             <TableCell>DOM</TableCell>
-            <TableCell align="right">Dumptruck</TableCell>
+            <TableCell align="right">DT</TableCell>
             <TableCell align="right">Total</TableCell>
             <TableCell align="right">Pending</TableCell>
-            <TableCell align="right">Synced</TableCell>
+            <TableCell align="right">Sync</TableCell>
             <TableCell>Status</TableCell>
             <TableCell align="right">Aksi</TableCell>
           </TableRow>
@@ -66,6 +66,7 @@ export default function CheckerStockpileList({
               <TableCell>{shiftLabel(row.shift_id)}</TableCell>
               <TableCell>{row.stockpile_nama || '-'}</TableCell>
               <TableCell>{row.material_nama || '-'}</TableCell>
+              <TableCell>{row.kondisi_material || '-'}</TableCell>
               <TableCell>{row.dom_code || '-'}</TableCell>
               <TableCell align="right">{row.total_dumptruck || 0}</TableCell>
               <TableCell align="right">{row.total_ritase || 0}</TableCell>

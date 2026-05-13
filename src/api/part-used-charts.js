@@ -36,6 +36,7 @@ const usePartUsedChart = (endpoint, params, refreshInterval = 180000) => {
     () => ({
       data: data?.data || [],
       meta: data?.meta || null,
+      average: data?.meta?.average || null,
       loading: isLoading,
       error,
       validating: isValidating
