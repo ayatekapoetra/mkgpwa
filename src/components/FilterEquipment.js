@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment, CircularProgress } from '@mui/material';
-import { useGetEquipment } from 'api/equipment';
+import { usePublicEquipment } from 'api/equipment';
 
 const FilterEquipment = ({ value = '', label = 'Equipment', name = 'equipment_id', startAdornment = null, setData }) => {
-  const { data: array, dataLoading } = useGetEquipment(null);
+  const { data: array, dataLoading } = usePublicEquipment(null);
+  
 
   const options = useMemo(() => (Array.isArray(array) ? array : []), [array]);
   const selectedValue = useMemo(() => options.find((option) => option?.id == value) || null, [options, value]);
