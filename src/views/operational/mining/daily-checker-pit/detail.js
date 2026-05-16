@@ -131,6 +131,7 @@ export default function DailyCheckerPitDetailView() {
                   <TableCell>Dumptruck</TableCell>
                   <TableCell>Driver</TableCell>
                   <TableCell>Material</TableCell>
+                  <TableCell>Seq</TableCell>
                   <TableCell>PIT</TableCell>
                   <TableCell>Tujuan</TableCell>
                   <TableCell>Status</TableCell>
@@ -140,7 +141,7 @@ export default function DailyCheckerPitDetailView() {
               <TableBody>
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8}>
+                    <TableCell colSpan={9}>
                       <Typography color="text.secondary">Tidak ada data ritase pada scope ini.</Typography>
                     </TableCell>
                   </TableRow>
@@ -151,6 +152,7 @@ export default function DailyCheckerPitDetailView() {
                     <TableCell>{item.dumptruck_kode || '-'}</TableCell>
                     <TableCell>{item.driver_nama || '-'}</TableCell>
                     <TableCell>{item.material_nama || '-'}</TableCell>
+                    <TableCell>{item.seq || '-'}</TableCell>
                     <TableCell>{item.pit_nama || '-'}</TableCell>
                     <TableCell>{item.stockpile_nama || '-'}</TableCell>
                     <TableCell>{item.status || '-'}</TableCell>

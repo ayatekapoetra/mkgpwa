@@ -51,6 +51,7 @@ const normalizePitRow = (item = {}) => {
     ),
     material_id: normalizeId(pickFirst(item.material_id, item.material?.id)),
     material_nama: String(pickFirst(item.material_nama, item.material?.abbr, item.material?.nama, '-') || '-'),
+    seq: String(pickFirst(item.seq, '-') || '-'),
     startpit_id: normalizeId(pickFirst(item.startpit_id, item.pit_id, item.startPit?.id, item.pit?.id)),
     pit_nama: String(
       pickFirst(item.pit_nama, item.startPit?.abbr, item.startPit?.nama, item.pit?.abbr, item.pit?.nama, '-') || '-'
