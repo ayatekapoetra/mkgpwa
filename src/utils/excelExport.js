@@ -11,9 +11,16 @@ const getSmuValues = (timesheet, item) => {
   const smuFinish = toNumber(
     item?.smufinish ?? timesheet?.smufinish ?? smuStart,
   );
-  const used = toNumber(
-    item?.usedsmu ?? timesheet?.usedhmkm ?? smuFinish - smuStart,
-  );
+  const diffUsed = smuFinish - smuStart;
+  const rawUsed = item?.usedsmu ?? timesheet?.usedhmkm;
+  let used = toNumber(rawUsed);
+
+  // Some export payloads still send usedhmkm=0 even when finish-start has a value.
+  // Prefer the actual HM/KM delta in that case.
+  if (rawUsed === undefined || rawUsed === null || rawUsed === "" || (used === 0 && diffUsed !== 0)) {
+    used = diffUsed;
+  }
+
   return { smuStart, smuFinish, used };
 };
 
