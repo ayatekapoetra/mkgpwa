@@ -8,7 +8,7 @@ export const endpoints = {
 
 export const useGetProduksiPitCircleTimeMonitoring = (params, refreshInterval = 30000) => {
   const url = params ? `${endpoints.monitoring}?${new URLSearchParams(params)}` : endpoints.monitoring;
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+  const { data, isLoading, error, isValidating } = useSWR([url, { skipAuthRedirect: true }], fetcher, {
     refreshInterval,
     revalidateIfStale: false,
     revalidateOnFocus: false,
