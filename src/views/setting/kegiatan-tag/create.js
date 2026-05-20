@@ -11,13 +11,12 @@ import {
   Typography,
   FormControl,
   InputLabel,
-  OutlinedInput,
   FormHelperText,
   Select,
   MenuItem,
 } from "@mui/material";
 
-import { Tag2, Send2, Back, TickCircle } from "iconsax-react";
+import { Tag2, Send2, Back, UserOctagon } from "iconsax-react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 
@@ -27,6 +26,7 @@ import Breadcrumbs from "components/@extended/Breadcrumbs";
 import BtnBack from "components/BtnBack";
 import OptionKegiatanKerja from "components/OptionKegiatanKerja";
 import OptionMaterialMining from "components/OptionMaterialMining";
+import OptionPenyewa from "components/OptionPenyewa";
 import axiosServices from "utils/axios";
 import { openNotification } from "api/notification";
 import { saveRequest } from "lib/offlineFetch";
@@ -52,6 +52,8 @@ const breadcrumbLinks = [
 ];
 
 const initialValues = {
+  penyewa_id: "",
+  nmpenyewa: "",
   ctg: "",
   kegiatan_id: "",
   nmkegiatan: "",
@@ -64,6 +66,7 @@ export default function CreateGroupTagKegiatanScreen() {
   const route = useRouter();
 
   const validationSchema = Yup.object({
+    penyewa_id: Yup.string().required("Penyewa wajib dipilih"),
     ctg: Yup.string()
       .oneOf(["HE", "DT", "WT", "FT", "LT", "LV"], "Pilih CTG yang valid")
       .required("CTG wajib dipilih"),
@@ -74,6 +77,8 @@ export default function CreateGroupTagKegiatanScreen() {
 
   const onSubmitHandle = async (values) => {
     const payload = {
+      penyewa_id: values.penyewa_id || null,
+      nmpenyewa: values.nmpenyewa || "",
       ctg: values.ctg,
       kegiatan_id: values.kegiatan_id,
       nmkegiatan: values.nmkegiatan,
@@ -124,6 +129,27 @@ export default function CreateGroupTagKegiatanScreen() {
         >
           {({ errors, touched, values, setFieldValue, handleSubmit }) => (
             <Form noValidate onSubmit={handleSubmit}>
+              <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
+                <Grid item xs={12} sm={6} mb={3}>
+                  <OptionPenyewa
+                    label="Penyewa"
+                    value={values.penyewa_id}
+                    name="penyewa_id"
+                    startAdornment={<UserOctagon/>}
+                    error={errors.penyewa_id}
+                    touched={touched.penyewa_id}
+                    setFieldValue={(name, value, option) => {
+                      setFieldValue(name, value || "");
+                      setFieldValue("nmpenyewa", option?.nama || "");
+                    }}
+                  />
+                  {Boolean(errors.penyewa_id) && touched.penyewa_id && (
+                    <Typography variant="body2" color="error" gutterBottom>
+                      {errors.penyewa_id}
+                    </Typography>
+                  )}
+                </Grid>
+              </Grid>
               <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
                 <Grid item xs={12} sm={2}>
                   <FormControl fullWidth error={touched.ctg && Boolean(errors.ctg)}>

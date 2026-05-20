@@ -29,6 +29,7 @@ import {
   Tag2,
   TickCircle,
   Calendar,
+  Building4,
   Sort,
   ArrowUp2,
   ArrowDown2,
@@ -122,6 +123,21 @@ export default function ListGroupTagKegiatanDesktop({ data, setParams }) {
         cell: ({ row }) => (
           <Typography variant="subtitle" fontWeight="medium">
             {safeText(row.original.nmkegiatan)}
+          </Typography>
+        ),
+      },
+      {
+        header: () => (
+          <Stack direction="row" gap={1} alignItems="center">
+            <Building4 size={16} />
+            <Typography variant="subtitle">Penyewa</Typography>
+          </Stack>
+        ),
+        accessorKey: "nmpenyewa",
+        size: 220,
+        cell: ({ row }) => (
+          <Typography variant="subtitle" fontWeight="medium">
+            {safeText(row.original.nmpenyewa)}
           </Typography>
         ),
       },

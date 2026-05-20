@@ -43,6 +43,9 @@ export default function ListGroupTagKegiatanMobile({ data }) {
 
             <Stack spacing={0.5}>
               <Typography variant="body2" color="text.secondary">
+                Penyewa: {safeText(row.nmpenyewa)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
                 Material: {safeText(row.nmmaterial)}
               </Typography>
               <Typography variant="body2" color="text.secondary">

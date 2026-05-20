@@ -16,7 +16,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { Tag2, Send2, Back, TickCircle, Trash } from "iconsax-react";
+import { Tag2, Send2, Back, UserOctagon, Trash } from "iconsax-react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 
@@ -28,6 +28,7 @@ import { openNotification } from "api/notification";
 import { useShowGroupTagKegiatan } from "api/grouptag-kegiatan";
 import OptionKegiatanKerja from "components/OptionKegiatanKerja";
 import OptionMaterialMining from "components/OptionMaterialMining";
+import OptionPenyewa from "components/OptionPenyewa";
 
 const msgSuccessDelete = {
   open: true,
@@ -64,6 +65,8 @@ export default function ShowGroupTagKegiatan() {
 
   const initialValues = useMemo(
     () => ({
+      penyewa_id: data?.penyewa_id?.toString() || "",
+      nmpenyewa: data?.nmpenyewa || "",
       ctg: data?.ctg || "",
       kegiatan_id: data?.kegiatan_id?.toString() || "",
       nmkegiatan: data?.nmkegiatan || "",
@@ -75,6 +78,7 @@ export default function ShowGroupTagKegiatan() {
   );
 
   const validationSchema = Yup.object({
+    penyewa_id: Yup.string().required("Penyewa wajib dipilih"),
     ctg: Yup.string()
       .oneOf(["HE", "DT", "WT", "FT", "LT", "LV"], "Pilih CTG yang valid")
       .required("CTG wajib dipilih"),
@@ -107,6 +111,8 @@ export default function ShowGroupTagKegiatan() {
         method: "POST",
         data: {
           ...values,
+          penyewa_id: values.penyewa_id || null,
+          nmpenyewa: values.nmpenyewa || "",
           material_id: values.material_id || null,
         },
       });
@@ -139,7 +145,28 @@ export default function ShowGroupTagKegiatan() {
           {({ values, errors, touched, setFieldValue, handleSubmit, isSubmitting }) => (
             <Form noValidate onSubmit={handleSubmit}>
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={6} mb={3}>
+                  <OptionPenyewa
+                    label="Penyewa"
+                    value={values.penyewa_id}
+                    name="penyewa_id"
+                    startAdornment={<UserOctagon/>}
+                    error={errors.penyewa_id}
+                    touched={touched.penyewa_id}
+                    setFieldValue={(name, value, option) => {
+                      setFieldValue(name, value || "");
+                      setFieldValue("nmpenyewa", option?.nama || "");
+                    }}
+                  />
+                  {Boolean(errors.penyewa_id) && touched.penyewa_id && (
+                    <Typography variant="body2" color="error" gutterBottom>
+                      {errors.penyewa_id}
+                    </Typography>
+                  )}
+                </Grid>
+              </Grid>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={2}>
                   <FormControl fullWidth error={touched.ctg && Boolean(errors.ctg)}>
                     <InputLabel id="ctg-label">CTG</InputLabel>
                     <Select
@@ -161,8 +188,7 @@ export default function ShowGroupTagKegiatan() {
                     {touched.ctg && errors.ctg && <FormHelperText>{errors.ctg}</FormHelperText>}
                   </FormControl>
                 </Grid>
-
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={5}>
                   <OptionKegiatanKerja
                     label="Kegiatan"
                     value={values.kegiatan_id}
