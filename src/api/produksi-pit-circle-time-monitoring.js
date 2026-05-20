@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  monitoring: '/ritase/pit/circle-time-monitoring'
+  monitoring: '/public/ritase/signage/pit-circle-time-monitoring'
 };
 
 export const useGetProduksiPitCircleTimeMonitoring = (params, refreshInterval = 30000) => {
