@@ -67,7 +67,7 @@ avg_circle_time_dumptruck < avg_circle_time_fleet
 
 Syarat tambahan yang disarankan:
 
-- Dumptruck baru dinilai jika memiliki minimal `3` trip valid.
+- Dumptruck baru dinilai jika memiliki minimal `5` trip valid.
 - Jika di bawah itu, status ditandai `insufficient_data`.
 
 ## Target User
@@ -128,7 +128,7 @@ Query params:
 - `material_id` optional
 - `status` optional default `PRODUKSI`
 - `include_inactive` optional default `false`
-- `min_valid_trips` optional default `3`
+- `min_valid_trips` optional default `5`
 
 Response shape yang disarankan:
 
@@ -139,7 +139,7 @@ Response shape yang disarankan:
     "filters": {
       "start_date": "2026-05-01",
       "end_date": "2026-05-30",
-      "min_valid_trips": 3
+      "min_valid_trips": 5
     },
     "fleets": [
       {

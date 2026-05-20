@@ -45,7 +45,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
   const params = useMemo(() => ({
     start_date: appliedDateRange.start,
     end_date: appliedDateRange.end,
-    min_valid_trips: 3,
+    min_valid_trips: 5,
     // status: 'PRODUKSI'
   }), [appliedDateRange.end, appliedDateRange.start]);
 
