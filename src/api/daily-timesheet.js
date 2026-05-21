@@ -11,7 +11,8 @@ export const endpoints = {
   show: '/show',
   exportAlatBerat: '/alat-berat/export-excel',
   exportDumptruck: '/dumptruck/export-excel',
-  exportAll: '/all/export-excel'
+  exportAll: '/all/export-excel',
+  exportEvaluasi: '/evaluasi/export-excel'
 };
 
 /**
@@ -128,6 +129,15 @@ export const exportTimesheetAll = async (params) => {
   const url = params 
     ? endpoints.key + endpoints.exportAll + `?${new URLSearchParams(params)}`
     : endpoints.key + endpoints.exportAll;
+  
+  const response = await axiosServices.get(url);
+  return response.data;
+};
+
+export const exportTimesheetEvaluasi = async (params) => {
+  const url = params 
+    ? endpoints.key + endpoints.exportEvaluasi + `?${new URLSearchParams(params)}`
+    : endpoints.key + endpoints.exportEvaluasi;
   
   const response = await axiosServices.get(url);
   return response.data;

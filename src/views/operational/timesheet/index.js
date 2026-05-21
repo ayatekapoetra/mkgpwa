@@ -22,9 +22,9 @@ import { getAllRequests, replayRequests } from 'lib/offlineFetch';
 import SyncProgressDialog from 'components/SyncProgressDialog';
 
 // SWR
-import { useGetDailyTimesheet, exportTimesheetHeavyEquipment, exportTimesheetDumptruck, exportTimesheetAll } from 'api/daily-timesheet';
+import { useGetDailyTimesheet, exportTimesheetHeavyEquipment, exportTimesheetDumptruck, exportTimesheetAll, exportTimesheetEvaluasi } from 'api/daily-timesheet';
 import FilterTimesheet from './filter';
-import { generateHeavyEquipmentTimesheetExcel, generateDumptruckTimesheetExcel, generateAllTimesheetExcel } from 'utils/excelExport';
+import { generateHeavyEquipmentTimesheetExcel, generateDumptruckTimesheetExcel, generateAllTimesheetExcel, generateEvaluasiTimesheetExcel } from 'utils/excelExport';
 import { useSnackbar } from 'notistack';
 
 const breadcrumbLinks = [
@@ -229,6 +229,16 @@ export default function DailyTimesheetScreen() {
         console.log('Generating Excel for', response.rows.length, 'records');
         generateAllTimesheetExcel(response.rows);
         enqueueSnackbar('Excel All Equipment berhasil di-download', { variant: 'success' });
+      } else if (type === 'evaluasi') {
+        const response = await exportTimesheetEvaluasi(exportParams);
+        
+        if (!response?.rows || response.rows.length === 0) {
+          enqueueSnackbar('Tidak ada data Evaluasi untuk di-export', { variant: 'warning' });
+          return;
+        }
+
+        generateEvaluasiTimesheetExcel(response.rows);
+        enqueueSnackbar('Excel Evaluasi berhasil di-download', { variant: 'success' });
       }
     } catch (error) {
       console.error('Download Excel error:', error);
@@ -317,6 +327,12 @@ export default function DailyTimesheetScreen() {
                   <DocumentDownload size={20} />
                 </ListItemIcon>
                 <ListItemText>Download Excel All Equipment</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => handleDownloadExcel('evaluasi')}>
+                <ListItemIcon>
+                  <DocumentDownload size={20} />
+                </ListItemIcon>
+                <ListItemText>Download Excel Evaluasi</ListItemText>
               </MenuItem>
             </Menu>
           </>

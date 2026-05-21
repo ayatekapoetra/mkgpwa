@@ -1170,3 +1170,106 @@ export const generateDailyEquipmentActivityPdfHE = async (data, filename) => {
   const finalFilename = filename || `Daily_Equipment_Activity_HE_${timestamp}.pdf`;
   doc.save(finalFilename);
 };
+
+export const generateEvaluasiTimesheetExcel = (data, filename) => {
+  if (!data || data.length === 0) {
+    throw new Error("Tidak ada data untuk di-export");
+  }
+
+  const rows = [];
+
+  const headers = [
+    "TGL",
+    "SUMBER",
+    "SITE",
+    "RENTAL",
+    "TOOLS",
+    "GOL",
+    "IDUNIT",
+    "SHIFT",
+    "OPERATOR",
+    "START",
+    "FINISH",
+    "BREAK",
+    "TOTAL",
+    "LOKASI",
+    "BLOK",
+    "JAM START",
+    "JAM FINISH",
+    "BREAK",
+    "TOTAL JAM",
+    "BONUS",
+    "AKTIFITAS",
+    "SUMBER",
+    "STANDBY",
+    "REMARK 2"
+  ];
+
+  rows.push(headers);
+
+  data.forEach((item) => {
+    const row = [
+      item.tgl || '',
+      item.sumber || '',
+      item.site || '',
+      item.rental || '',
+      item.tools || 'BUCKET',
+      item.gol || '',
+      item.idunit || '',
+      item.shift || '',
+      item.operator || '',
+      item.start || 0,
+      item.finish || 0,
+      item.break_item || '',
+      item.total || 0,
+      item.lokasi || '',
+      item.blok || '',
+      item.jam_start || 0,
+      item.jam_finish || 0,
+      item.break_jam || 0,
+      item.total_jam || 0,
+      item.bonus || '',
+      item.aktivitas || '',
+      item.sumber_op || '',
+      item.standby || '',
+      item.remark || ''
+    ];
+    rows.push(row);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  const colWidths = [
+    { wch: 12 },
+    { wch: 35 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 6 },
+    { wch: 12 },
+    { wch: 10 },
+    { wch: 25 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 8 },
+    { wch: 10 },
+    { wch: 30 },
+    { wch: 8 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 8 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 30 },
+    { wch: 25 },
+    { wch: 10 },
+    { wch: 20 }
+  ];
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Timesheet Evaluasi");
+  
+  const timestamp = moment().format('YYYYMMDD_HHmmss');
+  XLSX.writeFile(wb, filename || `Timesheet_Evaluasi_${timestamp}.xlsx`);
+};
