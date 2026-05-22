@@ -42,45 +42,29 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
     start: moment().add(-2, 'day').format('YYYY-MM-DD'),
     end: moment().format('YYYY-MM-DD')
   });
-  const [selectedCabang, setSelectedCabang] = useState('');
   const [selectedArea, setSelectedArea] = useState('');
 
   const params = useMemo(() => ({
     start_date: appliedDateRange.start,
     end_date: appliedDateRange.end,
     min_valid_trips: 5,
-    cabang_id: selectedCabang || undefined,
     area: selectedArea || undefined,
-  }), [appliedDateRange.end, appliedDateRange.start, selectedCabang, selectedArea]);
+  }), [appliedDateRange.end, appliedDateRange.start, selectedArea]);
 
   const { fleets, loading, error } = useGetProduksiPitCircleTimeMonitoring(params);
   const { cabangAreaList } = useGetCabangAreaList(appliedDateRange.start && appliedDateRange.end ? appliedDateRange : null);
 
-  // Extract unique cabang list
-  const uniqueCabangs = useMemo(() => {
-    const seen = new Set();
-    return cabangAreaList.filter(item => {
-      if (seen.has(item.cabang_id)) return false;
-      seen.add(item.cabang_id);
-      return true;
-    }).map(item => ({
-      cabang_id: item.cabang_id,
-      cabang_nama: item.cabang_nama
-    }));
-  }, [cabangAreaList]);
-
-  // Extract unique area list (filtered by selected cabang if any)
+  // Extract unique area list
   const uniqueAreas = useMemo(() => {
     const seen = new Set();
     return cabangAreaList.filter(item => {
-      if (selectedCabang && item.cabang_id !== parseInt(selectedCabang)) return false;
       if (seen.has(item.area)) return false;
       seen.add(item.area);
       return true;
     }).map(item => ({
       area: item.area
     }));
-  }, [cabangAreaList, selectedCabang]);
+  }, [cabangAreaList]);
 
   const sortedFleets = useMemo(() => {
     return [...fleets].sort((a, b) => {
@@ -232,20 +216,9 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
 
         <Stack direction="row" spacing={1} alignItems="center">
           <select 
-            value={selectedCabang} 
-            onChange={(e) => { setSelectedCabang(e.target.value); setSelectedArea(''); }}
-            style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600, minWidth: 140 }}
-          >
-            <option value="">Semua Cabang</option>
-            {uniqueCabangs.map(c => (
-              <option key={c.cabang_id} value={c.cabang_id}>{c.cabang_nama}</option>
-            ))}
-          </select>
-
-          <select 
             value={selectedArea}
             onChange={(e) => setSelectedArea(e.target.value)}
-            style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600, minWidth: 120 }}
+            style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600, minWidth: 140 }}
           >
             <option value="">Semua Area</option>
             {uniqueAreas.map(a => (
