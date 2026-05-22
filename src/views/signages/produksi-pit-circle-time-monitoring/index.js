@@ -132,7 +132,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
         </Stack>
 
         <Grid container>
-          <Grid item xs={12} md={3.5}>
+          <Grid item xs={12} md={3}>
             <Paper variant="outlined" sx={{ p: 1, mr: 1, borderRadius: 2, height: '100%', textAlign: 'center' }}>
               <div style={{ fontSize: 13, color: '#64748b' }}>Total Ritase</div>
               <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 0.8 }}>{fleet.total_ritase}</div>
@@ -140,25 +140,33 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
               <div style={{ fontSize: 14 }}>{fleet.startpit_name}</div>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={8.5}>
+          <Grid item xs={12} md={9}>
             <Grid container spacing={1}>
-              <Grid item xs={6} md={4}>
-                <SummaryChip icon={<TruckFast size={18} />} title="Dumptruck" value={fleet.total_dumptruck} subtitle="Unit aktif" accent="#7c3aed" />
+              {/* Row 1 */}
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<TruckFast size={18} />} title="Dumptruck" value={fleet.total_dumptruck} accent="#7c3aed" />
               </Grid>
-              <Grid item xs={6} md={4}>
-                <SummaryChip icon={<Box1 size={18} />} title="Material" value={fleet.material_name} subtitle="Jenis material" accent="#0ea5e9" />
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<Box1 size={18} />} title="Material" value={fleet.material_name} accent="#0ea5e9" />
               </Grid>
-              <Grid item xs={6} md={4}>
-                <SummaryChip icon={<Timer1 size={18} />} title="Efektif Unit" value={fleet.effective_dumptrucks} subtitle="Di bawah avg fleet" accent="#2563eb" />
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<Timer1 size={18} />} title="EWH" value={fleet.ewh_hours ? `${fleet.ewh_hours.toFixed(1)} Jam` : '-'} accent="#10b981" />
               </Grid>
-              <Grid item xs={6} md={4}>
-                <SummaryChip icon={<Calendar1 size={18} />} title="Jadwal Shift" value={fleet.shift_name} subtitle="Shift operasional" accent="#f59e0b" />
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<PresentionChart size={18} />} title="APH" value={fleet.aph_ton_per_hour ? `${fleet.aph_ton_per_hour.toFixed(1)} Ton/Jam` : '-'} accent="#f59e0b" />
               </Grid>
-              <Grid item xs={6} md={4}>
-                <SummaryChip icon={<HierarchySquare3 size={18} />} title="Fleet Kerja" value={fleet.excavator_kode} subtitle="Excavator layanan" accent="#1d4ed8" />
+              {/* Row 2 */}
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<Calendar1 size={18} />} title="Jadwal Shift" value={fleet.shift_name} accent="#f59e0b" />
               </Grid>
-              <Grid item xs={6} md={4}>
-                <SummaryChip icon={<Warning2 size={18} />} title="Avg CircleTime" value={`${fleet.avg_circle_time_minutes} Menit`} subtitle="Benchmark fleet" accent="#dc2626" />
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<HierarchySquare3 size={18} />} title="Fleet Kerja" value={fleet.excavator_kode} accent="#1d4ed8" />
+              </Grid>
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<Timer1 size={18} />} title="Efektif Unit" value={fleet.effective_dumptrucks} accent="#2563eb" />
+              </Grid>
+              <Grid item xs={6} md={3}>
+                <SummaryChip icon={<Warning2 size={18} />} title="Avg CircleTime" value={`${fleet.avg_circle_time_minutes} Menit`} accent="#dc2626" />
               </Grid>
             </Grid>
           </Grid>
@@ -227,7 +235,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
         ) : !isSlideshow ? (
         <Grid container spacing={1}>
           {sortedFleets.map((fleet) => (
-            <Grid item xs={12} lg={6} key={fleet.fleet_key}>
+            <Grid item xs={12} key={fleet.fleet_key}>
               {renderFleetCard(fleet)}
             </Grid>
           ))}
