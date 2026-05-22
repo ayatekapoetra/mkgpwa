@@ -10,7 +10,7 @@ import 'moment/locale/id';
 import { PresentionChart, TruckFast, Timer1, Calendar1, HierarchySquare3, Box1, Warning2 } from 'iconsax-react';
 
 import FleetPerformanceChart from './FleetPerformanceChart';
-import { useGetProduksiPitCircleTimeMonitoring } from 'api/produksi-pit-circle-time-monitoring';
+import { useGetProduksiPitCircleTimeMonitoring, useGetCabangAreaList } from 'api/produksi-pit-circle-time-monitoring';
 
 moment.locale('id');
 
@@ -23,7 +23,6 @@ const SummaryChip = ({ icon, title, value, subtitle, accent = '#2563eb' }) => (
       <Stack spacing={0.3}>
         <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{value}</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>{title}</div>
-        {/* {subtitle ? <div style={{ fontSize: 12, color: '#475569' }}>{subtitle}</div> : null} */}
       </Stack>
     </Stack>
   </Paper>
@@ -43,15 +42,45 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
     start: moment().add(-2, 'day').format('YYYY-MM-DD'),
     end: moment().format('YYYY-MM-DD')
   });
+  const [selectedCabang, setSelectedCabang] = useState('');
+  const [selectedArea, setSelectedArea] = useState('');
 
   const params = useMemo(() => ({
     start_date: appliedDateRange.start,
     end_date: appliedDateRange.end,
     min_valid_trips: 5,
-    // status: 'PRODUKSI'
-  }), [appliedDateRange.end, appliedDateRange.start]);
+    cabang_id: selectedCabang || undefined,
+    area: selectedArea || undefined,
+  }), [appliedDateRange.end, appliedDateRange.start, selectedCabang, selectedArea]);
 
   const { fleets, loading, error } = useGetProduksiPitCircleTimeMonitoring(params);
+  const { cabangAreaList } = useGetCabangAreaList(appliedDateRange.start && appliedDateRange.end ? appliedDateRange : null);
+
+  // Extract unique cabang list
+  const uniqueCabangs = useMemo(() => {
+    const seen = new Set();
+    return cabangAreaList.filter(item => {
+      if (seen.has(item.cabang_id)) return false;
+      seen.add(item.cabang_id);
+      return true;
+    }).map(item => ({
+      cabang_id: item.cabang_id,
+      cabang_nama: item.cabang_nama
+    }));
+  }, [cabangAreaList]);
+
+  // Extract unique area list (filtered by selected cabang if any)
+  const uniqueAreas = useMemo(() => {
+    const seen = new Set();
+    return cabangAreaList.filter(item => {
+      if (selectedCabang && item.cabang_id !== parseInt(selectedCabang)) return false;
+      if (seen.has(item.area)) return false;
+      seen.add(item.area);
+      return true;
+    }).map(item => ({
+      area: item.area
+    }));
+  }, [cabangAreaList, selectedCabang]);
 
   const sortedFleets = useMemo(() => {
     return [...fleets].sort((a, b) => {
@@ -193,7 +222,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
     <Stack sx={{ minHeight: '100vh', overflow: 'hidden' }}>
       <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
         <Stack>
-          <h2 style={{ margin: 0, fontSize: '1.8rem' }}>Produksi Pit & Circle Time Monitoring</h2>
+          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Produksi Pit & Circle Time Monitoring</h2>
           <Stack direction="row" spacing={2} sx={{ mt: 0.5, fontSize: '0.95rem', color: 'text.secondary' }}>
             <span>{tanggal}</span>
             <span>|</span>
@@ -202,13 +231,35 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
         </Stack>
 
         <Stack direction="row" spacing={1} alignItems="center">
+          <select 
+            value={selectedCabang} 
+            onChange={(e) => { setSelectedCabang(e.target.value); setSelectedArea(''); }}
+            style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600, minWidth: 140 }}
+          >
+            <option value="">Semua Cabang</option>
+            {uniqueCabangs.map(c => (
+              <option key={c.cabang_id} value={c.cabang_id}>{c.cabang_nama}</option>
+            ))}
+          </select>
+
+          <select 
+            value={selectedArea}
+            onChange={(e) => setSelectedArea(e.target.value)}
+            style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600, minWidth: 120 }}
+          >
+            <option value="">Semua Area</option>
+            {uniqueAreas.map(a => (
+              <option key={a.area} value={a.area}>{a.area}</option>
+            ))}
+          </select>
+
           <input type="date" value={dateRange.start} onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))} style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600 }} />
           <span>to</span>
           <input type="date" value={dateRange.end} onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))} style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600 }} />
           <button onClick={handleApplyFilter} style={{ padding: '10px 18px', minWidth: 120, borderRadius: '12px', border: 'none', background: '#3862f0', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Apply</button>
           <button
             onClick={handleToggleSlideshow}
-            style={{ padding: '10px 18px', minWidth: 120, borderRadius: '12px', border: '1px solid #111827', background: isSlideshow ? '#111827' : 'white', color: isSlideshow ? 'white' : '#111827', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ padding: '10px 18px', minWidth: 100, borderRadius: '12px', border: '1px solid #111827', background: isSlideshow ? '#111827' : 'white', color: isSlideshow ? 'white' : '#111827', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <PresentionChart size={18} variant="Bold" />
             {isSlideshow ? 'Stop' : 'Start'}

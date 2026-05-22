@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  monitoring: '/public/ritase/signage/pit-circle-time-monitoring'
+  monitoring: '/public/ritase/signage/pit-circle-time-monitoring',
+  cabangAreaList: '/public/ritase/signage/cabang-area-list'
 };
 
 export const useGetProduksiPitCircleTimeMonitoring = (params, refreshInterval = 30000) => {
@@ -25,5 +26,23 @@ export const useGetProduksiPitCircleTimeMonitoring = (params, refreshInterval = 
       validating: isValidating
     }),
     [data, isLoading, error, isValidating]
+  );
+};
+
+export const useGetCabangAreaList = (params) => {
+  const url = params ? `${endpoints.cabangAreaList}?${new URLSearchParams(params)}` : endpoints.cabangAreaList;
+  const { data, isLoading, error } = useSWR([url, { skipAuthRedirect: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  return useMemo(
+    () => ({
+      cabangAreaList: data?.rows || [],
+      loading: isLoading,
+      error
+    }),
+    [data, isLoading, error]
   );
 };
