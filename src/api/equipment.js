@@ -23,16 +23,22 @@ export const useGetEquipment = (params) => {
   useOfflineStorage('equipment', 'equipment', data);
 
   const memoizedValue = useMemo(
-    () => ({
-      data: data?.rows?.data || [],
-      dataLoading: isLoading,
-      dataError: error,
-      dataEmpty: !isLoading && !(data?.rows?.data || []).length,
-      page: data?.rows?.page || 1,
-      perPage: data?.rows?.perPage || params?.perPages || 25,
-      total: data?.rows?.total ?? (data?.rows?.data || []).length ?? 0,
-      lastPage: data?.rows?.lastPage || 1
-    }),
+    () => {
+      const rowsData = data?.rows;
+      const isPaginated = rowsData && Array.isArray(rowsData.data);
+      const equipmentData = isPaginated ? rowsData.data : (Array.isArray(rowsData) ? rowsData : []);
+      
+      return {
+        data: equipmentData,
+        dataLoading: isLoading,
+        dataError: error,
+        dataEmpty: !isLoading && equipmentData.length === 0,
+        page: isPaginated ? rowsData.page : 1,
+        perPage: isPaginated ? rowsData.perPage : (params?.perPages || 25),
+        total: isPaginated ? rowsData.total : equipmentData.length,
+        lastPage: isPaginated ? rowsData.lastPage : 1
+      };
+    },
     [data, error, isLoading, params?.perPages]
   );
 
@@ -51,16 +57,22 @@ export const usePublicEquipment = (params) => {
   useOfflineStorage('equipment', 'equipment', data);
 
   const memoizedValue = useMemo(
-    () => ({
-      data: data?.rows || [],
-      dataLoading: isLoading,
-      dataError: error,
-      dataEmpty: !isLoading && !(data?.rows || []).length,
-      page: data?.rows?.page || 1,
-      perPage: data?.rows?.perPage || params?.perPages || 25,
-      total: data?.rows?.total ?? (data?.rows?.data || []).length ?? 0,
-      lastPage: data?.rows?.lastPage || 1
-    }),
+    () => {
+      const rowsData = data?.rows;
+      const isPaginated = rowsData && Array.isArray(rowsData.data);
+      const equipmentData = isPaginated ? rowsData.data : (Array.isArray(rowsData) ? rowsData : []);
+      
+      return {
+        data: equipmentData,
+        dataLoading: isLoading,
+        dataError: error,
+        dataEmpty: !isLoading && equipmentData.length === 0,
+        page: isPaginated ? rowsData.page : 1,
+        perPage: isPaginated ? rowsData.perPage : (params?.perPages || 25),
+        total: isPaginated ? rowsData.total : equipmentData.length,
+        lastPage: isPaginated ? rowsData.lastPage : 1
+      };
+    },
     [data, error, isLoading, params?.perPages]
   );
 

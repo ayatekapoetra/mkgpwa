@@ -1208,6 +1208,16 @@ export const generateEvaluasiTimesheetExcel = (data, filename) => {
   rows.push(headers);
 
   data.forEach((item) => {
+    const jamStart = item.starttime ? moment(item.starttime) : null;
+    const jamFinish = item.endtime ? moment(item.endtime) : null;
+    
+    let totalJam = 0;
+    if (jamStart && jamFinish) {
+      const breakJam = item.break_jam || 0;
+      const durationHours = jamFinish.diff(jamStart, 'hours', true);
+      totalJam = Math.max(0, durationHours - breakJam);
+    }
+
     const row = [
       item.tgl || '',
       item.sumber || '',
@@ -1224,10 +1234,10 @@ export const generateEvaluasiTimesheetExcel = (data, filename) => {
       item.total || 0,
       item.lokasi || '',
       item.blok || '',
-      item.jam_start || 0,
-      item.jam_finish || 0,
+      jamStart ? jamStart.format('DD-MM-YYYY HH:mm') : '',
+      jamFinish ? jamFinish.format('DD-MM-YYYY HH:mm') : '',
       item.break_jam || 0,
-      item.total_jam || 0,
+      parseFloat(totalJam.toFixed(2)),
       item.bonus || '',
       item.aktivitas || '',
       item.sumber_op || '',
