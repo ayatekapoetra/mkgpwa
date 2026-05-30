@@ -71,11 +71,32 @@ export function useGetMenu() {
       });
     };
 
+    const dashboardChildren = transformMenu(data.dashboard.children);
+    const humanCapital = dashboardChildren.find((item) => {
+      const title = (item?.title || '').toString().toLowerCase();
+      const id = (item?.id || '').toString().toLowerCase();
+      return title === 'human capital' || id.includes('human-capital') || id.includes('humancapital');
+    });
+
+    if (humanCapital && Array.isArray(humanCapital.children)) {
+      const hasCrewWorkActivity = humanCapital.children.some((item) => item?.url === '/crew-work-activity');
+      if (!hasCrewWorkActivity) {
+        humanCapital.children.push({
+          id: 'crew-work-activity',
+          title: 'Crew Work Activity',
+          type: 'item',
+          url: '/crew-work-activity',
+          icon: getMenuIcon('clipboardText') || getMenuIcon('documentText'),
+          breadcrumbs: true
+        });
+      }
+    }
+
     const result = {
       ...data,
       dashboard: {
         ...data.dashboard,
-        children: transformMenu(data.dashboard.children)
+        children: dashboardChildren
       }
     };
     
