@@ -6,11 +6,13 @@ import moment from 'moment';
 import MainCard from 'components/MainCard';
 import Paginate from 'components/Paginate';
 import { Button, Card, CardContent, Stack, Chip, IconButton, Typography, Grid, Box } from '@mui/material';
-import { Filter, ClipboardText, TickCircle, CloseCircle, Timer1, TaskSquare } from 'iconsax-react';
+import { Filter, ClipboardText, TickCircle, CloseCircle, Timer1, TaskSquare, DocumentDownload } from 'iconsax-react';
 
-import { useCrewWorkActivity, useCrewWorkActivityStats } from 'api/crew-work-activity';
+import { useCrewWorkActivity, useCrewWorkActivityStats, exportCrewWorkActivityExcel } from 'api/crew-work-activity';
 import CrewWorkActivityTable from './table';
 import FilterCrewWorkActivity from './filter';
+import { generateCrewWorkActivityExcel } from 'utils/excelExport';
+import { useSnackbar } from 'notistack';
 
 const defaultParams = () => ({
   startdate: moment().startOf('month').format('YYYY-MM-DD'),
@@ -59,8 +61,10 @@ const saveParamsToStorage = (params) => {
 
 const CrewWorkActivityScreen = () => {
   const router = useRouter();
+  const { enqueueSnackbar } = useSnackbar();
   const [openFilter, setOpenFilter] = useState(false);
   const [selectedRowsById, setSelectedRowsById] = useState({});
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [params, setParams] = useState(() => getStoredParams() || defaultParams());
   const { rows, loading, error, total, page, perPage, lastPage } = useCrewWorkActivity(params);
   const { stats, statsLoading, statsError } = useCrewWorkActivityStats(params);
@@ -83,6 +87,34 @@ const CrewWorkActivityScreen = () => {
   const selectedIds = useMemo(() => selectedRows.map((row) => row.id), [selectedRows]);
 
   const toggleFilterHandle = () => setOpenFilter((prev) => !prev);
+
+  const handleDownloadExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      const { startdate, enddate, status, crew_id, spv_id, cabang_id, keterangan } = params;
+      const exportParams = { startdate, enddate };
+      if (status) exportParams.status = status;
+      if (crew_id) exportParams.crew_id = crew_id;
+      if (spv_id) exportParams.spv_id = spv_id;
+      if (cabang_id) exportParams.cabang_id = cabang_id;
+      if (keterangan) exportParams.keterangan = keterangan;
+
+      const response = await exportCrewWorkActivityExcel(exportParams);
+      
+      if (!response?.rows || response.rows.length === 0) {
+        enqueueSnackbar('Tidak ada data untuk di-export', { variant: 'warning' });
+        return;
+      }
+
+      generateCrewWorkActivityExcel(response.rows);
+      enqueueSnackbar('Excel berhasil di-download', { variant: 'success' });
+    } catch (err) {
+      console.error('Download Excel error:', err);
+      enqueueSnackbar(err?.message || 'Gagal download Excel', { variant: 'error' });
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
 
   const toggleRowSelection = (row) => {
     if (!row || row.status !== 'A' || row.aktif === 'N') return;
@@ -135,6 +167,15 @@ const CrewWorkActivityScreen = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           {loading || statsLoading ? <Chip label="Loading..." size="small" color="info" /> : null}
           {error || statsError ? <Chip label="Error memuat data" size="small" color="error" /> : null}
+          <IconButton 
+            aria-label="download" 
+            variant="dashed" 
+            color="secondary" 
+            onClick={handleDownloadExcel}
+            disabled={downloadingExcel}
+          >
+            <DocumentDownload />
+          </IconButton>
           <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilterHandle}>
             <Filter />
           </IconButton>

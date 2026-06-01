@@ -1283,3 +1283,100 @@ export const generateEvaluasiTimesheetExcel = (data, filename) => {
   const timestamp = moment().format('YYYYMMDD_HHmmss');
   XLSX.writeFile(wb, filename || `Timesheet_Evaluasi_${timestamp}.xlsx`);
 };
+
+export const generateCrewWorkActivityExcel = (data, filename) => {
+  if (!data || data.length === 0) {
+    throw new Error("Tidak ada data untuk di-export");
+  }
+
+  const rows = [];
+
+  const headers = [
+    "No",
+    "Tanggal",
+    "Nama Crew",
+    "NIK",
+    "Section",
+    "Cabang",
+    "Area",
+    "Jam Mulai",
+    "Jam Selesai",
+    "Istirahat Mulai",
+    "Istirahat Selesai",
+    "Jam Kerja Normal",
+    "Jam Produktif",
+    "Jam Lembur",
+    "Nama Supervisor",
+    "NIK Supervisor",
+    "Status",
+    "Keterangan"
+  ];
+
+  rows.push(headers);
+
+  data.forEach((item) => {
+    const row = [
+      item.no || '-',
+      item.tanggal || '-',
+      item.crew_nama || '-',
+      item.crew_nik || '-',
+      item.crew_section || '-',
+      item.cabang || '-',
+      item.area || '-',
+      item.jam_mulai || '-',
+      item.jam_selesai || '-',
+      item.istirahat_mulai || '-',
+      item.istirahat_selesai || '-',
+      item.jam_kerja_normal || '0.00',
+      item.jam_kerja_produktif || '0.00',
+      item.jam_lembur || '0.00',
+      item.spv_nama || '-',
+      item.spv_nik || '-',
+      item.status || '-',
+      item.keterangan || '-'
+    ];
+    rows.push(row);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  const colWidths = [
+    { wch: 5 },   // No
+    { wch: 12 },  // Tanggal
+    { wch: 25 },  // Nama Crew
+    { wch: 20 },  // NIK
+    { wch: 15 },  // Section
+    { wch: 20 },  // Cabang
+    { wch: 15 },  // Area
+    { wch: 12 },  // Jam Mulai
+    { wch: 12 },  // Jam Selesai
+    { wch: 15 },  // Istirahat Mulai
+    { wch: 15 },  // Istirahat Selesai
+    { wch: 15 },  // Jam Kerja Normal
+    { wch: 12 },  // Jam Produktif
+    { wch: 12 },  // Jam Lembur
+    { wch: 25 },  // Nama Supervisor
+    { wch: 20 },  // NIK Supervisor
+    { wch: 12 },  // Status
+    { wch: 40 }   // Keterangan
+  ];
+  ws['!cols'] = colWidths;
+
+  // Style header
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const address = XLSX.utils.encode_col(C) + "1";
+    if (!ws[address]) continue;
+    ws[address].s = {
+      font: { bold: true },
+      fill: { fgColor: { rgb: "4472C4" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Crew Work Activity");
+  
+  const timestamp = moment().format('YYYYMMDD_HHmmss');
+  XLSX.writeFile(wb, filename || `Crew_Work_Activity_${timestamp}.xlsx`);
+};

@@ -104,3 +104,12 @@ export const useShowCrewWorkActivity = (id) => {
     [data, error, isLoading, isValidating, mutate]
   );
 };
+
+export const exportCrewWorkActivityExcel = async (params) => {
+  const cleanParams = Object.fromEntries(Object.entries(params || {}).filter(([, value]) => value !== undefined && value !== null && value !== ''));
+  const query = new URLSearchParams(cleanParams).toString();
+  const url = `${endpoints.key}/export-excel${query ? `?${query}` : ''}`;
+  
+  const response = await axiosServices.get(url);
+  return response.data;
+};
