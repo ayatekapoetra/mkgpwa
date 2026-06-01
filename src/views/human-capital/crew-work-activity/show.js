@@ -20,7 +20,8 @@ const breadcrumbLinks = [
 const statusMap = {
   P: { label: 'Pending', color: 'warning' },
   A: { label: 'Approved', color: 'success' },
-  R: { label: 'Rejected', color: 'error' }
+  R: { label: 'Rejected', color: 'error' },
+  V: { label: 'Validated', color: 'info' }
 };
 
 const formatDate = (value) => (value ? moment(value).format('DD MMMM YYYY') : '-');

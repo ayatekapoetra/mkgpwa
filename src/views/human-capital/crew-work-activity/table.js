@@ -5,6 +5,7 @@ import moment from 'moment';
 import {
   Box,
   Card,
+  Checkbox,
   Chip,
   Divider,
   Grid,
@@ -26,7 +27,8 @@ import { Calendar, Clock, Eye, Location, Profile2User, Timer1 } from 'iconsax-re
 const statusMap = {
   P: { label: 'Pending', color: 'warning' },
   A: { label: 'Approved', color: 'success' },
-  R: { label: 'Rejected', color: 'error' }
+  R: { label: 'Rejected', color: 'error' },
+  V: { label: 'Validated', color: 'info' }
 };
 
 const formatDate = (value) => (value ? moment(value).format('DD MMM YYYY') : '-');
@@ -43,18 +45,23 @@ const getRelation = (row, key) => {
   return null;
 };
 
-export default function CrewWorkActivityTable({ rows = [], loading, error }) {
+export default function CrewWorkActivityTable({ rows = [], loading, error, selectedIds = [], onToggleRow, onToggleAll }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   if (isMobile) {
-    return <CrewWorkActivityMobileList rows={rows} loading={loading} error={error} />;
+    return <CrewWorkActivityMobileList rows={rows} loading={loading} error={error} selectedIds={selectedIds} onToggleRow={onToggleRow} />;
   }
 
-  return <CrewWorkActivityDesktopTable rows={rows} loading={loading} error={error} />;
+  return <CrewWorkActivityDesktopTable rows={rows} loading={loading} error={error} selectedIds={selectedIds} onToggleRow={onToggleRow} onToggleAll={onToggleAll} />;
 }
 
-function CrewWorkActivityDesktopTable({ rows = [], loading, error }) {
+function CrewWorkActivityDesktopTable({ rows = [], loading, error, selectedIds = [], onToggleRow, onToggleAll }) {
+  const eligibleRows = rows.filter((row) => row.status === 'A' && row.aktif !== 'N');
+  const selectedEligibleCount = eligibleRows.filter((row) => selectedIds.includes(row.id)).length;
+  const allEligibleSelected = eligibleRows.length > 0 && selectedEligibleCount === eligibleRows.length;
+  const someEligibleSelected = selectedEligibleCount > 0 && selectedEligibleCount < eligibleRows.length;
+
   return (
     <TableContainer component={Paper} sx={{ maxHeight: '70vh', overflow: 'auto', position: 'relative' }}>
       <Table
@@ -68,6 +75,15 @@ function CrewWorkActivityDesktopTable({ rows = [], loading, error }) {
       >
         <TableHead>
           <TableRow>
+            <TableCell align="center" sx={{ minWidth: 64 }}>
+              <Checkbox
+                size="small"
+                disabled={eligibleRows.length === 0}
+                checked={allEligibleSelected}
+                indeterminate={someEligibleSelected}
+                onChange={() => onToggleAll?.(eligibleRows)}
+              />
+            </TableCell>
             <TableCell align="center" sx={{ minWidth: 80 }}>Detail</TableCell>
             <TableCell sx={{ minWidth: 120 }}>Tanggal</TableCell>
             <TableCell sx={{ minWidth: 240 }}>Crew</TableCell>
@@ -87,9 +103,19 @@ function CrewWorkActivityDesktopTable({ rows = [], loading, error }) {
             const supervisor = getRelation(row, 'supervisor');
             const cabang = getRelation(row, 'cabang');
             const status = statusMap[row.status] || { label: row.status || '-', color: 'default' };
+            const isEligible = row.status === 'A' && row.aktif !== 'N';
+            const isSelected = selectedIds.includes(row.id);
 
             return (
-              <TableRow key={row.id} hover>
+              <TableRow key={row.id} hover selected={isSelected}>
+                <TableCell align="center">
+                  <Checkbox
+                    size="small"
+                    disabled={!isEligible}
+                    checked={isSelected}
+                    onChange={() => onToggleRow?.(row)}
+                  />
+                </TableCell>
                 <TableCell align="center">
                   <IconButton size="small" color="primary" component={Link} href={`/crew-work-activity/${row.id}/show`}>
                     <Eye size={18} />
@@ -141,14 +167,14 @@ function CrewWorkActivityDesktopTable({ rows = [], loading, error }) {
           })}
           {!loading && !error && rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={11} align="center">
+              <TableCell colSpan={12} align="center">
                 <Typography variant="body2">Tidak ada data</Typography>
               </TableCell>
             </TableRow>
           )}
           {loading && (
             <TableRow>
-              <TableCell colSpan={11} align="center">
+              <TableCell colSpan={12} align="center">
                 <Typography variant="body2">Memuat data...</Typography>
               </TableCell>
             </TableRow>
@@ -159,7 +185,7 @@ function CrewWorkActivityDesktopTable({ rows = [], loading, error }) {
   );
 }
 
-function CrewWorkActivityMobileList({ rows = [], loading, error }) {
+function CrewWorkActivityMobileList({ rows = [], loading, error, selectedIds = [], onToggleRow }) {
   if (loading) {
     return (
       <Box sx={{ py: 2 }}>
@@ -184,6 +210,8 @@ function CrewWorkActivityMobileList({ rows = [], loading, error }) {
         const cabang = getRelation(row, 'cabang');
         const status = statusMap[row.status] || { label: row.status || '-', color: 'default' };
         const isOvertime = Number(row.jam_lembur || 0) > 0;
+        const isEligible = row.status === 'A' && row.aktif !== 'N';
+        const isSelected = selectedIds.includes(row.id);
 
         return (
           <Card
@@ -220,7 +248,10 @@ function CrewWorkActivityMobileList({ rows = [], loading, error }) {
             <Box sx={{ p: 2 }}>
               <Stack spacing={1.75}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                  <Chip label={status.label} color={status.color} size="small" variant="light" />
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Checkbox size="small" disabled={!isEligible} checked={isSelected} onChange={() => onToggleRow?.(row)} />
+                    <Chip label={status.label} color={status.color} size="small" variant="light" />
+                  </Stack>
                   <Typography variant="caption" color="text.secondary">ID #{row.id}</Typography>
                 </Stack>
 

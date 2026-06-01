@@ -22,6 +22,7 @@ const statusOptions = [
   { value: '', label: 'Semua Status' },
   { value: 'P', label: 'Pending' },
   { value: 'A', label: 'Approved' },
+  { value: 'V', label: 'Validated' },
   { value: 'R', label: 'Rejected' }
 ];
 

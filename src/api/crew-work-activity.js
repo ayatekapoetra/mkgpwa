@@ -1,11 +1,12 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
-import { fetcher } from 'utils/axios';
+import axiosServices, { fetcher } from 'utils/axios';
 
 export const endpoints = {
   key: '/operation/crew-worksheet',
   list: '/operation/crew-worksheet/list',
-  stats: '/operation/crew-worksheet/stats'
+  stats: '/operation/crew-worksheet/stats',
+  validate: (id) => `/operation/crew-worksheet/${id}/validate`
 };
 
 const toQueryString = (params = {}) => {
@@ -78,6 +79,11 @@ export const useCrewWorkActivityStats = (params) => {
     }),
     [data, error, isLoading, isValidating, mutate]
   );
+};
+
+export const validateCrewWorkActivity = async (id) => {
+  const response = await axiosServices.post(endpoints.validate(id));
+  return response.data;
 };
 
 export const useShowCrewWorkActivity = (id) => {
