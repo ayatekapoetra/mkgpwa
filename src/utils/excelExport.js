@@ -1295,7 +1295,7 @@ export const generateCrewWorkActivityExcel = (data, filename) => {
     "No",
     "Tanggal",
     "Nama Crew",
-    "NIK",
+    "KTP",
     "Section",
     "Cabang",
     "Area",
@@ -1307,7 +1307,7 @@ export const generateCrewWorkActivityExcel = (data, filename) => {
     "Jam Produktif",
     "Jam Lembur",
     "Nama Supervisor",
-    "NIK Supervisor",
+    "KTP Supervisor",
     "Status",
     "Keterangan"
   ];
@@ -1319,7 +1319,7 @@ export const generateCrewWorkActivityExcel = (data, filename) => {
       item.no || '-',
       item.tanggal || '-',
       item.crew_nama || '-',
-      item.crew_nik || '-',
+      item.crew_ktp || '-',
       item.crew_section || '-',
       item.cabang || '-',
       item.area || '-',
@@ -1331,7 +1331,7 @@ export const generateCrewWorkActivityExcel = (data, filename) => {
       item.jam_kerja_produktif || '0.00',
       item.jam_lembur || '0.00',
       item.spv_nama || '-',
-      item.spv_nik || '-',
+      item.spv_ktp || '-',
       item.status || '-',
       item.keterangan || '-'
     ];
