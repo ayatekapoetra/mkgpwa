@@ -270,8 +270,8 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
             <CompactKpi label="EWH" value={fleet.ewh_hours ? `${fleet.ewh_hours.toFixed(1)}j` : '-'} />
             <CompactKpi label="APH" value={fleet.aph_ton_per_hour ? `${fleet.aph_ton_per_hour.toFixed(1)}` : '-'} />
             <CompactKpi label="Avg CT" value={`${fleet.avg_circle_time_minutes}m`} danger />
-            <CompactKpi label="Slide" value={`${currentSlideIndex + 1}/${sortedFleets.length}`} />
-            <CompactKpi label="Next" value={formatCountdown(remainingSeconds)} />
+            {/* <CompactKpi label="Slide" value={`${currentSlideIndex + 1}/${sortedFleets.length}`} />
+            <CompactKpi label="Next" value={formatCountdown(remainingSeconds)} /> */}
             <Button size="small" variant="contained" color="inherit" onClick={handleToggleSlideshow} sx={{ color: '#111827', fontWeight: 900, borderRadius: 2, minWidth: { xs: 64, md: 72 }, height: 38, px: 1.25, flexShrink: 0 }}>
               Stop
             </Button>
@@ -295,7 +295,15 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
 
   function CompactKpi({ label, value, danger = false }) {
     return (
-      <Box sx={{ px: { xs: 0.75, md: 1 }, py: 0.6, borderRadius: 2, bgcolor: danger ? 'rgba(220,38,38,0.25)' : 'rgba(255,255,255,0.16)', flex: '1 1 0', minWidth: 0, maxWidth: { xs: 72, md: 92 }, textAlign: 'center' }}>
+      <Box sx={{ 
+        px: { xs: 0.75, md: 1 }, 
+        py: 0.6, 
+        borderRadius: 2, 
+        bgcolor: danger ? 'rgba(220,38,38,0.25)' : 'rgba(255,255,255,0.16)', 
+        flex: '1 1 0', 
+        minWidth: 0, 
+        maxWidth: { xs: 92, md: 102 }, 
+        textAlign: 'center' }}>
         <Typography variant="caption" sx={{ opacity: 0.72, fontWeight: 800, lineHeight: 1 }} noWrap>{label}</Typography>
         <Typography fontSize={{ xs: 13, md: 17 }} fontWeight={950} lineHeight={1.05} noWrap>{value}</Typography>
       </Box>
