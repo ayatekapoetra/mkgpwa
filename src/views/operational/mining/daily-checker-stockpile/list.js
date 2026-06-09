@@ -47,6 +47,7 @@ export default function CheckerStockpileList({
           <TableRow>
             <TableCell>Tanggal</TableCell>
             <TableCell>Shift</TableCell>
+            <TableCell>PIT Asal</TableCell>
             <TableCell>Stockpile</TableCell>
             <TableCell>Material</TableCell>
             <TableCell>Tipe</TableCell>
@@ -64,6 +65,7 @@ export default function CheckerStockpileList({
             <TableRow hover key={row.key}>
               <TableCell>{row.date_ops || '-'}</TableCell>
               <TableCell>{shiftLabel(row.shift_id)}</TableCell>
+              <TableCell>{row.pit_asal_nama || '-'}</TableCell>
               <TableCell>{row.stockpile_nama || '-'}</TableCell>
               <TableCell>{row.material_nama || '-'}</TableCell>
               <TableCell>{row.kondisi_material || '-'}</TableCell>

@@ -112,6 +112,7 @@ export default function DailyCheckerStockpileDetailView() {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
             <Typography variant="body2">Tanggal: <strong>{date_ops || '-'}</strong></Typography>
             <Typography variant="body2">Shift: <strong>{shiftLabel(shift_id)}</strong></Typography>
+            <Typography variant="body2">PIT Asal: <strong>{scopeMeta.pit_asal_nama || '-'}</strong></Typography>
             <Typography variant="body2">Stockpile: <strong>{scopeMeta.stockpile_nama || `ID ${stockpile_id || '-'}`}</strong></Typography>
             <Typography variant="body2">Material: <strong>{scopeMeta.material_nama || `ID ${material_id || '-'}`}</strong></Typography>
             <Typography variant="body2">DOM: <strong>{scopeMeta.dom_code || dom_id || '-'}</strong></Typography>
@@ -126,11 +127,12 @@ export default function DailyCheckerStockpileDetailView() {
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
-                <TableRow>
-                  <TableCell>Jam</TableCell>
-                  <TableCell>Dumptruck</TableCell>
-                  <TableCell>Driver</TableCell>
-                  <TableCell>Material</TableCell>
+                  <TableRow>
+                    <TableCell>Jam</TableCell>
+                    <TableCell>PIT Asal</TableCell>
+                    <TableCell>Dumptruck</TableCell>
+                    <TableCell>Driver</TableCell>
+                    <TableCell>Material</TableCell>
                   <TableCell>Stockpile</TableCell>
                   <TableCell>DOM</TableCell>
                   <TableCell>Tipe</TableCell>
@@ -141,7 +143,7 @@ export default function DailyCheckerStockpileDetailView() {
               <TableBody>
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9}>
+                    <TableCell colSpan={10}>
                       <Typography color="text.secondary">Tidak ada data ritase pada scope ini.</Typography>
                     </TableCell>
                   </TableRow>
@@ -149,6 +151,7 @@ export default function DailyCheckerStockpileDetailView() {
                 {rows.map((item) => (
                   <TableRow key={item.ritase_stockpile_id || `${item.finishtime}-${item.dumptruck_id}`} hover>
                     <TableCell>{item.finishtime ? new Date(item.finishtime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}</TableCell>
+                    <TableCell>{item.pit_asal_nama || '-'}</TableCell>
                     <TableCell>{item.dumptruck_kode || '-'}</TableCell>
                     <TableCell>{item.driver_nama || '-'}</TableCell>
                     <TableCell>{item.material_nama || '-'}</TableCell>
