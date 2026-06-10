@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 import { Stack, Button, Chip, Alert, CircularProgress, Box } from '@mui/material';
 import { Add, DocumentDownload, Filter, Warning2 } from 'iconsax-react';
@@ -11,7 +12,6 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
 import { useCheckerStockpileGroups, useCheckerStockpileUnmatchedCount } from 'api/checker-stockpile';
-import axiosServices from 'utils/axios';
 
 import CheckerStockpileFilter from './filter';
 import CheckerStockpileList from './list';
@@ -21,8 +21,20 @@ const breadcrumbLinks = [
   { title: 'Daily Checker Stockpile', to: '/daily-checker-stockpile' }
 ];
 
+const formatDateInput = (value) => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const today = new Date();
+const defaultStartDate = formatDateInput(new Date(today.getFullYear(), today.getMonth(), 1));
+const defaultEndDate = formatDateInput(today);
+
 const defaultParams = {
-  date_ops: '',
+  start_date: defaultStartDate,
+  end_date: defaultEndDate,
   shift_id: '',
   sync_status: '',
   stockpile_keyword: '',
@@ -32,13 +44,15 @@ const defaultParams = {
 
 export default function DailyCheckerStockpilePage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [params, setParams] = useState(defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const { grouped, dataLoading, dataError } = useCheckerStockpileGroups({
-    date_ops: params.date_ops,
+    start_date: params.start_date,
+    end_date: params.end_date,
     shift_id: params.shift_id,
     limit: 0
   });
@@ -46,7 +60,8 @@ export default function DailyCheckerStockpilePage() {
 
   const rows = useMemo(() => {
     return grouped.filter((item) => {
-      const matchDate = !params.date_ops || item.date_ops === params.date_ops;
+      const itemDate = item.date_ops || '';
+      const matchDate = (!params.start_date || itemDate >= params.start_date) && (!params.end_date || itemDate <= params.end_date);
       const matchShift = !params.shift_id || item.shift_id === params.shift_id;
       const matchSync =
         !params.sync_status ||
@@ -69,6 +84,25 @@ export default function DailyCheckerStockpilePage() {
     return rows.slice(start, start + rowsPerPage);
   }, [rows, page, rowsPerPage]);
 
+  const downloadUrl = useMemo(() => {
+    const startDate = params.start_date || defaultStartDate;
+    const endDate = params.end_date || defaultEndDate;
+    const token = session?.token?.accessToken || '';
+    const apiBase = (process.env.NEXT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+
+    if (!startDate || !endDate || !token || !apiBase) {
+      return '#';
+    }
+
+    const query = new URLSearchParams({
+      startDate,
+      endDate,
+      token
+    }).toString();
+
+    return `${apiBase}/public/ritase/sample-download-pdf-direct?${query}`;
+  }, [params.start_date, params.end_date, session?.token?.accessToken]);
+
   useEffect(() => {
     setPage(0);
   }, [params]);
@@ -82,50 +116,42 @@ export default function DailyCheckerStockpilePage() {
     setPage(0);
   };
 
-  const handleDownloadPdf = async () => {
-    const date = params.date_ops || '';
+  const apiBase = (process.env.NEXT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  const token = session?.token?.accessToken || '';
 
-    if (!date) {
+  const handleDownloadPdf = (event) => {
+    const startDate = params.start_date || defaultStartDate;
+    const endDate = params.end_date || defaultEndDate;
+
+    if (!startDate || !endDate) {
+      event.preventDefault();
       openNotification({
         type: 'warning',
-        message: 'Pilih tanggal operasional terlebih dahulu untuk download PDF.'
+        message: 'Pilih tanggal atau range operasional terlebih dahulu untuk download PDF.'
       });
       return;
     }
 
-    try {
-      setDownloadingPdf(true);
-
-      const response = await axiosServices.get('/api/ritase/sample-download-pdf', {
-        params: {
-          startDate: date,
-          endDate: date
-        },
-        responseType: 'blob'
-      });
-
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `sample-stockpile-${date}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      openNotification({
-        type: 'success',
-        message: 'PDF sample stockpile berhasil di-download.'
-      });
-    } catch (error) {
+    if (!token) {
+      event.preventDefault();
       openNotification({
         type: 'error',
-        message: error?.message || 'Gagal download PDF sample stockpile.'
+        message: 'Sesi login tidak ditemukan. Silakan login ulang.'
       });
-    } finally {
-      setDownloadingPdf(false);
+      return;
     }
+
+    if (!apiBase) {
+      event.preventDefault();
+      openNotification({
+        type: 'error',
+        message: 'Konfigurasi API URL belum tersedia.'
+      });
+      return;
+    }
+
+    setDownloadingPdf(true);
+    setTimeout(() => setDownloadingPdf(false), 1500);
   };
 
   const handleOpenCreate = () => {
@@ -178,9 +204,20 @@ export default function DailyCheckerStockpilePage() {
             <Button variant="outlined" color="secondary" startIcon={<Filter />} onClick={() => setOpenFilter(true)}>
               Filter
             </Button>
-            <Button variant="outlined" startIcon={<DocumentDownload />} onClick={handleDownloadPdf} disabled={downloadingPdf}>
-              Download
-            </Button>
+            <Box
+              component="form"
+              action={`${apiBase}/public/ritase/sample-download-pdf-direct`}
+              method="GET"
+              onSubmit={handleDownloadPdf}
+              sx={{ display: 'inline-flex' }}
+            >
+              <input type="hidden" name="startDate" value={params.start_date || defaultStartDate} />
+              <input type="hidden" name="endDate" value={params.end_date || defaultEndDate} />
+              <input type="hidden" name="token" value={token} />
+              <Button type="submit" variant="outlined" startIcon={<DocumentDownload />} disabled={downloadingPdf}>
+                Download
+              </Button>
+            </Box>
           </Stack>
         }
         content

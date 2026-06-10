@@ -21,8 +21,13 @@ const syncOptions = [
 
 export default function CheckerStockpileFilter({ open, onClose, params, setParams, anchor = 'right' }) {
   const onReset = () => {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const formatDate = (value) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+
     setParams({
-      date_ops: '',
+      start_date: formatDate(startOfMonth),
+      end_date: formatDate(today),
       shift_id: '',
       sync_status: '',
       stockpile_keyword: '',
@@ -36,13 +41,24 @@ export default function CheckerStockpileFilter({ open, onClose, params, setParam
       <Box sx={{ width: { xs: 320, sm: 360 }, p: 2 }} role="presentation">
         <MainCard title="Filter Checker Stockpile" content>
           <Grid container spacing={1.5}>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={12}>
               <InputSearch
                 type="date"
-                label="Tanggal Operasional"
+                label="Tanggal Mulai"
                 size="md"
-                value={params.date_ops || ''}
-                onChange={(e) => setParams((prev) => ({ ...prev, date_ops: e.target.value }))}
+                value={params.start_date || ''}
+                onChange={(e) => setParams((prev) => ({ ...prev, start_date: e.target.value }))}
+                startAdornment={<CalendarMonth fontSize="small" />}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={12}>
+              <InputSearch
+                type="date"
+                label="Tanggal Selesai"
+                size="md"
+                value={params.end_date || ''}
+                onChange={(e) => setParams((prev) => ({ ...prev, end_date: e.target.value }))}
                 startAdornment={<CalendarMonth fontSize="small" />}
               />
             </Grid>

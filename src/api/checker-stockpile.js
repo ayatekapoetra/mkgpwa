@@ -157,6 +157,8 @@ export const useCheckerStockpileGroups = (params = {}) => {
     aktif: 'Y',
     limit: String(limitValue),
     ...(params.date_ops ? { date_ops: params.date_ops } : {}),
+    ...(!params.date_ops && params.start_date ? { start_date: params.start_date } : {}),
+    ...(!params.date_ops && params.end_date ? { end_date: params.end_date } : {}),
     ...(params.shift_id ? { shift_id: params.shift_id } : {}),
     ...(params.cabang_id ? { cabang_id: params.cabang_id } : {})
   }).toString();
