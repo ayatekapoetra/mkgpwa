@@ -12,7 +12,7 @@ const STATUS_COLORS = {
   insufficient_data: 'rgba(148,163,184,0.85)'
 };
 
-export default function FleetPerformanceChart({ dumptrucks = [], averageFleetCircleTime = 0 }) {
+export default function FleetPerformanceChart({ dumptrucks = [], targetCircleTime = 0 }) {
   if (!dumptrucks.length) {
     return <p style={{ margin: 0 }}>Belum ada data dumptruck untuk fleet ini.</p>;
   }
@@ -48,8 +48,8 @@ export default function FleetPerformanceChart({ dumptrucks = [], averageFleetCir
           },
           {
             type: 'line',
-            label: 'Avg CT Fleet',
-            data: labels.map(() => Number(averageFleetCircleTime || 0)),
+            label: 'CT Target',
+            data: labels.map(() => Number(targetCircleTime || 0)),
             borderColor: '#f59e0b',
             borderDash: [6, 6],
             borderWidth: 2,

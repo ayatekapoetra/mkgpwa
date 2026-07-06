@@ -222,7 +222,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
               <Typography variant="caption" color="text.secondary">Bar = ritase, line = avg circle time</Typography>
             </Stack>
             <Box sx={{ height: 280 }}>
-              <FleetPerformanceChart dumptrucks={fleet.dumptrucks} averageFleetCircleTime={fleet.avg_circle_time_minutes} />
+              <FleetPerformanceChart dumptrucks={fleet.dumptrucks} targetCircleTime={fleet.ct_target_minutes} />
             </Box>
           </Stack>
         </Paper>
@@ -286,7 +286,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
             <Typography variant="caption" color="text.secondary">Bar = ritase • Line = avg circle time</Typography>
           </Stack>
           <Box sx={{ flex: 1, minHeight: 0 }}>
-            <FleetPerformanceChart dumptrucks={fleet.dumptrucks} averageFleetCircleTime={fleet.avg_circle_time_minutes} />
+            <FleetPerformanceChart dumptrucks={fleet.dumptrucks} targetCircleTime={fleet.ct_target_minutes} />
           </Box>
         </Stack>
       </Paper>
