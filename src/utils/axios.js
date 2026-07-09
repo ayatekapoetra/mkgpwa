@@ -33,6 +33,14 @@ axiosServices.interceptors.request.use(
       config.url = config.url.replace(/^\/+/, "/");
     }
 
+    // Export/download endpoints can legitimately take much longer than normal API calls.
+    if (
+      typeof config.url === 'string' &&
+      (config.url.includes('/export-excel') || config.url.includes('/download'))
+    ) {
+      config.timeout = Math.max(Number(config.timeout) || 0, 300000);
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -70,6 +78,11 @@ axiosServices.interceptors.response.use(
     ) {
       window.location.pathname = "/login";
     }
+
+    if (error.config?.responseType === 'blob') {
+      return Promise.reject(error);
+    }
+
     return Promise.reject((error.response && error.response.data) || error);
   },
 );

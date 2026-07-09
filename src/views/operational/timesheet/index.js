@@ -24,7 +24,6 @@ import SyncProgressDialog from 'components/SyncProgressDialog';
 // SWR
 import { useGetDailyTimesheet, exportTimesheetHeavyEquipment, exportTimesheetDumptruck, exportTimesheetAll, exportTimesheetEvaluasi } from 'api/daily-timesheet';
 import FilterTimesheet from './filter';
-import { generateHeavyEquipmentTimesheetExcel, generateDumptruckTimesheetExcel, generateAllTimesheetExcel, generateEvaluasiTimesheetExcel } from 'utils/excelExport';
 import { useSnackbar } from 'notistack';
 
 const breadcrumbLinks = [
@@ -52,6 +51,17 @@ const saveParamsToStorage = (params) => {
   } catch (error) {
     console.error('Error saving to localStorage:', error);
   }
+};
+
+const triggerBlobDownload = (blob, filename) => {
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(downloadUrl);
 };
 
 export default function DailyTimesheetScreen() {
@@ -195,49 +205,19 @@ export default function DailyTimesheetScreen() {
 
       if (type === 'alat-berat') {
         const response = await exportTimesheetHeavyEquipment(exportParams);
-        
-        if (!response?.rows || response.rows.length === 0) {
-          enqueueSnackbar('Tidak ada data Alat Berat untuk di-export', { variant: 'warning' });
-          return;
-        }
-
-        generateHeavyEquipmentTimesheetExcel(response.rows);
+        triggerBlobDownload(response.blob, response.filename);
         enqueueSnackbar('Excel Alat Berat berhasil di-download', { variant: 'success' });
       } else if (type === 'dumptruck') {
-        console.log('Fetching Dumptruck data with params:', exportParams);
         const response = await exportTimesheetDumptruck(exportParams);
-        console.log('Dumptruck response:', response);
-        
-        if (!response?.rows || response.rows.length === 0) {
-          enqueueSnackbar('Tidak ada data Dumptruck untuk di-export', { variant: 'warning' });
-          return;
-        }
-
-        console.log('Generating Excel for', response.rows.length, 'records');
-        generateDumptruckTimesheetExcel(response.rows);
+        triggerBlobDownload(response.blob, response.filename);
         enqueueSnackbar('Excel Dumptruck berhasil di-download', { variant: 'success' });
       } else if (type === 'all') {
-        console.log('Fetching All data with params:', exportParams);
         const response = await exportTimesheetAll(exportParams);
-        console.log('All response:', response);
-        
-        if (!response?.rows || response.rows.length === 0) {
-          enqueueSnackbar('Tidak ada data untuk di-export', { variant: 'warning' });
-          return;
-        }
-
-        console.log('Generating Excel for', response.rows.length, 'records');
-        generateAllTimesheetExcel(response.rows);
+        triggerBlobDownload(response.blob, response.filename);
         enqueueSnackbar('Excel All Equipment berhasil di-download', { variant: 'success' });
       } else if (type === 'evaluasi') {
         const response = await exportTimesheetEvaluasi(exportParams);
-        
-        if (!response?.rows || response.rows.length === 0) {
-          enqueueSnackbar('Tidak ada data Evaluasi untuk di-export', { variant: 'warning' });
-          return;
-        }
-
-        generateEvaluasiTimesheetExcel(response.rows);
+        triggerBlobDownload(response.blob, response.filename);
         enqueueSnackbar('Excel Evaluasi berhasil di-download', { variant: 'success' });
       }
     } catch (error) {

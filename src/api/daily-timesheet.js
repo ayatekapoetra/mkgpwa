@@ -111,34 +111,76 @@ export const exportTimesheetHeavyEquipment = async (params) => {
   const url = params 
     ? endpoints.key + endpoints.exportAlatBerat + `?${new URLSearchParams(params)}`
     : endpoints.key + endpoints.exportAlatBerat;
-  
-  const response = await axiosServices.get(url);
-  return response.data;
+
+  return downloadTimesheetFile(url, 'Timesheet_HE.xlsx');
 };
 
 export const exportTimesheetDumptruck = async (params) => {
   const url = params 
     ? endpoints.key + endpoints.exportDumptruck + `?${new URLSearchParams(params)}`
     : endpoints.key + endpoints.exportDumptruck;
-  
-  const response = await axiosServices.get(url);
-  return response.data;
+
+  return downloadTimesheetFile(url, 'Timesheet_DT.xlsx');
 };
 
 export const exportTimesheetAll = async (params) => {
   const url = params 
     ? endpoints.key + endpoints.exportAll + `?${new URLSearchParams(params)}`
     : endpoints.key + endpoints.exportAll;
-  
-  const response = await axiosServices.get(url);
-  return response.data;
+
+  return downloadTimesheetFile(url, 'Timesheet_All.xlsx');
 };
 
 export const exportTimesheetEvaluasi = async (params) => {
   const url = params 
     ? endpoints.key + endpoints.exportEvaluasi + `?${new URLSearchParams(params)}`
     : endpoints.key + endpoints.exportEvaluasi;
-  
-  const response = await axiosServices.get(url);
-  return response.data;
+
+  return downloadTimesheetFile(url, 'Timesheet_Evaluasi.xlsx');
+};
+
+const downloadTimesheetFile = async (url, fallbackFilename) => {
+  try {
+    const response = await axiosServices.get(url, {
+      responseType: 'blob',
+      timeout: 300000
+    });
+
+    return {
+      blob: response.data,
+      filename: getFilenameFromDisposition(response.headers?.['content-disposition'], fallbackFilename)
+    };
+  } catch (error) {
+    if (error?.response?.data instanceof Blob) {
+      const text = await error.response.data.text();
+
+      try {
+        const payload = JSON.parse(text);
+        const message = payload?.diagnostic?.message || payload?.message || 'Gagal download Excel';
+        const nextError = new Error(message);
+        nextError.response = { data: payload };
+        throw nextError;
+      } catch {
+        throw new Error(text || error.message || 'Gagal download Excel');
+      }
+    }
+
+    throw error;
+  }
+};
+
+const getFilenameFromDisposition = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback;
+
+  const utfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    return decodeURIComponent(utfMatch[1]);
+  }
+
+  const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+  if (asciiMatch?.[1]) {
+    return asciiMatch[1];
+  }
+
+  return fallback;
 };
