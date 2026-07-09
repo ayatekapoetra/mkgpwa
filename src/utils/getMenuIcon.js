@@ -40,7 +40,8 @@ import {
   Building4,
   Building3,
   ProgrammingArrows,
-  FavoriteChart
+  FavoriteChart,
+  Health,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -91,6 +92,7 @@ const iconMap = {
   smartcar: SmartCar,
   avalanche: Avalanche,
   android: Android,
+  health: Health,
   Building4: Building4,
   Building3: Building3,
   FingerScan: FingerScan,
@@ -101,6 +103,7 @@ const iconMap = {
   // Aliases for common names
   dom: Diagram,
   equipment: Truck,
+  truckremove: Health,
   barang: Box,
   material: Layer,
   'lokasi-kerja': Location,

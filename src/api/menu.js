@@ -61,6 +61,10 @@ export function useGetMenu() {
         } else {
           console.log(`${indent}[Transform] ${item.title}: No icon`);
         }
+
+        if (item.url === '/laporan/summary-breakdown') {
+          transformed.icon = getMenuIcon('health');
+        }
         
         // Transform children recursively
         if (item.children && Array.isArray(item.children)) {

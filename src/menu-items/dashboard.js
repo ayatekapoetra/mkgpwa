@@ -46,7 +46,8 @@ import {
   ClipboardText,
   ShieldTick,
   DocumentText,
-  FingerScan
+  FingerScan,
+  Health,
 } from 'iconsax-react';
 
 import { useGetMenu } from 'api/menu';
@@ -100,8 +101,11 @@ const icons = {
   shieldTick: ShieldTick,
   documentText: DocumentText,
   building: Buildings,
+  health: Health,
   FingerScan: FingerScan,
-  humancapital: Android
+  humancapital: Android,
+  truckremove: Health,
+  TruckRemove: Health
 };
 
 const loadingMenu = {
