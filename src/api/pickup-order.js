@@ -1,18 +1,15 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
 
-// UTIL
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
-  key: '/master/dom',
+  key: '/scm/pickup-order',
   list: '/list'
 };
 
-export const useDom = (params) => {
-  const url = params ? endpoints.key + endpoints.list + `?${new URLSearchParams(params)}` : endpoints.key + endpoints.list;
-
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+export const useGetPickupOrder = () => {
+  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.list, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: false
@@ -24,7 +21,7 @@ export const useDom = (params) => {
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.length
+      dataEmpty: !isLoading && !(data?.rows?.length || 0)
     }),
     [data, error, isLoading, isValidating]
   );
@@ -32,8 +29,8 @@ export const useDom = (params) => {
   return memoizedValue;
 };
 
-export const useShowDom = (id) => {
-  const { data, isLoading, error, isValidating } = useSWR(`${endpoints.key}/${id}/show`, fetcher, {
+export const useShowPickupOrder = (id) => {
+  const { data, isLoading, error, isValidating } = useSWR(id ? `${endpoints.key}/${id}` : null, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: false
@@ -41,7 +38,7 @@ export const useShowDom = (id) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows || {},
+      data: data?.rows || null,
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating

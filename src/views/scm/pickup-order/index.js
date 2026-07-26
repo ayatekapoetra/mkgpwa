@@ -16,12 +16,10 @@ import MainCard from 'components/MainCard';
 
 // THIRD - PARTY
 import moment from 'moment';
-import { Filter, Trash } from 'iconsax-react';
+import { Eye, Filter } from 'iconsax-react';
 import ListPickupOrder from './list';
-import { useGetDeliveryOrder } from 'api/delivery-order';
-import LinearWithLabel from 'components/@extended/progress/LinearWithLabel';
-import Paginate from 'components/Paginate';
-// import FilterDeliveryOrder from './filter';
+import { useGetPickupOrder } from 'api/pickup-order';
+import FilterPickupOrder from './filter';
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
@@ -33,22 +31,31 @@ const breadcrumbLinks = [
 
 export default function PickupOrderScreen() {
   const columns = DataColumn();
-  const [filtered, setFiltered] = useState({
-    page: 1,
-    perPage: 25,
-    kode: ''
-  });
-  const { data, dataLoading } = useGetDeliveryOrder(filtered);
+  const { data, dataLoading } = useGetPickupOrder();
   const [state, setState] = useState([]);
   const [openFilter, setOpenFilter] = useState(false);
+  const [filtered, setFiltered] = useState({
+    kode: '',
+    pickup_by: '',
+    keterangan: ''
+  });
 
   useEffect(() => {
-    if (data?.data) {
-      setState(data.data);
-    } else {
-      setState([]);
-    }
-  }, [data]);
+    const rows = Array.isArray(data) ? data : [];
+    const keywordKode = filtered.kode.trim().toLowerCase();
+    const keywordPickupBy = filtered.pickup_by.trim().toLowerCase();
+    const keywordKeterangan = filtered.keterangan.trim().toLowerCase();
+
+    const nextState = rows.filter((item) => {
+      const matchKode = !keywordKode || String(item.kode || '').toLowerCase().includes(keywordKode);
+      const matchPickupBy = !keywordPickupBy || String(item.pickup_by || '').toLowerCase().includes(keywordPickupBy);
+      const matchKeterangan = !keywordKeterangan || String(item.keterangan || '').toLowerCase().includes(keywordKeterangan);
+
+      return matchKode && matchPickupBy && matchKeterangan;
+    });
+
+    setState(nextState);
+  }, [data, filtered]);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
@@ -70,7 +77,7 @@ export default function PickupOrderScreen() {
         }
         content={false}
       >
-        {/* <FilterDeliveryOrder count={data?.total} data={filtered} setData={setFiltered} open={openFilter} onClose={toggleFilterHandle} /> */}
+        <FilterPickupOrder count={state.length} data={filtered} setData={setFiltered} open={openFilter} onClose={toggleFilterHandle} />
         {dataLoading || !data ? (
           <div>loading...</div>
         ) : (
@@ -78,15 +85,7 @@ export default function PickupOrderScreen() {
             <ListPickupOrder
               columns={columns}
               data={state}
-              paginate={
-                <Paginate
-                  page={data.page || filtered.page}
-                  total={data.total || 0}
-                  lastPage={data.lastPage || 0}
-                  perPage={data.perPage || filtered.perPage}
-                  onPageChange={(newPage) => setFiltered({ ...filtered, page: newPage })}
-                />
-              }
+              paginate={null}
             />
           </Stack>
         )}
@@ -108,8 +107,8 @@ function DataColumn() {
           const { id } = row.original;
           return (
             <Box sx={{ width: 15, textAlign: 'center' }}>
-              <IconButton component={Link} href={`/delivery-order/${id}/show`} variant="dashed" color="error">
-                <Trash />
+              <IconButton component={Link} href={`/pickup-order/${id}/show`} variant="dashed" color="primary">
+                <Eye />
               </IconButton>
             </Box>
           );
@@ -121,95 +120,85 @@ function DataColumn() {
         accessor: 'kode',
         minWidth: 100, // lebar minimum
         Cell: ({ row }) => {
-          const { kode, do_date } = row.original;
+          const { kode, date_pickup } = row.original;
           return (
             <div>
               <Typography variant="body1">{kode}</Typography>
               <Typography variant="caption" color="secondary">
-                {moment(do_date).format('DD-MM-YYYY')}
+                {moment(date_pickup).format('DD-MM-YYYY')}
               </Typography>
             </div>
           );
         }
       },
       {
-        id: 'pemasok_id',
-        Header: 'Pemasok',
-        accessor: 'pemasok.nama',
+        id: 'pickup_by',
+        Header: 'Pickup',
+        accessor: 'pickup_by',
         minWidth: 450, // lebar minimum
         Cell: ({ row }) => {
-          const { pemasok, narasi } = row.original;
+          const { pickup_by, keterangan } = row.original;
           return (
             <div>
-              <Typography variant="body1">{pemasok.nama}</Typography>
+              <Typography variant="body1">{pickup_by}</Typography>
               <Typography variant="caption" color="secondary">
-                {narasi}
+                {keterangan}
               </Typography>
             </div>
           );
         }
       },
       {
-        id: 'via',
-        Header: 'Via',
-        accessor: 'via'
+        id: 'gudang',
+        Header: 'Gudang Transit',
+        accessor: 'gudang.nama',
+        Cell: ({ row }) => {
+          const { gudang } = row.original;
+          return <Typography>{gudang?.nama || '-'}</Typography>;
+        }
       },
       {
-        Header: () => <div>Jenis & Type</div>,
-        id: 'jenis',
-        accessor: 'jenis',
+        Header: () => <div>Accepted</div>,
+        id: 'accepted_by',
+        accessor: 'acceptedby.nama_lengkap',
         Cell: ({ row }) => {
-          const { jenis, type } = row.original;
+          const { acceptedby, prioritas } = row.original;
           return (
             <div>
-              <Typography variant="body1">{jenis}</Typography>
+              <Typography variant="body1">{acceptedby?.nama_lengkap || '-'}</Typography>
               <Typography variant="caption" color="secondary">
-                {type}
+                Prioritas {prioritas}
               </Typography>
             </div>
           );
         }
       },
       {
-        id: 'forwarder',
-        Header: 'FWD',
-        accessor: 'forwarder'
+        id: 'totitems',
+        Header: 'Items',
+        accessor: 'totitems'
       },
       {
-        id: 'delivered_at',
-        Header: 'Delivered At',
-        accessor: 'delivered_at',
+        id: 'totpickup',
+        Header: 'Qty Pickup',
+        accessor: 'totpickup',
         Cell: ({ row }) => {
-          const { delivered_at } = row.original;
+          const { totpickup } = row.original;
           return (
             <Stack>
               <Typography variant="body1" color="secondary">
-                {moment(delivered_at).format('DD-MM-YYYY')}
+                {totpickup}
               </Typography>
             </Stack>
           );
         }
       },
       {
-        id: 'estreceived',
-        Header: 'Estimate',
-        accessor: 'est_received',
+        id: 'ctg',
+        Header: 'Kategori',
+        accessor: 'ctg',
         Cell: ({ row }) => {
-          const { est_received } = row.original;
-          return (
-            <Stack>
-              <Typography variant="body1" color="secondary">
-                {moment(est_received).format('DD-MM-YYYY')}
-              </Typography>
-            </Stack>
-          );
-        }
-      },
-      {
-        Header: 'Progress',
-        accessor: 'progress',
-        Cell: ({ value }) => {
-          return <LinearWithLabel value={value} sx={{ minWidth: 75 }} />;
+          return <Typography color="secondary">{row.original.ctg}</Typography>;
         }
       }
     ],

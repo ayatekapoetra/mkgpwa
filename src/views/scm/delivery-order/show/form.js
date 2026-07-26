@@ -29,7 +29,7 @@ import OptionPemasokDelor from 'components/OptionPemasokDelor';
 import WaitOption from '../waitoption';
 import TableItems from './table';
 
-export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBlur, handleChange, values, touched, errors }) {
+export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBlur, handleChange, values, touched, errors, onDelete, isDeleting }) {
   const { bisnisOptions, jenisItemOptions, typeKirimOptions, viaKirimOptions } = useDropdownOptions();
   // console.log('errors.', errors);
   console.log('values.', values);
@@ -229,8 +229,8 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
         <Button type="button" variant="dashed" color="secondary">
           Cancel
         </Button>
-        <Button type="submit" variant="contained" color="error">
-          <Trash variant="Bold" /> <span style={{ marginLeft: '3px' }}>Delete</span>
+        <Button type="button" variant="contained" color="error" onClick={onDelete} disabled={isDeleting}>
+          <Trash variant="Bold" /> <span style={{ marginLeft: '3px' }}>{isDeleting ? 'Deleting...' : 'Delete'}</span>
         </Button>
       </CardActions>
     </Form>

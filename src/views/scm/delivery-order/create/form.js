@@ -1,7 +1,7 @@
 'use client';
 
 // REACT
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // MATERIAL - UI
 import Typography from '@mui/material/Typography';
@@ -113,6 +113,7 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
         <Grid item xs={12} sm={6} lg={6}>
           <OptionPemasokDelor
             value={values.pemasok_id}
+            bisnisId={values.bisnis_id}
             name={'pemasok_id'}
             label="Pemasok"
             error={errors.pemasok_id}
@@ -237,11 +238,25 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
 }
 
 const FormHelpers = ({ setFieldValue, values }) => {
+  const prevBisnisIdRef = useRef(values.bisnis_id);
+
   useEffect(() => {
     if (values.pemasok_id) {
-      setFieldValue('phone_pemasok', values.pemasok.phone);
-      setFieldValue('alamat_pemasok', values.pemasok.alamat);
+      setFieldValue('phone_pemasok', values.pemasok?.phone || '', false);
+      setFieldValue('alamat_pemasok', values.pemasok?.alamat || '', false);
     }
-  }, []);
-  return;
+  }, [values.pemasok_id, values.pemasok, setFieldValue]);
+
+  useEffect(() => {
+    if (prevBisnisIdRef.current !== values.bisnis_id) {
+      prevBisnisIdRef.current = values.bisnis_id;
+      setFieldValue('pemasok_id', '', false);
+      setFieldValue('pemasok', null, false);
+      setFieldValue('phone_pemasok', '', false);
+      setFieldValue('alamat_pemasok', '', false);
+      setFieldValue('items', [], false);
+    }
+  }, [values.bisnis_id, setFieldValue]);
+
+  return null;
 };

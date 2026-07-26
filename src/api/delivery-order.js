@@ -9,11 +9,14 @@ export const endpoints = {
   keypemasok: '/list-prepare-delor',
   list: '/list', // server URL
   prepPickup: '/list-prepare-pickup', // Data prepare for pickup
-  prepOrder: '/list-prepare-delor' // Data prepare for delivery order
+  prepOrder: '/list-prepare-delor', // Data pemasok delivery order
+  prepItems: '/ready-delor' // Data item prepare for delivery order
 };
 
-export const useGetDelorByPemasok = () => {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.prepOrder, fetcher, {
+export const useGetDelorByPemasok = (enabled = true) => {
+  const key = enabled ? `${endpoints.key}${endpoints.prepOrder}` : null;
+
+  const { data, isLoading, error, isValidating } = useSWR(key, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
@@ -141,15 +144,12 @@ export const useShowDeliveryOrder = (id) => {
 };
 
 export const useGetPrepareDo = (pemasok_id) => {
-  const { data, isLoading, error, isValidating, mutate } = useSWR(
-    endpoints.key + endpoints.prepOrder + '?pemasok_id=' + pemasok_id,
-    fetcher,
-    {
-      revalidateIfStale: true,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false
-    }
-  );
+  const key = pemasok_id ? `${endpoints.key}${endpoints.prepItems}?${new URLSearchParams({ pemasok_id })}` : null;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(key, fetcher, {
+    revalidateIfStale: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
 
   const memoizedValue = useMemo(
     () => ({
@@ -187,8 +187,10 @@ export const useGetPrepareDo = (pemasok_id) => {
 //   return memoizedValue;
 // };
 
-export const useGetReadyPickup = (arrselected = []) => {
-  const { data, isLoading, error, isValidating } = useSWR(endpoints.key + endpoints.prepPickup, fetcher, {
+export const useGetReadyPickup = (arrselected = [], enabled = true) => {
+  const key = enabled ? endpoints.key + endpoints.prepPickup : null;
+
+  const { data, isLoading, error, isValidating } = useSWR(key, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: false

@@ -65,7 +65,7 @@ export default function WaitOrderOption({ remove, push, open, onClose, pemasok, 
         setStateSelected(results);
         setFieldValue(
           'items',
-          results.map((m) => ({ ...m, pickup: m.qty_do }))
+          results.map((m) => ({ ...m, pickup: getRemainingQty(m), remaining_qty: getRemainingQty(m), existing_pickup: m.pickup }))
         );
 
         return { ...currentData, rows: rowUpdated };
@@ -79,6 +79,7 @@ export default function WaitOrderOption({ remove, push, open, onClose, pemasok, 
       const updatedRows = currentData?.rows.map((item) => {
         if (item.id === id) {
           const isSelected = !item.selected;
+          const remainingQty = getRemainingQty(item);
 
           // Tambah ke Formik jika selected
           if (isSelected) {
@@ -91,10 +92,12 @@ export default function WaitOrderOption({ remove, push, open, onClose, pemasok, 
                 narasi: item.narasi,
                 barang: item.barang,
                 qty_do: item.qty_do,
+                existing_pickup: item.pickup,
+                remaining_qty: remainingQty,
                 satuan: item.satuan,
                 noberkas: item.kode_po || item.kode_pd || item.kode_transfer,
                 harga: item.harga,
-                pickup: item.qty_do
+                pickup: remainingQty
               });
             }
           } else {
@@ -203,6 +206,8 @@ function HeaderFilter({ count = 0, onClose }) {
 }
 
 function CardOptions({ data, handleSelect }) {
+  const remainingQty = getRemainingQty(data);
+
   if (data?.kode_po) {
     var kodeBerkas = <Typography variant="h5">{data?.kode_po}</Typography>;
     var typeBerkas = <Typography variant="body1">Purchase Order</Typography>;
@@ -259,9 +264,15 @@ function CardOptions({ data, handleSelect }) {
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Jumlah & Satuan:
                 </Typography>
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="body1">{data?.qty_do}</Typography>
-                  <Typography variant="body1">{data?.satuan}</Typography>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Stack>
+                    <Typography variant="body1">
+                      Total: {data?.qty_do} {data?.satuan}
+                    </Typography>
+                    <Typography variant="caption" color="secondary">
+                      Sisa DO: {remainingQty} {data?.satuan}
+                    </Typography>
+                  </Stack>
                 </Stack>
               </Stack>
               <Divider />
@@ -284,4 +295,11 @@ function CardOptions({ data, handleSelect }) {
       </Grid>
     );
   }
+}
+
+function getRemainingQty(item) {
+  const qtyDo = Number(item?.qty_do || 0);
+  const qtyPickup = Number(item?.pickup || 0);
+
+  return Math.max(qtyDo - qtyPickup, 0);
 }

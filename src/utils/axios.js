@@ -13,6 +13,20 @@ const axiosServices = axios.create({
   },
 });
 
+function normalizeJsonPayload(data) {
+  let parsed = data;
+
+  for (let attempt = 0; attempt < 2 && typeof parsed === "string"; attempt += 1) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return data;
+    }
+  }
+
+  return parsed && typeof parsed === "object" ? parsed : data;
+}
+
 axiosServices.interceptors.request.use(
   async (config) => {
     const session = await getSession();
@@ -20,6 +34,11 @@ axiosServices.interceptors.request.use(
 
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const contentType = config.headers?.["Content-Type"] || config.headers?.get?.("Content-Type");
+    if (typeof config.data === "string" && contentType?.includes("application/json")) {
+      config.data = normalizeJsonPayload(config.data);
     }
 
     // Prevent double "/api/api" when baseURL already has /api and url also starts with /api/
@@ -56,6 +75,9 @@ axiosServices.interceptors.response.use(
       typeof navigator !== "undefined" &&
       !navigator.onLine
     ) {
+      if (error.config?.skipOfflineQueue) {
+        return Promise.reject(new Error("Fitur ini memerlukan koneksi internet"));
+      }
       if (
         typeof window !== "undefined" &&
         window.location.hostname === "localhost"

@@ -7,6 +7,8 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 // import TableFooter from '@mui/material/TableFooter';
 import IconButton from '@mui/material/IconButton';
 
@@ -19,8 +21,8 @@ import { useTable, useFilters, useGlobalFilter, useBlockLayout, useResizeColumns
 
 import { DefaultColumnFilter, renderFilterTypes } from 'utils/react-table';
 
-const TableItems = ({ data = [], values, setFieldValue, remove, mutate }) => {
-  const columns = useTableColumns(values, setFieldValue, remove, mutate);
+const TableItems = ({ data = [], setFieldValue, remove, mutate }) => {
+  const columns = useTableColumns(setFieldValue, remove, mutate);
 
   const filterTypes = useMemo(() => renderFilterTypes, []);
   const defaultColumn = useMemo(
@@ -51,12 +53,16 @@ const TableItems = ({ data = [], values, setFieldValue, remove, mutate }) => {
     <ScrollX>
       <Table {...getTableProps()} size="small">
         <TableHead>
-          {headerGroups.map((headerGroup) => (
-            <TableRow key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
+          {headerGroups.map((headerGroup) => {
+            const { key, ...restHeaderGroupProps } = headerGroup.getHeaderGroupProps();
+            return (
+            <TableRow key={key || headerGroup.id} {...restHeaderGroupProps}>
+              {headerGroup.headers.map((column) => {
+                const { key: columnKey, ...restColumnProps } = column.getHeaderProps();
+                return (
                 <TableCell
-                  key={column.id}
-                  {...column.getHeaderProps()}
+                  key={columnKey || column.id}
+                  {...restColumnProps}
                   style={{
                     width: column.width,
                     position: 'relative',
@@ -83,22 +89,25 @@ const TableItems = ({ data = [], values, setFieldValue, remove, mutate }) => {
                     />
                   )}
                 </TableCell>
-              ))}
+              )})}
             </TableRow>
-          ))}
+          )})}
         </TableHead>
 
         <TableBody {...getTableBodyProps()}>
           {rows.length > 0 ? (
             rows.map((row) => {
               prepareRow(row);
+              const { key, ...restRowProps } = row.getRowProps();
               return (
-                <TableRow key={row.id || row.index} {...row.getRowProps()}>
-                  {row.cells.map((cell) => (
-                    <TableCell key={cell.column.id} {...cell.getCellProps()}>
+                <TableRow key={key || row.id || row.index} {...restRowProps}>
+                  {row.cells.map((cell) => {
+                    const { key: cellKey, ...restCellProps } = cell.getCellProps();
+                    return (
+                    <TableCell key={cellKey || cell.column.id} {...restCellProps}>
                       {cell.render('Cell')}
                     </TableCell>
-                  ))}
+                  )})}
                 </TableRow>
               );
             })
@@ -113,7 +122,7 @@ const TableItems = ({ data = [], values, setFieldValue, remove, mutate }) => {
 
 export default TableItems;
 
-function useTableColumns(values, setFieldValue, remove, mutate) {
+function useTableColumns(setFieldValue, remove, mutate) {
   return useMemo(
     () => [
       {
@@ -148,11 +157,16 @@ function useTableColumns(values, setFieldValue, remove, mutate) {
         maxWidth: 300,
         resizable: true,
         Cell: ({ row }) => {
-          const { qty_do, satuan } = row.original;
+          const { qty_do, remaining_qty, satuan } = row.original;
           return (
-            <Typography variant="body1">
-              {qty_do} {satuan}
-            </Typography>
+            <Stack>
+              <Typography variant="body1">
+                Total: {qty_do} {satuan}
+              </Typography>
+              <Typography variant="caption" color="secondary">
+                Sisa DO: {remaining_qty ?? qty_do} {satuan}
+              </Typography>
+            </Stack>
           );
         }
       },
@@ -168,14 +182,42 @@ function useTableColumns(values, setFieldValue, remove, mutate) {
         }
       },
       {
-        Header: () => <div style={{ textAlign: 'right' }}>Perintah Pickup</div>,
+        Header: 'Pickup?',
+        id: 'is_pickup',
+        width: 140,
+        maxWidth: 160,
+        resizable: true,
+        Cell: ({ row }) => {
+          const { is_pickup } = row.original;
+          const checked = is_pickup === 'Y';
+
+          return (
+            <FormControlLabel
+              sx={{ m: 0 }}
+              control={
+                <Switch
+                  size="small"
+                  checked={checked}
+                  onChange={(e) => {
+                    const nextValue = e.target.checked ? 'Y' : 'N';
+                    setFieldValue(`items.${row.index}.is_pickup`, nextValue, false);
+                  }}
+                />
+              }
+              label={checked ? 'Ya' : 'Tidak'}
+            />
+          );
+        }
+      },
+      {
+        Header: () => <div style={{ textAlign: 'right' }}>Qty DO</div>,
         id: 'perintahpickup',
         width: 180,
         maxWidth: 200,
         resizable: true,
         Cell: ({ row }) => {
           const itemId = row.original.id;
-          const pickupValue = values?.items.find((item) => item.id === itemId)?.pickup || '';
+          const { satuan, remaining_qty, qty_do, pickup, is_pickup } = row.original;
           const handleChange = (e) => {
             setFieldValue(`items.${row.index}.pickup`, e.target.value, false);
           };
@@ -186,10 +228,13 @@ function useTableColumns(values, setFieldValue, remove, mutate) {
                 label="Qty Pickup"
                 name={`pickup-${itemId}`}
                 placeholder="Pickup"
-                value={pickupValue}
+                value={pickup ?? ''}
                 onChange={handleChange}
                 startAdornment={<TruckTick />}
               />
+              <Typography variant="caption" color="secondary">
+                Maks {remaining_qty ?? qty_do} {satuan} • {is_pickup === 'Y' ? 'Butuh pickup barang' : 'Tanpa pickup barang'}
+              </Typography>
             </div>
           );
         }
@@ -202,12 +247,11 @@ function useTableColumns(values, setFieldValue, remove, mutate) {
         resizable: false,
         Cell: ({ row }) => {
           const itemId = row.original.id;
-          const index = values?.items.findIndex((item) => item.id === itemId);
           return (
             <IconButton
               color="error"
               onClick={() => {
-                if (index !== -1) remove?.(index);
+                remove?.(row.index);
                 mutate?.((currentData) => {
                   const result = currentData.rows.map((m) => (m.id === itemId ? { ...m, selected: !m.selected } : m));
                   return { ...currentData, rows: result };
@@ -220,6 +264,6 @@ function useTableColumns(values, setFieldValue, remove, mutate) {
         }
       }
     ],
-    [values, setFieldValue, remove, mutate]
+    [setFieldValue, remove, mutate]
   );
 }

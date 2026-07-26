@@ -71,7 +71,8 @@ export default function FormCreateScreen() {
     items: Yup.array()
       .of(
         Yup.object().shape({
-          pickup: Yup.number().required('Qty perintah pickup wajib diisi').min(1, 'Jumlah minimal 1')
+          is_pickup: Yup.string().oneOf(['Y', 'N']).default('N'),
+          pickup: Yup.number().required('Qty item wajib diisi').min(1, 'Jumlah minimal 1')
         })
       )
       .min(1, 'Minimal 1 item harus diisi')
@@ -80,7 +81,7 @@ export default function FormCreateScreen() {
   const onSubmitHandle = async (values) => {
     // console.log(values);
     try {
-      const resp = await axiosServices.post('/msc/delivery-order/create', values);
+      const resp = await axiosServices.post('/scm/delivery-order/create', values);
       console.log('resp-api.', resp);
       openNotification(msgSuccess);
       router.push('/delivery-order');

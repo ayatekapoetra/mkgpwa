@@ -1,29 +1,34 @@
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete } from '@mui/material';
 // import { useGetPemasokDelor } from 'api/pemasok';
-import { useGetPrepareDo } from 'api/delivery-order';
+import { useGetDelorByPemasok } from 'api/delivery-order';
 import InputSkeleton from './InputSkeleton';
 
 const OptionPemasokDelor = ({
   value = '',
+  bisnisId = '',
   label = 'Pemasok',
   name = 'pemasok_id',
   error = null, // Tambahkan prop error
   touched = false, // Tambahkan prop touched
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetPrepareDo(value);
-  console.log('ARRAY---', array);
-  
-  if (dataLoading || !array) {
+  const { data: array, dataLoading } = useGetDelorByPemasok(Boolean(bisnisId));
+
+  if (bisnisId && dataLoading) {
     return <InputSkeleton height={30} />;
   }
+
+  const safeArray = array || [];
+
   return (
     <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
+          disabled={!bisnisId}
           fullWidth
-          options={array}
-          value={array.find((option) => option?.id == value) || null}
+          options={safeArray}
+          noOptionsText={bisnisId ? 'Pemasok tidak tersedia' : 'Pilih bisnis unit terlebih dahulu'}
+          value={safeArray.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
             setFieldValue('pemasok', newValue || null);

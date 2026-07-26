@@ -36,7 +36,7 @@ const OptionCabang = ({
                     {option.nama}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {option.bisnis.name}
+                    {option.bisnis?.name || '-'}
                   </Typography>
                 </Stack>
                 <Badge badgeContent={option.type} color="primary" sx={{ mt: 1 }} />

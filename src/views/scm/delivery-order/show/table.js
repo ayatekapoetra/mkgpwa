@@ -71,12 +71,16 @@ const TableItems = ({ data = [], values, setFieldValue }) => {
     <ScrollX>
       <Table {...getTableProps()} size="small">
         <TableHead>
-          {headerGroups.map((headerGroup) => (
-            <TableRow key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
+          {headerGroups.map((headerGroup) => {
+            const { key, ...restHeaderGroupProps } = headerGroup.getHeaderGroupProps();
+            return (
+            <TableRow key={key || headerGroup.id} {...restHeaderGroupProps}>
+              {headerGroup.headers.map((column) => {
+                const { key: columnKey, ...restColumnProps } = column.getHeaderProps();
+                return (
                 <TableCell
-                  key={column.id}
-                  {...column.getHeaderProps()}
+                  key={columnKey || column.id}
+                  {...restColumnProps}
                   style={{
                     width: column.width,
                     position: 'relative',
@@ -103,22 +107,25 @@ const TableItems = ({ data = [], values, setFieldValue }) => {
                     />
                   )}
                 </TableCell>
-              ))}
+              )})}
             </TableRow>
-          ))}
+          )})}
         </TableHead>
 
         <TableBody {...getTableBodyProps()}>
           {rows.length > 0 ? (
             rows.map((row) => {
               prepareRow(row);
+              const { key, ...restRowProps } = row.getRowProps();
               return (
-                <TableRow key={row.id || row.index} {...row.getRowProps()}>
-                  {row.cells.map((cell) => (
-                    <TableCell key={cell.column.id} {...cell.getCellProps()}>
+                <TableRow key={key || row.id || row.index} {...restRowProps}>
+                  {row.cells.map((cell) => {
+                    const { key: cellKey, ...restCellProps } = cell.getCellProps();
+                    return (
+                    <TableCell key={cellKey || cell.column.id} {...restCellProps}>
                       {cell.render('Cell')}
                     </TableCell>
-                  ))}
+                  )})}
                 </TableRow>
               );
             })

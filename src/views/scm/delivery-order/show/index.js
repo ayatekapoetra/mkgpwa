@@ -1,7 +1,7 @@
 'use client';
 
 // REACT
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
@@ -12,16 +12,16 @@ import { APP_DEFAULT_PATH } from 'config';
 import * as Yup from 'yup';
 // import moment from 'moment';
 import { Formik } from 'formik';
-// import axiosServices from 'utils/axios';
+import axiosServices from 'utils/axios';
 import {
-  // useRouter,
+  useRouter,
   useParams
 } from 'next/navigation';
 
 import BtnBack from 'components/BtnBack';
 import FormikFormCreate from './form';
 import AlertNotification from 'components/@extended/AlertNotification';
-// import { openNotification } from 'api/notification';
+import { openNotification } from 'api/notification';
 import { useShowDeliveryOrder } from 'api/delivery-order';
 
 const breadcrumbLinks = [
@@ -32,8 +32,9 @@ const breadcrumbLinks = [
 
 export default function FormShowScreen() {
   const { id } = useParams();
-  // const router = useRouter();
+  const router = useRouter();
   const { data: initialValues, dataLoading } = useShowDeliveryOrder(id);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   console.log('ID.', initialValues);
 
@@ -70,6 +71,32 @@ export default function FormShowScreen() {
     // }
   };
 
+  const onDeleteHandle = async () => {
+    const confirmed = window.confirm('Hapus delivery order ini?');
+    if (!confirmed || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await axiosServices.post(`/scm/delivery-order/${id}/destroy`);
+      openNotification({
+        open: true,
+        title: 'success',
+        message: 'Delivery Order berhasil dihapus...',
+        alert: { color: 'success' }
+      });
+      router.push('/delivery-order');
+    } catch (error) {
+      openNotification({
+        open: true,
+        title: 'error',
+        message: error?.diagnostic?.error || error?.message || 'Delivery Order gagal dihapus...',
+        alert: { color: 'error' }
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Fragment>
       <Breadcrumbs custom heading={'Detail Delivery Order'} links={breadcrumbLinks} />
@@ -77,7 +104,7 @@ export default function FormShowScreen() {
         <AlertNotification />
         <Formik initialValues={initialValues} validationSchema={validationSchema} enableReinitialize={true} onSubmit={onSubmitHandle}>
           {(formikProps) => {
-            return !dataLoading && <FormikFormCreate {...formikProps} />;
+            return !dataLoading && <FormikFormCreate {...formikProps} onDelete={onDeleteHandle} isDeleting={isDeleting} />;
           }}
         </Formik>
       </MainCard>
