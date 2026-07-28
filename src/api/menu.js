@@ -96,6 +96,40 @@ export function useGetMenu() {
       }
     }
 
+    const reportMenu = dashboardChildren.find((item) => {
+      const title = (item?.title || '').toString().trim().toLowerCase();
+      const id = (item?.id || '').toString().trim().toLowerCase();
+      const isReportGroup = title.includes('report') || title.includes('laporan') || id.includes('report') || id.includes('laporan');
+      return Array.isArray(item?.children) && isReportGroup;
+    });
+
+    if (reportMenu && Array.isArray(reportMenu.children)) {
+      const reportItems = [
+        {
+          id: 'operating-history',
+          title: 'Operating History',
+          type: 'item',
+          url: '/laporan/operating-history',
+          icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
+          breadcrumbs: true
+        },
+        {
+          id: 'operating-history-detail',
+          title: 'Operating History Detail',
+          type: 'item',
+          url: '/laporan/operating-history-detail',
+          icon: getMenuIcon('documentText'),
+          breadcrumbs: true
+        }
+      ];
+
+      reportItems.forEach((reportItem) => {
+        if (!reportMenu.children.some((item) => item?.url === reportItem.url)) {
+          reportMenu.children.push(reportItem);
+        }
+      });
+    }
+
     const result = {
       ...data,
       dashboard: {
