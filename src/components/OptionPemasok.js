@@ -1,41 +1,59 @@
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete } from '@mui/material';
-import { useGetPenyewa } from 'api/penyewa';
+import { usePengajuanDanaPemasoks } from 'api/pengajuan-dana';
+import InputSkeleton from './InputSkeleton';
 
 const OptionPemasok = ({
   value = '',
-  label = 'Penyewa',
-  name = 'penyewa_id',
-  error = null, // Tambahkan prop error
-  // helperText = null, // Tambahkan prop helperText
-  touched = false, // Tambahkan prop touched
+  bisnisId = '',
+  label = 'Pemasok',
+  name = 'pemasok_id',
+  error = null,
+  touched = false,
+  disabled = false,
   setFieldValue
 }) => {
-  const { data: array, dataLoading } = useGetPenyewa();
-  if (dataLoading || !array) {
-    return <div>Loading...</div>;
+  const { rows, loading } = usePengajuanDanaPemasoks(bisnisId ? { bisnis_id: bisnisId } : {});
+  const options = Array.isArray(rows) ? rows : [];
+
+  if (loading) {
+    return <InputSkeleton height={40} />;
   }
+
   return (
-    <Stack mt={2} justifyContent="flex-start" alignItems="flex-start">
+    <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array.find((option) => option?.id == value) || null}
-          onChange={(e, newValue) => {
-            // setData((prev) => ({ ...prev, assigner_id: newValue?.id || '' }));
-            setFieldValue(name, newValue?.id || '');
+          disabled={disabled}
+          options={options}
+          value={options.find((option) => String(option?.id) === String(value)) || null}
+          onChange={(_e, newValue) => {
+            setFieldValue(name, newValue?.id != null ? String(newValue.id) : '');
           }}
-          isOptionEqualToValue={(option, value) => option.id === value?.id}
-          getOptionLabel={(option) => option.nama || ''}
+          isOptionEqualToValue={(option, selected) => String(option?.id) === String(selected?.id)}
+          getOptionLabel={(option) => {
+            if (!option) return '';
+            const prefix = option.kode ? `[${option.kode}] ` : '';
+            return `${prefix}${option.nama || ''}`;
+          }}
           sx={{ '& .MuiInputBase-root': { py: 0.9 } }}
           renderOption={(props, option) => (
-            <li {...props} key={`${option.id}-${option.label}`}>
+            <li {...props} key={`${option.id}-${option.kode || option.nama}`}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1 }}>
-                <Typography variant="body1">{option.nama}</Typography>
+                <Stack>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {option.nama}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {option.kode || '-'}
+                  </Typography>
+                </Stack>
               </Box>
             </li>
           )}
-          renderInput={(params) => <TextField {...params} label={label} error={touched && Boolean(error)} helperText={touched && error} />}
+          renderInput={(params) => (
+            <TextField {...params} label={label} error={touched && Boolean(error)} helperText={touched && error} />
+          )}
         />
       </FormControl>
     </Stack>

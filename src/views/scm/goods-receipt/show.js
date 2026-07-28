@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -8,15 +9,17 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-import { ArchiveBook, Calendar, Location, Profile2User } from 'iconsax-react';
+import { ArchiveBook, Barcode, Calendar, Location, Profile2User } from 'iconsax-react';
 import { useParams } from 'next/navigation';
 
 import MainCard from 'components/MainCard';
@@ -26,6 +29,8 @@ import ScrollX from 'components/ScrollX';
 import { APP_DEFAULT_PATH } from 'config';
 
 import { useShowGoodsReceipt } from 'api/goods-receipt';
+import axiosServices from 'utils/axios';
+import { openNotification } from 'api/notification';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -36,6 +41,32 @@ const breadcrumbLinks = [
 export default function GoodsReceiptShowScreen() {
   const { id } = useParams();
   const { data, dataLoading, dataError } = useShowGoodsReceipt(id);
+  const [isPrintingLabel, setIsPrintingLabel] = useState(false);
+
+  const handlePrintQrcode = async (barangId, harga) => {
+    if (!barangId || isPrintingLabel) return;
+
+    setIsPrintingLabel(true);
+    try {
+      const response = await axiosServices.get(`/scm/terima-barang/${barangId}/print-qrcode/${harga || 0}`, {
+        responseType: 'blob',
+        skipOfflineQueue: true
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      openNotification({
+        open: true,
+        title: 'error',
+        message: error?.response?.data?.diagnostic?.error || error?.message || 'Gagal mencetak label QR barang.',
+        alert: { color: 'error' }
+      });
+    } finally {
+      setIsPrintingLabel(false);
+    }
+  };
 
   return (
     <Fragment>
@@ -91,10 +122,18 @@ export default function GoodsReceiptShowScreen() {
 
             <MainCard content={false} title={<Typography>Items Penerimaan</Typography>}>
               <ScrollX>
-                <Table size="small">
+                <Table
+                  size="small"
+                  sx={{
+                    minWidth: 980,
+                    width: 'max-content',
+                    '& .MuiTableCell-root': { whiteSpace: 'nowrap', verticalAlign: 'top' }
+                  }}
+                >
                   <TableHead>
                     <TableRow>
                       <TableCell>No</TableCell>
+                      <TableCell align="center">Label</TableCell>
                       <TableCell>Barang</TableCell>
                       <TableCell>Pemasok</TableCell>
                       <TableCell>Rack</TableCell>
@@ -106,16 +145,43 @@ export default function GoodsReceiptShowScreen() {
                     {(data.items || []).map((item, index) => (
                       <TableRow key={item.id} hover>
                         <TableCell>{index + 1}</TableCell>
+                        <TableCell align="center" sx={{ minWidth: 90 }}>
+                          <Tooltip title="Cetak label barcode barang">
+                            <span>
+                              <IconButton color="secondary" size="small" onClick={() => handlePrintQrcode(item.barang_id, item.harga)} disabled={!item.barang_id || isPrintingLabel} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                                <Barcode size={18} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </TableCell>
                         <TableCell>
                           <Stack spacing={0.5}>
                             <Typography variant="body2">{item.barang?.kode || '-'}</Typography>
                             <Typography variant="caption" color="text.secondary">{item.barang?.nama || item.description || '-'}</Typography>
                           </Stack>
                         </TableCell>
-                        <TableCell>{item.pemasok?.nama || '-'}</TableCell>
-                        <TableCell>{item.rack?.kode ? `${item.rack.kode} - ${item.rack.nama || '-'}` : '-'}</TableCell>
+                        <TableCell sx={{ minWidth: 220, whiteSpace: 'normal !important' }}>
+                          <Stack spacing={0.35}>
+                            <Typography variant="body2">{item.pemasok?.nama || '-'}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                              {item.pemasok?.alamat || '-'}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 180, whiteSpace: 'normal !important' }}>
+                          {item.rack?.kode ? (
+                            <Stack spacing={0.35}>
+                              <Typography variant="body2">{item.rack.kode}</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                {item.rack.nama || '-'}
+                              </Typography>
+                            </Stack>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
                         <TableCell align="right">{item.qty} {item.uom}</TableCell>
-                        <TableCell align="right">{item.harga}</TableCell>
+                        <TableCell align="right">{formatCurrency(item.harga)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -137,4 +203,9 @@ function InfoRow({ icon, label, value }) {
       <Typography variant="body2" fontWeight={600}>{value}</Typography>
     </Stack>
   );
+}
+
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+  return `Rp ${amount.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }

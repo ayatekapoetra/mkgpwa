@@ -41,8 +41,8 @@ const msgError = {
 
 const initialValues = {
   do_date: moment().format('YYYY-MM-DD'),
-  delivered_at: new Date().toISOString().slice(0, 16),
-  est_received: new Date().toISOString().slice(0, 16),
+  delivered_at: moment().format('DD-MM-YYYY HH:mm'),
+  est_received: moment().format('DD-MM-YYYY HH:mm'),
   bisnis_id: '',
   pemasok_id: '',
   pemasok: null,
@@ -55,14 +55,23 @@ const initialValues = {
   items: []
 };
 
+function toSqlDateTime(value) {
+  const parsed = moment(value, ['DD-MM-YYYY HH:mm', 'YYYY-MM-DDTHH:mm', 'YYYY-MM-DD HH:mm:ss', moment.ISO_8601], true);
+  return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm:ss') : null;
+}
+
 export default function FormCreateScreen() {
   const router = useRouter();
+  const dateTimeSchema = Yup.string()
+    .required('Tanggal wajib diisi')
+    .test('valid-datetime', 'Format tanggal dan waktu tidak valid', (value) => !value || moment(value, 'DD-MM-YYYY HH:mm', true).isValid());
+
   const validationSchema = Yup.object().shape({
     do_date: Yup.date().required('Tanggal wajib diisi'),
     bisnis_id: Yup.string().required('Bisnis unit oleh harus terisi'),
     pemasok_id: Yup.string().required('Pemasok wajib diisi'),
-    delivered_at: Yup.date().required('Tanggal estimasi kirim wajib diisi'),
-    est_received: Yup.date().required('Tanggal estimasi tiba wajib diisi'),
+    delivered_at: dateTimeSchema.label('Tanggal estimasi kirim'),
+    est_received: dateTimeSchema.label('Tanggal estimasi tiba'),
     narasi: Yup.string().required('Keterangan wajib diisi'),
     via: Yup.string().required('Via pengiriman wajib diisi'),
     type: Yup.string().required('Type pengiriman wajib diisi'),
@@ -79,9 +88,14 @@ export default function FormCreateScreen() {
   });
 
   const onSubmitHandle = async (values) => {
-    // console.log(values);
     try {
-      const resp = await axiosServices.post('/scm/delivery-order/create', values);
+      const payload = {
+        ...values,
+        delivered_at: toSqlDateTime(values.delivered_at),
+        est_received: toSqlDateTime(values.est_received)
+      };
+
+      const resp = await axiosServices.post('/scm/delivery-order/create', payload);
       console.log('resp-api.', resp);
       openNotification(msgSuccess);
       router.push('/delivery-order');

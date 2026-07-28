@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from 'react';
 
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -34,7 +35,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useShowShippingOrder } from 'api/shipping-order';
 import { openNotification } from 'api/notification';
 import axiosServices from 'utils/axios';
-import { ArchiveBook, Calendar, Location, Profile2User, Trash } from 'iconsax-react';
+import { ArchiveBook, Calendar, Printer, Location, Profile2User, Trash } from 'iconsax-react';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -48,6 +49,7 @@ export default function FormShowScreen() {
   const { data, dataLoading, dataError } = useShowShippingOrder(id);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -76,6 +78,31 @@ export default function FormShowScreen() {
     }
   };
 
+  const handlePrint = async () => {
+    if (isPrinting) return;
+
+    setIsPrinting(true);
+    try {
+      const response = await axiosServices.get(`/scm/shipping-order/${id}/print`, {
+        responseType: 'blob',
+        skipOfflineQueue: true
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      openNotification({
+        open: true,
+        title: 'error',
+        message: error?.response?.data?.diagnostic?.error || error?.message || 'Dokumen shipping gagal dicetak...',
+        alert: { color: 'error' }
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   return (
     <Fragment>
       <Breadcrumbs custom heading={'Detail Shipping Order'} links={breadcrumbLinks} />
@@ -93,35 +120,94 @@ export default function FormShowScreen() {
               sx={{
                 p: { xs: 2, md: 3 },
                 borderRadius: 3,
-                bgcolor: 'secondary.200',
-                borderLeft: '4px solid',
-                borderLeftColor: 'primary.main'
+                background: (theme) => `linear-gradient(135deg, ${theme.palette.secondary[100]} 0%, ${theme.palette.background.paper} 100%)`,
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow: 1
               }}
             >
-              <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
-                <Stack spacing={1}>
-                  <Typography variant="overline" color="text.secondary">
-                    Shipping Order
-                  </Typography>
-                  <Typography variant="h3">{data.kode}</Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 720 }}>
-                    {data.narasi || 'Tidak ada keterangan.'}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    <Chip
-                      label={data.status === 'received' ? 'Diterima' : 'Pending'}
-                      color={data.status === 'received' ? 'success' : 'warning'}
-                      variant="filled"
-                    />
-                    <Chip label={data.gudangTujuan?.nama || 'Tanpa gudang tujuan'} color="default" variant="filled" />
+              <Grid container spacing={2.5} alignItems="stretch">
+                <Grid item xs={12} lg={8}>
+                  <Stack spacing={1.5} sx={{ height: '100%' }}>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Typography variant="overline" color="text.secondary">
+                        Shipping Order
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={data.status === 'received' ? 'Diterima' : 'Pending'}
+                        color={data.status === 'received' ? 'success' : 'warning'}
+                        variant="filled"
+                      />
+                    </Stack>
+
+                    <Typography variant="h3" sx={{ lineHeight: 1.1 }}>
+                      {data.kode}
+                    </Typography>
+
+                    <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
+                      {data.narasi || 'Tidak ada keterangan.'}
+                    </Typography>
+
+                    <Grid container spacing={1.5} sx={{ pt: 0.5 }}>
+                      <Grid item xs={12} sm={6} md={4}>
+                        <InfoTile
+                          label="Tanggal Kirim"
+                          value={data.trx_date ? moment(data.trx_date).format('DD MMM YYYY') : '-'}
+                          icon={<Calendar size={18} />}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={4}>
+                        <InfoTile
+                          label="Gudang Tujuan"
+                          value={data.gudangTujuan?.nama || 'Tanpa gudang tujuan'}
+                          icon={<Location size={18} />}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={4}>
+                        <InfoTile
+                          label="Penerima"
+                          value={data.nm_penerima || '-'}
+                          icon={<Profile2User size={18} />}
+                        />
+                      </Grid>
+                    </Grid>
                   </Stack>
-                </Stack>
-                <Stack direction={{ xs: 'row', md: 'column' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'flex-end' }}>
-                  <Button variant="contained" color="error" startIcon={<Trash />} onClick={() => setOpenDeleteDialog(true)}>
-                    Delete
-                  </Button>
-                </Stack>
-              </Stack>
+                </Grid>
+
+                <Grid item xs={12} lg={4}>
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      height: '100%'
+                    }}
+                  >
+                    <Stack spacing={2} justifyContent="space-between" sx={{ height: '100%' }}>
+                      <Stack spacing={1.25}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Ringkasan Dokumen
+                        </Typography>
+                        <InfoLine label="Pengirim" value={data.nm_pengirim || '-'} />
+                        <InfoLine label="Phone Pengirim" value={data.phone_pengirim || '-'} />
+                        <InfoLine label="Phone Penerima" value={data.phone_penerima || '-'} />
+                      </Stack>
+
+                      <Stack direction="row" spacing={1.5} justifyContent={{ xs: 'flex-start', sm: 'flex-end' }} flexWrap="wrap" useFlexGap>
+                        <IconButton variant="contained" shape="rounded" color="secondary" onClick={handlePrint} disabled={isPrinting}>
+                          <Printer />
+                        </IconButton>
+                        <IconButton variant="contained" shape="rounded" color="error" onClick={() => setOpenDeleteDialog(true)}>
+                          <Trash />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+                  </Box>
+                </Grid>
+              </Grid>
             </Box>
 
             <Grid container spacing={2.5}>
@@ -227,6 +313,47 @@ function InfoRow({ icon, label, value }) {
         {label}
       </Typography>
       <Typography variant="body2" fontWeight={600}>
+        {value}
+      </Typography>
+    </Stack>
+  );
+}
+
+function InfoTile({ icon, label, value }) {
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: 2,
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        height: '100%'
+      }}
+    >
+      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+        <Box sx={{ color: 'primary.main', display: 'flex', mt: 0.25 }}>{icon}</Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="caption" color="text.secondary">
+            {label}
+          </Typography>
+          <Typography variant="body2" fontWeight={700} sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+            {value}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+function InfoLine({ label, value }) {
+  return (
+    <Stack direction="row" spacing={1} alignItems="flex-start">
+      <Typography variant="caption" color="text.secondary" sx={{ minWidth: 96 }}>
+        {label}
+      </Typography>
+      <Typography variant="caption" color="text.secondary">:</Typography>
+      <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
         {value}
       </Typography>
     </Stack>

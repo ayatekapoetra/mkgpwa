@@ -5,12 +5,15 @@ import { DateRange } from '@mui/icons-material';
 import { useField } from 'formik';
 import { Stack, FormControl, InputLabel, OutlinedInput, InputAdornment, FormHelperText } from '@mui/material';
 
+const INPUT_FORMATS = ['DD-MM-YYYY HH:mm', 'YYYY-MM-DDTHH:mm', 'YYYY-MM-DD HH:mm:ss', moment.ISO_8601];
+
 const InputDateTime = ({ label, inputProps = {}, minDate, maxDate, ...props }) => {
   const [field, meta, helpers] = useField(props);
   const hasError = Boolean(meta.touched && meta.error);
   const id = `${field.name}-datetime-input`;
 
-  const inputValue = field.value ? moment(field.value, 'DD-MM-YYYY HH:mm').format('YYYY-MM-DDTHH:mm') : '';
+  const parsedValue = field.value ? moment(field.value, INPUT_FORMATS, true) : null;
+  const inputValue = parsedValue?.isValid() ? parsedValue.format('YYYY-MM-DDTHH:mm') : '';
 
   // Ubah format min & max agar sesuai standar input datetime-local
   const formattedMin = minDate ? moment(minDate).format('YYYY-MM-DDTHH:mm') : undefined;
@@ -19,7 +22,7 @@ const InputDateTime = ({ label, inputProps = {}, minDate, maxDate, ...props }) =
   const handleChange = (event) => {
     const rawValue = event.target.value;
     if (rawValue) {
-      const formatted = moment(rawValue, 'YYYY-MM-DDTHH:mm').format('DD-MM-YYYY HH:mm');
+      const formatted = moment(rawValue, 'YYYY-MM-DDTHH:mm', true).format('DD-MM-YYYY HH:mm');
       helpers.setValue(formatted);
     } else {
       helpers.setValue('');

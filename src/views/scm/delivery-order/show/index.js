@@ -10,7 +10,7 @@ import { APP_DEFAULT_PATH } from 'config';
 
 // THIRD - PARTY
 import * as Yup from 'yup';
-// import moment from 'moment';
+import moment from 'moment';
 import { Formik } from 'formik';
 import axiosServices from 'utils/axios';
 import {
@@ -36,14 +36,18 @@ export default function FormShowScreen() {
   const { data: initialValues, dataLoading } = useShowDeliveryOrder(id);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const dateTimeSchema = Yup.string()
+    .required('Tanggal wajib diisi')
+    .test('valid-datetime', 'Format tanggal dan waktu tidak valid', (value) => !value || moment(value, 'DD-MM-YYYY HH:mm', true).isValid());
+
   console.log('ID.', initialValues);
 
   const validationSchema = Yup.object().shape({
     do_date: Yup.date().required('Tanggal wajib diisi'),
     bisnis_id: Yup.string().required('Bisnis unit oleh harus terisi'),
     pemasok_id: Yup.string().required('Pemasok wajib diisi'),
-    delivered_at: Yup.date().required('Tanggal estimasi kirim wajib diisi'),
-    est_received: Yup.date().required('Tanggal estimasi tiba wajib diisi'),
+    delivered_at: dateTimeSchema.label('Tanggal estimasi kirim'),
+    est_received: dateTimeSchema.label('Tanggal estimasi tiba'),
     narasi: Yup.string().required('Keterangan wajib diisi'),
     via: Yup.string().required('Via pengiriman wajib diisi'),
     type: Yup.string().required('Type pengiriman wajib diisi'),

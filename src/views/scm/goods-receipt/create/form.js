@@ -14,6 +14,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -22,9 +23,11 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 import { SearchNormal1 } from 'iconsax-react';
+import { Barcode } from 'iconsax-react';
 
 import Paginate from 'components/Paginate';
 import { useGetAvailableReceiptShipments, useGetGoodsReceiptShipmentItems } from 'api/goods-receipt';
@@ -68,7 +71,8 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
     );
   }, [shipmentDetail, setFieldValue]);
 
-  const hasRackErrors = values.items.some((item) => !item.hasRackLocation);
+  const hasRackWarnings = values.items.some((item) => !item.hasRackLocation);
+  const hasUnselectedRack = values.items.some((item) => !item.rack_id);
 
   const applyShipmentSelection = (item) => {
     setFieldValue('sj_id', item.sj_id);
@@ -102,6 +106,23 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
       setSearchShipmentError(error?.response?.data?.diagnostic?.error || error?.message || 'Gagal mencari shipment.');
     } finally {
       setIsSearchingShipment(false);
+    }
+  };
+
+  const handlePrintQrcode = async (barangId, harga) => {
+    if (!barangId) return;
+
+    try {
+      const response = await axiosServices.get(`/scm/terima-barang/${barangId}/print-qrcode/${harga || 0}`, {
+        responseType: 'blob',
+        skipOfflineQueue: true
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      setSearchShipmentError(error?.response?.data?.diagnostic?.error || error?.message || 'Gagal mencetak label QR barang.');
     }
   };
 
@@ -173,7 +194,7 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
             <Stack spacing={1.5} mb={2}>
               <Typography variant="subtitle1">Items Penerimaan</Typography>
               {shipmentItemsError ? <Alert severity="warning">{shipmentItemsError?.message || 'Gagal memuat item shipment.'}</Alert> : null}
-              {hasRackErrors ? <Alert severity="error">Masih ada barang yang belum memiliki lokasi rack pada gudang tujuan. Submit dinonaktifkan.</Alert> : null}
+              {hasRackWarnings ? <Alert severity="warning">Beberapa barang belum memiliki histori lokasi rack pada gudang tujuan. Silakan pilih rack secara manual untuk melanjutkan.</Alert> : null}
             </Stack>
             {shipmentItemsLoading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
@@ -190,6 +211,7 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
                 >
                   <TableHead>
                     <TableRow>
+                      <TableCell align="center">QRcode</TableCell>
                       <TableCell>Barang</TableCell>
                       <TableCell>Pemasok</TableCell>
                       <TableCell align="right">Qty Kirim</TableCell>
@@ -203,7 +225,22 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
                       const qtyField = `items.${index}.qty_terima`;
                       const rackField = `items.${index}.rack_id`;
                       return (
-                        <TableRow key={item.sjitem_id} hover selected={!item.hasRackLocation}>
+                        <TableRow key={item.sjitem_id} hover selected={!item.hasRackLocation && !item.rack_id}>
+                          <TableCell align="center" sx={{ minWidth: 50 }}>
+                            <Tooltip title="Cetak label barcode barang">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="secondary"
+                                  onClick={() => handlePrintQrcode(item.barang_id, item.harga)}
+                                  disabled={!item.barang_id}
+                                  sx={{ border: '1px solid', borderColor: 'divider' }}
+                                >
+                                  <Barcode size={18} />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </TableCell>
                           <TableCell sx={{ minWidth: 280, whiteSpace: 'normal !important' }}>
                             <Stack spacing={0.5}>
                               <Typography variant="body2" fontWeight={700}>{item.barang?.kode || '-'}</Typography>
@@ -249,8 +286,8 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
                                 <TextField
                                   {...params}
                                   size="small"
-                                  error={!item.hasRackLocation || Boolean(errors.items?.[index]?.rack_id)}
-                                  helperText={item.hasRackLocation ? (errors.items?.[index]?.rack_id || '') : item.rackValidationMessage}
+                                  error={Boolean(errors.items?.[index]?.rack_id)}
+                                  helperText={errors.items?.[index]?.rack_id || (!item.hasRackLocation ? `${item.rackValidationMessage} Silakan pilih rack manual.` : '')}
                                   placeholder="Pilih Rack"
                                 />
                               )}
@@ -281,7 +318,7 @@ export default function GoodsReceiptCreateForm({ values, errors, touched, handle
           <Divider />
           <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 2 }}>
             <Button variant="outlined" color="secondary" onClick={() => window.history.back()}>Batal</Button>
-            <Button variant="contained" type="submit" disabled={isSubmitting || hasRackErrors || values.items.length === 0}>
+            <Button variant="contained" type="submit" disabled={isSubmitting || hasUnselectedRack || values.items.length === 0}>
               {isSubmitting ? 'Menyimpan...' : 'Submit'}
             </Button>
           </Stack>

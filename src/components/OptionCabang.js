@@ -1,35 +1,47 @@
+import { useMemo } from 'react';
 import { Box, Stack, Badge, Typography, FormControl, TextField, Autocomplete, InputAdornment } from '@mui/material';
 import { useCabang } from 'api/cabang';
+import InputSkeleton from './InputSkeleton';
 
 const OptionCabang = ({
   value = '',
+  bisnisId = '',
   label = 'Nama Cabang',
   name = 'cabang_id',
-  error = null, // Tambahkan prop error
-  touched = false, // Tambahkan prop touched
+  error = null,
+  touched = false,
   startAdornment = null,
+  disabled = false,
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useCabang();
 
-  if (dataLoading || !array) {
-    return <div>Loading...</div>;
+  const options = useMemo(() => {
+    const list = Array.isArray(array) ? array : [];
+    if (!bisnisId) return list;
+    return list.filter((item) => !item.bisnis_id || String(item.bisnis_id) === String(bisnisId));
+  }, [array, bisnisId]);
+
+  if (dataLoading) {
+    return <InputSkeleton height={40} />;
   }
+
   return (
     <Stack justifyContent="flex-start" alignItems="flex-start">
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          options={array}
-          value={array.find((option) => option?.id == value) || null}
-          onChange={(e, newValue) => {
-            setFieldValue(name, newValue?.id || '');
+          disabled={disabled}
+          options={options}
+          value={options.find((option) => String(option?.id) === String(value)) || null}
+          onChange={(_e, newValue) => {
+            setFieldValue(name, newValue?.id != null ? String(newValue.id) : '');
           }}
-          isOptionEqualToValue={(option, value) => option.id === value?.id}
-          getOptionLabel={(option) => option.nama || ''}
+          isOptionEqualToValue={(option, selected) => String(option?.id) === String(selected?.id)}
+          getOptionLabel={(option) => option?.nama || option?.initial || option?.kode || ''}
           sx={{ '& .MuiInputBase-root': { py: 0.9 } }}
           renderOption={(props, option) => (
-            <li {...props} key={`${option.id}-${option.label}`}>
+            <li {...props} key={`${option.id}-${option.nama || option.kode}`}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1 }}>
                 <Stack>
                   <Typography variant="body" sx={{ fontWeight: 700 }}>
@@ -39,7 +51,7 @@ const OptionCabang = ({
                     {option.bisnis?.name || '-'}
                   </Typography>
                 </Stack>
-                <Badge badgeContent={option.type} color="primary" sx={{ mt: 1 }} />
+                {option.type ? <Badge badgeContent={option.type} color="primary" sx={{ mt: 1 }} /> : null}
               </Box>
             </li>
           )}

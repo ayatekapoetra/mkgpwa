@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
+import axiosServices from 'utils/axios';
 
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -15,7 +16,7 @@ import Chip from '@mui/material/Chip';
 import MainCard from 'components/MainCard';
 
 import moment from 'moment';
-import { Eye, Filter } from 'iconsax-react';
+import { Printer, Eye, Filter } from 'iconsax-react';
 import ListShippingOrder from './list';
 import { useGetShippingOrder } from 'api/shipping-order';
 import FilterShippingOrder from './filter';
@@ -23,6 +24,7 @@ import Paginate from 'components/Paginate';
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
+import { openNotification } from 'api/notification';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -91,6 +93,26 @@ export default function ShippingOrderScreen() {
 }
 
 function DataColumn() {
+  const handlePrint = async (id) => {
+    try {
+      const response = await axiosServices.get(`/scm/shipping-order/${id}/print`, {
+        responseType: 'blob',
+        skipOfflineQueue: true
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      openNotification({
+        open: true,
+        title: 'error',
+        message: error?.response?.data?.diagnostic?.error || error?.message || 'Dokumen shipping gagal dicetak...',
+        alert: { color: 'error' }
+      });
+    }
+  };
+
   const column = useMemo(
     () => [
       {
@@ -102,11 +124,14 @@ function DataColumn() {
         Cell: ({ row }) => {
           const { id } = row.original;
           return (
-            <Box sx={{ width: 30, textAlign: 'center' }}>
+            <Stack direction="row" spacing={0.5}>
               <IconButton component={Link} href={`/shipping-order/${id}/show`} variant="dashed" color="primary">
                 <Eye />
               </IconButton>
-            </Box>
+              <IconButton variant="dashed" color="secondary" onClick={() => handlePrint(id)}>
+                <Printer />
+              </IconButton>
+            </Stack>
           );
         }
       },

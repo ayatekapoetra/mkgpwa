@@ -42,6 +42,8 @@ import {
   ProgrammingArrows,
   FavoriteChart,
   Health,
+  Bag,
+  ShoppingBag,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -99,7 +101,8 @@ const iconMap = {
   ProgrammingArrows: ProgrammingArrows,
   FavoriteChart: FavoriteChart,
   BoxTime: BoxTime,
-
+  bag: Bag,
+  ShoppingBag: ShoppingBag,
   // Aliases for common names
   dom: Diagram,
   equipment: Truck,
