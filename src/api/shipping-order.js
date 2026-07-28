@@ -64,6 +64,7 @@ export const useGetReadyShip = (params, enabled = true) => {
   const memoizedValue = useMemo(
     () => ({
       data: data?.rows?.data || [],
+      deliveryOrderOptions: data?.rows?.deliveryOrderOptions || [],
       page: data?.rows?.page || 1,
       perPage: data?.rows?.perPage || params?.perPage || 12,
       total: data?.rows?.total || 0,

@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import Chip from '@mui/material/Chip';
 
 import MainCard from 'components/MainCard';
 
@@ -170,9 +171,13 @@ function DataColumn() {
           return (
             <Stack spacing={0.5}>
               <Typography variant="body2">{narasi || '-'}</Typography>
-              <Typography variant="caption" color={status === 'received' ? 'success' : 'warning'}>
-                {status === 'received' ? 'diterima' : 'pending'}
-              </Typography>
+              <Chip
+                size="small"
+                label={status === 'received' ? 'diterima' : 'pending'}
+                color={status === 'received' ? 'success' : 'warning'}
+                variant="filled"
+                sx={{ width: 'fit-content', textTransform: 'capitalize' }}
+              />
             </Stack>
           );
         }

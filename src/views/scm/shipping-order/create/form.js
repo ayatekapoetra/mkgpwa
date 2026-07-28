@@ -27,6 +27,10 @@ import Chip from '@mui/material/Chip';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import InputAdornment from '@mui/material/InputAdornment';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 import Slide from '@mui/material/Slide';
 import IconButton from '@mui/material/IconButton';
@@ -49,9 +53,10 @@ export default function FormikFormCreate({
   const [openModal, setOpenModal] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [searchInput, setSearchInput] = useState('');
-  const [pickerParams, setPickerParams] = useState({ page: 1, perPage: 12, search: '' });
+  const [pickerParams, setPickerParams] = useState({ page: 1, perPage: 12, search: '', kodeDo: '' });
   const {
     data: readyItems,
+    deliveryOrderOptions,
     dataLoading: itemsLoading,
     dataError: itemsError,
     page: pickerPage,
@@ -64,6 +69,7 @@ export default function FormikFormCreate({
     () => gudangRows.find((item) => String(item.id) === String(values.gudang_rec)) || null,
     [gudangRows, values.gudang_rec]
   );
+  const selectedItemIds = useMemo(() => new Set(values.items.map((item) => item.doitem_id)), [values.items]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -74,7 +80,7 @@ export default function FormikFormCreate({
   }, [searchInput]);
 
   const handleSelectItem = (item) => {
-    const exists = values.items.find((i) => i.doitem_id === item.id);
+    const exists = selectedItemIds.has(item.id);
     if (exists) return;
 
     const newItem = {
@@ -98,6 +104,34 @@ export default function FormikFormCreate({
     };
 
     setFieldValue('items', [...values.items, newItem]);
+  };
+
+  const handleSelectAllItems = () => {
+    const newItems = readyItems
+      .filter((item) => !selectedItemIds.has(item.id))
+      .map((item) => ({
+        doitem_id: item.id,
+        wait_id: item.wait_id,
+        barang_id: item.barang_id,
+        keterangan: item.keterangan,
+        satuan: item.satuan,
+        qty_pickup: item.qty_pickup,
+        qty_send: item.qty_send || 0,
+        qty_available: Number(item.sisa_kirim ?? 0),
+        qty_kirim: Number(item.sisa_kirim ?? 0),
+        multi: 'N',
+        kode_barang: item.barang?.kode || '-',
+        num_part: item.barang?.num_part || '-',
+        pemasok: item.supplier?.nama || item.dataroot?.pemasok?.nama || '-',
+        kode_doc: item.kode_doc || '-',
+        source_code: item.source?.code || '-',
+        source_type: item.source?.label || '-',
+        gudang_pemesan: item.requesting_warehouse?.nama || '-'
+      }));
+
+    if (newItems.length === 0) return;
+
+    setFieldValue('items', [...values.items, ...newItems]);
   };
 
   const handleRemoveItem = (index) => {
@@ -386,18 +420,69 @@ export default function FormikFormCreate({
           </Stack>
         </DialogTitle>
         <DialogContent dividers>
-          <TextField
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Cari kode PO, gudang, delivery order, part number, atau nama barang..."
-            size="small"
-            fullWidth
-            autoFocus
-            sx={{ mb: 2 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><SearchNormal1 size={18} /></InputAdornment>
-            }}
-          />
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
+            <Autocomplete
+              size="small"
+              options={deliveryOrderOptions}
+              value={deliveryOrderOptions.find((option) => option.kode === pickerParams.kodeDo) || null}
+              onChange={(_, newValue) => setPickerParams((prev) => ({ ...prev, page: 1, kodeDo: newValue?.kode || '' }))}
+              isOptionEqualToValue={(option, value) => option.kode === value?.kode}
+              getOptionLabel={(option) => option?.kode || ''}
+              noOptionsText="Tidak ada kode DO"
+              sx={{ minWidth: { xs: '100%', md: 280 } }}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.kode}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={700}>{option.kode}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      {option.pemasok_nama || '-'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      {truncateText(option.narasi, 50) || '-'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              renderInput={(params) => <TextField {...params} label="Kode DO" placeholder="Semua Kode DO" />}
+            />
+
+            <TextField
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Cari nama barang, kode PO, gudang, delivery order, part number, atau field lain..."
+              size="small"
+              fullWidth
+              autoFocus
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><SearchNormal1 size={18} /></InputAdornment>
+              }}
+            />
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 120 } }}>
+              <InputLabel id="shipping-per-page-label">Per Page</InputLabel>
+              <Select
+                labelId="shipping-per-page-label"
+                value={pickerParams.perPage}
+                label="Per Page"
+                onChange={(event) => setPickerParams((prev) => ({ ...prev, page: 1, perPage: Number(event.target.value) }))}
+              >
+                <MenuItem value={12}>12</MenuItem>
+                <MenuItem value={24}>24</MenuItem>
+                <MenuItem value={36}>36</MenuItem>
+                <MenuItem value={48}>48</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleSelectAllItems}
+              disabled={readyItems.length === 0 || readyItems.every((item) => selectedItemIds.has(item.id))}
+              sx={{ minWidth: { xs: '100%', md: 140 } }}
+            >
+              Select All
+            </Button>
+          </Stack>
 
           {itemsError ? (
             <Alert severity="warning">
@@ -416,7 +501,7 @@ export default function FormikFormCreate({
                 <Grid item xs={12} sm={6} lg={4} xl={3} key={item.id}>
                   <ReadyItemCard
                     item={item}
-                    selected={values.items.some((selected) => selected.doitem_id === item.id)}
+                    selected={selectedItemIds.has(item.id)}
                     onSelect={handleSelectItem}
                   />
                 </Grid>
@@ -439,7 +524,7 @@ export default function FormikFormCreate({
                     <ReadyItemRow
                       key={item.id}
                       item={item}
-                      selected={values.items.some((selected) => selected.doitem_id === item.id)}
+                      selected={selectedItemIds.has(item.id)}
                       onSelect={handleSelectItem}
                     />
                   ))}
@@ -558,6 +643,12 @@ function InfoBlock({ label, primary, secondary }) {
 
 function getDeliveryOrderCode(item) {
   return item.dataroot?.kode || item.kode_doc || '-';
+}
+
+function truncateText(text, maxLength = 50) {
+  const value = String(text || '').trim();
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength)}...`;
 }
 
 function QtyInfo({ label, value, unit, highlight = false }) {

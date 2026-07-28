@@ -2,7 +2,7 @@
 import { FormattedMessage } from 'react-intl';
 
 // ASSETS
-import { Book1, I24Support, MessageProgramming, TruckFast, TruckTime, Ship } from 'iconsax-react';
+import { ArchiveBook, Book1, I24Support, MessageProgramming, TruckFast, TruckTime, Ship } from 'iconsax-react';
 
 // ICONS
 const icons = {
@@ -11,7 +11,8 @@ const icons = {
   contactus: I24Support,
   do: TruckFast,
   so: TruckTime,
-  ship: Ship
+  ship: Ship,
+  receipt: ArchiveBook
 };
 
 // ==============================|| MENU ITEMS - PAGES ||============================== //
@@ -45,6 +46,14 @@ const SCMPage = {
       type: 'item',
       url: '/shipping-order',
       icon: icons.ship,
+      breadcrumbs: false
+    },
+    {
+      id: 'goods-receipt',
+      title: <FormattedMessage id="Terima Barang" />,
+      type: 'item',
+      url: '/goods-receipt',
+      icon: icons.receipt,
       breadcrumbs: false
     }
   ]
