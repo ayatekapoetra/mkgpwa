@@ -33,33 +33,37 @@ export default function PengajuanDanaListDesktop({ rows }) {
   }
 
   return (
-    <TableContainer component={Paper} variant="outlined">
-      <Table size="small">
+    <TableContainer
+      component={Paper}
+      variant="outlined"
+      sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}
+    >
+      <Table size="small" sx={{ minWidth: 1050 }}>
         <TableHead>
           <TableRow>
-            <TableCell align="center">Aksi</TableCell>
-            <TableCell>Kode</TableCell>
-            <TableCell>Tanggal</TableCell>
-            <TableCell>Narasi</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell align="center">Items</TableCell>
-            <TableCell align="center">File</TableCell>
-            <TableCell align="right">Total</TableCell>
+            <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>Aksi</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 180 }}>Kode</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 125 }}>Tanggal</TableCell>
+            <TableCell sx={{ minWidth: 300 }}>Narasi</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 140 }}>Status</TableCell>
+            <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>Items</TableCell>
+            <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>File</TableCell>
+            <TableCell align="right" sx={{ whiteSpace: 'nowrap', minWidth: 150 }}>Total</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.id} hover>
-              <TableCell align="center">
+              <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                 <Button size="small" variant="outlined" component={Link} href={`/pengajuan-dana/${row.id}`}>
                   Detail
                 </Button>
               </TableCell>
-              <TableCell>
-                <Typography variant="body2" fontWeight={700}>{row.kode || '-'}</Typography>
+              <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                <Typography variant="body2" fontWeight={700} noWrap>{row.kode || '-'}</Typography>
               </TableCell>
-              <TableCell>{row.trx_date ? moment(row.trx_date).format('DD MMM YYYY') : '-'}</TableCell>
-              <TableCell>
+              <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.trx_date ? moment(row.trx_date).format('DD MMM YYYY') : '-'}</TableCell>
+              <TableCell sx={{ whiteSpace: 'nowrap' }}>
                 <Stack spacing={0.5}>
                   <Typography variant="body2">{row.narasi || '-'}</Typography>
                   <Typography variant="caption" color="text.secondary">{row.creator?.nama_lengkap || '-'}</Typography>
@@ -70,7 +74,7 @@ export default function PengajuanDanaListDesktop({ rows }) {
               </TableCell>
               <TableCell align="center">{row.items_count || 0}</TableCell>
               <TableCell align="center">{row.files_count || 0}</TableCell>
-              <TableCell align="right">{formatCurrency(row.total)}</TableCell>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontWeight: 700 }}>{formatCurrency(row.total)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

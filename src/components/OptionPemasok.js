@@ -4,7 +4,6 @@ import InputSkeleton from './InputSkeleton';
 
 const OptionPemasok = ({
   value = '',
-  bisnisId = '',
   label = 'Pemasok',
   name = 'pemasok_id',
   error = null,
@@ -12,7 +11,7 @@ const OptionPemasok = ({
   disabled = false,
   setFieldValue
 }) => {
-  const { rows, loading } = usePengajuanDanaPemasoks(bisnisId ? { bisnis_id: bisnisId } : {});
+  const { rows, loading } = usePengajuanDanaPemasoks({});
   const options = Array.isArray(rows) ? rows : [];
 
   if (loading) {
@@ -26,6 +25,7 @@ const OptionPemasok = ({
           fullWidth
           disabled={disabled}
           options={options}
+          ListboxProps={{ style: { maxHeight: 320 } }}
           value={options.find((option) => String(option?.id) === String(value)) || null}
           onChange={(_e, newValue) => {
             setFieldValue(name, newValue?.id != null ? String(newValue.id) : '');
@@ -52,7 +52,12 @@ const OptionPemasok = ({
             </li>
           )}
           renderInput={(params) => (
-            <TextField {...params} label={label} error={touched && Boolean(error)} helperText={touched && error} />
+            <TextField
+              {...params}
+              label={label}
+              error={touched && Boolean(error)}
+              helperText={(touched && error) || `Total ${options.length} pemasok aktif`}
+            />
           )}
         />
       </FormControl>

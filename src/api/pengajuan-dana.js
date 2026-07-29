@@ -5,11 +5,13 @@ import axiosServices, { fetcher } from 'utils/axios';
 
 const endpoints = {
   key: '/pengajuan-dana',
+  access: '/pengajuan-dana/access',
   approvalCount: '/pengajuan-dana/approval-count',
   export: '/pengajuan-dana/export',
   coas: '/pengajuan-dana/options/coas',
   detail: (id) => `/pengajuan-dana/${id}`,
   permissions: (id) => `/pengajuan-dana/${id}/permissions`,
+  attachments: (id) => `/pengajuan-dana/${id}/attachments`,
   approve: (id) => `/pengajuan-dana/${id}/approve`,
   reject: (id) => `/pengajuan-dana/${id}/reject`,
   return: (id) => `/pengajuan-dana/${id}/return`,
@@ -17,6 +19,28 @@ const endpoints = {
   destroy: (id) => `/pengajuan-dana/${id}`,
   destroyItem: (id, itemId) => `/pengajuan-dana/${id}/items/${itemId}`
 };
+
+const accessPermissionDefaults = {
+  can_read: false,
+  can_insert: false,
+  can_update: false,
+  can_remove: false,
+  can_approve: false,
+  can_validate: false
+};
+
+const documentPermissionDefaults = {
+  ...accessPermissionDefaults,
+  can_verify: false,
+  can_reject: false,
+  can_return: false,
+  can_upload_attachment: false
+};
+
+const isPermissionEnabled = (value) => value === true || value === 1 || ['1', 'Y', 'TRUE'].includes(String(value || '').toUpperCase());
+
+const normalizePermissions = (permissions, defaults) =>
+  Object.fromEntries(Object.keys(defaults).map((key) => [key, isPermissionEnabled(permissions?.[key])]));
 
 const toQueryString = (params = {}) => {
   const clean = Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''));
@@ -44,8 +68,27 @@ const normalizeList = (payload, params = {}) => {
   };
 };
 
-export const useGetPengajuanDana = (params = {}) => {
-  const url = `${endpoints.key}${toQueryString(params)}`;
+export const usePengajuanDanaAccess = () => {
+  const { data, error, isLoading, isValidating, mutate } = useSWR(endpoints.access, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      permissions: normalizePermissions(data?.data?.permissions, accessPermissionDefaults),
+      loading: isLoading,
+      error,
+      validating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
+export const useGetPengajuanDana = (params = {}, enabled = true) => {
+  const url = enabled ? `${endpoints.key}${toQueryString(params)}` : null;
   const { data, error, isLoading, isValidating, mutate } = useSWR(url, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -69,8 +112,8 @@ export const useGetPengajuanDana = (params = {}) => {
   }, [data, error, isLoading, isValidating, mutate, params]);
 };
 
-export const useShowPengajuanDana = (id) => {
-  const { data, error, isLoading, isValidating, mutate } = useSWR(id ? endpoints.detail(id) : null, fetcher, {
+export const useShowPengajuanDana = (id, enabled = true) => {
+  const { data, error, isLoading, isValidating, mutate } = useSWR(id && enabled ? endpoints.detail(id) : null, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
@@ -88,8 +131,8 @@ export const useShowPengajuanDana = (id) => {
   );
 };
 
-export const usePengajuanDanaPermissions = (id) => {
-  const { data, error, isLoading, isValidating, mutate } = useSWR(id ? endpoints.permissions(id) : null, fetcher, {
+export const usePengajuanDanaPermissions = (id, enabled = true) => {
+  const { data, error, isLoading, isValidating, mutate } = useSWR(id && enabled ? endpoints.permissions(id) : null, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
@@ -97,12 +140,7 @@ export const usePengajuanDanaPermissions = (id) => {
 
   return useMemo(
     () => ({
-      permissions: data?.data?.permissions || {
-        can_approve: false,
-        can_verify: false,
-        can_reject: false,
-        can_return: false
-      },
+      permissions: normalizePermissions(data?.data?.permissions, documentPermissionDefaults),
       status: data?.data?.status || '',
       userRole: data?.data?.user_role || '',
       loading: isLoading,
@@ -114,8 +152,8 @@ export const usePengajuanDanaPermissions = (id) => {
   );
 };
 
-export const usePengajuanDanaApprovalCount = () => {
-  const { data, error, isLoading, isValidating, mutate } = useSWR(endpoints.approvalCount, fetcher, {
+export const usePengajuanDanaApprovalCount = (enabled = true) => {
+  const { data, error, isLoading, isValidating, mutate } = useSWR(enabled ? endpoints.approvalCount : null, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: true
@@ -182,6 +220,27 @@ export const usePengajuanDanaGudangs = createOptionHook((params) => `${endpoints
 export const usePengajuanDanaBanks = createOptionHook((params) => `${endpoints.key}/options/banks${toQueryString(params)}`);
 export const usePengajuanDanaSatuans = createOptionHook((params) => `${endpoints.key}/options/satuans${toQueryString(params)}`);
 
+export const usePengajuanDanaPemasokRekenings = (params = {}) => {
+  const pemasokId = params?.pemasok_id;
+  const url = pemasokId ? `${endpoints.key}/options/pemasok-rekenings${toQueryString(params)}` : null;
+  const { data, error, isLoading, isValidating, mutate } = useSWR(url, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      rows: Array.isArray(data?.data) ? data.data : [],
+      loading: Boolean(pemasokId) && isLoading,
+      error,
+      validating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate, pemasokId]
+  );
+};
+
 const buildMultipartPayload = (payload) => {
   const formData = new FormData();
   const { lampiran = [], ...jsonPayload } = payload || {};
@@ -243,6 +302,19 @@ export const deletePengajuanDana = async (id) => {
 
 export const deletePengajuanDanaItem = async (id, itemId) => {
   const response = await axiosServices.delete(endpoints.destroyItem(id, itemId), { skipOfflineQueue: true });
+  return response.data;
+};
+
+export const uploadPengajuanDanaAttachments = async (id, files) => {
+  const formData = new FormData();
+  Array.from(files || []).forEach((file) => {
+    if (file instanceof File) formData.append('lampiran', file);
+  });
+
+  const response = await axiosServices.post(endpoints.attachments(id), formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    skipOfflineQueue: true
+  });
   return response.data;
 };
 

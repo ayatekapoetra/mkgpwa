@@ -9,6 +9,8 @@ const OptionSysOption = ({
   error = null,
   touched = false,
   startAdornment = null,
+  helperText = '',
+  disabled = false,
   setFieldValue = () => {}
 }) => {
   const { data: array = [], dataLoading } = useSysOptions(group);
@@ -23,6 +25,7 @@ const OptionSysOption = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
+          disabled={disabled}
           options={array}
           value={selectedOption}
           onChange={(e, newValue) => {
@@ -59,7 +62,7 @@ const OptionSysOption = ({
                 {...params}
                 label={label}
                 error={touched && Boolean(error)}
-                helperText={touched && error}
+                helperText={(touched && error) || helperText}
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: startAdornment && (

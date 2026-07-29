@@ -62,7 +62,7 @@ import { saveRequest } from 'lib/offlineFetch';
 import { openNotification } from 'api/notification';
 import OptionPenyewa from 'components/OptionPenyewa';
 import moment from 'moment';
-import OptionOperatorDriver from 'components/OptionOperatorDriver';
+import OptionKaryawan from 'components/OptionKaryawan';
 import OptionEquipment from 'components/OptionEquipment';
 import OptionKegiatanKerja from 'components/OptionKegiatanKerja';
 import PhotoDropZoneFormik from 'components/PhotoDropZoneFormik';
@@ -193,20 +193,14 @@ export default function CreateTimesheet() {
             .min(Yup.ref('starttime'), 'Waktu Finish harus lebih besar dari Start')
             .required('Waktu Finish wajib diisi'),
 
-          smustart: Yup.number()
-            .typeError('HM Start harus angka')
-            .when('$kategori', {
-              is: 'HE',
-              then: (schema) => schema.required('HM Start wajib diisi')
-            }),
+          smustart: Yup.number().typeError('SMU Start harus angka').required('SMU Start wajib diisi'),
 
           smufinish: Yup.number()
-            .typeError('HM Finish harus angka')
-            .when('$kategori', {
-              is: 'HE',
-              then: (schema) =>
-                schema.required('HM Finish wajib diisi').min(Yup.ref('smustart'), 'HM Finish tidak boleh lebih kecil dari Start')
-            }),
+            .typeError('SMU Finish harus angka')
+            .required('SMU Finish wajib diisi')
+            .min(Yup.ref('smustart'), 'SMU Finish tidak boleh lebih kecil dari Start'),
+
+          usedsmu: Yup.number().typeError('SMU Used harus angka').required('SMU Used wajib diisi'),
 
           seq: Yup.string().required('SEQ wajib diisi'),
 
@@ -442,17 +436,16 @@ export default function CreateTimesheet() {
                     </FormControl>
                   </Grid>
                   <Grid item xs={12} sm={5}>
-                    <OptionOperatorDriver
-                      label={'Operator / Driver'}
+                    <OptionKaryawan
+                      label={'Pengawas'}
                       name={'karyawan_id'}
-                      objValue={'karyawan'}
                       value={values.karyawan_id}
                       error={errors.karyawan_id}
                       touched={touched.karyawan_id}
                       startAdornment={<UserOctagon />}
-                      helperText={touched.karyawan_id && errors.karyawan_id}
+                      searchParams={{ section: 'pengawas%', cabang_id: values.cabang_id || '0' }}
                       setFieldValue={setFieldValue}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !values.cabang_id}
                     />
                   </Grid>
                   <Grid item xs={12} sm={3}>
@@ -555,7 +548,12 @@ export default function CreateTimesheet() {
                                   lokasi_to: '',
                                   material_id: '',
                                   starttime: '',
-                                  endtime: ''
+                                  endtime: '',
+                                  smustart: 0,
+                                  smufinish: 0,
+                                  usedsmu: 0,
+                                  seq: '',
+                                  ritase: ''
                                 })
                               }
                               variant="contained"
@@ -632,7 +630,7 @@ export default function CreateTimesheet() {
                                     )}
                                   </Grid>
                                   {values.equipment?.kategori == 'DT' && (
-                                    <Grid item xs={12} sm={3}>
+                                    <Grid item xs={12} sm={3} sx={{ mt: 2 }}>
                                       <OptionLokasiKerja
                                         value={item.lokasi_to}
                                         label="Lokasi Tujuan"
@@ -644,6 +642,45 @@ export default function CreateTimesheet() {
                                       />
                                     </Grid>
                                   )}
+                                  <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
+                                    <InputForm
+                                      name={`kegiatan[${idx}].smustart`}
+                                      label={values.equipment?.kategori == 'DT' ? 'KM Start' : 'HM Start'}
+                                      type="number"
+                                      startAdornment={<Speedometer />}
+                                      value={item.smustart}
+                                      onChange={handleChange}
+                                      touched={touched.kegiatan?.[idx]?.smustart}
+                                      errors={touched.kegiatan?.[idx]?.smustart && errors.kegiatan?.[idx]?.smustart}
+                                      disabled={isSubmitting}
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
+                                    <InputForm
+                                      label={values.equipment?.kategori == 'DT' ? 'KM Finish' : 'HM Finish'}
+                                      type="number"
+                                      name={`kegiatan[${idx}].smufinish`}
+                                      value={item.smufinish}
+                                      onChange={handleChange}
+                                      startAdornment={<Speedometer />}
+                                      touched={touched.kegiatan?.[idx]?.smufinish}
+                                      errors={touched.kegiatan?.[idx]?.smufinish && errors.kegiatan?.[idx]?.smufinish}
+                                      disabled={isSubmitting}
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
+                                    <InputForm
+                                      label={values.equipment?.kategori == 'DT' ? 'KM Used' : 'HM Used'}
+                                      type="number"
+                                      name={`kegiatan[${idx}].usedsmu`}
+                                      value={item.usedsmu}
+                                      onChange={handleChange}
+                                      startAdornment={<Speedometer />}
+                                      touched={touched.kegiatan?.[idx]?.usedsmu}
+                                      errors={touched.kegiatan?.[idx]?.usedsmu && errors.kegiatan?.[idx]?.usedsmu}
+                                      disabled={isSubmitting}
+                                    />
+                                  </Grid>
                                   <Grid item xs={12} sm={3} sx={{ mt: 2 }}>
                                     <InputForm
                                       name={`kegiatan[${idx}].starttime`}
@@ -677,33 +714,6 @@ export default function CreateTimesheet() {
                                       </Typography>
                                     )}
                                   </Grid>
-                                  {values.equipment?.kategori == 'HE' && (
-                                    <>
-                                      <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
-                                        <InputForm
-                                          name={`kegiatan[${idx}].smustart`}
-                                          label="HM Start"
-                                          type="number"
-                                          startAdornment={<Speedometer />}
-                                          value={item.smustart}
-                                          onChange={handleChange}
-                                          touched={touched.kegiatan?.[idx]?.smustart}
-                                          errors={touched.kegiatan?.[idx]?.smustart && errors.kegiatan?.[idx]?.smustart}
-                                        />
-                                      </Grid>
-                                      <Grid item xs={12} sm={2} sx={{ mt: 2 }}>
-                                        <InputForm
-                                          label="HM Finish"
-                                          type="number"
-                                          name={`kegiatan[${idx}].smufinish`}
-                                          value={item.smufinish}
-                                          onChange={handleChange}
-                                          startAdornment={<Speedometer />}
-                                          error={touched.kegiatan?.[idx]?.smufinish && Boolean(errors.kegiatan?.[idx]?.smufinish)}
-                                        />
-                                      </Grid>
-                                    </>
-                                  )}
                                   <Grid item xs={12} sm={1} sx={{ mt: 2 }}>
                                     <InputForm
                                       label="SEQ"
@@ -785,10 +795,22 @@ export default function CreateTimesheet() {
 const HelperComponent = ({ values, setFieldValue }) => {
   useEffect(() => {
     if (values.smustart || values.smufinish) {
-      var usedsmu = parseFloat(values.smufinish) - parseFloat(values.smustart);
-      setFieldValue('usedsmu', usedsmu || 0);
+      const usedsmu = parseFloat(values.smufinish) - parseFloat(values.smustart);
+      setFieldValue('usedsmu', Number.isFinite(usedsmu) ? usedsmu : 0);
     }
-  }, [values, setFieldValue]);
+
+    if (Array.isArray(values.kegiatan)) {
+      values.kegiatan.forEach((item, idx) => {
+        const start = parseFloat(item?.smustart);
+        const finish = parseFloat(item?.smufinish);
+        if (!Number.isFinite(start) || !Number.isFinite(finish)) return;
+        const usedsmu = finish - start;
+        if (parseFloat(item?.usedsmu) !== usedsmu) {
+          setFieldValue(`kegiatan[${idx}].usedsmu`, Number.isFinite(usedsmu) ? usedsmu : 0);
+        }
+      });
+    }
+  }, [values.smustart, values.smufinish, values.kegiatan, setFieldValue]);
 
   return null;
 };

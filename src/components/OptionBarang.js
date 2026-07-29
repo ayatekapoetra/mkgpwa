@@ -10,7 +10,8 @@ const OptionBarang = ({
   error = null,
   touched = false,
   disabled = false,
-  setFieldValue
+  setFieldValue,
+  onSelect
 }) => {
   const { rows, loading } = usePengajuanDanaBarangs(bisnisId ? { bisnis_id: bisnisId } : {});
   const options = Array.isArray(rows) ? rows : [];
@@ -29,6 +30,7 @@ const OptionBarang = ({
           value={options.find((option) => String(option?.id) === String(value)) || null}
           onChange={(_e, newValue) => {
             setFieldValue(name, newValue?.id != null ? String(newValue.id) : '');
+            onSelect?.(newValue || null);
           }}
           isOptionEqualToValue={(option, selected) => String(option?.id) === String(selected?.id)}
           getOptionLabel={(option) => {
@@ -48,6 +50,11 @@ const OptionBarang = ({
                   <Typography variant="caption" color="text.secondary">
                     {option.nama}
                   </Typography>
+                  {option.satuan ? (
+                    <Typography variant="caption" color="primary.main">
+                      Satuan order: {option.satuan}
+                    </Typography>
+                  ) : null}
                 </Stack>
               </Box>
             </li>

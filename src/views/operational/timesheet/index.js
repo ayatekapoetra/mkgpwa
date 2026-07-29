@@ -241,11 +241,11 @@ export default function DailyTimesheetScreen() {
         title={
           <Stack direction="row" alignItems="center" spacing={2}>
             {isMobile ? (
-              <IconButton variant="contained" component={Link} href="#" color="primary">
+              <IconButton variant="contained" component={Link} href="/timesheet/create" color="primary">
                 <NoteAdd />
               </IconButton>
             ) : (
-              <Button variant="contained" component={Link} href="#">
+              <Button variant="contained" component={Link} href="/timesheet/create">
                 Buat Timesheet
               </Button>
             )}

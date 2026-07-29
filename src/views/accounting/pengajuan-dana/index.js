@@ -3,17 +3,23 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
-import { Alert, Box, Button, CircularProgress, Grid, Stack, TextField, Typography } from '@mui/material';
-import { Add, DocumentDownload, Filter } from 'iconsax-react';
+import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
+import { Add, DocumentDownload, Filter as FilterIcon } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import Paginate from 'components/Paginate';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
-import { exportPengajuanDanaExcel, useGetPengajuanDana, usePengajuanDanaApprovalCount } from 'api/pengajuan-dana';
+import {
+  exportPengajuanDanaExcel,
+  useGetPengajuanDana,
+  usePengajuanDanaAccess,
+  usePengajuanDanaApprovalCount
+} from 'api/pengajuan-dana';
 
 import PengajuanDanaList from './list';
+import PengajuanDanaFilter from './filter';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -25,6 +31,9 @@ const defaultParams = {
   limit: 25,
   status: '',
   kategori: '',
+  bisnis_id: '',
+  cabang_id: '',
+  author_id: '',
   kode: '',
   narasi: '',
   date_start: '',
@@ -49,9 +58,12 @@ function SummaryCard({ title, value, helper }) {
 
 export default function PengajuanDanaPage() {
   const [params, setParams] = useState(defaultParams);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const { rows, page, perPage, total, lastPage, summary, loading, error } = useGetPengajuanDana(params);
-  const approvalCount = usePengajuanDanaApprovalCount();
+  const { permissions, loading: accessLoading, error: accessError } = usePengajuanDanaAccess();
+  const canRead = !accessLoading && !accessError && permissions.can_read;
+  const { rows, page, perPage, total, lastPage, summary, loading, error } = useGetPengajuanDana(params, canRead);
+  const approvalCount = usePengajuanDanaApprovalCount(canRead);
 
   const summaryCards = useMemo(
     () => [
@@ -63,12 +75,27 @@ export default function PengajuanDanaPage() {
     [summary, approvalCount.count]
   );
 
-  const handleSearch = (field, value) => {
-    setParams((prev) => ({ ...prev, page: 1, [field]: value }));
+  const activeFilterCount = useMemo(
+    () => {
+      const fieldCount = ['status', 'kategori', 'bisnis_id', 'cabang_id', 'author_id', 'kode', 'narasi', 'date_start', 'date_end']
+        .filter((field) => Boolean(params[field])).length;
+      return fieldCount + (Number(params.limit) !== 25 ? 1 : 0);
+    },
+    [params]
+  );
+
+  const applyFilters = (filters) => {
+    setParams((current) => ({ ...current, ...filters, page: 1 }));
+    setFilterOpen(false);
+  };
+
+  const resetFilters = () => {
+    setParams(defaultParams);
+    setFilterOpen(false);
   };
 
   const handleExport = async () => {
-    if (exporting) return;
+    if (exporting || !permissions.can_read) return;
 
     setExporting(true);
     try {
@@ -99,64 +126,76 @@ export default function PengajuanDanaPage() {
 
       <MainCard
         title={
-          <Button variant="contained" component={Link} href="/pengajuan-dana/create" startIcon={<Add />}>
-            Tambah Pengajuan
-          </Button>
+          permissions.can_insert ? (
+            <Button variant="contained" component={Link} href="/pengajuan-dana/create" startIcon={<Add />}>
+              Tambah Pengajuan
+            </Button>
+          ) : null
         }
         secondary={
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button variant="outlined" color="secondary" startIcon={<DocumentDownload />} onClick={handleExport} disabled={exporting}>
-              {exporting ? 'Exporting...' : 'Export Excel'}
-            </Button>
+          canRead ? (
             <Stack direction="row" spacing={1} alignItems="center">
-              <Filter size={18} />
-              <Typography variant="body2" color="text.secondary">
-                Filter cepat
-              </Typography>
+              <Button variant="outlined" color="secondary" startIcon={<DocumentDownload />} onClick={handleExport} disabled={exporting}>
+                {exporting ? 'Exporting...' : 'Export Excel'}
+              </Button>
+              <Button variant={activeFilterCount ? 'contained' : 'outlined'} color="primary" startIcon={<FilterIcon size={18} />} onClick={() => setFilterOpen(true)}>
+                Filter{activeFilterCount ? ` (${activeFilterCount})` : ''}
+              </Button>
             </Stack>
-          </Stack>
+          ) : null
         }
         content
       >
         <Stack spacing={3}>
-          <Grid container spacing={2}>
-            {summaryCards.map((item) => (
-              <Grid item xs={12} sm={6} md={3} key={item.title}>
-                <SummaryCard {...item} />
-              </Grid>
-            ))}
-          </Grid>
+          {accessLoading && (
+            <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
+              <CircularProgress size={28} />
+            </Box>
+          )}
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={3}>
-              <TextField fullWidth label="Kode" value={params.kode} onChange={(event) => handleSearch('kode', event.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField fullWidth label="Narasi" value={params.narasi} onChange={(event) => handleSearch('narasi', event.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField
-                fullWidth
-                select
-                SelectProps={{ native: true }}
-                label="Status"
-                value={params.status}
-                onChange={(event) => handleSearch('status', event.target.value)}
-              >
-                <option value="">Semua</option>
-                <option value="open">Open</option>
-                <option value="approval">Approval</option>
-                <option value="close">Close</option>
-                <option value="reject">Reject</option>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField fullWidth label="Tanggal Mulai" type="date" InputLabelProps={{ shrink: true }} value={params.date_start} onChange={(event) => handleSearch('date_start', event.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField fullWidth label="Tanggal Akhir" type="date" InputLabelProps={{ shrink: true }} value={params.date_end} onChange={(event) => handleSearch('date_end', event.target.value)} />
-            </Grid>
-          </Grid>
+          {accessError && <Alert severity="error">Gagal memeriksa hak akses Pengajuan Dana. {accessError?.message || 'Coba muat ulang halaman.'}</Alert>}
+
+          {!accessLoading && !accessError && !permissions.can_read && (
+            <Alert severity="warning">Anda tidak memiliki hak akses untuk melihat Pengajuan Dana.</Alert>
+          )}
+
+          {canRead && (
+            <>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'minmax(0, 1fr)',
+                sm: 'repeat(2, minmax(0, 1fr))',
+                md: 'repeat(4, minmax(0, 1fr))'
+              },
+              gap: 2,
+              width: '100%'
+            }}
+          >
+            {summaryCards.map((item) => (
+              <Box key={item.title} sx={{ minWidth: 0 }}>
+                <SummaryCard {...item} />
+              </Box>
+            ))}
+          </Box>
+
+          {activeFilterCount > 0 && (
+            <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+              <Typography variant="body2" color="text.secondary">Filter aktif:</Typography>
+              {params.kode && <Chip size="small" label={`Kode: ${params.kode}`} />}
+              {params.narasi && <Chip size="small" label={`Narasi: ${params.narasi}`} />}
+              {params.status && <Chip size="small" label={`Status: ${params.status}`} />}
+              {params.kategori && <Chip size="small" label={`Kategori: ${params.kategori}`} />}
+              {params.bisnis_id && <Chip size="small" label={`Bisnis ID: ${params.bisnis_id}`} />}
+              {params.cabang_id && <Chip size="small" label={`Cabang ID: ${params.cabang_id}`} />}
+              {params.author_id && <Chip size="small" label={`Author ID: ${params.author_id}`} />}
+              {params.date_start && <Chip size="small" label={`Mulai: ${params.date_start}`} />}
+              {params.date_end && <Chip size="small" label={`Akhir: ${params.date_end}`} />}
+              {Number(params.limit) !== 25 && <Chip size="small" label={`${params.limit} baris/halaman`} />}
+              <Button size="small" color="error" onClick={resetFilters}>Reset</Button>
+            </Stack>
+          )}
 
           {error && (
             <Alert severity="warning">
@@ -182,8 +221,20 @@ export default function PengajuanDanaPage() {
               </Stack>
             </>
           )}
+            </>
+          )}
         </Stack>
       </MainCard>
+
+      {canRead && (
+        <PengajuanDanaFilter
+          open={filterOpen}
+          onClose={() => setFilterOpen(false)}
+          params={params}
+          onApply={applyFilters}
+          onReset={resetFilters}
+        />
+      )}
     </>
   );
 }

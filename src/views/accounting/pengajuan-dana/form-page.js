@@ -10,7 +10,7 @@ import BtnBack from 'components/BtnBack';
 import LoadingScreen from 'components/screens/LoadingScreen';
 import ErrorScreen from 'components/screens/ErrorScreen';
 import { APP_DEFAULT_PATH } from 'config';
-import { useShowPengajuanDana } from 'api/pengajuan-dana';
+import { usePengajuanDanaAccess, usePengajuanDanaPermissions, useShowPengajuanDana } from 'api/pengajuan-dana';
 
 import PengajuanDanaForm from './form';
 
@@ -18,7 +18,13 @@ export default function PengajuanDanaFormPage({ mode = 'create' }) {
   const params = useParams();
   const router = useRouter();
   const isEdit = mode === 'edit';
-  const { row, rowLoading, rowError } = useShowPengajuanDana(isEdit ? params.id : null);
+  const { permissions: access, loading: accessLoading, error: accessError } = usePengajuanDanaAccess();
+  const canRead = !accessLoading && !accessError && access.can_read;
+  const { row, rowLoading, rowError } = useShowPengajuanDana(isEdit ? params.id : null, isEdit && canRead);
+  const { permissions, loading: permissionsLoading, error: permissionsError } = usePengajuanDanaPermissions(
+    isEdit ? params.id : null,
+    isEdit && canRead
+  );
 
   const breadcrumbLinks = [
     { title: 'Home', to: APP_DEFAULT_PATH },
@@ -26,12 +32,20 @@ export default function PengajuanDanaFormPage({ mode = 'create' }) {
     { title: isEdit ? 'Edit' : 'Create' }
   ];
 
-  if (isEdit && rowLoading) {
+  if (accessLoading || (isEdit && canRead && (rowLoading || permissionsLoading))) {
     return <LoadingScreen fullScreen={false} message="Memuat form pengajuan" />;
   }
 
-  if (isEdit && rowError) {
-    return <ErrorScreen error={rowError} variant="data" showDetails={false} />;
+  if (accessError || (isEdit && (rowError || permissionsError))) {
+    return <ErrorScreen error={accessError || rowError || permissionsError} variant="data" showDetails={false} />;
+  }
+
+  if ((!isEdit && !access.can_insert) || (isEdit && !access.can_read)) {
+    return <ErrorScreen error={{ message: 'Anda tidak memiliki hak akses untuk halaman Pengajuan Dana ini.' }} variant="data" showDetails={false} />;
+  }
+
+  if (isEdit && !permissions.can_update) {
+    return <ErrorScreen error={{ message: 'Anda tidak memiliki hak akses untuk mengubah Pengajuan Dana ini.' }} variant="data" showDetails={false} />;
   }
 
   return (

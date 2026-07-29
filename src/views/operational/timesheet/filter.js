@@ -25,7 +25,7 @@ import InputSearch from "components/InputSearch";
 import SelectSearch from "components/SelectSearch";
 import MainCard from "components/MainCard";
 import FilterCabang from "components/FilterCabang";
-import FilterOperatorDriver from "components/FilterOperatorDriver";
+import FilterKaryawan from "components/FilterKaryawan";
 import FilterPenyewa from "components/FilterPenyewa";
 import FilterEquipment from "components/FilterEquipment";
 
@@ -105,11 +105,13 @@ export default function FilterTimesheet({
                 />
               </Grid>
               <Grid item xs={12} sm={12} lg={12}>
-                <FilterOperatorDriver
+                <FilterKaryawan
                   name={"karyawan_id"}
+                  label={"Operator / Driver / Pengawas"}
                   setData={setParams}
                   value={params.karyawan_id}
                   startAdornment={<TagUser />}
+                  params={{ section: "operator,driver,pengawas%" }}
                 />
               </Grid>
               <Grid item xs={12} sm={12} lg={12}>
