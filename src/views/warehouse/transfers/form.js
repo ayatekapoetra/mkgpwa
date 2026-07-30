@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
@@ -13,8 +14,9 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { alpha, useTheme } from '@mui/material/styles';
 
-import { Add, Trash } from 'iconsax-react';
+import { Add, Box1, BoxTick, DollarCircle, Trash } from 'iconsax-react';
 import { FieldArray } from 'formik';
 
 import axiosServices from 'utils/axios';
@@ -45,11 +47,15 @@ export default function WarehouseTransferForm({
   gudangOptions,
   mode = 'create'
 }) {
+  const theme = useTheme();
   const [barangOptions, setBarangOptions] = useState({});
   const [priceOptions, setPriceOptions] = useState({});
   const [sourceRackOptions, setSourceRackOptions] = useState({});
   const [loadingBarang, setLoadingBarang] = useState({});
   const [loadingDeps, setLoadingDeps] = useState({});
+  const barangSearchTimers = useRef({});
+  const barangFetchSeq = useRef({});
+  const barangCacheRef = useRef({});
 
   const gudangSrc = values.gudang_src;
 
@@ -68,19 +74,50 @@ export default function WarehouseTransferForm({
     [filteredGudangTarget, values.gudang_target]
   );
 
-  const fetchBarang = useCallback(async (index, keyword) => {
+  const fetchBarang = useCallback(async (index, keyword = '', { force = false } = {}) => {
     if (!gudangSrc) return;
+    const normalizedKeyword = String(keyword || '').trim();
+    const cacheKey = `${gudangSrc}::${normalizedKeyword.toLowerCase()}`;
+
+    if (!force && barangCacheRef.current[cacheKey]) {
+      setBarangOptions((prev) => ({ ...prev, [index]: barangCacheRef.current[cacheKey] }));
+      return;
+    }
+
+    const seq = (barangFetchSeq.current[index] || 0) + 1;
+    barangFetchSeq.current[index] = seq;
     setLoadingBarang((prev) => ({ ...prev, [index]: true }));
     try {
-      const params = new URLSearchParams({ gudang_id: gudangSrc, page: 1, limit: 20, keyword: keyword || '' });
+      const params = new URLSearchParams({ gudang_id: gudangSrc, page: 1, limit: 20, keyword: normalizedKeyword });
       const response = await axiosServices.get(`/warehouse/transfers/options/barang?${params.toString()}`);
-      setBarangOptions((prev) => ({ ...prev, [index]: response.data?.data?.items || [] }));
+      if (barangFetchSeq.current[index] !== seq) return;
+      const items = response.data?.data?.items || [];
+      barangCacheRef.current[cacheKey] = items;
+      setBarangOptions((prev) => ({ ...prev, [index]: items }));
     } catch (error) {
+      if (barangFetchSeq.current[index] !== seq) return;
       setBarangOptions((prev) => ({ ...prev, [index]: [] }));
     } finally {
-      setLoadingBarang((prev) => ({ ...prev, [index]: false }));
+      if (barangFetchSeq.current[index] === seq) {
+        setLoadingBarang((prev) => ({ ...prev, [index]: false }));
+      }
     }
   }, [gudangSrc]);
+
+  const scheduleFetchBarang = useCallback((index, keyword) => {
+    if (barangSearchTimers.current[index]) {
+      clearTimeout(barangSearchTimers.current[index]);
+    }
+    barangSearchTimers.current[index] = setTimeout(() => {
+      fetchBarang(index, keyword);
+    }, 300);
+  }, [fetchBarang]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(barangSearchTimers.current).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
 
   const fetchDependencies = useCallback(async (index, barangId) => {
     if (!gudangSrc || !barangId) return;
@@ -146,6 +183,7 @@ export default function WarehouseTransferForm({
               setBarangOptions({});
               setPriceOptions({});
               setSourceRackOptions({});
+              barangCacheRef.current = {};
             }}
             renderInput={(params) => (
               <TextField
@@ -195,9 +233,31 @@ export default function WarehouseTransferForm({
                   const qtyPakai = Number(item.qty_pakai || 0);
                   const pembagi = Number(item.pembagi_pakai || 0);
                   const previewQtyOrder = pembagi > 0 ? qtyPakai / pembagi : 0;
+                  const selectedPrice = (priceOptions[index] || []).find((option) => String(option.id) === String(item.hargabeli_id || '')) || null;
+                  const selectedRack = (sourceRackOptions[index] || []).find((option) => String(option.id) === String(item.rack_src_id || '')) || null;
+                  const barangMetaChips = buildBarangMetaChips(item.barang_option);
 
                   return (
-                    <Box key={index} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Box
+                      key={index}
+                      sx={{
+                        p: { xs: 1.75, md: 2.25 },
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2.5,
+                        bgcolor: 'background.paper',
+                        boxShadow: `0 1px 2px ${alpha(theme.palette.common.black, 0.04)}`
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Item #{index + 1}
+                        </Typography>
+                        <IconButton color="error" size="small" onClick={() => arrayHelpers.remove(index)} disabled={values.items.length === 1}>
+                          <Trash size={18} />
+                        </IconButton>
+                      </Stack>
+
                       <Grid container spacing={2} alignItems="flex-start">
                         <Grid item xs={12} md={8}>
                           <Autocomplete
@@ -206,13 +266,16 @@ export default function WarehouseTransferForm({
                             fullWidth
                             openOnFocus
                             loading={Boolean(loadingBarang[index])}
-                            getOptionLabel={(option) => `${option.kode || '-'} - ${option.nama || '-'}`}
+                            getOptionLabel={(option) => formatBarangLabel(option)}
                             isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)}
                             filterOptions={(options) => options}
-                            onInputChange={(_, value) => {
-                              fetchBarang(index, value || '');
+                            onInputChange={(_, value, reason) => {
+                              if (reason === 'input') scheduleFetchBarang(index, value || '');
+                              if (reason === 'clear') fetchBarang(index, '');
                             }}
-                            onOpen={() => fetchBarang(index, '')}
+                            onOpen={() => {
+                              if (!(barangOptions[index] || []).length) fetchBarang(index, '');
+                            }}
                             onChange={(_, option) => {
                               setFieldValue(`items.${index}.barang_option`, option);
                               setFieldValue(`items.${index}.barang_id`, option?.id || '');
@@ -225,6 +288,34 @@ export default function WarehouseTransferForm({
                               setFieldValue(`items.${index}.rack_src_id`, '');
                               if (option?.id) fetchDependencies(index, option.id);
                             }}
+                            renderOption={(props, option) => (
+                              <Box component="li" {...props} key={option.id} sx={{ alignItems: 'flex-start !important', py: 1.25 }}>
+                                <Stack spacing={0.5} sx={{ width: '100%' }}>
+                                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                                    <Typography variant="body2" fontWeight={600}>
+                                      {option.kode || '-'} — {option.nama || '-'}
+                                    </Typography>
+                                    <Chip
+                                      size="small"
+                                      label={`${option.stok_pakai || 0} ${option.satuan_pakai || ''}`.trim()}
+                                      color="success"
+                                      variant="outlined"
+                                      sx={{ height: 22 }}
+                                    />
+                                  </Stack>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {[
+                                      option.num_part ? `PN ${option.num_part}` : null,
+                                      option.kategori,
+                                      option.manufacture,
+                                      option.brand
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' · ') || 'Tanpa detail tambahan'}
+                                  </Typography>
+                                </Stack>
+                              </Box>
+                            )}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
@@ -245,7 +336,7 @@ export default function WarehouseTransferForm({
                             )}
                           />
                         </Grid>
-                        
+
                         <Grid item xs={12} md={4}>
                           <Autocomplete
                             options={sourceRackOptions[index] || []}
@@ -286,7 +377,7 @@ export default function WarehouseTransferForm({
                             )}
                           />
                         </Grid>
-                        <Grid item xs={12} md={2}>
+                        <Grid item xs={12} md={4}>
                           <TextField
                             label={`Qty Pakai${item.satuan_pakai ? ` (${item.satuan_pakai})` : ''}`}
                             name={`items.${index}.qty_pakai`}
@@ -299,7 +390,7 @@ export default function WarehouseTransferForm({
                             helperText={itemTouched.qty_pakai && itemErrors.qty_pakai}
                           />
                         </Grid>
-                        <Grid item xs={12} md={2}>
+                        <Grid item xs={12} md={4}>
                           <TextField
                             label={`Qty Order${item.satuan_order ? ` (${item.satuan_order})` : ''}`}
                             size="small"
@@ -308,16 +399,141 @@ export default function WarehouseTransferForm({
                             InputProps={{ readOnly: true }}
                           />
                         </Grid>
-                        <Grid item xs={12} md={0.5}>
-                          <IconButton color="error" onClick={() => arrayHelpers.remove(index)} disabled={values.items.length === 1}>
-                            <Trash size={18} />
-                          </IconButton>
-                        </Grid>
+
                         <Grid item xs={12}>
-                          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                            <Typography variant="caption" color="text.secondary">Stok sumber: {item.stok_pakai || 0} {item.satuan_pakai || '-'} | {item.stok_order || 0} {item.satuan_order || '-'}</Typography>
-                            <Typography variant="caption" color="text.secondary">Konversi: {item.pembagi_pakai || 0}</Typography>
-                            {loadingDeps[index] ? <Typography variant="caption" color="primary">Memuat harga dan rack...</Typography> : null}
+                          <Stack spacing={1.5}>
+                            {loadingDeps[index] ? (
+                              <Typography variant="caption" color="primary">
+                                Memuat harga dan rack...
+                              </Typography>
+                            ) : null}
+
+                            {(item.barang_option || selectedPrice || selectedRack) ? (
+                              <Grid container spacing={1.5}>
+                                {item.barang_option ? (
+                                  <Grid item xs={12} md={4}>
+                                    <InfoCard
+                                      title="Info Barang"
+                                      icon={<Box1 size={16} variant="Bold" />}
+                                      accent={theme.palette.primary.main}
+                                    >
+                                      <Stack spacing={1.25}>
+                                        <Box>
+                                          <Typography variant="caption" color="text.secondary">
+                                            {item.barang_option.kode || '-'}
+                                          </Typography>
+                                          <Typography variant="subtitle2" sx={{ lineHeight: 1.35, mt: 0.25 }}>
+                                            {item.barang_option.nama || '-'}
+                                          </Typography>
+                                        </Box>
+
+                                        {barangMetaChips.length ? (
+                                          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                                            {barangMetaChips.map((chip) => (
+                                              <Chip
+                                                key={`${chip.label}-${chip.value}`}
+                                                size="small"
+                                                label={`${chip.label}: ${chip.value}`}
+                                                variant="filled"
+                                                sx={{
+                                                  height: 24,
+                                                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                                  color: 'text.primary',
+                                                  '& .MuiChip-label': { px: 1, fontSize: 11 }
+                                                }}
+                                              />
+                                            ))}
+                                          </Stack>
+                                        ) : null}
+
+                                        <Box
+                                          sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: 1
+                                          }}
+                                        >
+                                          <MetricTile label="Satuan Pakai" value={item.satuan_pakai || '-'} />
+                                          <MetricTile label="Satuan Order" value={item.satuan_order || '-'} />
+                                          <MetricTile label="Konversi" value={item.pembagi_pakai || 0} />
+                                          <MetricTile
+                                            label="Stok Sumber"
+                                            value={`${item.stok_pakai || 0} ${item.satuan_pakai || ''}`.trim()}
+                                            emphasize
+                                          />
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                          Stok order: {item.stok_order || 0} {item.satuan_order || '-'}
+                                        </Typography>
+                                      </Stack>
+                                    </InfoCard>
+                                  </Grid>
+                                ) : null}
+
+                                {selectedPrice ? (
+                                  <Grid item xs={12} md={4}>
+                                    <InfoCard
+                                      title="Info Harga"
+                                      icon={<DollarCircle size={16} variant="Bold" />}
+                                      accent={theme.palette.warning.main}
+                                    >
+                                      <Stack spacing={1}>
+                                        <InfoRow label="Periode" value={selectedPrice.periode || '-'} />
+                                        <InfoRow label="Harga Pakai" value={formatCurrency(selectedPrice.harga_pakai)} highlight />
+                                        <InfoRow label="Harga Order" value={formatCurrency(selectedPrice.harga_order)} />
+                                        <InfoRow label="Satuan Pakai" value={selectedPrice.satuan_pakai || '-'} />
+                                        <InfoRow label="Satuan Order" value={selectedPrice.satuan_order || '-'} />
+                                      </Stack>
+                                    </InfoCard>
+                                  </Grid>
+                                ) : null}
+
+                                {selectedRack ? (
+                                  <Grid item xs={12} md={4}>
+                                    <InfoCard
+                                      title="Info Rack Sumber"
+                                      icon={<BoxTick size={16} variant="Bold" />}
+                                      accent={theme.palette.success.main}
+                                    >
+                                      <Stack spacing={1}>
+                                        <Box>
+                                          <Typography variant="caption" color="text.secondary">
+                                            {selectedRack.kode || '-'}
+                                          </Typography>
+                                          <Typography variant="subtitle2" sx={{ lineHeight: 1.35, mt: 0.25 }}>
+                                            {selectedRack.nama || '-'}
+                                          </Typography>
+                                        </Box>
+                                        <Box
+                                          sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: 1
+                                          }}
+                                        >
+                                          <MetricTile
+                                            label="Stok Pakai"
+                                            value={`${selectedRack.stok_pakai || 0} ${item.satuan_pakai || ''}`.trim()}
+                                            emphasize
+                                          />
+                                          <MetricTile
+                                            label="Stok Order"
+                                            value={`${selectedRack.stok_order || 0} ${item.satuan_order || ''}`.trim()}
+                                          />
+                                        </Box>
+                                        <Chip
+                                          size="small"
+                                          color={selectedRack.is_recommended ? 'success' : 'default'}
+                                          variant={selectedRack.is_recommended ? 'filled' : 'outlined'}
+                                          label={selectedRack.is_recommended ? 'Rekomendasi' : 'Bukan rekomendasi'}
+                                          sx={{ alignSelf: 'flex-start', height: 24 }}
+                                        />
+                                      </Stack>
+                                    </InfoCard>
+                                  </Grid>
+                                ) : null}
+                              </Grid>
+                            ) : null}
                           </Stack>
                         </Grid>
                       </Grid>
@@ -344,6 +560,119 @@ export default function WarehouseTransferForm({
       </Grid>
     </form>
   );
+}
+
+function formatBarangLabel(option) {
+  if (!option) return '';
+  const base = `${option.kode || '-'} - ${option.nama || '-'}`;
+  if (option.num_part) return `${base} (${option.num_part})`;
+  return base;
+}
+
+function buildBarangMetaChips(barang) {
+  if (!barang) return [];
+  return [
+    { label: 'Part No', value: barang.num_part },
+    { label: 'Serial', value: barang.serial },
+    { label: 'Kategori', value: barang.kategori },
+    { label: 'Manufaktur', value: barang.manufacture },
+    { label: 'Brand', value: barang.brand },
+    { label: 'Aplikasi', value: barang.application }
+  ].filter((item) => item.value);
+}
+
+function InfoCard({ title, children, icon, accent }) {
+  return (
+    <Box
+      sx={{
+        p: 1.75,
+        borderRadius: 2.5,
+        height: '100%',
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: (t) => alpha(accent || t.palette.primary.main, 0.03),
+        backgroundImage: (t) =>
+          `linear-gradient(180deg, ${alpha(accent || t.palette.primary.main, 0.08)} 0%, ${alpha(t.palette.background.paper, 0)} 48%)`
+      }}
+    >
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.25 }}>
+        <Box
+          sx={{
+            width: 28,
+            height: 28,
+            borderRadius: 1.5,
+            display: 'grid',
+            placeItems: 'center',
+            color: accent || 'primary.main',
+            bgcolor: (t) => alpha(accent || t.palette.primary.main, 0.12)
+          }}
+        >
+          {icon}
+        </Box>
+        <Typography variant="subtitle2" sx={{ color: accent || 'primary.main', fontWeight: 700 }}>
+          {title}
+        </Typography>
+      </Stack>
+      {children}
+    </Box>
+  );
+}
+
+function MetricTile({ label, value, emphasize = false }) {
+  return (
+    <Box
+      sx={{
+        px: 1,
+        py: 0.85,
+        borderRadius: 1.5,
+        bgcolor: (t) => alpha(t.palette.common.black, t.palette.mode === 'dark' ? 0.18 : 0.03),
+        border: '1px solid',
+        borderColor: 'divider'
+      }}
+    >
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
+        {label}
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          display: 'block',
+          mt: 0.35,
+          fontWeight: emphasize ? 700 : 600,
+          color: emphasize ? 'success.main' : 'text.primary',
+          wordBreak: 'break-word'
+        }}
+      >
+        {value || '-'}
+      </Typography>
+    </Box>
+  );
+}
+
+function InfoRow({ label, value, highlight = false }) {
+  return (
+    <Stack direction="row" spacing={1} alignItems="flex-start" justifyContent="space-between">
+      <Typography variant="caption" color="text.secondary" sx={{ minWidth: 92 }}>
+        {label}
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          textAlign: 'right',
+          wordBreak: 'break-word',
+          fontWeight: highlight ? 700 : 500,
+          color: highlight ? 'warning.dark' : 'text.primary'
+        }}
+      >
+        {value || '-'}
+      </Typography>
+    </Stack>
+  );
+}
+
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+  return `Rp ${amount.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 export { createEmptyItem };

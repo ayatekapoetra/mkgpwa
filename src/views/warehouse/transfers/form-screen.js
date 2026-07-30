@@ -64,7 +64,24 @@ export default function WarehouseTransferFormScreen({ id = null, mode = 'create'
           rack_src_id: item.rack_src_id || '',
           hargabeli_id: item.hargabeli_id || '',
           qty_pakai: item.qty_pakai || '',
-          barang_option: item.barang ? { id: item.barang_id, kode: item.barang.kode, nama: item.barang.nama, satuan_pakai: item.satuan_pakai, satuan_order: item.satuan_order, pembagi_pakai: item.pembagi_pakai, stok_order: item.stok_order || 0, stok_pakai: item.stok_pakai || 0 } : null,
+          barang_option: item.barang
+            ? {
+                id: item.barang_id,
+                kode: item.barang.kode,
+                nama: item.barang.nama,
+                num_part: item.barang.num_part || null,
+                serial: item.barang.serial || null,
+                kategori: item.barang.kategori || null,
+                manufacture: item.barang.manufacture || null,
+                brand: item.barang.brand || null,
+                application: item.barang.application || null,
+                satuan_pakai: item.satuan_pakai,
+                satuan_order: item.satuan_order,
+                pembagi_pakai: item.pembagi_pakai,
+                stok_order: item.stok_order || 0,
+                stok_pakai: item.stok_pakai || 0
+              }
+            : null,
           satuan_pakai: item.satuan_pakai || '',
           satuan_order: item.satuan_order || '',
           pembagi_pakai: item.pembagi_pakai || 0,
