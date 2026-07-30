@@ -1,10 +1,7 @@
-// PROJECT IMPORTS
-import PermissionScreen from 'views/setting/user-access/index';
+import ShowUserAccess from 'views/setting/user-access/show';
 
-// ==============================|| SAMPLE PAGE ||============================== //
-
-const PermissionPage = () => {
-  return <PermissionScreen />;
+const PermissionShowPage = () => {
+  return <ShowUserAccess />;
 };
 
-export default PermissionPage;
+export default PermissionShowPage;
