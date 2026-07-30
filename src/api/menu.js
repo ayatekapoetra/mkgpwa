@@ -40,11 +40,8 @@ export function useGetMenu() {
   // Transform menu data to include icon components
   const transformedData = useMemo(() => {
     if (!data?.dashboard?.children) {
-      console.log('[Menu Transform] No data to transform');
       return data;
     }
-
-    console.log('[Menu Transform] Starting transformation...');
     
     const transformMenu = (menuItems, depth = 0) => {
       return menuItems.map(item => {
@@ -54,7 +51,6 @@ export function useGetMenu() {
         // Convert icon string to component
         if (item.icon && typeof item.icon === 'string') {
           const IconComponent = getMenuIcon(item.icon);
-          console.log(`${indent}[Transform] ${item.title}: "${item.icon}" → ${IconComponent ? '✓ Component' : '✗ NULL'}`);
           transformed.icon = IconComponent;
         } else if (item.icon) {
           console.log(`${indent}[Transform] ${item.title}: Already a component`);

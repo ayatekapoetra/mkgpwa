@@ -2,20 +2,21 @@
 
 import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSnackbar } from 'notistack';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
 
-import { Eye, SearchNormal1 } from 'iconsax-react';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
+
+import { Eye, Filter } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Paginate from 'components/Paginate';
@@ -23,8 +24,9 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 
 import { useGetGoodsReceipt } from 'api/goods-receipt';
-import { useGetGudang } from 'api/gudang';
 import ListGoodsReceipt from './list';
+import FilterGoodsReceipt from './filter';
+import axiosServices from 'utils/axios';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -33,6 +35,7 @@ const breadcrumbLinks = [
 
 export default function GoodsReceiptScreen() {
   const columns = DataColumn();
+  const { enqueueSnackbar } = useSnackbar();
   const [filters, setFilters] = useState({
     page: 1,
     perPage: 25,
@@ -44,7 +47,40 @@ export default function GoodsReceiptScreen() {
     gudangId: ''
   });
   const { data, dataLoading, dataError } = useGetGoodsReceipt(filters);
-  const { data: gudangRows } = useGetGudang();
+  const [openFilter, setOpenFilter] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState('');
+
+  const saveBlob = ({ blob, filename }) => {
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleDownload = async (format) => {
+    try {
+      setDownloadFormat(format);
+      const query = new URLSearchParams(filters).toString();
+      const endpoint = format === 'pdf' ? `/scm/terima-barang/download-pdf?${query}` : `/scm/terima-barang/download-excel?${query}`;
+      const response = await axiosServices.get(endpoint, { responseType: 'blob', skipOfflineQueue: true });
+      const contentDisposition = response.headers?.['content-disposition'] || '';
+      const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+      const filename = filenameMatch?.[1] || `goods-receipt.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      const blob = new Blob([response.data], {
+        type: format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      saveBlob({ blob, filename });
+      enqueueSnackbar(`Goods Receipt ${format.toUpperCase()} berhasil di-download`, { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Gagal download dokumen', { variant: 'error' });
+    } finally {
+      setDownloadFormat('');
+    }
+  };
 
   return (
     <Fragment>
@@ -55,91 +91,32 @@ export default function GoodsReceiptScreen() {
             Buat Penerimaan
           </Button>
         }
+        secondary={
+          <Stack direction="row" gap={1}>
+            <Tooltip title="Download PDF">
+              <span>
+                <IconButton aria-label="download-pdf" variant="dashed" color="error" onClick={() => handleDownload('pdf')} disabled={Boolean(downloadFormat)}>
+                  {downloadFormat === 'pdf' ? <CircularProgress size={20} color="inherit" /> : <PictureAsPdfOutlinedIcon />}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Download Excel">
+              <span>
+                <IconButton aria-label="download-excel" variant="dashed" color="success" onClick={() => handleDownload('excel')} disabled={Boolean(downloadFormat)}>
+                  {downloadFormat === 'excel' ? <CircularProgress size={20} color="inherit" /> : <DescriptionOutlinedIcon />}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Filter">
+              <IconButton shape="rounded" color="secondary" onClick={() => setOpenFilter((prev) => !prev)}>
+                <Filter />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        }
         content={false}
       >
-        <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={3}>
-              <TextField
-                label="Kode Receipt"
-                size="small"
-                fullWidth
-                value={filters.kodeReceipt}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, kodeReceipt: event.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField
-                label="Kode Surat Jalan"
-                size="small"
-                fullWidth
-                value={filters.kodeSj}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, kodeSj: event.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                select
-                label="Gudang"
-                size="small"
-                fullWidth
-                value={filters.gudangId}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, gudangId: event.target.value }))}
-              >
-                <MenuItem value="">Semua Gudang</MenuItem>
-                {gudangRows.map((item) => (
-                  <MenuItem key={item.id} value={item.id}>{`${item.kode || '-'} - ${item.nama || '-'}`}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Narasi"
-                size="small"
-                fullWidth
-                value={filters.narasi}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, narasi: event.target.value }))}
-                InputProps={{ startAdornment: <InputAdornment position="start"><SearchNormal1 size={16} /></InputAdornment> }}
-              />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField
-                label="Start Date"
-                type="date"
-                size="small"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={filters.startDate}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, startDate: event.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField
-                label="End Date"
-                type="date"
-                size="small"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={filters.endDate}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, endDate: event.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField
-                select
-                label="Per Page"
-                size="small"
-                fullWidth
-                value={filters.perPage}
-                onChange={(event) => setFilters((prev) => ({ ...prev, page: 1, perPage: Number(event.target.value) }))}
-              >
-                {[10, 25, 50, 100].map((value) => (
-                  <MenuItem key={value} value={value}>{value}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-          </Grid>
-        </Box>
+        <FilterGoodsReceipt count={data?.total} data={filters} setData={setFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
         {dataError ? (
           <Alert severity="warning" sx={{ m: 2 }}>Gagal memuat data terima barang.</Alert>
         ) : dataLoading ? (
