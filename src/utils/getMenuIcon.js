@@ -27,6 +27,7 @@ import {
   Windows,
   Home,
   Home2,
+  House2,
   HomeTrendUp,
   SmartCar,
   DocumentText,
@@ -44,6 +45,7 @@ import {
   Health,
   Bag,
   ShoppingBag,
+  I3DRotate,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -103,6 +105,8 @@ const iconMap = {
   BoxTime: BoxTime,
   bag: Bag,
   ShoppingBag: ShoppingBag,
+  warehouse: House2,
+  transferpart: I3DRotate,
   // Aliases for common names
   dom: Diagram,
   equipment: Truck,
@@ -132,7 +136,6 @@ const normalizedIconMap = Object.fromEntries(
  */
 export function getMenuIcon(iconName) {
   if (!iconName || typeof iconName !== 'string') {
-    console.log('[getMenuIcon] Invalid iconName:', iconName);
     return null;
   }
   
