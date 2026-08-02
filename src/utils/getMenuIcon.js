@@ -46,6 +46,7 @@ import {
   Bag,
   ShoppingBag,
   I3DRotate,
+  CloudNotif,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -107,6 +108,7 @@ const iconMap = {
   ShoppingBag: ShoppingBag,
   warehouse: House2,
   transferpart: I3DRotate,
+  CloudNotif: CloudNotif,
   // Aliases for common names
   dom: Diagram,
   equipment: Truck,
