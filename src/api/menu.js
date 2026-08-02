@@ -116,6 +116,14 @@ export function useGetMenu() {
           url: '/laporan/operating-history-detail',
           icon: getMenuIcon('documentText'),
           breadcrumbs: true
+        },
+        {
+          id: 'event-history',
+          title: 'Event History',
+          type: 'item',
+          url: '/laporan/event-history',
+          icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
+          breadcrumbs: true
         }
       ];
 
