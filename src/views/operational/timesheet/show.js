@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import moment from "moment";
 
 // MATERIAL - UI
@@ -56,7 +57,7 @@ import {
 import { Formik, Form, FieldArray } from "formik";
 import * as Yup from "yup"; // ⬅ WAJIB
 
-import { useShowDailyTimesheet } from "api/daily-timesheet";
+import { useShowDailyTimesheet, useTimesheetAccess } from "api/daily-timesheet";
 import { openNotification } from "api/notification";
 
 const msgSuccess = {
@@ -91,6 +92,8 @@ const breadcrumbLinks = [
 const ShowTimesheetScreen = () => {
   const route = useRouter();
   const { id } = useParams();
+  const { data: session } = useSession();
+  const { permissions, loading: accessLoading } = useTimesheetAccess(session?.id, session?.usertype);
   const { data: initData, dataLoading } = useShowDailyTimesheet(id);
   console.log("initData--", initData);
 
@@ -872,22 +875,20 @@ const ShowTimesheetScreen = () => {
 
                     <Grid item xs={12} sm={12} sx={{ mt: 2 }}>
                       <Stack direction="row" justifyContent="space-between">
-                        {
-                          values.status !== "A" && (
-                            <Stack direction="row" gap={1}>
-                              <Button
-                                variant="contained"
-                                color="error"
-                                startIcon={<Trash />}
-                                onClick={toggleDialogHandle}
-                              >
-                                Hapus Timesheet
-                              </Button>
-                            </Stack>
-                          )
-                        }
+                        {!accessLoading && permissions.can_remove && values.status !== "A" && (
+                          <Stack direction="row" gap={1}>
+                            <Button
+                              variant="contained"
+                              color="error"
+                              startIcon={<Trash />}
+                              onClick={toggleDialogHandle}
+                            >
+                              Hapus Timesheet
+                            </Button>
+                          </Stack>
+                        )}
                         <Stack direction="row" gap={1}>
-                          {values.status !== "A" && (
+                          {!accessLoading && permissions.can_approve && values.status !== "A" && (
                             <Button
                               color="warning"
                               variant="shadow"
@@ -898,13 +899,15 @@ const ShowTimesheetScreen = () => {
                               Approve
                             </Button>
                           )}
-                          <Button
-                            type="submit"
-                            variant="shadow"
-                            startIcon={<Send2 />}
-                          >
-                            Update Data
-                          </Button>
+                          {!accessLoading && permissions.can_update && (
+                            <Button
+                              type="submit"
+                              variant="shadow"
+                              startIcon={<Send2 />}
+                            >
+                              Update Data
+                            </Button>
+                          )}
                         </Stack>
                       </Stack>
                     </Grid>

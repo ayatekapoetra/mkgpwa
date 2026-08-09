@@ -88,7 +88,7 @@ const MiningAuthBackground = () => {
           animation: 'float 6s ease-in-out infinite'
         }}
       >
-        <Image src="/assets/images/equipment/SK200-10.png" alt="Excavator" width={500} height={400} style={{ objectFit: 'contain' }} />
+        <Image src="/assets/images/equipment/SK200-10.png" alt="Excavator" width={500} height={400} style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
       </Box>
 
       <Box
@@ -102,7 +102,7 @@ const MiningAuthBackground = () => {
           animation: 'float 8s ease-in-out infinite reverse'
         }}
       >
-        <Image src="/assets/images/equipment/FVZ285.png" alt="Dump Truck" width={450} height={350} style={{ objectFit: 'contain' }} />
+        <Image src="/assets/images/equipment/FVZ285.png" alt="Dump Truck" width={450} height={350} style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
       </Box>
 
       <Box
@@ -116,7 +116,7 @@ const MiningAuthBackground = () => {
           animation: 'float 10s ease-in-out infinite'
         }}
       >
-        <Image src="/assets/images/equipment/330D.png" alt="Bulldozer" width={400} height={300} style={{ objectFit: 'contain' }} />
+        <Image src="/assets/images/equipment/330D.png" alt="Bulldozer" width={400} height={300} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
       </Box>
 
       {/* Mining Pattern Overlay */}

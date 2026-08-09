@@ -24,52 +24,23 @@ const AuthGuard = ({ children }) => {
 
   // Handle authentication state changes
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/auth/protected', { cache: 'no-store' });
-        const json = await res?.json();
-        
-        if (!json?.protected) {
-          // For testing purposes, bypass authentication in development
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Development mode: bypassing authentication');
-            setAuthState('authenticated');
-            return;
-          }
-          router.push('/login');
-          return;
-        }
-
-        // User is authenticated, go directly to app
-        setAuthState('authenticated');
-      } catch (error) {
-        console.error('Fetch error:', error);
-        // For testing purposes, bypass authentication in development
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Development mode: bypassing authentication due to error');
-          setAuthState('authenticated');
-          return;
-        }
-        router.push('/login');
-      }
-    };
-
     if (status === 'loading') {
       setAuthState('loading');
       return;
     }
 
     if (status === 'authenticated' && session?.user) {
-      fetchData();
-    } else {
-      // For testing purposes, bypass authentication in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: bypassing authentication check');
-        setAuthState('authenticated');
-        return;
-      }
-      router.push('/login');
+      setAuthState('authenticated');
+      return;
     }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: bypassing authentication check');
+      setAuthState('authenticated');
+      return;
+    }
+
+    router.push('/login');
   }, [session, status, router]);
 
   

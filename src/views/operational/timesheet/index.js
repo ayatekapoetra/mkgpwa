@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 // MATERIAL - UI
 import Button from '@mui/material/Button';
@@ -22,7 +23,14 @@ import { getAllRequests, replayRequests } from 'lib/offlineFetch';
 import SyncProgressDialog from 'components/SyncProgressDialog';
 
 // SWR
-import { useGetDailyTimesheet, exportTimesheetHeavyEquipment, exportTimesheetDumptruck, exportTimesheetAll, exportTimesheetEvaluasi } from 'api/daily-timesheet';
+import {
+  useGetDailyTimesheet,
+  useTimesheetAccess,
+  exportTimesheetHeavyEquipment,
+  exportTimesheetDumptruck,
+  exportTimesheetAll,
+  exportTimesheetEvaluasi
+} from 'api/daily-timesheet';
 import FilterTimesheet from './filter';
 import { useSnackbar } from 'notistack';
 
@@ -68,6 +76,8 @@ export default function DailyTimesheetScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { enqueueSnackbar } = useSnackbar();
+  const { data: session } = useSession();
+  const { permissions, loading: accessLoading } = useTimesheetAccess(session?.id, session?.usertype);
 
   const defaultParams = {
     page: 1,
@@ -240,14 +250,16 @@ export default function DailyTimesheetScreen() {
       <MainCard
         title={
           <Stack direction="row" alignItems="center" spacing={2}>
-            {isMobile ? (
-              <IconButton variant="contained" component={Link} href="/timesheet/create" color="primary">
-                <NoteAdd />
-              </IconButton>
-            ) : (
-              <Button variant="contained" component={Link} href="/timesheet/create">
-                Buat Timesheet
-              </Button>
+            {!accessLoading && permissions.can_insert && (
+              isMobile ? (
+                <IconButton variant="contained" component={Link} href="/timesheet/create" color="primary">
+                  <NoteAdd />
+                </IconButton>
+              ) : (
+                <Button variant="contained" component={Link} href="/timesheet/create">
+                  Buat Timesheet
+                </Button>
+              )
             )}
             {!isOnline && (
               <IconButton variant="outlined" color="warning" onClick={handleManualSync} disabled={syncing}>

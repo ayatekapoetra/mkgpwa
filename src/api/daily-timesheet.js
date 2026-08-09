@@ -12,7 +12,97 @@ export const endpoints = {
   exportAlatBerat: '/alat-berat/export-excel',
   exportDumptruck: '/dumptruck/export-excel',
   exportAll: '/all/export-excel',
-  exportEvaluasi: '/evaluasi/export-excel'
+  exportEvaluasi: '/evaluasi/export-excel',
+  access: '/setting/akses-menu/list'
+};
+
+const TIMESHEET_SUBMENU_URL = '/timesheet';
+
+const DENIED_PERMISSIONS = {
+  can_read: false,
+  can_insert: false,
+  can_update: false,
+  can_remove: false,
+  can_approve: false,
+  can_reject: false
+};
+
+const isPermissionEnabled = (value) =>
+  value === true || value === 1 || ['1', 'Y', 'TRUE'].includes(String(value || '').trim().toUpperCase());
+
+const extractAccessRows = (payload) => {
+  if (Array.isArray(payload?.rows?.data)) return payload.rows.data;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload)) return payload;
+  return [];
+};
+
+const findTimesheetAccessRow = (rows = []) =>
+  rows.find((row) => {
+    const url = String(row?.submenu?.url || row?.url || '').trim();
+    return url === TIMESHEET_SUBMENU_URL;
+  }) || null;
+
+const permissionsFromAccessRow = (row) => {
+  const canApprove = isPermissionEnabled(row?.approve);
+  return {
+    can_read: isPermissionEnabled(row?.read),
+    can_insert: isPermissionEnabled(row?.insert),
+    can_update: isPermissionEnabled(row?.update),
+    can_remove: isPermissionEnabled(row?.remove),
+    can_approve: canApprove,
+    can_reject: canApprove
+  };
+};
+
+export const useTimesheetAccess = (userId, usertype) => {
+  const isDeveloper = String(usertype || '').toLowerCase() === 'developer';
+  const url =
+    userId && !isDeveloper
+      ? `${endpoints.access}?${new URLSearchParams({ user_id: userId, perPages: 100 })}`
+      : null;
+
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(() => {
+    if (isDeveloper) {
+      return {
+        permissions: {
+          can_read: true,
+          can_insert: true,
+          can_update: true,
+          can_remove: true,
+          can_approve: true,
+          can_reject: true
+        },
+        loading: false,
+        error: null,
+        validating: false
+      };
+    }
+
+    if (!userId) {
+      return {
+        permissions: DENIED_PERMISSIONS,
+        loading: false,
+        error: null,
+        validating: false
+      };
+    }
+
+    const accessRow = findTimesheetAccessRow(extractAccessRows(data));
+    return {
+      permissions: accessRow ? permissionsFromAccessRow(accessRow) : DENIED_PERMISSIONS,
+      loading: isLoading,
+      error,
+      validating: isValidating
+    };
+  }, [data, error, isDeveloper, isLoading, isValidating, userId]);
 };
 
 /**

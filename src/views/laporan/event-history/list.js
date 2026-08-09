@@ -29,7 +29,8 @@ const durationColumns = [
 
 const formatHours = (value) => {
   const number = Number(value);
-  return Number.isFinite(number) ? number.toFixed(2) : '0.00';
+  if (!Number.isFinite(number) || number === 0) return '-';
+  return number.toFixed(2);
 };
 
 export default function ListEventHistory({

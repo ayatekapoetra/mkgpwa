@@ -242,9 +242,9 @@ export default function HomeDashboard() {
               xl: 'repeat(6, 1fr)'
             }}
           >
-            {topKpis.map((kpi) => (
-              <DashboardGridItem key={kpi.key}>
-                <KpiCard {...kpi} />
+            {topKpis.map(({ key: kpiKey, ...kpiProps }) => (
+              <DashboardGridItem key={kpiKey}>
+                <KpiCard {...kpiProps} />
               </DashboardGridItem>
             ))}
           </DashboardGrid>

@@ -18,18 +18,12 @@ const GuestGuard = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch('/api/auth/protected');
-      const json = await res?.json();
-      if (json?.protected) {
-        router.push('/home');
-      }
-    };
-
-    fetchData();
+    if (status === 'authenticated') {
+      router.push('/home');
+    }
 
     // eslint-disable-next-line
-  }, [session]);
+  }, [session, status, router]);
 
   if (status === 'loading' || session?.user) return <Loader />;
 

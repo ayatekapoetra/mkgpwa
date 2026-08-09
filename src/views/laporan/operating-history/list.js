@@ -23,6 +23,11 @@ const formatNumber = (value) => {
   return Number.isFinite(number) ? number.toFixed(2) : '0.00';
 };
 
+const formatWorkingHours = (value) => {
+  if (value === '' || value === null || value === undefined) return '';
+  return formatNumber(value);
+};
+
 const formatDate = (value) => {
   const date = moment(value, 'YYYY-MM-DD', true);
   return date.isValid() ? date.format('DD MMM YYYY') : '-';
@@ -40,7 +45,7 @@ export default function ListOperatingHistory({
   onRowsPerPageChange
 }) {
   const theme = useTheme();
-  const columnCount = detail ? 13 : 10;
+  const columnCount = detail ? 14 : 11;
   const headerCellSx = {
     position: 'sticky',
     top: 0,
@@ -78,6 +83,7 @@ export default function ListOperatingHistory({
           <TableHead>
             <TableRow>
               <TableCell sx={headerCellSx}>No</TableCell>
+              <TableCell sx={headerCellSx}>Site Project</TableCell>
               <TableCell sx={headerCellSx}>Location</TableCell>
               {detail ? <TableCell sx={headerCellSx}>Date</TableCell> : null}
               {detail ? <TableCell sx={headerCellSx}>Shift</TableCell> : null}
@@ -100,13 +106,14 @@ export default function ListOperatingHistory({
             ) : (
               data.map((row) => {
                 const key = detail
-                  ? `${row.location_id}-${row.date_ops}-${row.shift_id}-${row.equipment_id}-${row.employee_id}-${row.type}-${row.no}`
-                  : `${row.location_id}-${row.equipment_id}-${row.type}-${row.no}`;
+                  ? `${row.location_id}-${row.site_project_id}-${row.date_ops}-${row.shift_id}-${row.equipment_id}-${row.employee_id}-${row.type}-${row.no}`
+                  : `${row.location_id}-${row.site_project_id}-${row.equipment_id}-${row.type}-${row.no}`;
                 const diff = Number(row.diff) || 0;
 
                 return (
                   <TableRow key={key} hover>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.no}</TableCell>
+                    <TableCell sx={{ minWidth: 180 }}><Typography variant="body2" fontWeight={600}>{row.site_project_name || '-'}</Typography></TableCell>
                     <TableCell sx={{ minWidth: 170 }}><Typography variant="body2" fontWeight={600}>{row.location_name || '-'}</Typography></TableCell>
                     {detail ? <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDate(row.date_ops)}</TableCell> : null}
                     {detail ? <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.shift_name || '-'}</TableCell> : null}
@@ -115,7 +122,7 @@ export default function ListOperatingHistory({
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.type || ''}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.duration)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.hmkm)}</TableCell>
-                    <TableCell sx={numericCellSx}>{row.working_hours || ''}</TableCell>
+                    <TableCell sx={numericCellSx}>{formatWorkingHours(row.working_hours)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.da_operating_hours)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.ts_operating_hours)}</TableCell>
                     <TableCell sx={{ ...numericCellSx, color: diff === 0 ? 'text.primary' : diff > 0 ? 'warning.main' : 'error.main', fontWeight: 700 }}>
