@@ -45,15 +45,17 @@ export default function ListOperatingHistory({
   onRowsPerPageChange
 }) {
   const theme = useTheme();
-  const columnCount = detail ? 14 : 11;
+  const columnCount = detail ? 12 : 9;
+  const headerBg = theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200];
   const headerCellSx = {
-    position: 'sticky',
-    top: 0,
-    zIndex: 3,
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200],
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    backgroundColor: headerBg,
+    border: `1px solid ${theme.palette.divider}`,
     whiteSpace: 'nowrap',
-    fontWeight: 700
+    fontWeight: 700,
+    textAlign: 'center',
+    verticalAlign: 'middle',
+    lineHeight: 1.25,
+    py: 1
   };
   const numericCellSx = { whiteSpace: 'nowrap', textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
 
@@ -62,7 +64,7 @@ export default function ListOperatingHistory({
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Stack spacing={0.25}>
           <Typography variant="subtitle1">Data Operating History{detail ? ' Detail' : ''}</Typography>
-          <Typography variant="caption" color="text.secondary">Perbandingan Daily Activity dan Timesheet</Typography>
+          <Typography variant="caption" color="text.secondary">Perbandingan Daily Activity dan Timesheet per penyewa dan unit (lintas lokasi)</Typography>
         </Stack>
         <TextField
           select
@@ -78,24 +80,35 @@ export default function ListOperatingHistory({
         </TextField>
       </Stack>
 
-      <TableContainer sx={{ maxHeight: '70vh', overflowX: 'auto', position: 'relative' }}>
-        <Table stickyHeader sx={{ minWidth: detail ? 1720 : 1280 }}>
-          <TableHead>
+      <TableContainer sx={{ maxHeight: '70vh', overflow: 'auto', position: 'relative' }}>
+        <Table sx={{ minWidth: detail ? 1440 : 1000 }}>
+          <TableHead
+            sx={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 5,
+              backgroundColor: headerBg,
+              '& .MuiTableCell-root': {
+                backgroundColor: headerBg
+              }
+            }}
+          >
             <TableRow>
-              <TableCell sx={headerCellSx}>No</TableCell>
-              <TableCell sx={headerCellSx}>Site Project</TableCell>
-              <TableCell sx={headerCellSx}>Location</TableCell>
-              {detail ? <TableCell sx={headerCellSx}>Date</TableCell> : null}
-              {detail ? <TableCell sx={headerCellSx}>Shift</TableCell> : null}
-              <TableCell sx={headerCellSx}>ID Unit</TableCell>
-              {detail ? <TableCell sx={headerCellSx}>Driver/Operator</TableCell> : null}
-              <TableCell sx={headerCellSx}>Type</TableCell>
-              <TableCell sx={headerCellSx} align="right">Duration</TableCell>
-              <TableCell sx={headerCellSx} align="right">HM/KM</TableCell>
-              <TableCell sx={headerCellSx} align="right">Working Hours</TableCell>
-              <TableCell sx={headerCellSx} align="right">DA Operating Hours</TableCell>
-              <TableCell sx={headerCellSx} align="right">TS Operating Hours</TableCell>
-              <TableCell sx={headerCellSx} align="right">Diff</TableCell>
+              <TableCell sx={headerCellSx} rowSpan={2}>No</TableCell>
+              <TableCell sx={headerCellSx} rowSpan={2}>Site Project</TableCell>
+              {detail ? <TableCell sx={headerCellSx} rowSpan={2}>Date</TableCell> : null}
+              {detail ? <TableCell sx={headerCellSx} rowSpan={2}>Shift</TableCell> : null}
+              <TableCell sx={headerCellSx} rowSpan={2}>ID Unit</TableCell>
+              {detail ? <TableCell sx={headerCellSx} rowSpan={2}>Driver/Operator</TableCell> : null}
+              <TableCell sx={headerCellSx} rowSpan={2}>Type</TableCell>
+              <TableCell sx={headerCellSx} rowSpan={2} align="right">HM/KM</TableCell>
+              <TableCell sx={headerCellSx} rowSpan={2} align="right">Working Hours</TableCell>
+              <TableCell sx={headerCellSx} colSpan={2} align="center">Operating Hours</TableCell>
+              <TableCell sx={headerCellSx} rowSpan={2} align="right">Diff</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell sx={headerCellSx} align="right">DA</TableCell>
+              <TableCell sx={headerCellSx} align="right">TS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -106,26 +119,24 @@ export default function ListOperatingHistory({
             ) : (
               data.map((row) => {
                 const key = detail
-                  ? `${row.location_id}-${row.site_project_id}-${row.date_ops}-${row.shift_id}-${row.equipment_id}-${row.employee_id}-${row.type}-${row.no}`
-                  : `${row.location_id}-${row.site_project_id}-${row.equipment_id}-${row.type}-${row.no}`;
+                  ? `${row.site_project_id}-${row.date_ops}-${row.shift_id}-${row.equipment_id}-${row.employee_id}-${row.type}-${row.no}`
+                  : `${row.site_project_id}-${row.equipment_id}-${row.type}-${row.no}`;
                 const diff = Number(row.diff) || 0;
 
                 return (
                   <TableRow key={key} hover>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.no}</TableCell>
                     <TableCell sx={{ minWidth: 180 }}><Typography variant="body2" fontWeight={600}>{row.site_project_name || '-'}</Typography></TableCell>
-                    <TableCell sx={{ minWidth: 170 }}><Typography variant="body2" fontWeight={600}>{row.location_name || '-'}</Typography></TableCell>
                     {detail ? <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDate(row.date_ops)}</TableCell> : null}
                     {detail ? <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.shift_name || '-'}</TableCell> : null}
                     <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.equipment_code || '-'}</TableCell>
                     {detail ? <TableCell sx={{ minWidth: 180 }}>{row.employee_name || '-'}</TableCell> : null}
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.type || ''}</TableCell>
-                    <TableCell sx={numericCellSx}>{formatNumber(row.duration)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.hmkm)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatWorkingHours(row.working_hours)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.da_operating_hours)}</TableCell>
                     <TableCell sx={numericCellSx}>{formatNumber(row.ts_operating_hours)}</TableCell>
-                    <TableCell sx={{ ...numericCellSx, color: diff === 0 ? 'text.primary' : diff > 0 ? 'warning.main' : 'error.main', fontWeight: 700 }}>
+                    <TableCell sx={{ ...numericCellSx, color: diff === 0 ? 'success.main' : diff > 0 ? 'warning.main' : 'error.main', fontWeight: 700 }}>
                       {formatNumber(diff)}
                     </TableCell>
                   </TableRow>
