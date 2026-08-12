@@ -102,34 +102,10 @@ export function useGetMenu() {
     if (reportMenu && Array.isArray(reportMenu.children)) {
       const reportItems = [
         {
-          id: 'operating-history',
-          title: 'Operating History',
-          type: 'item',
-          url: '/laporan/operating-history',
-          icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        },
-        {
-          id: 'operating-history-detail',
-          title: 'Operating History Detail',
-          type: 'item',
-          url: '/laporan/operating-history-detail',
-          icon: getMenuIcon('documentText'),
-          breadcrumbs: true
-        },
-        {
           id: 'event-history',
           title: 'Event History',
           type: 'item',
           url: '/laporan/event-history',
-          icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        },
-        {
-          id: 'productivity',
-          title: 'Productivity',
-          type: 'item',
-          url: '/laporan/productivity',
           icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
           breadcrumbs: true
         }

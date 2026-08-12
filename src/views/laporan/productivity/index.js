@@ -141,6 +141,14 @@ export default function ProductivityScreen() {
           page={result.page}
           perPage={result.perPage}
           loading={result.dataLoading}
+          metricLoading={{
+            hmkm: hmkmResult.dataLoading,
+            standby: standbyResult.dataLoading,
+            opportunity: opportunityResult.dataLoading,
+            operating: operatingResult.dataLoading,
+            PA: paResult.dataLoading,
+            MA: maResult.dataLoading
+          }}
           onPageChange={(page) => setParams((previous) => ({ ...previous, page }))}
           onRowsPerPageChange={(perPage) => setParams((previous) => ({ ...previous, perPage, page: 1 }))}
         />

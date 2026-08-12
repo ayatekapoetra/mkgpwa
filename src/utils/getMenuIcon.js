@@ -49,6 +49,9 @@ import {
   CloudNotif,
   MessageNotif,
   BagHappy,
+  Crown1,
+  TextalignLeft,
+  TableDocument,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -113,12 +116,16 @@ const iconMap = {
   CloudNotif: CloudNotif,
   MessageNotif: MessageNotif,
   BagHappy: BagHappy,
-  // Aliases for common names
+  Crown1: Crown1,
+  TextalignLeft: TextalignLeft,
+  TableDocument: TableDocument,
+  // Aliases for common names`
   dom: Diagram,
   equipment: Truck,
   truckremove: Health,
   barang: Box,
   material: Layer,
+  PresentionChart: PresentionChart,
   'lokasi-kerja': Location,
   'kegiatan-kerja': Task,
   penyewa: Profile2User,

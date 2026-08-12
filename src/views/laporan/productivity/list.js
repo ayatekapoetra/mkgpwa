@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
+import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
@@ -101,12 +102,55 @@ const renderCell = (column, row, formatDecimalFn, formatPercentFn) => {
 
 const cellSx = { whiteSpace: 'nowrap', verticalAlign: 'top' };
 
+const METRIC_LOADING_KEYS = {
+  hmkm: 'hmkm',
+  standby: 'standby',
+  opportunity: 'opportunity',
+  operating: 'operating',
+  pa: 'PA',
+  ma: 'MA',
+  ua: 'UA',
+  eu: 'EU',
+  mttfs: 'MTTFS',
+  mttr: 'MTTR',
+  mtbs: 'MTBS',
+  mtbf: 'MTBF'
+};
+
+const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercentFn }) => {
+  const loadingKey = METRIC_LOADING_KEYS[column.id];
+  const isLoading = loadingKey && metricLoading?.[loadingKey];
+
+  if (isLoading) {
+    return (
+      <TableCell key={column.id} sx={cellSx}>
+        <CircularProgress size={16} />
+      </TableCell>
+    );
+  }
+
+  if (column.id === 'project') {
+    return (
+      <TableCell key={column.id} sx={{ minWidth: 200, whiteSpace: 'normal', verticalAlign: 'top' }}>
+        {renderCell(column, row, formatDecimalFn, formatPercentFn)}
+      </TableCell>
+    );
+  }
+
+  return (
+    <TableCell key={column.id} sx={cellSx}>
+      {renderCell(column, row, formatDecimalFn, formatPercentFn)}
+    </TableCell>
+  );
+};
+
 export default function ListProductivity({
   data = [],
   total = 0,
   page = 1,
   perPage = 25,
   loading = false,
+  metricLoading = {},
   onPageChange,
   onRowsPerPageChange
 }) {
@@ -214,20 +258,16 @@ export default function ListProductivity({
             ) : (
               data.map((row, index) => (
                 <TableRow key={row.row_key || `${row.equipment_id || row.equipment_code}-${index}`} hover>
-                  {visibleColumns.map((column) => {
-                    if (column.id === 'project') {
-                      return (
-                        <TableCell key={column.id} sx={{ minWidth: 200, whiteSpace: 'normal', verticalAlign: 'top' }}>
-                          {renderCell(column, row, formatDecimal, formatPercent)}
-                        </TableCell>
-                      );
-                    }
-                    return (
-                      <TableCell key={column.id} sx={cellSx}>
-                        {renderCell(column, row, formatDecimal, formatPercent)}
-                      </TableCell>
-                    );
-                  })}
+                  {visibleColumns.map((column) => (
+                    <MetricCell
+                      key={column.id}
+                      column={column}
+                      row={row}
+                      metricLoading={metricLoading}
+                      formatDecimalFn={formatDecimal}
+                      formatPercentFn={formatPercent}
+                    />
+                  ))}
                 </TableRow>
               ))
             )}
