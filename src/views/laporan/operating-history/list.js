@@ -126,7 +126,7 @@ export default function ListOperatingHistory({
                 return (
                   <TableRow key={key} hover>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.no}</TableCell>
-                    <TableCell sx={{ minWidth: 180 }}><Typography variant="body2" fontWeight={600}>{row.site_project_name || '-'}</Typography></TableCell>
+                    <TableCell sx={{ minWidth: 180 }}><Typography variant="body" fontWeight={600}>{row.site_project_name || '-'}</Typography></TableCell>
                     {detail ? <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDate(row.date_ops)}</TableCell> : null}
                     {detail ? <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.shift_name || '-'}</TableCell> : null}
                     <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.equipment_code || '-'}</TableCell>

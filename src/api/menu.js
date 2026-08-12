@@ -124,6 +124,14 @@ export function useGetMenu() {
           url: '/laporan/event-history',
           icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
           breadcrumbs: true
+        },
+        {
+          id: 'productivity',
+          title: 'Productivity',
+          type: 'item',
+          url: '/laporan/productivity',
+          icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
+          breadcrumbs: true
         }
       ];
 

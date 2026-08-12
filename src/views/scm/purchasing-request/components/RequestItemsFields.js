@@ -212,9 +212,9 @@ function RequestItemFields({
                   size="small"
                   label="Barang / Sparepart"
                   placeholder="Cari kode, nama, part number, brand, manufaktur"
-                  required
-                  error={Boolean(errors.items?.[index]?.barang_id)}
+                  error={Boolean(errors.items?.[index]?.barang_id) || Boolean(errors.items?.[index]?.description)}
                   helperText={
+                    errors.items?.[index]?.description ||
                     errors.items?.[index]?.barang_id ||
                     `${mergedOptions.length} sparepart tersedia · ketik untuk cari lebih lanjut`
                   }
@@ -347,6 +347,7 @@ function RequestItemFields({
               value={item.description || ""}
               onChange={handleChange}
               fullWidth
+              required={!item.barang_id}
               placeholder="Catatan kebutuhan, posisi pemasangan, atau referensi WO"
               InputLabelProps={{ shrink: true }}
               sx={{

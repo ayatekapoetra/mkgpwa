@@ -35,9 +35,14 @@ const PURCHASING_REQUEST_SCHEMA = Yup.object({
     .min(1, "Minimal satu item")
     .of(
       Yup.object({
-        barang_id: Yup.number().required("Barang wajib dipilih"),
+        barang_id: Yup.number().nullable(),
         qty_req: Yup.number().positive("Qty harus lebih dari 0").required(),
         stn: Yup.string().required("Satuan wajib diisi"),
+        description: Yup.string().when("barang_id", {
+          is: (val) => !val,
+          then: (schema) => schema.required("Deskripsi wajib diisi jika barang tidak dipilih"),
+          otherwise: (schema) => schema,
+        }),
       }),
     ),
 });
@@ -57,9 +62,10 @@ function PurchasingRequestFormBody({
   onSuccess,
 }) {
   const { rows: businessOptions = [] } = usePurchasingRequestBisnis();
-  const { rows: branches = [] } = usePurchasingRequestCabang(
+  const { rows: rawBranches = [] } = usePurchasingRequestCabang(
     values.bisnis_id ? { bisnis_id: values.bisnis_id } : {},
   );
+  const branches = Array.isArray(rawBranches) ? rawBranches : [];
   const { rows: warehouses = [] } = usePurchasingRequestGudang();
   // Load all spare parts without bisnis filter so search works across all units.
   const { rows: itemOptions = [], loading: itemLoading } =

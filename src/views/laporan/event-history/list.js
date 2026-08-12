@@ -24,7 +24,8 @@ const durationColumns = [
   { key: 'hujan', label: 'Hujan', color: 'success' },
   { key: 'jalan_licin', label: 'Jalan Licin', color: 'success' },
   { key: 'public', label: 'Public', color: 'success' },
-  { key: 'arahan', label: 'Arahan', color: 'success' }
+  { key: 'arahan', label: 'Arahan', color: 'success' },
+  { key: 'commissioning', label: 'Commissioning', color: 'success' }
 ];
 
 const formatHours = (value) => {
@@ -83,7 +84,7 @@ export default function ListEventHistory({
       </Stack>
 
         <TableContainer sx={{ maxHeight: '70vh', overflow: 'auto', position: 'relative' }}>
-        <Table stickyHeader sx={{ minWidth: 1320 }}>
+        <Table stickyHeader sx={{ minWidth: 1420 }}>
           <TableHead sx={{ position: 'sticky', top: 0, zIndex: 4 }}>
             <TableRow>
               <TableCell sx={headerCellSx}>No</TableCell>
@@ -94,14 +95,14 @@ export default function ListEventHistory({
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={11} align="center">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={12} align="center">Loading...</TableCell></TableRow>
             ) : data.length === 0 ? (
-              <TableRow><TableCell colSpan={11} align="center">Tidak ada data</TableCell></TableRow>
+              <TableRow><TableCell colSpan={12} align="center">Tidak ada data</TableCell></TableRow>
             ) : (
               data.map((row) => (
                 <TableRow key={`${row.site_project_id}-${row.equipment_id}-${row.no}`} hover>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.no}</TableCell>
-                  <TableCell sx={{ minWidth: 180 }}><Typography variant="body2" fontWeight={600}>{row.site_project_name || '-'}</Typography></TableCell>
+                  <TableCell sx={{ minWidth: 180 }}><Typography variant="body" fontWeight={600}>{row.site_project_name || '-'}</Typography></TableCell>
                   <TableCell sx={{ minWidth: 130, whiteSpace: 'nowrap', fontWeight: 600 }}>{row.equipment_code || '-'}</TableCell>
                   {durationColumns.map(({ key, color }) => <TableCell key={key} sx={durationBodyCellSx(color)}>{formatHours(row[key])}</TableCell>)}
                 </TableRow>

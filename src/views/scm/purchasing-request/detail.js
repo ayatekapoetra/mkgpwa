@@ -10,6 +10,7 @@ import {
   printPurchasingRequest,
   rollbackPurchasingRequest,
   usePurchasingRequestAccess,
+  usePurchasingRequestBarang,
   usePurchasingRequestPemasok,
   usePurchasingRequestPermissions,
   useShowPurchasingRequest,
@@ -42,6 +43,10 @@ export default function PurchasingRequestDetail() {
   const { permissions } = usePurchasingRequestPermissions(row);
   const { rows: suppliers = [] } = usePurchasingRequestPemasok(
     { page: 1, limit: 100 },
+    Boolean(row),
+  );
+  const { rows: barangOptions = [] } = usePurchasingRequestBarang(
+    {},
     Boolean(row),
   );
   const [mode, setMode] = useState("view");
@@ -125,7 +130,8 @@ export default function PurchasingRequestDetail() {
 
       return {
         id: item.id,
-        barang_id: item.barang_id,
+        barang_id: value.barang_id || item.barang_id || null,
+        description: value.description || item.description || "",
         pemasok_id: value.pemasok_id,
         equipment_id: item.equipment_id,
         qty_acc: Number(value.qty_acc),
@@ -309,6 +315,7 @@ export default function PurchasingRequestDetail() {
                   index={index}
                   mode={mode}
                   suppliers={suppliers}
+                  barangOptions={barangOptions}
                   value={getItemDraft(item)}
                   eligibleValidation={pendingValidation.some(
                     (pendingItem) => pendingItem.id === item.id,

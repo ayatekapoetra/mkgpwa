@@ -4,6 +4,7 @@ import {
   Autocomplete,
   Box,
   Checkbox,
+  Chip,
   FormControlLabel,
   InputAdornment,
   MenuItem,
@@ -20,14 +21,50 @@ import {
   formatCurrency,
   getBarangDisplayName,
   getBarangPrimaryCode,
+  getBarangSearchText,
   getRelationName,
   getSelectedOption,
 } from "../utils";
 
+/** Renders a rich spare-part option row for the validation autocomplete. */
+function BarangValidationOptionRow({ option }) {
+  const group = getRelationName(option.kategori) || option.category || "";
+  const satuan = option.satuan || option.stn || "";
+  const groups = option.groups || "";
+
+  return (
+    <Stack sx={{ width: "100%", py: 0.5 }} spacing={0.5}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Typography variant="caption" color="text.secondary">
+          {option.kode || "-"}
+        </Typography>
+        {groups && <Chip size="small" label={groups} variant="outlined" />}
+      </Stack>
+      <Typography variant="body2" fontWeight={700}>
+        {option.nama || option.name || "-"}
+      </Typography>
+      <Stack direction="row" spacing={0.5} alignItems="center" useFlexGap flexWrap="wrap">
+        {group && (
+          <Typography variant="caption" color="text.secondary">
+            {group}
+          </Typography>
+        )}
+        {satuan && (
+          <Typography variant="caption" color="text.secondary">
+            · {satuan}
+          </Typography>
+        )}
+      </Stack>
+    </Stack>
+  );
+}
+
 /** Renders editable supplier and pricing fields for one selected item. */
-function ValidationFields({ item, value, suppliers, onChange }) {
+function ValidationFields({ item, value, suppliers, barangOptions, onChange }) {
   const selectedSupplier =
     getSelectedOption(suppliers, value.pemasok_id) || item.pemasok || null;
+  const selectedBarang =
+    getSelectedOption(barangOptions, value.barang_id) || item.barang || null;
   const totals = calculateItemTotals(value);
 
   // Grid helper: 12 columns on desktop, each field spans N columns.
@@ -42,8 +79,55 @@ function ValidationFields({ item, value, suppliers, onChange }) {
         gridTemplateColumns: { xs: "repeat(12, 1fr)" },
         gap: 1.5,
       }}
-    >
-      {/* Supplier — lebar 4/12 */}
+      >
+        {/* Barang — lebar 6/12, opsional */}
+        <Autocomplete
+          options={barangOptions}
+          value={selectedBarang}
+          getOptionLabel={(option) =>
+            [option?.kode, option?.nama || option?.name].filter(Boolean).join(" · ") || ""
+          }
+          isOptionEqualToValue={(option, valueOption) =>
+            String(option?.id) === String(valueOption?.id)
+          }
+          filterOptions={(options, state) => {
+            const query = String(state.inputValue || "")
+              .trim()
+              .toLowerCase();
+            if (!query) return options;
+            return options.filter((option) =>
+              getBarangSearchText(option).includes(query),
+            );
+          }}
+          onChange={(_, option) => {
+            onChange(item, "barang_id", option?.id || "");
+            if (option?.satuan || option?.stn) {
+              onChange(item, "stn", option.satuan || option.stn);
+            }
+          }}
+          size="small"
+          sx={col(12)}
+          renderOption={(props, option) => (
+            <li {...props} key={`${option.id}-${option.kode || "barang"}`}>
+              <BarangValidationOptionRow option={option} />
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Barang / Sparepart"
+              placeholder="Cari sparepart (opsional)"
+              size="small"
+              helperText={
+                !value.barang_id
+                  ? "Wajib pilih barang atau isi deskripsi item"
+                  : " "
+              }
+            />
+          )}
+        />
+
+        {/* Supplier — lebar 6/12 */}
       <Autocomplete
         options={suppliers}
         value={selectedSupplier}
@@ -166,6 +250,25 @@ function ValidationFields({ item, value, suppliers, onChange }) {
         InputProps={{ readOnly: true }}
         sx={col(3)}
       />
+
+      {/* Deskripsi Item — 12/12 */}
+      <TextField
+        size="small"
+        label="Deskripsi Item"
+        value={value.description || item.description || ""}
+        onChange={(event) => onChange(item, "description", event.target.value)}
+        fullWidth
+        multiline
+        minRows={2}
+        placeholder="Catatan kebutuhan, posisi pemasangan, atau referensi WO"
+        required={!value.barang_id && !item.barang_id}
+        helperText={
+          !value.barang_id && !item.barang_id
+            ? "Wajib diisi jika barang tidak dipilih"
+            : " "
+        }
+        sx={col(12)}
+      />
     </Box>
   );
 }
@@ -223,6 +326,7 @@ export default function RequestItemCard({
   index,
   mode,
   suppliers,
+  barangOptions = [],
   value,
   eligibleValidation,
   eligibleApproval,
@@ -315,6 +419,7 @@ export default function RequestItemCard({
             item={item}
             value={value}
             suppliers={suppliers}
+            barangOptions={barangOptions}
             onChange={onDraftChange}
           />
         ) : (
