@@ -14,7 +14,7 @@ import { Add } from 'iconsax-react';
 import MainCard from 'components/MainCard';
 import { usePublicEquipment } from 'api/equipment';
 import { useGetKegiatanKerja } from 'api/kegiatan-mining';
-import { useGetLokasiKerja } from 'api/lokasi-mining';
+import { usePublicPenyewa } from 'api/penyewa';
 import { useGetShiftKerja } from 'api/shiftkerja';
 
 const defaultDates = () => {
@@ -31,15 +31,15 @@ const selectedOptions = (options, selected) => {
 };
 
 export default function FilterOperatingHistory({ open, count, params, setParams, onClose, title, anchor = 'right' }) {
-  const { data: lokasiData = [], dataLoading: lokasiLoading } = useGetLokasiKerja();
+  const { penyewa: penyewaData = [], penyewaLoading } = usePublicPenyewa();
   const { data: shiftData = [], dataLoading: shiftLoading } = useGetShiftKerja();
   const { data: kegiatanData = [], dataLoading: kegiatanLoading } = useGetKegiatanKerja();
   const { data: equipmentData = [], dataLoading: equipmentLoading } = usePublicEquipment();
-  const lokasiOptions = Array.isArray(lokasiData) ? lokasiData : [];
+  const penyewaOptions = Array.isArray(penyewaData) ? penyewaData : [];
   const shiftOptions = Array.isArray(shiftData) ? shiftData : [];
   const kegiatanOptions = Array.isArray(kegiatanData) ? kegiatanData : [];
   const equipmentOptions = Array.isArray(equipmentData) ? equipmentData : [];
-  const selectedLokasi = selectedOptions(lokasiOptions, params.lokasi_ids);
+  const selectedPenyewa = selectedOptions(penyewaOptions, params.penyewa_ids);
   const selectedShift = selectedOptions(shiftOptions, params.shift_ids);
   const selectedKegiatan = selectedOptions(kegiatanOptions, params.kegiatan_ids);
   const selectedEquipment = selectedOptions(equipmentOptions, params.equipment_ids);
@@ -50,7 +50,7 @@ export default function FilterOperatingHistory({ open, count, params, setParams,
     update({
       startdate: dates.startdate,
       enddate: dates.enddate,
-      lokasi_ids: [],
+      penyewa_ids: [],
       shift_ids: [],
       kegiatan_ids: [],
       equipment_ids: []
@@ -100,21 +100,13 @@ export default function FilterOperatingHistory({ open, count, params, setParams,
             <Grid item xs={12}>
               <Autocomplete
                 multiple
-                options={lokasiOptions}
-                loading={lokasiLoading}
-                value={selectedLokasi}
-                onChange={(_, value) => update({ lokasi_ids: value })}
+                options={penyewaOptions}
+                loading={penyewaLoading}
+                value={selectedPenyewa}
+                onChange={(_, value) => update({ penyewa_ids: value })}
                 isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
                 getOptionLabel={(option) => option?.nama || ''}
-                renderInput={(inputParams) => <TextField {...inputParams} label="Lokasi" />}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id}>
-                    <Stack>
-                      <Typography variant="body2" fontWeight={600}>{option.nama || '-'}</Typography>
-                      <Typography variant="caption" color="text.secondary">{option.cabang?.nama || option.type || '-'}</Typography>
-                    </Stack>
-                  </li>
-                )}
+                renderInput={(inputParams) => <TextField {...inputParams} label="Project / Penyewa" />}
               />
             </Grid>
             <Grid item xs={12}>

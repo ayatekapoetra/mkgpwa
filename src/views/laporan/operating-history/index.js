@@ -53,7 +53,7 @@ export default function OperatingHistoryScreen({ detail = false }) {
     perPage: 25,
     startdate: defaultDates.startdate,
     enddate: defaultDates.enddate,
-    lokasi_ids: [],
+    penyewa_ids: [],
     shift_ids: [],
     kegiatan_ids: [],
     equipment_ids: []

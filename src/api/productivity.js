@@ -176,3 +176,45 @@ export const useGetProductivityMa = (params) => {
     [data, error, isLoading, isValidating, mutate]
   );
 };
+
+export const useGetProductivityUa = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/metrics/ua/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
+export const useGetProductivityEu = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/metrics/eu/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};

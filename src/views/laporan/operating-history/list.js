@@ -95,7 +95,7 @@ export default function ListOperatingHistory({
           >
             <TableRow>
               <TableCell sx={headerCellSx} rowSpan={2}>No</TableCell>
-              <TableCell sx={headerCellSx} rowSpan={2}>Site Project</TableCell>
+              <TableCell sx={headerCellSx} rowSpan={2}>Penyewa</TableCell>
               {detail ? <TableCell sx={headerCellSx} rowSpan={2}>Date</TableCell> : null}
               {detail ? <TableCell sx={headerCellSx} rowSpan={2}>Shift</TableCell> : null}
               <TableCell sx={headerCellSx} rowSpan={2}>ID Unit</TableCell>

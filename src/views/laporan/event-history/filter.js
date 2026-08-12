@@ -13,7 +13,7 @@ import { Add } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import { usePublicEquipment } from 'api/equipment';
-import { useGetLokasiKerja } from 'api/lokasi-mining';
+import { usePublicPenyewa } from 'api/penyewa';
 import { useGetShiftKerja } from 'api/shiftkerja';
 
 const defaultDates = () => {
@@ -30,17 +30,17 @@ const selectedOptions = (options, selected) => {
 };
 
 export default function FilterEventHistory({ open, count, params, setParams, onClose }) {
-  const { data: lokasiData = [], dataLoading: lokasiLoading } = useGetLokasiKerja();
+  const { penyewa: penyewaData = [], penyewaLoading } = usePublicPenyewa();
   const { data: equipmentData = [], dataLoading: equipmentLoading } = usePublicEquipment();
   const { data: shiftData = [], dataLoading: shiftLoading } = useGetShiftKerja();
-  const lokasiOptions = Array.isArray(lokasiData) ? lokasiData : [];
+  const penyewaOptions = Array.isArray(penyewaData) ? penyewaData : [];
   const equipmentOptions = Array.isArray(equipmentData) ? equipmentData : [];
   const shiftOptions = Array.isArray(shiftData) ? shiftData : [];
   const update = (values) => setParams((previous) => ({ ...previous, ...values, page: 1 }));
 
   const reset = () => {
     const dates = defaultDates();
-    update({ ...dates, lokasi_ids: [], equipment_ids: [], shift_ids: [] });
+    update({ ...dates, penyewa_ids: [], equipment_ids: [], shift_ids: [] });
   };
 
   return (
@@ -86,13 +86,13 @@ export default function FilterEventHistory({ open, count, params, setParams, onC
             <Grid item xs={12}>
               <Autocomplete
                 multiple
-                options={lokasiOptions}
-                loading={lokasiLoading}
-                value={selectedOptions(lokasiOptions, params.lokasi_ids)}
-                onChange={(_, value) => update({ lokasi_ids: value })}
+                options={penyewaOptions}
+                loading={penyewaLoading}
+                value={selectedOptions(penyewaOptions, params.penyewa_ids)}
+                onChange={(_, value) => update({ penyewa_ids: value })}
                 isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
                 getOptionLabel={(option) => option?.nama || ''}
-                renderInput={(inputParams) => <TextField {...inputParams} label="Location" />}
+                renderInput={(inputParams) => <TextField {...inputParams} label="Project / Penyewa" />}
               />
             </Grid>
             <Grid item xs={12}>

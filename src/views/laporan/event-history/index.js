@@ -49,7 +49,7 @@ export default function EventHistoryScreen() {
     perPage: 25,
     startdate: defaultDates.startdate,
     enddate: defaultDates.enddate,
-    lokasi_ids: [],
+    penyewa_ids: [],
     equipment_ids: [],
     shift_ids: []
   });

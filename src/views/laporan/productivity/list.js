@@ -26,20 +26,43 @@ import { useTheme } from '@mui/material/styles';
 import Paginate from 'components/Paginate';
 
 const formatDecimal = (value) => {
-  if (value === null || value === undefined || value === '') return '0.00';
+  if (value === null || value === undefined || value === '') return '0.0';
   const parsed = Number(value);
-  return Number.isNaN(parsed) ? '0.00' : parsed.toFixed(2);
+  return Number.isNaN(parsed) ? '0.0' : parsed.toFixed(1);
 };
 
 const formatPercent = (value) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed === 0) return '-';
-  return Math.round(parsed * 100);
+  return (parsed * 100).toFixed(1);
+};
+
+const getPercentValue = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed === 0) return null;
+  return parsed * 100;
+};
+
+const PercentText = ({ value }) => {
+  const percent = getPercentValue(value);
+  if (percent === null) return '-';
+  const isDanger = percent < 95;
+  return (
+    <Typography
+      variant="body"
+      sx={{
+        fontWeight: 700,
+        color: (theme) => isDanger ? theme.palette.error.main : theme.palette.success.main
+      }}
+    >
+      {percent.toFixed(1)}
+    </Typography>
+  );
 };
 
 const FIXED_COLUMNS = [
   { id: 'no', label: 'No', fixed: true },
-  { id: 'project', label: 'Project', fixed: true },
+  { id: 'project', label: 'Penyewa', fixed: true },
   { id: 'id_unit', label: 'ID Unit', fixed: true }
 ];
 
@@ -49,6 +72,7 @@ const TOGGLEABLE_COLUMNS = [
   { id: 'standby', label: 'Standby' },
   { id: 'opportunity', label: 'Opportunity' },
   { id: 'operating', label: 'Operating' },
+  { id: 'wh', label: 'WH' },
   { id: 'pa', label: 'PA' },
   { id: 'ma', label: 'MA' },
   { id: 'ua', label: 'UA' },
@@ -79,14 +103,16 @@ const renderCell = (column, row, formatDecimalFn, formatPercentFn) => {
       return formatDecimalFn(row.opportunity);
     case 'operating':
       return formatDecimalFn(row.operating);
+    case 'wh':
+      return formatDecimalFn(row.WH);
     case 'pa':
-      return formatPercentFn(row.PA);
+      return <PercentText value={row.PA} />;
     case 'ma':
-      return formatPercentFn(row.MA);
+      return <PercentText value={row.MA} />;
     case 'ua':
-      return formatDecimalFn(row.UA);
+      return <PercentText value={row.UA} />;
     case 'eu':
-      return formatDecimalFn(row.EU);
+      return <PercentText value={row.EU} />;
     case 'mttfs':
       return formatDecimalFn(row.MTTFS);
     case 'mttr':
@@ -107,6 +133,7 @@ const METRIC_LOADING_KEYS = {
   standby: 'standby',
   opportunity: 'opportunity',
   operating: 'operating',
+  wh: 'PA',
   pa: 'PA',
   ma: 'MA',
   ua: 'UA',
@@ -117,13 +144,20 @@ const METRIC_LOADING_KEYS = {
   mtbf: 'MTBF'
 };
 
+const CENTERED_COLUMN_IDS = new Set([
+  'hmkm', 'standby', 'opportunity', 'operating', 'wh',
+  'pa', 'ma', 'ua', 'eu', 'mttfs', 'mttr', 'mtbs', 'mtbf'
+]);
+
 const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercentFn }) => {
   const loadingKey = METRIC_LOADING_KEYS[column.id];
   const isLoading = loadingKey && metricLoading?.[loadingKey];
+  const isCentered = CENTERED_COLUMN_IDS.has(column.id);
+  const centerSx = isCentered ? { ...cellSx, textAlign: 'center' } : cellSx;
 
   if (isLoading) {
     return (
-      <TableCell key={column.id} sx={cellSx}>
+      <TableCell key={column.id} sx={centerSx}>
         <CircularProgress size={16} />
       </TableCell>
     );
@@ -138,7 +172,7 @@ const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercent
   }
 
   return (
-    <TableCell key={column.id} sx={cellSx}>
+    <TableCell key={column.id} sx={centerSx}>
       {renderCell(column, row, formatDecimalFn, formatPercentFn)}
     </TableCell>
   );
@@ -242,7 +276,7 @@ export default function ListProductivity({
           >
             <TableRow>
               {visibleColumns.map((column) => (
-                <TableCell key={column.id} sx={headerCellSx}>{column.label}</TableCell>
+                <TableCell key={column.id} sx={{ ...headerCellSx, ...(CENTERED_COLUMN_IDS.has(column.id) ? { textAlign: 'center' } : {}) }}>{column.label}</TableCell>
               ))}
             </TableRow>
           </TableHead>

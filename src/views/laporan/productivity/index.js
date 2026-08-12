@@ -11,7 +11,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
-import { useGetProductivityBase, useGetProductivityHmkm, useGetProductivityStandby, useGetProductivityOpportunity, useGetProductivityOperating, useGetProductivityPa, useGetProductivityMa } from 'api/productivity';
+import { useGetProductivityBase, useGetProductivityHmkm, useGetProductivityStandby, useGetProductivityOpportunity, useGetProductivityOperating, useGetProductivityPa, useGetProductivityMa, useGetProductivityUa, useGetProductivityEu } from 'api/productivity';
 import FilterProductivity from './filter';
 import ListProductivity from './list';
 
@@ -45,6 +45,8 @@ export default function ProductivityScreen() {
   const operatingResult = useGetProductivityOperating(params);
   const paResult = useGetProductivityPa(params);
   const maResult = useGetProductivityMa(params);
+  const uaResult = useGetProductivityUa(params);
+  const euResult = useGetProductivityEu(params);
 
   const hmkmMap = useMemo(() => {
     const map = new Map();
@@ -81,7 +83,17 @@ export default function ProductivityScreen() {
   const paMap = useMemo(() => {
     const map = new Map();
     (paResult.data || []).forEach((row) => {
-      if (row.row_key) map.set(row.row_key, row.PA ?? 0);
+      if (row.row_key) {
+        map.set(row.row_key, row.PA ?? 0);
+      }
+    });
+    return map;
+  }, [paResult.data]);
+
+  const whMap = useMemo(() => {
+    const map = new Map();
+    (paResult.data || []).forEach((row) => {
+      if (row.row_key) map.set(row.row_key, row.WH ?? 0);
     });
     return map;
   }, [paResult.data]);
@@ -94,6 +106,22 @@ export default function ProductivityScreen() {
     return map;
   }, [maResult.data]);
 
+  const uaMap = useMemo(() => {
+    const map = new Map();
+    (uaResult.data || []).forEach((row) => {
+      if (row.row_key) map.set(row.row_key, row.UA ?? 0);
+    });
+    return map;
+  }, [uaResult.data]);
+
+  const euMap = useMemo(() => {
+    const map = new Map();
+    (euResult.data || []).forEach((row) => {
+      if (row.row_key) map.set(row.row_key, row.EU ?? 0);
+    });
+    return map;
+  }, [euResult.data]);
+
   const mergedData = useMemo(
     () => (result.data || []).map((row) => ({
       ...row,
@@ -102,9 +130,12 @@ export default function ProductivityScreen() {
       opportunity: opportunityMap.get(row.row_key) ?? 0,
       operating: operatingMap.get(row.row_key) ?? 0,
       PA: paMap.get(row.row_key) ?? 0,
-      MA: maMap.get(row.row_key) ?? 0
+      WH: whMap.get(row.row_key) ?? 0,
+      MA: maMap.get(row.row_key) ?? 0,
+      UA: uaMap.get(row.row_key) ?? 0,
+      EU: euMap.get(row.row_key) ?? 0
     })),
-    [result.data, hmkmMap, standbyMap, opportunityMap, operatingMap, paMap, maMap]
+    [result.data, hmkmMap, standbyMap, opportunityMap, operatingMap, paMap, maMap, uaMap, euMap]
   );
 
   return (
@@ -147,7 +178,9 @@ export default function ProductivityScreen() {
             opportunity: opportunityResult.dataLoading,
             operating: operatingResult.dataLoading,
             PA: paResult.dataLoading,
-            MA: maResult.dataLoading
+            MA: maResult.dataLoading,
+            UA: uaResult.dataLoading,
+            EU: euResult.dataLoading
           }}
           onPageChange={(page) => setParams((previous) => ({ ...previous, page }))}
           onRowsPerPageChange={(perPage) => setParams((previous) => ({ ...previous, perPage, page: 1 }))}
