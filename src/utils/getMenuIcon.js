@@ -52,6 +52,7 @@ import {
   Crown1,
   TextalignLeft,
   TableDocument,
+  ShoppingCart,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -119,6 +120,7 @@ const iconMap = {
   Crown1: Crown1,
   TextalignLeft: TextalignLeft,
   TableDocument: TableDocument,
+  ShoppingCart: ShoppingCart,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,

@@ -172,6 +172,7 @@ export default function ProductivityScreen() {
           page={result.page}
           perPage={result.perPage}
           loading={result.dataLoading}
+          filterParams={params}
           metricLoading={{
             hmkm: hmkmResult.dataLoading,
             standby: standbyResult.dataLoading,

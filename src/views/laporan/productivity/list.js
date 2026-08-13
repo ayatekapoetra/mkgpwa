@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
@@ -149,15 +150,21 @@ const CENTERED_COLUMN_IDS = new Set([
   'pa', 'ma', 'ua', 'eu', 'mttfs', 'mttr', 'mtbs', 'mtbf'
 ]);
 
-const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercentFn }) => {
+const CLICKABLE_COLUMN_IDS = new Set(['standby', 'opportunity', 'operating']);
+
+const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercentFn, onCellClick }) => {
   const loadingKey = METRIC_LOADING_KEYS[column.id];
   const isLoading = loadingKey && metricLoading?.[loadingKey];
   const isCentered = CENTERED_COLUMN_IDS.has(column.id);
+  const isClickable = CLICKABLE_COLUMN_IDS.has(column.id);
   const centerSx = isCentered ? { ...cellSx, textAlign: 'center' } : cellSx;
+  const clickableSx = isClickable
+    ? { ...centerSx, cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' }, textDecoration: 'underline', textDecorationStyle: 'dotted' }
+    : centerSx;
 
   if (isLoading) {
     return (
-      <TableCell key={column.id} sx={centerSx}>
+      <TableCell key={column.id} sx={clickableSx}>
         <CircularProgress size={16} />
       </TableCell>
     );
@@ -172,7 +179,11 @@ const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercent
   }
 
   return (
-    <TableCell key={column.id} sx={centerSx}>
+    <TableCell
+      key={column.id}
+      sx={clickableSx}
+      onClick={isClickable ? () => onCellClick(column.id, row) : undefined}
+    >
       {renderCell(column, row, formatDecimalFn, formatPercentFn)}
     </TableCell>
   );
@@ -185,10 +196,12 @@ export default function ListProductivity({
   perPage = 25,
   loading = false,
   metricLoading = {},
+  filterParams = {},
   onPageChange,
   onRowsPerPageChange
 }) {
   const theme = useTheme();
+  const router = useRouter();
   const [hiddenColumns, setHiddenColumns] = useState([]);
   const [columnAnchor, setColumnAnchor] = useState(null);
 
@@ -215,6 +228,19 @@ export default function ListProductivity({
 
   const handleColumnOpen = (event) => setColumnAnchor(event.currentTarget);
   const handleColumnClose = () => setColumnAnchor(null);
+
+  const handleCellClick = (columnId, row) => {
+    const params = new URLSearchParams({
+      type: columnId,
+      penyewa_id: row.penyewa_id || '',
+      equipment_id: row.equipment_id || '',
+      penyewa_name: row.penyewa_name || '',
+      equipment_code: row.equipment_code || '',
+      startdate: filterParams.startdate || '',
+      enddate: filterParams.enddate || ''
+    });
+    router.push(`/laporan/productivity/detail?${params.toString()}`);
+  };
 
   const minWidth = visibleColumns.length * 110;
 
@@ -300,6 +326,7 @@ export default function ListProductivity({
                       metricLoading={metricLoading}
                       formatDecimalFn={formatDecimal}
                       formatPercentFn={formatPercent}
+                      onCellClick={handleCellClick}
                     />
                   ))}
                 </TableRow>

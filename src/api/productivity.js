@@ -198,6 +198,27 @@ export const useGetProductivityUa = (params) => {
   );
 };
 
+export const useGetProductivityDetail = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/detail/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows || null,
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
 export const useGetProductivityEu = (params) => {
   const query = buildQueryString(params);
   const url = `${endpoint}/metrics/eu/list${query ? `?${query}` : ''}`;
