@@ -92,6 +92,40 @@ export function useGetMenu() {
       }
     }
 
+    const operationalMenu = dashboardChildren.find((item) => {
+      const title = (item?.title || '').toString().toLowerCase();
+      const id = (item?.id || '').toString().toLowerCase();
+      return title.includes('operational') || title.includes('operasi') || id.includes('operational') || id.includes('operasi');
+    });
+
+    if (operationalMenu && Array.isArray(operationalMenu.children)) {
+      const hasMobilization = operationalMenu.children.some((item) => (
+        item?.url === '/mobilisasi-equipments'
+        || item?.url === '/equipment-mobilization'
+        || item?.url === '/operational/equipment-mobilization'
+      ));
+      if (!hasMobilization) {
+        operationalMenu.children.push({
+          id: 'equipment-mobilization',
+          title: 'Equipment Mobilization',
+          type: 'item',
+          url: '/mobilisasi-equipments',
+          icon: getMenuIcon('truck') || getMenuIcon('truckFast') || getMenuIcon('documentText'),
+          breadcrumbs: true
+        });
+      } else {
+        operationalMenu.children = operationalMenu.children.map((item) => {
+          if (
+            item?.url === '/operational/equipment-mobilization'
+            || item?.url === '/equipment-mobilization'
+          ) {
+            return { ...item, url: '/mobilisasi-equipments' };
+          }
+          return item;
+        });
+      }
+    }
+
     const reportMenu = dashboardChildren.find((item) => {
       const title = (item?.title || '').toString().trim().toLowerCase();
       const id = (item?.id || '').toString().trim().toLowerCase();

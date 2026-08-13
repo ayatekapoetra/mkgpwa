@@ -53,6 +53,7 @@ import {
   TextalignLeft,
   TableDocument,
   ShoppingCart,
+  CardTick1,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -121,6 +122,8 @@ const iconMap = {
   TextalignLeft: TextalignLeft,
   TableDocument: TableDocument,
   ShoppingCart: ShoppingCart,
+  TruckFast: TruckFast,
+  CardTick1: CardTick1,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,

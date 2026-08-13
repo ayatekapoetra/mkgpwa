@@ -80,8 +80,8 @@ export default function ListSummaryBreakdown({
         </TextField>
       </Stack>
 
-      <TableContainer sx={{ maxHeight: '70vh', overflowX: 'auto', position: 'relative' }}>
-        <Table stickyHeader sx={{ minWidth: 1320 }}>
+        <TableContainer sx={{ maxHeight: '70vh', overflowX: 'auto', position: 'relative' }}>
+        <Table stickyHeader sx={{ minWidth: 1440 }}>
           <TableHead
             sx={{
               position: 'sticky',
@@ -91,6 +91,7 @@ export default function ListSummaryBreakdown({
           >
             <TableRow>
               <TableCell sx={headerCellSx}>No</TableCell>
+              <TableCell sx={headerCellSx}>Penyewa</TableCell>
               <TableCell sx={headerCellSx}>Location</TableCell>
               <TableCell sx={headerCellSx}>Breakdown</TableCell>
               <TableCell sx={headerCellSx}>Ready</TableCell>
@@ -105,34 +106,37 @@ export default function ListSummaryBreakdown({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} align="center">Loading...</TableCell>
+                <TableCell colSpan={11} align="center">Loading...</TableCell>
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} align="center">Tidak ada data</TableCell>
+                <TableCell colSpan={11} align="center">Tidak ada data</TableCell>
               </TableRow>
             ) : (
-              data.map((row) => (
-                <TableRow key={row.id} hover>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.no}</TableCell>
-                  <TableCell sx={{ minWidth: 180, whiteSpace: 'normal', verticalAlign: 'top' }}>
-                    <Typography variant="body2" fontWeight={600}>{row.location_name || '-'}</Typography>
-                    <Typography variant="caption" color="text.secondary">{row.cabang_name || '-'}</Typography>
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.breakdown_at_label || formatDateTime(row.breakdown_at)}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.ready_at_label || formatDateTime(row.ready_at)}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{formatDurationDecimal(row.duration_decimal)}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.smu ?? '-'}</TableCell>
-                  <TableCell sx={{ minWidth: 180, whiteSpace: 'normal', verticalAlign: 'top' }}>{row.equipment_model || '-'}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.equipment_code || '-'}</TableCell>
-                  <TableCell sx={{ minWidth: 320, whiteSpace: 'normal', verticalAlign: 'top' }}>
-                    <Box>{row.problem_summary || '-'}</Box>
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>
-                    <StatusChip status={row.status} />
-                  </TableCell>
-                </TableRow>
-              ))
+              data.map((row) => {
+                return (
+                  <TableRow key={row.id} hover>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.no}</TableCell>
+                    <TableCell sx={{ minWidth: 180, whiteSpace: 'normal', verticalAlign: 'top' }}>{row.penyewa_name || '-'}</TableCell>
+                    <TableCell sx={{ minWidth: 180, whiteSpace: 'normal', verticalAlign: 'top' }}>
+                      <Typography variant="body2" fontWeight={600}>{row.location_name || '-'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{row.cabang_name || '-'}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.breakdown_at_label || formatDateTime(row.breakdown_at)}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.ready_at_label || formatDateTime(row.ready_at)}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{formatDurationDecimal(row.duration_decimal)}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.smu ?? '-'}</TableCell>
+                    <TableCell sx={{ minWidth: 180, whiteSpace: 'normal', verticalAlign: 'top' }}>{row.equipment_model || '-'}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{row.equipment_code || '-'}</TableCell>
+                    <TableCell sx={{ minWidth: 320, whiteSpace: 'normal', verticalAlign: 'top' }}>
+                      <Box>{row.problem_summary || '-'}</Box>
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                      <StatusChip status={row.status} />
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

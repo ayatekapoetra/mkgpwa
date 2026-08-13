@@ -18,6 +18,7 @@ import MainCard from 'components/MainCard';
 import { useGetLokasiKerja } from 'api/lokasi-mining';
 import { usePublicEquipment } from 'api/equipment';
 import { usePublicCabang } from 'api/cabang';
+import { usePublicPenyewa } from 'api/penyewa';
 
 const defaultDates = () => {
   const now = new Date();
@@ -34,6 +35,7 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
   const { data: cabangOptions = [], dataLoading: cabangLoading } = usePublicCabang();
   const { data: lokasiOptions = [], dataLoading: lokasiLoading } = useGetLokasiKerja();
   const { data: equipmentOptions = [], dataLoading: equipmentLoading } = usePublicEquipment();
+  const { penyewa: penyewaOptions = [], penyewaLoading } = usePublicPenyewa();
 
   const areaOptions = useMemo(() => {
     const uniqueAreas = [...new Set((cabangOptions || []).map((item) => item?.area).filter(Boolean))];
@@ -99,6 +101,11 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
     return (equipmentOptions || []).filter((option) => selectedIds.includes(option.id));
   }, [params.equipment_ids, equipmentOptions]);
 
+  const selectedPenyewa = useMemo(() => {
+    const selectedIds = (params.penyewa_ids || []).map((item) => (typeof item === 'object' ? item.id : item));
+    return (penyewaOptions || []).filter((option) => selectedIds.includes(option.id));
+  }, [params.penyewa_ids, penyewaOptions]);
+
   useEffect(() => {
     const allowedIds = new Set(filteredEquipmentOptions.map((item) => item.id));
     const current = params.equipment_ids || [];
@@ -122,6 +129,7 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
       areas: [],
       lokasi_ids: [],
       equipment_ids: [],
+      penyewa_ids: [],
       status: '',
       problem_issue: ''
     }));
@@ -206,6 +214,23 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
                       <Typography variant="body2" fontWeight={600}>{option.kode || '-'}</Typography>
                       <Typography variant="caption" color="text.secondary">{option.model || '-'}</Typography>
                     </Stack>
+                  </li>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Autocomplete
+                multiple
+                options={penyewaOptions || []}
+                loading={penyewaLoading}
+                value={selectedPenyewa}
+                onChange={(_, newValue) => setParams((prev) => ({ ...prev, page: 1, penyewa_ids: newValue }))}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                getOptionLabel={(option) => option?.nama || ''}
+                renderInput={(inputParams) => <TextField {...inputParams} label="Penyewa" />}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    <Typography variant="body2" fontWeight={600}>{option.nama || '-'}</Typography>
                   </li>
                 )}
               />

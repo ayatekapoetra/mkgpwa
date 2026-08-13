@@ -37,6 +37,7 @@ const SummaryBreakdownScreen = () => {
     areas: [],
     lokasi_ids: [],
     equipment_ids: [],
+    penyewa_ids: [],
     status: '',
     problem_issue: ''
   });
