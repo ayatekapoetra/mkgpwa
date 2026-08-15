@@ -115,11 +115,11 @@ const renderCell = (column, row, formatDecimalFn, formatPercentFn) => {
     case 'eu':
       return <PercentText value={row.EU} />;
     case 'mttfs':
-      return formatDecimalFn(row.MTTFS);
+      return row.MTTFS ? formatDecimalFn(row.MTTFS) : '-';
     case 'mttr':
-      return formatDecimalFn(row.MTTR);
+      return row.MTTR ? formatDecimalFn(row.MTTR) : '-';
     case 'mtbs':
-      return formatDecimalFn(row.MTBS);
+      return row.MTBS ? formatDecimalFn(row.MTBS) : '-';
     case 'mtbf':
       return formatDecimalFn(row.MTBF);
     default:

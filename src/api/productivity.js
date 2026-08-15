@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
 
-import { fetcher } from 'utils/axios';
+import axiosServices, { fetcher } from 'utils/axios';
 
 const endpoint = '/laporan/productivity';
 
@@ -238,4 +238,118 @@ export const useGetProductivityEu = (params) => {
     }),
     [data, error, isLoading, isValidating, mutate]
   );
+};
+
+export const useGetProductivityMttfs = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/metrics/mttfs/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
+export const useGetProductivityMttr = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/metrics/mttr/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
+export const useGetProductivityMtbs = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/metrics/mtbs/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
+const filenameFromDisposition = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback;
+
+  const utfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    try {
+      return decodeURIComponent(utfMatch[1]);
+    } catch {
+      return utfMatch[1];
+    }
+  }
+
+  return contentDisposition.match(/filename="?([^";]+)"?/i)?.[1] || fallback;
+};
+
+const messageFromBlob = async (blob, fallback) => {
+  const text = await blob.text();
+  if (!text) return fallback;
+
+  try {
+    const payload = JSON.parse(text);
+    return payload?.diagnostic?.message || payload?.message || fallback;
+  } catch {
+    return text;
+  }
+};
+
+export const downloadProductivity = async (params, format) => {
+  const query = buildQueryString({ ...params, page: undefined, perPage: undefined });
+  const extension = format === 'pdf' ? 'pdf' : 'xlsx';
+  const fallback = `report-productivity-${params.startdate}-to-${params.enddate}.${extension}`;
+
+  try {
+    const response = await axiosServices.get(`${endpoint}/download/${format}${query ? `?${query}` : ''}`, {
+      responseType: 'blob',
+      timeout: 300000,
+      skipOfflineQueue: true
+    });
+
+    return {
+      blob: response.data,
+      filename: filenameFromDisposition(response.headers?.['content-disposition'], fallback)
+    };
+  } catch (error) {
+    if (error?.response?.data instanceof Blob) {
+      throw new Error(await messageFromBlob(error.response.data, error.message || 'Gagal mengunduh laporan'));
+    }
+    throw error;
+  }
 };
