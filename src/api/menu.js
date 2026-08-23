@@ -152,6 +152,29 @@ export function useGetMenu() {
       });
     }
 
+    const settingMenu = dashboardChildren.find((item) => {
+      const title = (item?.title || '').toString().trim().toLowerCase();
+      const id = (item?.id || '').toString().trim().toLowerCase();
+      return title === 'setting' || title === 'pengaturan' || id.includes('setting') || id.includes('pengaturan');
+    });
+
+    if (settingMenu && Array.isArray(settingMenu.children)) {
+      const hasEquipmentProject = settingMenu.children.some((item) => (
+        item?.url === '/wa-config-breakdown'
+        || item?.id === 'wa-config-breakdown'
+      ));
+      if (!hasEquipmentProject) {
+        settingMenu.children.push({
+          id: 'wa-config-breakdown',
+          title: 'WA Config Equipment Breakdown',
+          type: 'item',
+          url: '/wa-config-breakdown',
+          icon: getMenuIcon('equipment') || getMenuIcon('documentText'),
+          breadcrumbs: true
+        });
+      }
+    }
+
     const result = {
       ...data,
       dashboard: {
