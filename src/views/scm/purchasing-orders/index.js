@@ -150,6 +150,7 @@ export default function PurchaseOrderPage() {
                   ["Baru", counts.open || 0],
                   ["Menunggu Verifikasi", counts.verify || 0],
                   ["Diproses", counts.close || 0],
+                  ["Ditolak", counts.reject || 0],
                 ].map(([label, value]) => (
                   <Box
                     key={label}

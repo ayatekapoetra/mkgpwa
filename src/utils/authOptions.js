@@ -35,7 +35,7 @@ export const authOptions = {
               phone: user.data.employee.phone,
               remember: credentials?.remember || false // Add remember flag
             };
-            return { ...user.data.user, ...employee };
+            return { ...user.data.user, ...employee, authPortal: 'internal' };
           }
         } catch (e) {
           if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
@@ -45,16 +45,65 @@ export const authOptions = {
           throw new Error(errorMessage);
         }
       }
+    }),
+    CredentialsProvider({
+      id: 'login-customers',
+      name: 'login-customers',
+      credentials: {
+        username: { name: 'username', label: 'Username', type: 'text', placeholder: 'Enter username' },
+        password: { name: 'password', label: 'Password', type: 'password', placeholder: 'Enter Password' },
+        remember: { name: 'remember', label: 'Remember Me', type: 'boolean' }
+      },
+      async authorize(credentials) {
+        try {
+          const endpoint = process.env.NEXT_APP_API_URL + '/auth/login-customers';
+          const result = await axios.post(endpoint, {
+            username: credentials?.username,
+            password: credentials?.password
+          });
+
+          if (result?.data?.user) {
+            const user = result.data.user;
+            const pelanggan = result.data.pelanggan || {};
+            return {
+              ...user,
+              username: user.username,
+              accessToken: result.data?.data?.token,
+              nama: pelanggan.nama || user.nama_lengkap || user.username,
+              phone: pelanggan.phone || user.handphone || null,
+              pelanggan_id: pelanggan.id || null,
+              pelanggan_kode: pelanggan.kode || null,
+              pelanggan_nama: pelanggan.nama || null,
+              pelanggan_email: pelanggan.email || null,
+              pelanggan_phone: pelanggan.phone || null,
+              bisnis_id: pelanggan.bisnis_id || null,
+              remember: credentials?.remember || false,
+              authPortal: 'customers'
+            };
+          }
+        } catch (e) {
+          if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+            console.log('Customer auth error:', e);
+          }
+          const errorMessage =
+            e?.response?.data?.diagnostic?.message ||
+            e?.response?.data?.message ||
+            e?.message ||
+            'Invalid username or password';
+          throw new Error(errorMessage);
+        }
+      }
     })
   ],
   callbacks: {
-    jwt: async ({ token, user, account }) => {
+    jwt: async ({ token, user, account, trigger, session }) => {
       // console.log('JWT', user);
 
       if (user) {
         token.accessToken = user.accessToken;
         token.id = user.id;
-        token.name = user.nama_lengkap;
+        token.name = user.nama_lengkap || user.nama || user.username;
+        token.username = user.username || null;
         token.usertype = user.usertype;
         token.handphone = user.handphone;
         token.employee_id = user.employee_id;
@@ -66,6 +115,13 @@ export const authOptions = {
         token.phone = user.phone;
         token.provider = account?.provider;
         token.remember = user.remember || false;
+        token.authPortal = user.authPortal || (account?.provider === 'login-customers' ? 'customers' : 'internal');
+        token.pelanggan_id = user.pelanggan_id || null;
+        token.pelanggan_kode = user.pelanggan_kode || null;
+        token.pelanggan_nama = user.pelanggan_nama || null;
+        token.pelanggan_email = user.pelanggan_email || null;
+        token.pelanggan_phone = user.pelanggan_phone || null;
+        token.bisnis_id = user.bisnis_id || null;
 
         // Set token expiration based on remember me
         if (user.remember) {
@@ -74,6 +130,22 @@ export const authOptions = {
           token.exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24 hours
         }
       }
+
+      // Support client-side session.update(...) for profile edits
+      if (trigger === 'update' && session) {
+        if (session.name !== undefined) token.name = session.name;
+        if (session.nama !== undefined) token.nama = session.nama;
+        if (session.phone !== undefined) token.phone = session.phone;
+        if (session.username !== undefined) token.username = session.username;
+        if (session.pelanggan_nama !== undefined) token.pelanggan_nama = session.pelanggan_nama;
+        if (session.pelanggan_kode !== undefined) token.pelanggan_kode = session.pelanggan_kode;
+        if (session.pelanggan_email !== undefined) token.pelanggan_email = session.pelanggan_email;
+        if (session.pelanggan_phone !== undefined) token.pelanggan_phone = session.pelanggan_phone;
+        if (session.token && typeof session.token === 'object') {
+          Object.assign(token, session.token);
+        }
+      }
+
       return token;
     },
     session: ({ session, token }) => {
@@ -93,6 +165,14 @@ export const authOptions = {
         session.nama = token.nama;
         session.phone = token.phone;
         session.remember = token.remember || false;
+        session.authPortal = token.authPortal || 'internal';
+        session.username = token.username || null;
+        session.pelanggan_id = token.pelanggan_id || null;
+        session.pelanggan_kode = token.pelanggan_kode || null;
+        session.pelanggan_nama = token.pelanggan_nama || null;
+        session.pelanggan_email = token.pelanggan_email || null;
+        session.pelanggan_phone = token.pelanggan_phone || null;
+        session.bisnis_id = token.bisnis_id || null;
 
         // Set session maxAge based on remember me
         session.maxAge = token.remember

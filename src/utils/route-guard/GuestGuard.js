@@ -19,7 +19,10 @@ const GuestGuard = ({ children }) => {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/home');
+      const isCustomer =
+        session?.authPortal === 'customers' ||
+        String(session?.usertype || '').toLowerCase() === 'customers';
+      router.push(isCustomer ? '/customers' : '/home');
     }
 
     // eslint-disable-next-line

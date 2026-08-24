@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -48,6 +48,7 @@ import { calculateHeaderTotals } from "./utils";
 /** Purchase order detail page coordinating the 3-status lifecycle workflow. */
 export default function PurchaseOrderDetail() {
   const params = useParams();
+  const router = useRouter();
   const { permissions: access } = usePurchaseOrderAccess();
   const { row, rowLoading, rowError, mutate } = useShowPurchaseOrder(
     params.id,
@@ -186,12 +187,20 @@ export default function PurchaseOrderDetail() {
     );
   };
 
-  const handleCancel = () => {
-    runAction(
-      () => cancelPurchaseOrder(params.id, reason),
-      "PO dibatalkan",
-      "Cancel",
-    );
+  const handleCancel = async () => {
+    setLoading(true);
+    try {
+      await cancelPurchaseOrder(params.id, reason);
+      notify("success", "PO dibatalkan");
+      setDialog(null);
+      setReason("");
+      router.push("/purchasing-orders");
+    } catch (error) {
+      const apiError = getPurchaseOrderError(error, "Cancel gagal");
+      notify("error", apiError.message, "Cancel gagal");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrint = async () => {
@@ -395,7 +404,7 @@ export default function PurchaseOrderDetail() {
       <ActionDialog
         open={dialog === "cancel"}
         title="Batalkan PO"
-        description="PO akan dinonaktifkan (soft cancel). Tidak dapat dibatalkan jika sudah close."
+        description="Status berkas diubah menjadi reject (sts_code=5). Tidak dapat dibatalkan jika sudah close."
         confirmLabel="Batalkan"
         color="error"
         loading={loading}

@@ -14,6 +14,21 @@ import { DocumentText, Trash } from "iconsax-react";
 
 const S3_BASE = "https://cdn.makkuragatama.id";
 
+const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
+
+function resolveUrl(url) {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `${S3_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+function isImageAttachment(file) {
+  const ext = String(
+    file?.datatype || file?.url?.split(".").pop() || "",
+  ).toLowerCase();
+  return IMAGE_EXTS.includes(ext);
+}
+
 /** Card to list, upload, and soft-delete PO attachments (active when status open). */
 export default function AttachmentCard({
   files = [],
@@ -91,59 +106,117 @@ export default function AttachmentCard({
       )}
 
       {files.length > 0 && (
-        <Stack spacing={1}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+            },
+            gap: 1.5,
+          }}
+        >
           {files.map((file) => {
-            const fullUrl = file.url
-              ? file.url.startsWith("http")
-                ? file.url
-                : `${S3_BASE}${file.url}`
-              : null;
+            const fullUrl = resolveUrl(file.url || file.full_url);
+            const image = isImageAttachment(file);
+            const label =
+              file.url?.split("/").pop() ||
+              (file.datatype ? `File .${file.datatype}` : `File #${file.id}`);
+
             return (
-              <Stack
+              <Box
                 key={file.id}
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={1}
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  bgcolor: "background.paper",
+                }}
               >
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Typography variant="body2">
-                    {file.datatype ? `.${file.datatype}` : ""}
-                  </Typography>
-                  {fullUrl ? (
-                    <Link
-                      href={fullUrl}
-                      target="_blank"
-                      rel="noopener"
-                      variant="body2"
-                      underline="hover"
-                    >
-                      Lihat file
-                    </Link>
+                <Box
+                  component={fullUrl ? "a" : "div"}
+                  href={fullUrl || undefined}
+                  target={fullUrl ? "_blank" : undefined}
+                  rel={fullUrl ? "noopener noreferrer" : undefined}
+                  sx={{
+                    display: "block",
+                    position: "relative",
+                    width: "100%",
+                    height: 140,
+                    bgcolor: "action.hover",
+                    textDecoration: "none",
+                  }}
+                >
+                  {image && fullUrl ? (
+                    <Box
+                      component="img"
+                      src={fullUrl}
+                      alt={label}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
                   ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      File #{file.id}
+                    <Stack
+                      alignItems="center"
+                      justifyContent="center"
+                      sx={{ height: "100%", color: "text.secondary" }}
+                    >
+                      <DocumentText size={36} />
+                      <Typography variant="caption" sx={{ mt: 0.5 }}>
+                        {(file.datatype || "file").toUpperCase()}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Box>
+
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={0.5}
+                  sx={{ p: 1 }}
+                >
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="caption" fontWeight={700} noWrap display="block">
+                      {label}
                     </Typography>
+                    {fullUrl && (
+                      <Link
+                        href={fullUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="caption"
+                        underline="hover"
+                      >
+                        Lihat file
+                      </Link>
+                    )}
+                  </Box>
+                  {canDelete && (
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(file.id)}
+                      disabled={deletingId === file.id}
+                    >
+                      {deletingId === file.id ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <Trash size={16} />
+                      )}
+                    </IconButton>
                   )}
                 </Stack>
-                {canDelete && (
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleDelete(file.id)}
-                    disabled={deletingId === file.id}
-                  >
-                    {deletingId === file.id ? (
-                      <CircularProgress size={16} />
-                    ) : (
-                      <Trash size={16} />
-                    )}
-                  </IconButton>
-                )}
-              </Stack>
+              </Box>
             );
           })}
-        </Stack>
+        </Box>
       )}
     </Box>
   );

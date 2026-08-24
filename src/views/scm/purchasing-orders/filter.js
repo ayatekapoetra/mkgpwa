@@ -164,6 +164,7 @@ export default function PurchaseOrderFilter({
             <MenuItem value="open">Baru</MenuItem>
             <MenuItem value="verify">Menunggu Verifikasi</MenuItem>
             <MenuItem value="close">Diproses</MenuItem>
+            <MenuItem value="reject">Ditolak</MenuItem>
           </TextField>
           <TextField select label="Prioritas" value={draft.prioritas} onChange={handleChange("prioritas")}>
             <MenuItem value="">Semua Prioritas</MenuItem>

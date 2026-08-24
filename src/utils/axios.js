@@ -96,9 +96,11 @@ axiosServices.interceptors.response.use(
       error.response?.status === 401 &&
       !error.config?.skipAuthRedirect &&
       typeof window !== "undefined" &&
-      !window.location.href.includes("/login")
+      !window.location.href.includes("/login") &&
+      !window.location.href.includes("/login-customers")
     ) {
-      window.location.pathname = "/login";
+      const isCustomersPath = window.location.pathname.startsWith("/customers");
+      window.location.pathname = isCustomersPath ? "/login-customers" : "/login";
     }
 
     if (error.config?.responseType === 'blob') {

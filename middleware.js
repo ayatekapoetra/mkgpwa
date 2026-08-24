@@ -66,15 +66,26 @@ export async function middleware(request) {
     }
   }
 
-  // If user is trying to access login page and has a token, redirect to /home
+  // If user is trying to access login page and has a token, redirect based on portal
   if (pathname === "/login" && token) {
-    return NextResponse.redirect(new URL("/home", request.url));
+    const isCustomer =
+      token.authPortal === "customers" ||
+      String(token.usertype || "").toLowerCase() === "customers";
+    return NextResponse.redirect(new URL(isCustomer ? "/customers" : "/home", request.url));
+  }
+
+  if (pathname === "/login-customers" && token) {
+    const isCustomer =
+      token.authPortal === "customers" ||
+      String(token.usertype || "").toLowerCase() === "customers";
+    return NextResponse.redirect(new URL(isCustomer ? "/customers" : "/home", request.url));
   }
 
   // If user is trying to access protected routes without token, redirect to login
   // Make signage dashboards public (no login required)
   const publicRoutes = [
     "/login",
+    "/login-customers",
     "/register",
     "/forgot-password",
     "/check-mail",
@@ -84,7 +95,25 @@ export async function middleware(request) {
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   if (!isPublicRoute && !token) {
+    if (pathname.startsWith("/customers")) {
+      return NextResponse.redirect(new URL("/login-customers", request.url));
+    }
     return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Separate portals: customers stay on /customers*, internal stay off /customers*
+  if (token) {
+    const isCustomer =
+      token.authPortal === "customers" ||
+      String(token.usertype || "").toLowerCase() === "customers";
+
+    if (isCustomer && !pathname.startsWith("/customers") && !isPublicRoute) {
+      return NextResponse.redirect(new URL("/customers", request.url));
+    }
+
+    if (!isCustomer && pathname.startsWith("/customers")) {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
   }
 
   return response;

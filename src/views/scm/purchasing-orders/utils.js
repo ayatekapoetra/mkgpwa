@@ -8,6 +8,7 @@ export const STATUS_META = {
   open: { label: "Baru", color: "warning" },
   verify: { label: "Menunggu Verifikasi", color: "info" },
   close: { label: "Diproses", color: "success" },
+  reject: { label: "Ditolak", color: "error" },
 };
 
 export const getStatusMeta = (status) =>

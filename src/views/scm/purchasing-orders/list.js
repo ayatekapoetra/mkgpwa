@@ -22,55 +22,50 @@ function EmptyList() {
 function DesktopList({ rows }) {
   if (!rows.length) return <EmptyList />;
   return (
-    <Box sx={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+    <Box
+      sx={{
+        width: "100%",
+        maxWidth: "100%",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      <Box
+        component="table"
+        sx={{
+          width: "100%",
+          minWidth: 1100,
+          borderCollapse: "collapse",
+          fontSize: 12,
+          tableLayout: "auto",
+          "& th, & td": {
+            padding: 1,
+            whiteSpace: "nowrap",
+            verticalAlign: "top",
+          },
+          "& th:nth-of-type(5), & td:nth-of-type(5)": {
+            whiteSpace: "normal",
+            minWidth: 220,
+            maxWidth: 320,
+          },
+        }}
+      >
         <thead>
           <tr style={{ background: "#f5f5f5", textAlign: "left" }}>
-            <th style={{ padding: 8 }}>Kode</th>
-            <th style={{ padding: 8 }}>Organisasi</th>
-            <th style={{ padding: 8 }}>Pemasok</th>
-            <th style={{ padding: 8 }}>Prioritas</th>
-            <th style={{ padding: 8 }}>Status</th>
-            <th style={{ padding: 8, textAlign: "right" }}>Grand Total</th>
-            <th style={{ padding: 8 }}>Aksi</th>
+            <th>Aksi</th>
+            <th>Kode</th>
+            <th>ReqCode</th>
+            <th>Organisasi</th>
+            <th>Pemasok</th>
+            <th>Prioritas</th>
+            <th>Status</th>
+            <th style={{ textAlign: "right" }}>Grand Total</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.id} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: 8 }}>
-                <Typography variant="body2" fontWeight={700}>{row.kdpo || "-"}</Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
-                  {row.kode_pr || "-"}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
-                  {row.request_date
-                    ? moment(row.request_date).format("DD MMM YYYY")
-                    : "-"}
-                </Typography>
-              </td>
-              <td style={{ padding: 8 }}>
-                <Typography variant="body2">
-                  {row.bisnis?.name || row.bisnis?.initial || "-"}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {row.cabang?.nama || "-"}
-                </Typography>
-              </td>
-              <td style={{ padding: 8 }}>{row.pemasok?.nama || "-"}</td>
-              <td style={{ padding: 8 }}>{row.prioritas || "-"}</td>
-              <td style={{ padding: 8 }}>
-                <StatusChip status={row.status} />
-              </td>
-              <td style={{ padding: 8, textAlign: "right" }}>
-                <Typography variant="body2" fontWeight={700}>
-                  {formatCurrency(row.grandtotal)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
-                  Item: {row.totalItems || 0}
-                </Typography>
-              </td>
-              <td style={{ padding: 8 }}>
+              <td>
                 <Button
                   size="small"
                   variant="outlined"
@@ -79,10 +74,50 @@ function DesktopList({ rows }) {
                   Detail
                 </Button>
               </td>
+              <td>
+                <Typography variant="body2" fontWeight={700}>{row.kdpo || "-"}</Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  {row.request_date
+                    ? moment(row.request_date).format("DD MMM YYYY")
+                    : "-"}
+                </Typography>
+              </td>
+              <td>
+                <Typography variant="body2" fontWeight={700}>{row.kode_pr || "-"}</Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  {row.author_pr || "-"}
+                </Typography>
+              </td>
+              <td>
+                <Typography variant="body2">
+                  {row.bisnis?.name || row.bisnis?.initial || "-"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {row.cabang?.nama || "-"}
+                </Typography>
+              </td>
+              <td>
+                <Typography variant="body2">{row.pemasok?.nama || "-"}</Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  {row.pemasok?.alamat || "-"}
+                </Typography>
+              </td>
+              <td>{row.prioritas || "-"}</td>
+              <td>
+                <StatusChip status={row.status} />
+              </td>
+              <td style={{ textAlign: "right" }}>
+                <Typography variant="body2" fontWeight={700}>
+                  {formatCurrency(row.grandtotal)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Item: {row.totalItems || 0}
+                </Typography>
+              </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Box>
     </Box>
   );
 }
@@ -106,8 +141,14 @@ function MobileList({ rows }) {
               <Typography variant="h6">{row.kdpo || "-"}</Typography>
               <StatusChip status={row.status} />
             </Stack>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" display="block">
+              {row.kode_pr || "-"} · {row.author_pr || "-"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">
               {row.pemasok?.nama || "-"} · {row.cabang?.nama || "-"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">
+              {row.pemasok?.alamat || "-"}
             </Typography>
             <Typography variant="body2" fontWeight={700}>
               {formatCurrency(row.grandtotal)}
