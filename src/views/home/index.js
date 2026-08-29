@@ -106,7 +106,7 @@ export default function HomeDashboard() {
       icon: <TruckFast size={22} variant="Bold" />,
       color: 'primary',
       loading: dash.ritase.loading,
-      href: '/panel/produksi-pit-circle-time-monitoring'
+      href: '/panel/produksi-pit-cycle-time-monitoring'
     },
     {
       key: 'cycle',
@@ -191,7 +191,7 @@ export default function HomeDashboard() {
       title: 'Ritase unmatched PIT/Stockpile',
       count: unmatched,
       severity: 'error',
-      href: '/panel/produksi-pit-circle-time-monitoring',
+      href: '/panel/produksi-pit-cycle-time-monitoring',
       description: `PIT ${formatNumber(dash.ritase.data?.unmatched?.pit)} · SP ${formatNumber(dash.ritase.data?.unmatched?.stockpile)}`
     },
     {

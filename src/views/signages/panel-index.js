@@ -25,6 +25,15 @@ import {
 
 const PANELS = [
   {
+    slug: 'site-monitoring',
+    href: '/panel/site-monitoring',
+    title: 'Site Monitoring',
+    description: 'Monitoring terpadu produksi, equipment, spare part, dan manpower per site.',
+    category: 'Operation',
+    color: 'info',
+    icon: PresentionChart
+  },
+  {
     slug: 'produksi',
     href: '/panel/produksi',
     title: 'Produksi',
@@ -34,9 +43,9 @@ const PANELS = [
     icon: TruckFast
   },
   {
-    slug: 'produksi-pit-circle-time-monitoring',
-    href: '/panel/produksi-pit-circle-time-monitoring',
-    title: 'PIT Circle Time',
+    slug: 'produksi-pit-cycle-time-monitoring',
+    href: '/panel/produksi-pit-cycle-time-monitoring',
+    title: 'PIT Cycle Time',
     description: 'Monitoring cycle time fleet, ritase, dan performa area PIT.',
     category: 'Produksi',
     color: 'info',

@@ -205,7 +205,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
                     <SummaryChip icon={<Timer1 size={18} />} title="Efektif Unit" value={fleet.effective_dumptrucks} accent="#2563eb" />
                   </Grid>
                   <Grid item xs={6} md={3}>
-                    <SummaryChip icon={<Warning2 size={18} />} title="Avg CircleTime" value={`${fleet.avg_circle_time_minutes} Menit`} accent="#dc2626" />
+                    <SummaryChip icon={<Warning2 size={18} />} title="Avg Cycle Time" value={`${fleet.avg_circle_time_minutes} Menit`} accent="#dc2626" />
                   </Grid>
                 </Grid>
               </Box>
@@ -219,7 +219,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
           <Stack spacing={1}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography fontWeight={800}>Performa Dumptruck per Fleet</Typography>
-              <Typography variant="caption" color="text.secondary">Bar = ritase, line = avg circle time</Typography>
+              <Typography variant="caption" color="text.secondary">Bar = ritase, line = avg cycle time</Typography>
             </Stack>
             <Box sx={{ height: 280 }}>
               <FleetPerformanceChart dumptrucks={fleet.dumptrucks} targetCircleTime={fleet.ct_target_minutes} />
@@ -283,7 +283,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
         <Stack spacing={0.75} sx={{ height: '100%', minHeight: 0 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
             <Typography fontSize={{ xs: 16, md: 20 }} fontWeight={900}>Performa Dumptruck per Fleet</Typography>
-            <Typography variant="caption" color="text.secondary">Bar = ritase • Line = avg circle time</Typography>
+            <Typography variant="caption" color="text.secondary">Bar = ritase • Line = avg cycle time</Typography>
           </Stack>
           <Box sx={{ flex: 1, minHeight: 0 }}>
             <FleetPerformanceChart dumptrucks={fleet.dumptrucks} targetCircleTime={fleet.ct_target_minutes} />
@@ -315,7 +315,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
       {!isSlideshow ? (
         <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
           <Stack>
-            <Typography variant="h2" fontSize="1.5rem" fontWeight={800}>Produksi Pit & Circle Time Monitoring</Typography>
+            <Typography variant="h2" fontSize="1.5rem" fontWeight={800}>Produksi Pit & Cycle Time Monitoring</Typography>
             <Stack direction="row" spacing={2} sx={{ mt: 0.5, fontSize: '0.95rem', color: 'text.secondary' }}>
               <span>{tanggal}</span>
               <span>|</span>
@@ -354,12 +354,12 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
         {error ? (
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="h3" sx={{ mt: 0 }}>Gagal memuat monitoring produksi pit</Typography>
-            <Typography sx={{ mb: 0 }}>Periksa endpoint backend circle time monitoring atau filter tanggal yang digunakan.</Typography>
+            <Typography sx={{ mb: 0 }}>Periksa endpoint backend cycle time monitoring atau filter tanggal yang digunakan.</Typography>
           </Paper>
         ) : loading ? (
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="h3" sx={{ mt: 0 }}>Memuat data fleet...</Typography>
-            <Typography sx={{ mb: 0 }}>Mengambil data ritase pit dan menghitung circle time dumptruck.</Typography>
+            <Typography sx={{ mb: 0 }}>Mengambil data ritase pit dan menghitung cycle time dumptruck.</Typography>
           </Paper>
         ) : !sortedFleets.length ? (
           <Paper sx={{ p: 3, borderRadius: 2 }}>

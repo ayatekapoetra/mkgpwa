@@ -72,7 +72,7 @@ export default function OperationsSection({ ritase }) {
         subtitle="Trend harian bulan berjalan"
         icon={<TruckFast size={20} variant="Bold" />}
         loading={ritase?.loading}
-        actionHref="/panel/produksi-pit-circle-time-monitoring"
+        actionHref="/panel/produksi-pit-cycle-time-monitoring"
         color="primary"
         minHeight={360}
       >

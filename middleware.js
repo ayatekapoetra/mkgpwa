@@ -89,6 +89,7 @@ export async function middleware(request) {
     "/register",
     "/forgot-password",
     "/check-mail",
+    "/panel/site-monitoring",
     "/panel/timesheet",
     "/panel/kehadiran-karyawan"
   ];

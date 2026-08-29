@@ -173,6 +173,21 @@ export function useGetMenu() {
           breadcrumbs: true
         });
       }
+
+      const hasAkuntingMapping = settingMenu.children.some((item) => (
+        item?.url === '/akunting-mapping'
+        || item?.id === 'akunting-mapping'
+      ));
+      if (!hasAkuntingMapping) {
+        settingMenu.children.push({
+          id: 'akunting-mapping',
+          title: 'Akunting Mapping',
+          type: 'item',
+          url: '/akunting-mapping',
+          icon: getMenuIcon('receiptItem') || getMenuIcon('documentText') || getMenuIcon('setting'),
+          breadcrumbs: true
+        });
+      }
     }
 
     const result = {

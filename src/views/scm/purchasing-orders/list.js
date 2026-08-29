@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import moment from "moment";
 import "moment/locale/id";
@@ -83,7 +85,23 @@ function DesktopList({ rows }) {
                 </Typography>
               </td>
               <td>
-                <Typography variant="body2" fontWeight={700}>{row.kode_pr || "-"}</Typography>
+                {row.pr && row.kode_pr ? (
+                  <Typography
+                    component={Link}
+                    href={`/purchasing-request/${row.pr}`}
+                    variant="body2"
+                    fontWeight={700}
+                    color="primary"
+                    sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+                  >
+                    <LinkOutlinedIcon sx={{ fontSize: 16 }} />
+                    {row.kode_pr}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" fontWeight={700}>
+                    {row.kode_pr || "-"}
+                  </Typography>
+                )}
                 <Typography variant="caption" color="text.secondary" display="block">
                   {row.author_pr || "-"}
                 </Typography>

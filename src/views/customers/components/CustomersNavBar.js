@@ -69,6 +69,13 @@ export default function CustomersNavBar() {
 
   const pelangganNama = session?.pelanggan_nama || session?.nama || session?.name || 'Pelanggan';
 
+  const handleLogout = async () => {
+    // Avoid NextAuth resolving callbackUrl against baked NEXTAUTH_URL (often localhost).
+    await signOut({ redirect: false });
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    window.location.href = `${origin}/login-customers`;
+  };
+
   const isActive = (href) => {
     if (!href || href === '#') return false;
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -185,7 +192,7 @@ export default function CustomersNavBar() {
                   color="secondary"
                   size="small"
                   startIcon={<Logout size={16} />}
-                  onClick={() => signOut({ callbackUrl: '/login-customers' })}
+                  onClick={handleLogout}
                   sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600 }}
                 >
                   Logout
@@ -251,7 +258,7 @@ export default function CustomersNavBar() {
           variant="outlined"
           color="secondary"
           startIcon={<Logout size={16} />}
-          onClick={() => signOut({ callbackUrl: '/login-customers' })}
+          onClick={handleLogout}
           sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600 }}
         >
           Logout

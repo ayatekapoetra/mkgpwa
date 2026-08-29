@@ -193,7 +193,7 @@ export const usePengajuanDanaCoas = (params = {}) => {
 
 const createOptionHook = (urlBuilder) => {
   return (params = {}) => {
-    const url = urlBuilder(params);
+    const url = params === null ? null : urlBuilder(params);
     const { data, error, isLoading, isValidating, mutate } = useSWR(url, fetcher, {
       revalidateIfStale: false,
       revalidateOnFocus: false,

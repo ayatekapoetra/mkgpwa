@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import {
   Box,
   Divider,
   Grid,
+  Link as MuiLink,
   Stack,
   Typography,
 } from "@mui/material";
@@ -35,7 +38,22 @@ export default function DocumentHeader({ row }) {
             {row?.kdpo || "-"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            PR Sumber: {row?.kode_pr || "-"} · {meta.label}
+            PR Sumber:{" "}
+            {row?.pr && row?.kode_pr ? (
+              <MuiLink
+                component={Link}
+                href={`/purchasing-request/${row.pr}`}
+                fontWeight={700}
+                underline="hover"
+                sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+              >
+                <LinkOutlinedIcon sx={{ fontSize: 16 }} />
+                {row.kode_pr}
+              </MuiLink>
+            ) : (
+              row?.kode_pr || "-"
+            )}{" "}
+            · {meta.label}
           </Typography>
         </Box>
         <Box sx={{ textAlign: { xs: "left", md: "right" } }}>

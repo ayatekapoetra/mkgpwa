@@ -223,12 +223,12 @@ Kemudian:
 ### Route Baru
 
 ```text
-/panel/produksi-pit-circle-time-monitoring
+/panel/produksi-pit-cycle-time-monitoring
 ```
 
 ### Struktur Folder
 
-- `src/app/(signageboard)/panel/produksi-pit-circle-time-monitoring/page.js`
+- `src/app/(signageboard)/panel/produksi-pit-cycle-time-monitoring/page.js`
 - `src/views/signages/produksi-pit-circle-time-monitoring/index.js`
 - komponen chart dan card di folder view yang sama
 
