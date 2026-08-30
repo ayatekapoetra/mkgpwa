@@ -15,7 +15,8 @@ export const endpoints = {
   shifts: '/public/shift/list'
 };
 
-const HRIS_BASE_URL = process.env.NEXT_PUBLIC_HRIS_API_URL || process.env.NEXT_APP_HRIS_API_URL || 'http://localhost:8000';
+const HRIS_BASE_URL =
+  process.env.NEXT_PUBLIC_HRIS_API_URL || process.env.NEXT_APP_HRIS_API_URL || 'https://apihris.makkuragatama.com';
 
 const hrisFetcher = (url) =>
   axios
