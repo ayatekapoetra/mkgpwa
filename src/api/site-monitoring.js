@@ -16,7 +16,7 @@ export const endpoints = {
 };
 
 const HRIS_BASE_URL =
-  process.env.NEXT_PUBLIC_HRIS_API_URL || process.env.NEXT_APP_HRIS_API_URL || 'https://apihris.makkuragatama.com';
+  process.env.NEXT_PUBLIC_HRIS_API_URL || process.env.NEXT_APP_HRIS_API_URL || 'https://apihris.makkuragatama.id';
 
 const hrisFetcher = (url) =>
   axios
