@@ -5,6 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
@@ -57,7 +58,7 @@ function normalizeProduction(response, fallback) {
     ...fallback,
     materials: materials.map((material) => material.label),
     pits,
-    periods: ['DAILY', 'MTD', 'YTD'].map((name) => {
+    periods: ['DAILY', 'MTD'].map((name) => {
       const period = periods.find((item) => item.name === name) || {};
       const valueMap = new Map(
         (period.values || []).map((item) => [`${item.material_key}|${item.pit_key}`, Number(item.value || 0)])
@@ -184,16 +185,22 @@ function ProductionChart({ period, materials = [], pits = [], tones, surfaceColo
                     >
                       {stackValues.map((value, pitIndex) =>
                         value ? (
-                          <Box
+                          <Tooltip
                             key={pits[pitIndex].key}
-                            title={`${pits[pitIndex].label}: ${numberFormatter.format(value)} ${period.unit}`}
-                            sx={{
-                              height: `${(value / maximum) * 100}%`,
-                              minHeight: 2,
-                              bgcolor: tones[pits[pitIndex].tone],
-                              borderTop: `1px solid ${alpha(surfaceColor, 0.65)}`
-                            }}
-                          />
+                            title={`${materials[materialIndex]} · ${pits[pitIndex].label}: ${numberFormatter.format(value)} ${period.unit}`}
+                            placement="top"
+                            arrow
+                          >
+                            <Box
+                              sx={{
+                                height: `${(value / maximum) * 100}%`,
+                                minHeight: 2,
+                                bgcolor: tones[pits[pitIndex].tone],
+                                borderTop: `1px solid ${alpha(surfaceColor, 0.65)}`,
+                                cursor: 'default'
+                              }}
+                            />
+                          </Tooltip>
                         ) : null
                       )}
                     </Box>
@@ -299,27 +306,29 @@ function ManPowerBarChart({ items, total, unit, tones, surfaceColor }) {
               const heightPercent = niceMax > 0 ? (Number(item.value || 0) / niceMax) * 100 : 0;
               return (
                 <Stack key={item.label} alignItems="center" justifyContent="flex-end" sx={{ flex: 1, height: '100%', minWidth: 0 }}>
-                  <Box
-                    title={`${item.label}: ${numberFormatter.format(item.value)} ${unit || 'Person'}`}
-                    sx={{
-                      width: { xs: 22, md: 28 },
-                      maxWidth: '80%',
-                      height: `${Math.max(heightPercent, 0)}%`,
-                      minHeight: item.value > 0 ? 3 : 0,
-                      borderRadius: '4px 4px 1px 1px',
-                      bgcolor: tones[item.tone] || tones.info,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'center',
-                      overflow: 'visible'
-                    }}
-                  >
-                    {item.value > 0 && (
-                      <Typography sx={{ fontSize: 8, fontWeight: 800, color: 'common.white', mt: 0.25, lineHeight: 1 }}>
-                        {compactNumber(item.value)}
-                      </Typography>
-                    )}
-                  </Box>
+                  <Tooltip title={`${item.label}: ${numberFormatter.format(item.value)} ${unit || 'Person'}`} placement="top" arrow>
+                    <Box
+                      sx={{
+                        width: { xs: 22, md: 28 },
+                        maxWidth: '80%',
+                        height: `${Math.max(heightPercent, 0)}%`,
+                        minHeight: item.value > 0 ? 3 : 0,
+                        borderRadius: '4px 4px 1px 1px',
+                        bgcolor: tones[item.tone] || tones.info,
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'center',
+                        overflow: 'visible',
+                        cursor: 'default'
+                      }}
+                    >
+                      {item.value > 0 && (
+                        <Typography sx={{ fontSize: 8, fontWeight: 800, color: 'common.white', mt: 0.25, lineHeight: 1 }}>
+                          {compactNumber(item.value)}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Tooltip>
                   <Typography
                     noWrap
                     color="text.secondary"
@@ -337,7 +346,7 @@ function ManPowerBarChart({ items, total, unit, tones, surfaceColor }) {
   );
 }
 
-function StatusDonutCard({ card, tones, surfaceColor, presentation = false, legendBelow = false, large = false }) {
+function StatusDonutCard({ card, tones, surfaceColor, presentation = false, legendBelow = false, large = false, accentTone }) {
   const total = card.items.reduce((sum, item) => sum + item.value, 0) || 1;
   let start = 0;
   const stops = card.items.map((item) => {
@@ -370,9 +379,13 @@ function StatusDonutCard({ card, tones, surfaceColor, presentation = false, lege
         bgcolor: surfaceColor,
         backgroundImage: 'none',
         borderColor: 'divider',
+        ...(accentTone && {
+          borderTop: `3px solid ${tones[accentTone]}`,
+          boxShadow: `inset 0 1px 0 ${alpha(tones[accentTone], 0.12)}`
+        }),
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: presentation ? 'center' : 'flex-start'
+        justifyContent: presentation || legendBelow ? 'center' : 'flex-start'
       }}
     >
       <Typography sx={{ fontSize: presentation ? 18 : 12, fontWeight: 800, letterSpacing: 0.3, mb: presentation ? 2 : 0.75, textAlign: presentation || legendBelow ? 'center' : 'left' }}>
@@ -384,36 +397,54 @@ function StatusDonutCard({ card, tones, surfaceColor, presentation = false, lege
         alignItems="center"
         justifyContent={presentation || legendBelow ? 'center' : 'flex-start'}
       >
-        <Box
-          role="img"
-          aria-label={`${card.title}: ${card.items.map((item) => `${item.label} ${item.value}`).join(', ')}`}
-          sx={{
-            width: donutSize,
-            height: donutSize,
-            flexShrink: 0,
-            borderRadius: '60%',
-            display: 'grid',
-            placeItems: 'center',
-            background: `conic-gradient(${stops.join(', ')})`,
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              inset: donutInset,
-              borderRadius: '60%',
-              bgcolor: surfaceColor
-            }
-          }}
+        <Tooltip
+          title={
+            <Stack spacing={0.35}>
+              <Typography sx={{ fontSize: 11, fontWeight: 800 }}>
+                Total: {numberFormatter.format(card.total)} {card.unit}
+              </Typography>
+              {card.items.map((item) => (
+                <Typography key={item.label} sx={{ fontSize: 10 }}>
+                  {item.label}: {numberFormatter.format(item.value)}
+                </Typography>
+              ))}
+            </Stack>
+          }
+          placement="top"
+          arrow
         >
-          <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-            <Typography sx={{ fontSize: presentation ? { xs: 32 * sizeScale, md: 42 * sizeScale } : legendBelow ? { xs: 22 * sizeScale, md: 26 * sizeScale } : { xs: 20 * sizeScale, md: 23 * sizeScale }, lineHeight: 1, fontWeight: 900 }}>
-              {numberFormatter.format(card.total)}
-            </Typography>
-            <Typography color="text.secondary" sx={{ fontSize: presentation ? { xs: 12 * sizeScale, md: 14 * sizeScale } : legendBelow ? { xs: 9 * sizeScale, md: 10 * sizeScale } : { xs: 10 * sizeScale, md: 12 * sizeScale }, textTransform: 'uppercase', mt: 0.3 }}>
-              {card.unit}
-            </Typography>
+          <Box
+            role="img"
+            aria-label={`${card.title}: ${card.items.map((item) => `${item.label} ${item.value}`).join(', ')}`}
+            sx={{
+              width: donutSize,
+              height: donutSize,
+              flexShrink: 0,
+              borderRadius: '60%',
+              display: 'grid',
+              placeItems: 'center',
+              background: `conic-gradient(${stops.join(', ')})`,
+              position: 'relative',
+              cursor: 'default',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                inset: donutInset,
+                borderRadius: '60%',
+                bgcolor: surfaceColor
+              }
+            }}
+          >
+            <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: presentation ? { xs: 32 * sizeScale, md: 42 * sizeScale } : legendBelow ? { xs: 22 * sizeScale, md: 26 * sizeScale } : { xs: 20 * sizeScale, md: 23 * sizeScale }, lineHeight: 1, fontWeight: 900 }}>
+                {numberFormatter.format(card.total)}
+              </Typography>
+              <Typography color="text.secondary" sx={{ fontSize: presentation ? { xs: 12 * sizeScale, md: 14 * sizeScale } : legendBelow ? { xs: 9 * sizeScale, md: 10 * sizeScale } : { xs: 10 * sizeScale, md: 12 * sizeScale }, textTransform: 'uppercase', mt: 0.3 }}>
+                {card.unit}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        </Tooltip>
 
         <Stack
           direction={legendBelow && !presentation ? 'row' : 'column'}
@@ -590,8 +621,7 @@ export default function SiteMonitoringScreen() {
         ? production.periods
         : [
             { name: 'DAILY', unit: 'MT', values: [] },
-            { name: 'MTD', unit: 'MT', values: [] },
-            { name: 'YTD', unit: 'MT', values: [] }
+            { name: 'MTD', unit: 'MT', values: [] }
           ],
     [production]
   );
@@ -983,7 +1013,7 @@ export default function SiteMonitoringScreen() {
           </Box>
         ) : (
           <>
-          <Box sx={{ display: 'grid', gap: 1.25, gridTemplateColumns: { xs: '1fr' } }}>
+          <Box sx={{ display: 'grid', gap: 1.25, gridTemplateColumns: { xs: '1fr', lg: 'repeat(4, minmax(0, 1fr))' } }}>
             <Paper component="section" variant="outlined" sx={{ ...sectionStyle, gridColumn: { lg: '1 / -1' } }}>
               <SectionHeader
                 title={data.production.title}
@@ -998,32 +1028,35 @@ export default function SiteMonitoringScreen() {
                 }
               />
 
-              {productionLoading && !productionResponse ? (
-                <Paper variant="outlined" sx={{ mt: 1, p: 3, textAlign: 'center', bgcolor: surfaceColor, backgroundImage: 'none' }}>
-                  <Typography color="text.secondary" sx={{ fontSize: 11 }}>
-                    Memuat data production dari ritase...
-                  </Typography>
-                </Paper>
-              ) : productionError && !productionResponse ? (
-                <Paper
-                  variant="outlined"
-                  sx={{ mt: 1, p: 3, textAlign: 'center', bgcolor: surfaceColor, backgroundImage: 'none', borderColor: 'error.main' }}
-                >
-                  <Typography color="error.main" sx={{ fontSize: 11 }}>
-                    Gagal memuat data production.
-                  </Typography>
-                </Paper>
-              ) : (
-                <Box
-                  sx={{
-                    mt: 1,
-                    display: 'grid',
-                    gap: { xs: 2, md: 1.5 },
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-                    alignItems: 'stretch'
-                  }}
-                >
-                  {periodCards.map((period) => (
+              <Box
+                sx={{
+                  mt: 1,
+                  display: 'grid',
+                  gap: { xs: 2, md: 1.5 },
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                  alignItems: 'stretch'
+                }}
+              >
+                {productionLoading && !productionResponse ? (
+                  <Paper
+                    variant="outlined"
+                    sx={{ p: 3, textAlign: 'center', bgcolor: surfaceColor, backgroundImage: 'none', gridColumn: { md: 'span 2' } }}
+                  >
+                    <Typography color="text.secondary" sx={{ fontSize: 11 }}>
+                      Memuat data production dari ritase...
+                    </Typography>
+                  </Paper>
+                ) : productionError && !productionResponse ? (
+                  <Paper
+                    variant="outlined"
+                    sx={{ p: 3, textAlign: 'center', bgcolor: surfaceColor, backgroundImage: 'none', borderColor: 'error.main', gridColumn: { md: 'span 2' } }}
+                  >
+                    <Typography color="error.main" sx={{ fontSize: 11 }}>
+                      Gagal memuat data production.
+                    </Typography>
+                  </Paper>
+                ) : (
+                  periodCards.map((period) => (
                     <ProductionChart
                       key={period.name}
                       period={period}
@@ -1033,9 +1066,21 @@ export default function SiteMonitoringScreen() {
                       surfaceColor={surfaceColor}
                       empty={!hasProductionData}
                     />
-                  ))}
-                </Box>
-              )}
+                  ))
+                )}
+                <StatusDonutCard
+                  card={{
+                    title: 'Man Power',
+                    total: manPowerData.total,
+                    unit: manPowerData.unit || 'Person',
+                    items: manPowerData.siteGroups || []
+                  }}
+                  tones={tones}
+                  surfaceColor={surfaceColor}
+                  legendBelow
+                  accentTone="warning"
+                />
+              </Box>
 
               {hasProductionData && (
                 <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
@@ -1051,7 +1096,7 @@ export default function SiteMonitoringScreen() {
               )}
             </Paper>
 
-            <Paper component="section" variant="outlined" sx={{ ...sectionStyle, gridColumn: { lg: '1 / -1' } }}>
+            <Paper component="section" variant="outlined" sx={{ ...sectionStyle, gridColumn: { lg: 'span 3' } }}>
               <SectionHeader
                 title="Equipment & Spare Part"
                 subtitle="Unit availability, standby breakdown & procurement status"
@@ -1085,26 +1130,8 @@ export default function SiteMonitoringScreen() {
                 ))}
               </Box>
             </Paper>
-          </Box>
 
-          <Box sx={{ display: 'grid', gap: 1.25, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mt: 1.25 }}>
-            <Paper component="section" variant="outlined" sx={sectionStyle}>
-              <Box sx={{ mt: 1, height: '100%' }}>
-                <StatusDonutCard
-                  card={{
-                    title: 'Man Power',
-                    total: manPowerData.total,
-                    unit: manPowerData.unit || 'Person',
-                    items: manPowerData.siteGroups || []
-                  }}
-                  tones={tones}
-                  surfaceColor={surfaceColor}
-                  large
-                />
-              </Box>
-            </Paper>
-
-            <Paper component="aside" variant="outlined" sx={sectionStyle}>
+            <Paper component="aside" variant="outlined" sx={{ ...sectionStyle, gridColumn: { lg: 'span 1' } }}>
               <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.3, mb: 0.75 }}>
                 Daily Attendance
               </Typography>

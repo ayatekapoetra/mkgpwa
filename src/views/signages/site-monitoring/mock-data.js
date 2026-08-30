@@ -134,9 +134,9 @@ const siteMonitoringMock = {
       { label: 'Tanpa Status', value: 3, detail: 'Need update', tone: 'error' }
     ],
     siteGroups: [
-      { label: 'Site Konawe Utara', value: 248, tone: 'info' },
-      { label: 'Site Morowali', value: 112, tone: 'success' },
-      { label: 'Site Kolaka', value: 68, tone: 'warning' }
+      { label: 'Operator', value: 180, tone: 'info' },
+      { label: 'Driver', value: 160, tone: 'warning' },
+      { label: 'Lainnya', value: 88, tone: 'success' }
     ]
   }
 };

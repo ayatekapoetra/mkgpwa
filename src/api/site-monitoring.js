@@ -212,7 +212,11 @@ export const useGetSiteMonitoringFilterOptions = () => {
   );
 };
 
-const MANPOWER_TONES = ['info', 'success', 'warning', 'error', 'primary'];
+const MANPOWER_TONES = {
+  operator: 'info',
+  driver: 'warning',
+  lainnya: 'success'
+};
 
 export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
@@ -229,11 +233,11 @@ export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) =
   return useMemo(() => {
     const rows = data?.rows;
     const items = Array.isArray(rows?.items)
-      ? rows.items.map((item, index) => ({
-          label: item.site_name || `Site ${item.site_id}`,
+      ? rows.items.map((item) => ({
+          label: item.label || item.key,
           value: Number(item.total || 0),
-          tone: MANPOWER_TONES[index % MANPOWER_TONES.length],
-          site_id: item.site_id
+          tone: MANPOWER_TONES[item.key] || 'primary',
+          key: item.key
         }))
       : [];
     const total = Number(rows?.total || 0);
