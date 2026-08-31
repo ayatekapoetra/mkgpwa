@@ -58,7 +58,7 @@ const DomScreen = () => {
         }
         secondary={
           <Stack direction="row">
-            <IconButton aria-label="settings" onClick={toggleFilterHandle}>
+            <IconButton aria-label="settings" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
               <FilterListIcon />
             </IconButton>
           </Stack>

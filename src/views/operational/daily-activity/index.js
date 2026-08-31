@@ -7,12 +7,13 @@ import {
   Alert, Box, Button, Chip, CircularProgress, Grid, IconButton, MenuItem, Paper, Stack, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography, useMediaQuery, useTheme
 } from '@mui/material';
+import { GridOn, PictureAsPdf } from '@mui/icons-material';
 import { Add, Eye, FilterSearch } from 'iconsax-react';
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
-import { useDailyActivities, useDailyActivityAccess } from 'api/daily-activity';
+import { downloadDailyActivities, useDailyActivities, useDailyActivityAccess } from 'api/daily-activity';
 import { STATUSES, getHeaderId } from './utils';
 
 const initialFilters = { page: 1, perPage: 25, date_from: '', date_to: '', shift_id: '', status: '', ctgunit: '', kontraktor: '', lokasi_site_id: '', lokasi_pit_id: '' };
@@ -26,6 +27,8 @@ export default function DailyActivityList() {
   const { permissions, accessLoading, accessError } = useDailyActivityAccess();
   const [filters, setFilters] = useState(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [exporting, setExporting] = useState('');
+  const [exportError, setExportError] = useState('');
   const { data, dataLoading, dataError } = useDailyActivities(filters, permissions.read);
   const rows = useMemo(() => data.data || [], [data.data]);
 
@@ -35,6 +38,44 @@ export default function DailyActivityList() {
     pits: [...new Map(rows.filter((row) => row.lokasi_pit_id).map((row) => [String(row.lokasi_pit_id), row.lokasi_pit_nama || row.lokasi_pit_id])).entries()]
   }), [rows]);
   const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value, page: key === 'page' ? value : 1 }));
+  const saveDownload = ({ blob, filename }) => {
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  };
+  const getExportFilters = () => {
+    const { page, perPage, ...activeFilters } = filters;
+    return activeFilters;
+  };
+  const handleExportExcel = async () => {
+    if (exporting) return;
+    setExporting('excel');
+    setExportError('');
+    try {
+      saveDownload(await downloadDailyActivities(getExportFilters(), 'excel'));
+    } catch (error) {
+      setExportError(error?.message || 'Gagal membuat file Excel.');
+    } finally {
+      setExporting('');
+    }
+  };
+  const handleExportPdf = async () => {
+    if (exporting) return;
+    setExporting('pdf');
+    setExportError('');
+    try {
+      saveDownload(await downloadDailyActivities(getExportFilters(), 'pdf'));
+    } catch (error) {
+      setExportError(error?.message || 'Gagal membuat file PDF.');
+    } finally {
+      setExporting('');
+    }
+  };
 
   if (accessLoading) return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 300 }}><CircularProgress /></Box>;
   if (accessError || dataError) return <Alert severity="error">Gagal memuat daily activity. Fitur ini memerlukan koneksi internet.</Alert>;
@@ -45,9 +86,14 @@ export default function DailyActivityList() {
       <Breadcrumbs custom heading="Daily Activity" links={[{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Daily Activity', to: '/daily-activity' }]} />
       <MainCard
         title={permissions.insert ? <Button component={Link} href="/daily-activity/create" variant="contained" startIcon={<Add />}>Tambah Activity</Button> : 'Daftar Activity'}
-        secondary={<Button variant="outlined" startIcon={<FilterSearch />} onClick={() => setShowFilters((value) => !value)}>Filter</Button>}
+        secondary={<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Button size="small" variant="outlined" startIcon={exporting === 'excel' ? <CircularProgress size={16} /> : <GridOn />} onClick={handleExportExcel} disabled={Boolean(exporting) || dataLoading}>Excel</Button>
+          <Button size="small" variant="contained" color="error" startIcon={exporting === 'pdf' ? <CircularProgress size={16} color="inherit" /> : <PictureAsPdf />} onClick={handleExportPdf} disabled={Boolean(exporting) || dataLoading}>PDF</Button>
+          <Button size="small" variant="outlined" startIcon={<FilterSearch />} onClick={() => setShowFilters((value) => !value)}>Filter</Button>
+        </Stack>}
         content={false}
       >
+        {exportError && <Alert severity="error" onClose={() => setExportError('')} sx={{ m: 2.5, mb: 0 }}>{exportError}</Alert>}
         {showFilters && (
           <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
             <Grid container spacing={1.5}>

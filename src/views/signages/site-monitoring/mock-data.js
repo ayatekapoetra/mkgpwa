@@ -62,6 +62,26 @@ const siteMonitoringMock = {
         ]
       },
       {
+        title: 'Dump Truck Status',
+        total: 124,
+        unit: 'Unit',
+        items: [
+          { label: 'Operasi', value: 77, tone: 'success' },
+          { label: 'Breakdown', value: 14, tone: 'error' },
+          { label: 'Standby', value: 33, tone: 'warning' }
+        ]
+      },
+      {
+        title: 'Purchase Request',
+        total: 0,
+        unit: 'PR',
+        items: [
+          { label: 'New Request', value: 0, tone: 'info' },
+          { label: 'Approved', value: 0, tone: 'success' },
+          { label: 'Overdue', value: 0, tone: 'error' }
+        ]
+      },
+      {
         title: 'Standby HE Detail',
         total: 0,
         unit: 'Unit',
@@ -77,16 +97,6 @@ const siteMonitoringMock = {
         ]
       },
       {
-        title: 'Dump Truck Status',
-        total: 124,
-        unit: 'Unit',
-        items: [
-          { label: 'Operasi', value: 77, tone: 'success' },
-          { label: 'Breakdown', value: 14, tone: 'error' },
-          { label: 'Standby', value: 33, tone: 'warning' }
-        ]
-      },
-      {
         title: 'Standby DT Detail',
         total: 0,
         unit: 'Unit',
@@ -99,16 +109,6 @@ const siteMonitoringMock = {
           { label: 'Public', value: 0, tone: 'primary' },
           { label: 'Arahan', value: 0, tone: 'warning' },
           { label: 'Commissioning', value: 0, tone: 'info' }
-        ]
-      },
-      {
-        title: 'Purchase Request',
-        total: 0,
-        unit: 'PR',
-        items: [
-          { label: 'New Request', value: 0, tone: 'info' },
-          { label: 'Approved', value: 0, tone: 'success' },
-          { label: 'Overdue', value: 0, tone: 'error' }
         ]
       },
       {

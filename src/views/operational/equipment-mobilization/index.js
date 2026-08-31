@@ -91,7 +91,7 @@ export default function EquipmentMobilizationScreen() {
         }
         secondary={
           <Tooltip title="Filter">
-            <IconButton color="secondary" onClick={() => setOpenFilter(true)}>
+            <IconButton color="secondary" onClick={() => setOpenFilter(true)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
               <Filter />
             </IconButton>
           </Tooltip>

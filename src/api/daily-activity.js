@@ -7,6 +7,7 @@ export const dailyActivityEndpoints = {
   list: '/operation/daily-activity/items',
   access: '/operation/daily-activity/access',
   detail: (id) => `/operation/daily-activity/by-header/${id}`,
+  download: (format) => `/operation/daily-activity/download/${format}`,
   create: '/operation/daily-activity-bulk',
   update: (id, status) => `/operation/daily-activity/${id}/status/${status}/update`,
   destroy: (id) => `/operation/daily-activity/${id}/destroy`
@@ -93,6 +94,42 @@ export async function updateDailyActivityStatus(id, status, header, items) {
 export async function deleteDailyActivity(id) {
   const response = await axiosServices.post(dailyActivityEndpoints.destroy(id), null, onlineConfig);
   return getPayload(response.data);
+}
+
+const filenameFromDisposition = (value, fallback) => {
+  const match = value?.match(/filename="?([^";]+)"?/i);
+  return match?.[1] || fallback;
+};
+
+export async function downloadDailyActivities(params = {}, format = 'pdf') {
+  const extension = format === 'excel' ? 'xlsx' : 'pdf';
+  try {
+    const response = await axiosServices.get(dailyActivityEndpoints.download(format), {
+      ...onlineConfig,
+      params: compactParams(params),
+      responseType: 'blob',
+      timeout: 300000
+    });
+    return {
+      blob: response.data,
+      filename: filenameFromDisposition(
+        response.headers?.['content-disposition'],
+        `daily-activity-detail-${new Date().toISOString().slice(0, 10)}.${extension}`
+      )
+    };
+  } catch (error) {
+    if (error?.response?.data instanceof Blob) {
+      const text = await error.response.data.text();
+      try {
+        const payload = JSON.parse(text);
+        throw new Error(payload?.message || 'Gagal mengunduh Daily Activity.');
+      } catch (parseError) {
+        if (parseError instanceof SyntaxError) throw new Error(text || 'Gagal mengunduh Daily Activity.');
+        throw parseError;
+      }
+    }
+    throw error;
+  }
 }
 
 export async function getDailyActivityMasters() {

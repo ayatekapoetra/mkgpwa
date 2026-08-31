@@ -110,10 +110,10 @@ export default function CustomersEventHistoryScreen() {
               <span>
                 <IconButton
                   aria-label="download-pdf"
-                  variant="dashed"
                   color="error"
                   onClick={() => handleDownload('pdf')}
                   disabled={Boolean(downloadFormat)}
+                  sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}
                 >
                   {downloadFormat === 'pdf' ? (
                     <CircularProgress size={20} color="inherit" />
@@ -127,10 +127,10 @@ export default function CustomersEventHistoryScreen() {
               <span>
                 <IconButton
                   aria-label="download-excel"
-                  variant="dashed"
                   color="success"
                   onClick={() => handleDownload('excel')}
                   disabled={Boolean(downloadFormat)}
+                  sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}
                 >
                   {downloadFormat === 'excel' ? (
                     <CircularProgress size={20} color="inherit" />
@@ -143,9 +143,9 @@ export default function CustomersEventHistoryScreen() {
             <Tooltip title="Filter">
               <IconButton
                 aria-label="filter"
-                variant="dashed"
                 color="primary"
                 onClick={() => setOpenFilter((open) => !open)}
+                sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}
               >
                 <FilterListIcon />
               </IconButton>

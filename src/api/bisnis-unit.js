@@ -19,7 +19,7 @@ export const useGetBisnisUnit = (params) => {
 
   const memoizedValue = useMemo(() => {
     const rowsPayload = data?.rows;
-    const listPayload = rowsPayload?.data || rowsPayload?.rows || [];
+    const listPayload = Array.isArray(rowsPayload) ? rowsPayload : (rowsPayload?.data || rowsPayload?.rows || []);
     const normalizedBisnisUnit = {
       ...rowsPayload,
       rows: Array.isArray(listPayload) ? listPayload : []

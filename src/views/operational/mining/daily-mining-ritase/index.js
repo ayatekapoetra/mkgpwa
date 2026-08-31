@@ -54,7 +54,7 @@ export default function DailyMiningProduksiScreen() {
       <MainCard
         title={<div></div>}
         secondary={
-          <IconButton shape="rounded" color="secondary" onClick={toggleFilterHandle}>
+          <IconButton color="secondary" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <Filter />
           </IconButton>
         }

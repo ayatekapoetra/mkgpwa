@@ -190,6 +190,26 @@ export function useGetMenu() {
       }
     }
 
+    const warehouseMenu = dashboardChildren.find((item) => {
+      const title = (item?.title || '').toString().trim().toLowerCase();
+      const id = (item?.id || '').toString().trim().toLowerCase();
+      return title === 'warehouse' || title === 'gudang' || id.includes('warehouse') || id.includes('gudang');
+    });
+
+    if (warehouseMenu && Array.isArray(warehouseMenu.children)) {
+      const hasGoodsIssues = warehouseMenu.children.some((item) => item?.url === '/goods-issues' || item?.id === 'goods-issues');
+      if (!hasGoodsIssues) {
+        warehouseMenu.children.push({
+          id: 'goods-issues',
+          title: 'Goods Issues',
+          type: 'item',
+          url: '/goods-issues',
+          icon: getMenuIcon('box') || getMenuIcon('documentText'),
+          breadcrumbs: true
+        });
+      }
+    }
+
     const result = {
       ...data,
       dashboard: {

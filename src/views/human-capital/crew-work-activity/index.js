@@ -169,14 +169,14 @@ const CrewWorkActivityScreen = () => {
           {error || statsError ? <Chip label="Error memuat data" size="small" color="error" /> : null}
           <IconButton 
             aria-label="download" 
-            variant="dashed" 
             color="secondary" 
             onClick={handleDownloadExcel}
             disabled={downloadingExcel}
+            sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}
           >
             <DocumentDownload />
           </IconButton>
-          <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilterHandle}>
+          <IconButton aria-label="filter" color="primary" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <Filter />
           </IconButton>
         </Stack>

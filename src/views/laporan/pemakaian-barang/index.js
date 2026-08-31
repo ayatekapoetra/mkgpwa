@@ -49,10 +49,10 @@ const LaporanEvaluasiPartScreen = () => {
       title="Laporan Pemakaian Barang"
       secondary={
         <Stack direction="row" gap={1}>
-          <IconButton aria-label="export" variant="dashed" color="secondary" onClick={handleExport}>
+          <IconButton aria-label="export" color="secondary" onClick={handleExport} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <FileDownloadIcon />
           </IconButton>
-          <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilterHandle}>
+          <IconButton aria-label="filter" color="primary" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <FilterListIcon />
           </IconButton>
         </Stack>

@@ -72,7 +72,7 @@ function MaterialScreen() {
       title={<BtnAction />} 
       secondary={
         <Stack direction="row" gap={1}>
-          <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilterHandle}>
+          <IconButton aria-label="filter" color="primary" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <FilterListIcon />
           </IconButton>
         </Stack>

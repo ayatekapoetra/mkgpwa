@@ -203,20 +203,20 @@ export default function ProductivityScreen() {
         <Stack direction="row" gap={1}>
           <Tooltip title="Download PDF">
             <span>
-              <IconButton aria-label="download-pdf" variant="dashed" color="error" onClick={() => handleDownload('pdf')} disabled={Boolean(downloadFormat)}>
+              <IconButton aria-label="download-pdf" color="error" onClick={() => handleDownload('pdf')} disabled={Boolean(downloadFormat)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
                 {downloadFormat === 'pdf' ? <CircularProgress size={20} color="inherit" /> : <PictureAsPdfOutlinedIcon />}
               </IconButton>
             </span>
           </Tooltip>
           <Tooltip title="Download Excel">
             <span>
-              <IconButton aria-label="download-excel" variant="dashed" color="success" onClick={() => handleDownload('excel')} disabled={Boolean(downloadFormat)}>
+              <IconButton aria-label="download-excel" color="success" onClick={() => handleDownload('excel')} disabled={Boolean(downloadFormat)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
                 {downloadFormat === 'excel' ? <CircularProgress size={20} color="inherit" /> : <DescriptionOutlinedIcon />}
               </IconButton>
             </span>
           </Tooltip>
           <Tooltip title="Filter">
-            <IconButton aria-label="filter" variant="dashed" color="primary" onClick={() => setOpenFilter((open) => !open)}>
+            <IconButton aria-label="filter" color="primary" onClick={() => setOpenFilter((open) => !open)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
               <FilterListIcon />
             </IconButton>
           </Tooltip>

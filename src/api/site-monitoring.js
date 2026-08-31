@@ -1,6 +1,5 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
-import axios from 'axios';
 import { fetcher } from 'utils/axios';
 
 export const endpoints = {
@@ -11,17 +10,12 @@ export const endpoints = {
   standbyDtDetail: '/public/signage/site-monitoring/standby-dt-detail',
   prStatus: '/public/signage/site-monitoring/pr-status',
   poStockStatus: '/public/signage/site-monitoring/po-stock-status',
+  manPower: '/public/signage/site-monitoring/man-power',
+  dailyAttendance: '/public/signage/site-monitoring/daily-attendance',
   penyewa: '/public/penyewa/list',
-  shifts: '/public/shift/list'
+  shifts: '/public/shift/list',
+  cabang: '/public/cabang/list'
 };
-
-const HRIS_BASE_URL =
-  process.env.NEXT_PUBLIC_HRIS_API_URL || process.env.NEXT_APP_HRIS_API_URL || 'https://apihris.makkuragatama.id';
-
-const hrisFetcher = (url) =>
-  axios
-    .get(`${HRIS_BASE_URL}${url}`, { timeout: 30000, headers: { 'Content-Type': 'application/json' } })
-    .then((res) => res.data);
 
 export const useGetSiteMonitoringProduction = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
@@ -144,9 +138,10 @@ export const useGetSiteMonitoringStandbyDtDetail = (params, refreshInterval = 3 
 };
 
 export const useGetSiteMonitoringPrStatus = (params, refreshInterval = 3 * 60 * 1000) => {
-  // PR Status sengaja tidak mengikuti filter penyewa/shift header.
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops }).filter(([, value]) => value !== undefined && value !== null && value !== '')
+    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ''
+    )
   ).toString();
   const url = query ? `${endpoints.prStatus}?${query}` : endpoints.prStatus;
   const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipAuthRedirect: true }], fetcher, {
@@ -169,9 +164,10 @@ export const useGetSiteMonitoringPrStatus = (params, refreshInterval = 3 * 60 * 
 };
 
 export const useGetSiteMonitoringPoStockStatus = (params, refreshInterval = 3 * 60 * 1000) => {
-  // PO/Stock sengaja tidak mengikuti filter penyewa/shift header.
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops }).filter(([, value]) => value !== undefined && value !== null && value !== '')
+    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ''
+    )
   ).toString();
   const url = query ? `${endpoints.poStockStatus}?${query}` : endpoints.poStockStatus;
   const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipAuthRedirect: true }], fetcher, {
@@ -201,29 +197,27 @@ export const useGetSiteMonitoringFilterOptions = () => {
   };
   const { data: penyewaData, isLoading: penyewaLoading } = useSWR([endpoints.penyewa, { skipAuthRedirect: true }], fetcher, swrOptions);
   const { data: shiftData, isLoading: shiftsLoading } = useSWR([endpoints.shifts, { skipAuthRedirect: true }], fetcher, swrOptions);
+  const { data: cabangData, isLoading: cabangLoading } = useSWR([endpoints.cabang, { skipAuthRedirect: true }], fetcher, swrOptions);
 
   return useMemo(
     () => ({
       penyewa: Array.isArray(penyewaData?.rows) ? penyewaData.rows : [],
       shifts: Array.isArray(shiftData?.rows) ? shiftData.rows : [],
-      loading: penyewaLoading || shiftsLoading
+      cabang: Array.isArray(cabangData?.rows) ? cabangData.rows : [],
+      loading: penyewaLoading || shiftsLoading || cabangLoading
     }),
-    [penyewaData, shiftData, penyewaLoading, shiftsLoading]
+    [penyewaData, shiftData, cabangData, penyewaLoading, shiftsLoading, cabangLoading]
   );
-};
-
-const MANPOWER_TONES = {
-  operator: 'info',
-  driver: 'warning',
-  lainnya: 'success'
 };
 
 export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops }).filter(([, value]) => value !== undefined && value !== null && value !== '')
+    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ''
+    )
   ).toString();
-  const url = `/api-public/karyawan/total-per-site${query ? `?${query}` : ''}`;
-  const { data, isLoading, error, isValidating, mutate } = useSWR(url, hrisFetcher, {
+  const url = query ? `${endpoints.manPower}?${query}` : endpoints.manPower;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipAuthRedirect: true }], fetcher, {
     refreshInterval,
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -232,22 +226,12 @@ export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) =
 
   return useMemo(() => {
     const rows = data?.rows;
-    const items = Array.isArray(rows?.items)
-      ? rows.items.map((item) => ({
-          label: item.label || item.key,
-          value: Number(item.total || 0),
-          tone: MANPOWER_TONES[item.key] || 'primary',
-          key: item.key
-        }))
-      : [];
-    const total = Number(rows?.total || 0);
-
     return {
       manPower: rows
         ? {
-            total,
-            unit: 'Person',
-            siteGroups: items
+            total: Number(rows.total || 0),
+            unit: rows.unit || 'Person',
+            siteGroups: Array.isArray(rows.siteGroups) ? rows.siteGroups : []
           }
         : null,
       loading: isLoading,
@@ -258,28 +242,14 @@ export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) =
   }, [data, isLoading, error, isValidating, mutate]);
 };
 
-const ATTENDANCE_TONE_MAP = {
-  finger: 'info',
-  sakit: 'error',
-  izin: 'warning',
-  cuti: 'primary',
-  tanpa_status: 'error'
-};
-
-const ATTENDANCE_DETAIL_MAP = {
-  finger: 'Recorded',
-  sakit: 'Person',
-  izin: 'Person',
-  cuti: 'Person',
-  tanpa_status: 'Need update'
-};
-
 export const useGetDailyAttendance = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops }).filter(([, value]) => value !== undefined && value !== null && value !== '')
+    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ''
+    )
   ).toString();
-  const url = `/api-public/karyawan/daily-attendance${query ? `?${query}` : ''}`;
-  const { data, isLoading, error, isValidating, mutate } = useSWR(url, hrisFetcher, {
+  const url = query ? `${endpoints.dailyAttendance}?${query}` : endpoints.dailyAttendance;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipAuthRedirect: true }], fetcher, {
     refreshInterval,
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -288,18 +258,8 @@ export const useGetDailyAttendance = (params, refreshInterval = 3 * 60 * 1000) =
 
   return useMemo(() => {
     const rows = data?.rows;
-    const liveItems = Array.isArray(rows?.items)
-      ? rows.items.map((item) => ({
-          label: item.label || item.key,
-          value: Number(item.value || 0),
-          detail: item.detail || ATTENDANCE_DETAIL_MAP[item.key] || '',
-          tone: ATTENDANCE_TONE_MAP[item.key] || 'info',
-          key: item.key
-        }))
-      : [];
-
     return {
-      dailyAttendance: rows ? liveItems : null,
+      dailyAttendance: rows ? (Array.isArray(rows.items) ? rows.items : []) : null,
       loading: isLoading,
       error,
       validating: isValidating,

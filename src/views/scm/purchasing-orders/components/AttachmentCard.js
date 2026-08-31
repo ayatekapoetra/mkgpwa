@@ -47,9 +47,14 @@ export default function AttachmentCard({
     event.target.value = "";
   };
 
-  const handleDelete = (fileId) => {
+  const handleDelete = async (fileId) => {
+    if (deletingId !== null || !onDelete) return;
     setDeletingId(fileId);
-    if (onDelete) onDelete(fileId);
+    try {
+      await onDelete(fileId);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -203,7 +208,7 @@ export default function AttachmentCard({
                       size="small"
                       color="error"
                       onClick={() => handleDelete(file.id)}
-                      disabled={deletingId === file.id}
+                      disabled={deletingId !== null}
                     >
                       {deletingId === file.id ? (
                         <CircularProgress size={16} />

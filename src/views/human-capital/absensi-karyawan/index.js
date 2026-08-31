@@ -31,7 +31,7 @@ const AbsensiKaryawanScreen = () => {
       title={<Button variant="contained" startIcon={<HashtagDown size={18} />} href="/absensi-karyawan/import-mesin">Import Mesin</Button>}
       secondary={
         <Stack direction="row" spacing={1} alignItems="center">
-          <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilterHandle}>
+          <IconButton aria-label="filter" color="primary" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <Filter />
           </IconButton>
         </Stack>

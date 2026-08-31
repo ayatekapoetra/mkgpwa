@@ -70,10 +70,10 @@ const SummaryBreakdownScreen = () => {
       title="Laporan Summary Breakdown"
       secondary={
         <Stack direction="row" gap={1}>
-          <IconButton aria-label="download-pdf" variant="dashed" color="secondary" onClick={handleDownload} disabled={downloading}>
+          <IconButton aria-label="download-pdf" color="secondary" onClick={handleDownload} disabled={downloading} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <FileDownloadIcon />
           </IconButton>
-          <IconButton aria-label="filter" variant="dashed" color="primary" onClick={toggleFilter}>
+          <IconButton aria-label="filter" color="primary" onClick={toggleFilter} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <FilterListIcon />
           </IconButton>
         </Stack>

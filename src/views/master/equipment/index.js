@@ -232,7 +232,7 @@ const EquipmentScreen = () => {
           <IconButton aria-label="settings" variant="dashed" color="secondary" onClick={() => setIsCard(!isCard)}>
             <AutoAwesomeMosaicIcon />
           </IconButton>
-          <IconButton aria-label="settings" variant="dashed" color="primary" onClick={toggleFilterHandle}>
+          <IconButton aria-label="settings" color="primary" onClick={toggleFilterHandle} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
             <FilterListIcon />
           </IconButton>
         </Stack>

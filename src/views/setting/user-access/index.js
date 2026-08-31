@@ -235,9 +235,9 @@ const PermissionScreen = () => {
           secondary={
             <IconButton
               color={openFilter || activeFilters.length ? 'primary' : 'secondary'}
-              variant={openFilter || activeFilters.length ? 'light' : 'text'}
               onClick={() => setOpenFilter((v) => !v)}
               aria-label="filter"
+              sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}
             >
               <FilterListIcon />
             </IconButton>

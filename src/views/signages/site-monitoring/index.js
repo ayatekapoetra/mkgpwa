@@ -479,6 +479,7 @@ export default function SiteMonitoringScreen() {
   const theme = useTheme();
   const data = siteMonitoringMock;
   const [filters, setFilters] = useState({
+    cabang_id: '',
     penyewa_id: '',
     date_ops: moment().format('YYYY-MM-DD'),
     shift_id: ''
@@ -515,9 +516,9 @@ export default function SiteMonitoringScreen() {
     loading: poStockStatusLoading,
     error: poStockStatusError
   } = useGetSiteMonitoringPoStockStatus(filters);
+  const { penyewa, shifts, cabang, loading: filterOptionsLoading } = useGetSiteMonitoringFilterOptions();
   const { manPower: manPowerResponse, loading: manPowerLoading, error: manPowerError } = useGetManPowerPerSite(filters);
   const { dailyAttendance: dailyAttendanceResponse, loading: dailyAttendanceLoading } = useGetDailyAttendance(filters);
-  const { penyewa, shifts, loading: filterOptionsLoading } = useGetSiteMonitoringFilterOptions();
   const production = normalizeProduction(productionResponse, data.production);
   const equipmentCards = useMemo(() => {
     const liveCards = {
@@ -599,14 +600,7 @@ export default function SiteMonitoringScreen() {
   }, [manPowerResponse, manPowerLoading, data.manpower]);
   const dailyAttendanceItems = useMemo(() => {
     if (dailyAttendanceResponse && dailyAttendanceResponse.length > 0) {
-      const liveMap = new Map(dailyAttendanceResponse.map((item) => [item.key, item]));
-      return data.manpower.items.map((item) => {
-        const liveItem = liveMap.get(item.label.toLowerCase().replace(/\s+/g, '_'));
-        if (liveItem) {
-          return { ...item, value: liveItem.value, detail: liveItem.detail || item.detail };
-        }
-        return item;
-      });
+      return dailyAttendanceResponse;
     }
     return data.manpower.items;
   }, [dailyAttendanceResponse, data.manpower.items]);
@@ -769,6 +763,35 @@ export default function SiteMonitoringScreen() {
           >
             {!isPresentation && (
               <>
+                <Paper
+                  variant="outlined"
+                  sx={{ px: 1.25, py: 0.55, minWidth: { sm: 180 }, borderRadius: 1.5, bgcolor: surfaceColor, backgroundImage: 'none' }}
+                >
+                  <Typography color="text.secondary" sx={{ display: 'block', fontSize: 7, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Cabang
+                  </Typography>
+                  <Select
+                    value={filters.cabang_id}
+                    onChange={(event) => setFilters((current) => ({ ...current, cabang_id: event.target.value }))}
+                    variant="standard"
+                    disableUnderline
+                    displayEmpty
+                    disabled={filterOptionsLoading}
+                    inputProps={{ 'aria-label': 'Filter cabang' }}
+                    sx={{ width: '100%', fontSize: 10, fontWeight: 700, '& .MuiSelect-select': { py: 0.15, pr: '24px !important' } }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: 11 }}>
+                      All Cabang
+                    </MenuItem>
+                    {cabang.map((item) => (
+                      <MenuItem key={item.id} value={String(item.id)} sx={{ fontSize: 11 }}>
+                        {item.bisnis?.initial ? `${item.bisnis.initial} - ` : ''}
+                        {item.nama || item.initial || `Cabang ${item.id}`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Paper>
+
                 <Paper
                   variant="outlined"
                   sx={{ px: 1.25, py: 0.55, minWidth: { sm: 180 }, borderRadius: 1.5, bgcolor: surfaceColor, backgroundImage: 'none' }}

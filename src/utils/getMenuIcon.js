@@ -6,6 +6,9 @@ import {
   Truck,
   TruckFast,
   Box,
+  BoxAdd,
+  BoxRemove,
+  BoxSearch,
   Layer,
   Location,
   Task,
@@ -55,6 +58,8 @@ import {
   ShoppingCart,
   CardTick1,
   Messages2,
+  Setting3,
+  WalletMoney,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -126,6 +131,11 @@ const iconMap = {
   TruckFast: TruckFast,
   CardTick1: CardTick1,
   Messages2: Messages2,
+  Setting3: Setting3,
+  BoxAdd: BoxAdd,
+  BoxRemove: BoxRemove,
+  BoxSearch: BoxSearch,
+  WalletMoney: WalletMoney,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,
