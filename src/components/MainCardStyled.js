@@ -7,7 +7,7 @@ import { styled } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 
 // project import
-import useConfig from 'hooks/useConfig';
+import { useThemeConfig } from 'hooks/useConfig';
 import { ThemeMode } from 'config';
 
 // ==============================|| MAIN CARD - STYLED ||============================== //
@@ -17,7 +17,7 @@ const MainCardStyled = styled(Card, {
     prop !== 'border' && prop !== 'shadow' && prop !== 'boxShadow' && prop !== 'codeHighlight' && prop !== 'modal'
 })(({ theme, border, shadow, boxShadow, codeHighlight, modal }) => {
   boxShadow = theme.palette.mode === ThemeMode.DARK ? boxShadow || true : boxShadow;
-  const { themeContrast } = useConfig();
+  const { themeContrast } = useThemeConfig();
   return {
     position: 'relative',
     overflow: 'inherit',

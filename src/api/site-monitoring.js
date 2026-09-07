@@ -139,7 +139,7 @@ export const useGetSiteMonitoringStandbyDtDetail = (params, refreshInterval = 3 
 
 export const useGetSiteMonitoringPrStatus = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+    Object.entries({ date_ops: params?.date_ops, area: params?.area }).filter(
       ([, value]) => value !== undefined && value !== null && value !== ''
     )
   ).toString();
@@ -165,7 +165,7 @@ export const useGetSiteMonitoringPrStatus = (params, refreshInterval = 3 * 60 * 
 
 export const useGetSiteMonitoringPoStockStatus = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+    Object.entries({ date_ops: params?.date_ops, area: params?.area }).filter(
       ([, value]) => value !== undefined && value !== null && value !== ''
     )
   ).toString();
@@ -200,19 +200,28 @@ export const useGetSiteMonitoringFilterOptions = () => {
   const { data: cabangData, isLoading: cabangLoading } = useSWR([endpoints.cabang, { skipAuthRedirect: true }], fetcher, swrOptions);
 
   return useMemo(
-    () => ({
-      penyewa: Array.isArray(penyewaData?.rows) ? penyewaData.rows : [],
-      shifts: Array.isArray(shiftData?.rows) ? shiftData.rows : [],
-      cabang: Array.isArray(cabangData?.rows) ? cabangData.rows : [],
-      loading: penyewaLoading || shiftsLoading || cabangLoading
-    }),
+    () => {
+      const cabang = Array.isArray(cabangData?.rows) ? cabangData.rows : [];
+      const areas = [...new Set(cabang.filter((item) => item.aktif === 'Y' && item.area).map((item) => item.area))].sort();
+      return {
+        penyewa: Array.isArray(penyewaData?.rows) ? penyewaData.rows : [],
+        shifts: Array.isArray(shiftData?.rows) ? shiftData.rows : [],
+        areas,
+        loading: penyewaLoading || shiftsLoading || cabangLoading
+      };
+    },
     [penyewaData, shiftData, cabangData, penyewaLoading, shiftsLoading, cabangLoading]
   );
 };
 
 export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+    Object.entries({
+      date_ops: params?.date_ops,
+      area: params?.area,
+      penyewa_id: params?.penyewa_id,
+      shift_id: params?.shift_id
+    }).filter(
       ([, value]) => value !== undefined && value !== null && value !== ''
     )
   ).toString();
@@ -244,7 +253,7 @@ export const useGetManPowerPerSite = (params, refreshInterval = 3 * 60 * 1000) =
 
 export const useGetDailyAttendance = (params, refreshInterval = 3 * 60 * 1000) => {
   const query = new URLSearchParams(
-    Object.entries({ date_ops: params?.date_ops, cabang_id: params?.cabang_id }).filter(
+    Object.entries({ date_ops: params?.date_ops, area: params?.area }).filter(
       ([, value]) => value !== undefined && value !== null && value !== ''
     )
   ).toString();
@@ -260,6 +269,7 @@ export const useGetDailyAttendance = (params, refreshInterval = 3 * 60 * 1000) =
     const rows = data?.rows;
     return {
       dailyAttendance: rows ? (Array.isArray(rows.items) ? rows.items : []) : null,
+      totalKaryawan: rows ? Number(rows.total_karyawan || 0) : null,
       loading: isLoading,
       error,
       validating: isValidating,

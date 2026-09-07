@@ -19,13 +19,11 @@ import ThemeWidth from './ThemeWidth';
 import ThemeMenuLayout from './ThemeMenuLayout';
 import ThemeFont from './ThemeFont';
 
-import Loader from 'components/Loader';
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
 import SimpleBar from 'components/third-party/SimpleBar';
 
-import useConfig from 'hooks/useConfig';
-import { useGetMenuMaster } from 'api/menu';
+import { useLayoutConfig, useThemeConfig } from 'hooks/useConfig';
 
 // ASSETS
 import { Add, Setting2 } from 'iconsax-react';
@@ -35,10 +33,9 @@ import MenuCaption from './MenuCaption';
 // ==============================|| HEADER CONTENT - CUSTOMIZATION ||============================== //
 
 const Customization = () => {
-  const { menuMasterLoading } = useGetMenuMaster();
-
   const theme = useTheme();
-  const { container, mode, presetColor, miniDrawer, themeDirection, menuOrientation, menuCaption, themeContrast, fontFamily } = useConfig();
+  const { container, miniDrawer, themeDirection, menuOrientation, menuCaption } = useLayoutConfig();
+  const { mode, presetColor, themeContrast, fontFamily } = useThemeConfig();
 
   // eslint-disable-next-line
   const themeLayout = useMemo(() => <ThemeLayout />, [miniDrawer, themeDirection]);
@@ -61,8 +58,6 @@ const Customization = () => {
   const handleToggle = () => {
     setOpen(!open);
   };
-
-  if (menuMasterLoading) return <Loader />;
 
   return (
     <>

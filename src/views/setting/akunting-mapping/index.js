@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Box,
+  Autocomplete,
   Button,
   Chip,
   IconButton,
@@ -24,6 +25,10 @@ import MainCard from "components/MainCard";
 import CircularLoader from "components/CircularLoader";
 import { APP_DEFAULT_PATH } from "config";
 import {
+  DEFAULT_SOURCE_INSTANCE,
+  GLOBAL_OPS_SOURCE_TYPES,
+  SOURCE_TO_TARGET_DEFAULT,
+  fetchAkuntingTargets,
   useAkuntingMappingMeta,
   useGetAkuntingMappings,
 } from "api/akunting-mapping";
@@ -37,7 +42,9 @@ const breadcrumbLinks = [
 export default function AkuntingMappingScreen() {
   const [filters, setFilters] = useState({
     source_system: "OPS_BE",
+    source_instance: DEFAULT_SOURCE_INSTANCE,
     source_entity_type: "",
+    company_id: "",
     status: "ACTIVE",
     q: "",
     limit: 100,
@@ -45,10 +52,20 @@ export default function AkuntingMappingScreen() {
   });
   const [draft, setDraft] = useState(filters);
   const { meta } = useAkuntingMappingMeta();
-  const { rows, total, dataLoading, dataMutate, dataError } = useGetAkuntingMappings(filters);
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const { rows, total, dataLoading, dataMutate, dataError } =
+    useGetAkuntingMappings(filters);
 
-  const sourceTypes = meta?.source_entity_types || [];
+  const sourceTypes = (meta?.source_entity_types || []).filter(
+    (type) => SOURCE_TO_TARGET_DEFAULT[type.value],
+  );
   const statuses = meta?.statuses || ["ACTIVE", "INACTIVE", "PENDING_REVIEW"];
+
+  useEffect(() => {
+    fetchAkuntingTargets("COMPANY", { limit: 100 })
+      .then(setCompanyOptions)
+      .catch(() => setCompanyOptions([]));
+  }, []);
 
   const applyFilter = () => setFilters({ ...draft, offset: 0 });
 
@@ -68,6 +85,14 @@ export default function AkuntingMappingScreen() {
             >
               Tambah Mapping
             </Button>
+            <Button
+              variant="outlined"
+              color="warning"
+              component={Link}
+              href="/akunting-mapping/issues"
+            >
+              Mapping Issues
+            </Button>
             <IconButton color="secondary" onClick={() => dataMutate()}>
               <Refresh />
             </IconButton>
@@ -83,22 +108,51 @@ export default function AkuntingMappingScreen() {
               size="small"
               label="Source Type"
               value={draft.source_entity_type}
-              onChange={(e) => setDraft((s) => ({ ...s, source_entity_type: e.target.value }))}
+              onChange={(e) =>
+                setDraft((s) => ({ ...s, source_entity_type: e.target.value }))
+              }
               sx={{ minWidth: 200 }}
             >
               <MenuItem value="">Semua</MenuItem>
               {sourceTypes.map((t) => (
                 <MenuItem key={t.value} value={t.value}>
-                  {t.label || t.value}
+                  {GLOBAL_OPS_SOURCE_TYPES.includes(t.value)
+                    ? `${t.label || t.value} (Global OPS)`
+                    : t.label || t.value}
                 </MenuItem>
               ))}
             </TextField>
+            <Autocomplete
+              size="small"
+              options={companyOptions}
+              value={
+                companyOptions.find(
+                  (o) => String(o.id) === String(draft.company_id),
+                ) || null
+              }
+              getOptionLabel={(option) =>
+                `[${option.code || option.id}] ${option.name || option.legal_name || ""}`.trim()
+              }
+              isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
+              onChange={(_, option) =>
+                setDraft((state) => ({
+                  ...state,
+                  company_id: option?.id || "",
+                }))
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Target Company" />
+              )}
+              sx={{ minWidth: 220 }}
+            />
             <TextField
               select
               size="small"
               label="Status"
               value={draft.status}
-              onChange={(e) => setDraft((s) => ({ ...s, status: e.target.value }))}
+              onChange={(e) =>
+                setDraft((s) => ({ ...s, status: e.target.value }))
+              }
               sx={{ minWidth: 160 }}
             >
               <MenuItem value="">Semua</MenuItem>
@@ -116,16 +170,26 @@ export default function AkuntingMappingScreen() {
               onChange={(e) => setDraft((s) => ({ ...s, q: e.target.value }))}
               sx={{ minWidth: 220 }}
             />
-            <Button variant="outlined" startIcon={<Filter />} onClick={applyFilter}>
+            <Button
+              variant="outlined"
+              startIcon={<Filter />}
+              onClick={applyFilter}
+            >
               Terapkan
             </Button>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-            Total: {total} mapping · Source system: OPS_BE → dbaccounting
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: 1, display: "block" }}
+          >
+            Total: {total} mapping · Source: OPS_BE / {filters.source_instance}{" "}
+            → dbaccounting
           </Typography>
           {dataError && (
             <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-              {dataError?.message || "Gagal memuat data. Pastikan ACCOUNTING_INTEGRATION_ENABLED=true di backend."}
+              {dataError?.message ||
+                "Gagal memuat data. Pastikan ACCOUNTING_INTEGRATION_ENABLED=true di backend."}
             </Typography>
           )}
         </Box>
@@ -138,9 +202,11 @@ export default function AkuntingMappingScreen() {
               <TableHead>
                 <TableRow sx={{ bgcolor: "action.hover" }}>
                   <TableCell>Source Type</TableCell>
+                  <TableCell>Instance</TableCell>
                   <TableCell>Source</TableCell>
                   <TableCell>Target Type</TableCell>
-                  <TableCell>Target ID</TableCell>
+                  <TableCell>Target Company</TableCell>
+                  <TableCell>Target</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Notes</TableCell>
                   <TableCell align="right">Aksi</TableCell>
@@ -149,55 +215,99 @@ export default function AkuntingMappingScreen() {
               <TableBody>
                 {tableRows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
+                    <TableCell colSpan={9}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ py: 3, textAlign: "center" }}
+                      >
                         Belum ada mapping.
                       </Typography>
                     </TableCell>
                   </TableRow>
                 )}
-                {tableRows.map((row) => (
-                  <TableRow key={row.id} hover>
-                    <TableCell>
-                      <Chip size="small" label={row.source_entity_type} />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={700}>
-                        {row.source_entity_id}
-                        {row.source_entity_code ? ` · ${row.source_entity_code}` : ""}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {row.source_entity_name || "-"}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{row.target_entity_type}</TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ fontFamily: "monospace" }}>
-                        {row.target_entity_id}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        color={row.status === "ACTIVE" ? "success" : "default"}
-                        label={row.status}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption">{row.notes || "-"}</Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        component={Link}
-                        href={`/akunting-mapping/${row.id}`}
-                      >
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {tableRows.map((row) => {
+                  const company = companyOptions.find(
+                    (option) => String(option.id) === String(row.company_id),
+                  );
+                  return (
+                    <TableRow key={row.id} hover>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={
+                            GLOBAL_OPS_SOURCE_TYPES.includes(
+                              row.source_entity_type,
+                            )
+                              ? `${row.source_entity_type} (Global OPS)`
+                              : row.source_entity_type
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>{row.source_instance || "-"}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={700}>
+                          {row.source_entity_id}
+                          {row.source_entity_code
+                            ? ` · ${row.source_entity_code}`
+                            : ""}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {row.source_entity_name || "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{row.target_entity_type}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={700}>
+                          {row.target_company_code ||
+                            row.company_code ||
+                            company?.code ||
+                            "-"}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {row.target_company_name ||
+                            row.company_name ||
+                            company?.name ||
+                            "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={700}>
+                          {row.target_entity_code ||
+                            row.target_code ||
+                            row.target_entity_id}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {row.target_entity_name || row.target_name || "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          color={
+                            row.status === "ACTIVE" ? "success" : "default"
+                          }
+                          label={row.status}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="caption">
+                          {row.notes || "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          component={Link}
+                          href={`/akunting-mapping/${row.id}`}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </Box>

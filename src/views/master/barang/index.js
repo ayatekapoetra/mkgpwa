@@ -31,7 +31,6 @@ const BarangScreen = () => {
     kode: '',
     num_part: '',
     serial: '',
-    bisnis_id: '',
     kategori_id: '',
     application_id: '',
     manufacture_id: '',

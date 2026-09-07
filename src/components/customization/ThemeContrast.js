@@ -7,7 +7,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useThemeConfig } from 'hooks/useConfig';
 
 // ASSETS
 import { Mask } from 'iconsax-react';
@@ -16,7 +16,7 @@ import { Mask } from 'iconsax-react';
 
 const ThemeContrast = () => {
   const theme = useTheme();
-  const { themeContrast, onChangeContrast } = useConfig();
+  const { themeContrast, onChangeContrast } = useThemeConfig();
 
   const handleContrastChange = () => {
     onChangeContrast();

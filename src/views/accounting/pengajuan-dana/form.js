@@ -672,7 +672,6 @@ export default function PengajuanDanaForm({ mode = 'create', initialData = null,
                                   <Grid item xs={12} md={8}>
                                     <OptionBarang
                                       value={item.barang_id || ''}
-                                      bisnisId={values.bisnis_id}
                                       name={`items.${index}.barang_id`}
                                       label="Barang (opsional)"
                                       setFieldValue={setFieldValue}
@@ -682,7 +681,7 @@ export default function PengajuanDanaForm({ mode = 'create', initialData = null,
                                           selectedBarang?.satuan || ''
                                         );
                                       }}
-                                      disabled={isSubmitting || !values.bisnis_id}
+                                      disabled={isSubmitting}
                                     />
                                   </Grid>
                                   <Grid item xs={12} md={4}>

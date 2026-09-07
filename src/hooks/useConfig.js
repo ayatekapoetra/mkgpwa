@@ -1,8 +1,8 @@
 import { useContext } from 'react';
-import { ConfigContext } from 'contexts/ConfigContext';
+import { LayoutConfigContext, LocaleConfigContext, ThemeConfigContext } from 'contexts/ConfigContext';
 
 // ==============================|| HOOKS - CONFIG  ||============================== //
 
-const useConfig = () => useContext(ConfigContext);
-
-export default useConfig;
+export const useThemeConfig = () => useContext(ThemeConfigContext);
+export const useLayoutConfig = () => useContext(LayoutConfigContext);
+export const useLocaleConfig = () => useContext(LocaleConfigContext);

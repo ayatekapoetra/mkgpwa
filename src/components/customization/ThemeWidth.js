@@ -7,7 +7,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 
 // ASSETS
 const defaultLayout = '/assets/images/customization/fluid.svg';
@@ -16,7 +16,7 @@ const containerLayout = '/assets/images/customization/container.svg';
 // ==============================|| CUSTOMIZATION - CONTAINER ||============================== //
 
 const ThemeWidth = () => {
-  const { container, onChangeContainer } = useConfig();
+  const { container, onChangeContainer } = useLayoutConfig();
 
   const handleContainerChange = () => {
     onChangeContainer();

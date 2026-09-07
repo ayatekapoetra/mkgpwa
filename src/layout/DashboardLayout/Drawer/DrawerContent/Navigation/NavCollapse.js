@@ -24,7 +24,7 @@ import Dot from 'components/@extended/Dot';
 import SimpleBar from 'components/third-party/SimpleBar';
 import Transitions from 'components/@extended/Transitions';
 
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { handlerActiveItem, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation, ThemeMode } from 'config';
 
@@ -61,7 +61,7 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
 
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { menuOrientation } = useConfig();
+  const { menuOrientation } = useLayoutConfig();
   const router = useRouter();
 
   const [open, setOpen] = useState(false);

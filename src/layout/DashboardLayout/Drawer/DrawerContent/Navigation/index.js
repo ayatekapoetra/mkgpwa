@@ -17,7 +17,7 @@ import NavItem from './NavItem';
 import NavGroup from './NavGroup';
 import menuItem from 'menu-items';
 
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { HORIZONTAL_MAX_ITEM } from 'config';
 import { useGetMenu, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation } from 'config';
@@ -39,7 +39,7 @@ const Navigation = () => {
 
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { menuOrientation } = useConfig();
+  const { menuOrientation } = useLayoutConfig();
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
 

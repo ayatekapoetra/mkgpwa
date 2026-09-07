@@ -12,6 +12,7 @@ const endpoints = {
   detail: (id) => `/pengajuan-dana/${id}`,
   permissions: (id) => `/pengajuan-dana/${id}/permissions`,
   attachments: (id) => `/pengajuan-dana/${id}/attachments`,
+  attachment: (id, fileId) => `/pengajuan-dana/${id}/attachments/${fileId}`,
   approve: (id) => `/pengajuan-dana/${id}/approve`,
   reject: (id) => `/pengajuan-dana/${id}/reject`,
   return: (id) => `/pengajuan-dana/${id}/return`,
@@ -34,7 +35,8 @@ const documentPermissionDefaults = {
   can_verify: false,
   can_reject: false,
   can_return: false,
-  can_upload_attachment: false
+  can_upload_attachment: false,
+  can_remove_attachment: false
 };
 
 const isPermissionEnabled = (value) => value === true || value === 1 || ['1', 'Y', 'TRUE'].includes(String(value || '').toUpperCase());
@@ -315,6 +317,11 @@ export const uploadPengajuanDanaAttachments = async (id, files) => {
     headers: { 'Content-Type': 'multipart/form-data' },
     skipOfflineQueue: true
   });
+  return response.data;
+};
+
+export const removePengajuanDanaAttachment = async (id, fileId) => {
+  const response = await axiosServices.delete(endpoints.attachment(id, fileId), { skipOfflineQueue: true });
   return response.data;
 };
 

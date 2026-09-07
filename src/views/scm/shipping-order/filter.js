@@ -41,6 +41,7 @@ export default function FilterShippingOrder({ count, data, setData, open, onClos
     if (data.startDate) count++;
     if (data.endDate) count++;
     if (data.gudang_id) count++;
+    if (data.status) count++;
     return count;
   }, [data]);
 
@@ -58,7 +59,8 @@ export default function FilterShippingOrder({ count, data, setData, open, onClos
       narasi: '',
       startDate: '',
       endDate: '',
-      gudang_id: ''
+      gudang_id: '',
+      status: ''
     }));
   };
 
@@ -124,6 +126,18 @@ export default function FilterShippingOrder({ count, data, setData, open, onClos
                 {gudang.kode || '-'} - {gudang.nama || '-'}
               </MenuItem>
             ))}
+          </TextField>
+          <TextField
+            select
+            label="Status"
+            size="small"
+            fullWidth
+            value={data.status}
+            onChange={handleChange('status')}
+          >
+            <MenuItem value="">Semua status</MenuItem>
+            <MenuItem value="received">Diterima</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
           </TextField>
           <Button variant="outlined" color="secondary" onClick={handleReset} fullWidth>
             Reset Filter

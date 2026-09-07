@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Alert,
   Autocomplete,
   Button,
   Grid,
@@ -20,6 +21,9 @@ import MainCard from "components/MainCard";
 import { APP_DEFAULT_PATH } from "config";
 import { openNotification } from "api/notification";
 import {
+  COMPANY_OWNED_TARGET_TYPES,
+  DEFAULT_SOURCE_INSTANCE,
+  GLOBAL_OPS_SOURCE_TYPES,
   SOURCE_TO_TARGET_DEFAULT,
   fetchAkuntingSources,
   fetchAkuntingTargets,
@@ -37,10 +41,15 @@ const breadcrumbLinks = [
 
 const schema = Yup.object({
   source_system: Yup.string().required(),
+  source_instance: Yup.string().required("Source instance wajib"),
   source_entity_type: Yup.string().required("Source type wajib"),
   source_entity_id: Yup.string().required("Source id wajib"),
   target_entity_type: Yup.string().required("Target type wajib"),
   target_entity_id: Yup.string().required("Target wajib dipilih"),
+  company_id: Yup.string().when("target_entity_type", {
+    is: (type) => COMPANY_OWNED_TARGET_TYPES.includes(type),
+    then: (field) => field.required("Company target wajib dipilih"),
+  }),
   status: Yup.string().required(),
 });
 
@@ -55,20 +64,38 @@ export default function AkuntingMappingForm({ mappingId }) {
   const router = useRouter();
   const search = useSearchParams();
   const isEdit = Boolean(mappingId) || search.get("edit") === "1";
+  const requestedReturnTo = search.get("return_to") || "";
+  const returnTo = /^\/integration-issues\/\d+$/.test(requestedReturnTo)
+    ? requestedReturnTo
+    : "/akunting-mapping";
   const { meta } = useAkuntingMappingMeta();
   const { rows, dataLoading } = useGetAkuntingMappings(
     mappingId
-      ? { source_system: "OPS_BE", status: "", limit: 500, offset: 0 }
+      ? {
+          source_system: "OPS_BE",
+          source_instance: DEFAULT_SOURCE_INSTANCE,
+          status: "",
+          limit: 500,
+          offset: 0,
+        }
       : null,
   );
 
   const existing = useMemo(
-    () => (mappingId ? rows.find((r) => String(r.id) === String(mappingId)) : null),
+    () =>
+      mappingId ? rows.find((r) => String(r.id) === String(mappingId)) : null,
     [rows, mappingId],
   );
 
-  const sourceTypes = meta?.source_entity_types || [];
-  const targetTypes = meta?.target_entity_types || [];
+  const sourceTypes = (meta?.source_entity_types || []).filter(
+    (type) => SOURCE_TO_TARGET_DEFAULT[type.value],
+  );
+  const targetTypeLabels = Object.fromEntries(
+    (meta?.target_entity_types || []).map((type) => [
+      type.value,
+      type.label || type.value,
+    ]),
+  );
   const statuses = meta?.statuses || ["ACTIVE", "INACTIVE", "PENDING_REVIEW"];
 
   const [sourceOptions, setSourceOptions] = useState([]);
@@ -84,19 +111,35 @@ export default function AkuntingMappingForm({ mappingId }) {
   }, []);
 
   const initialValues = {
-    company_id: existing?.company_id || "",
+    company_id: existing?.company_id || search.get("company_id") || "",
     source_system: existing?.source_system || "OPS_BE",
-    source_entity_type: existing?.source_entity_type || "BUSINESS",
-    source_entity_id: existing?.source_entity_id || "",
-    source_entity_code: existing?.source_entity_code || "",
-    source_entity_name: existing?.source_entity_name || "",
+    source_instance:
+      existing?.source_instance ||
+      search.get("source_instance") ||
+      meta?.default_source_instance ||
+      DEFAULT_SOURCE_INSTANCE,
+    source_entity_type:
+      existing?.source_entity_type ||
+      search.get("source_entity_type") ||
+      "BUSINESS",
+    source_entity_id:
+      existing?.source_entity_id || search.get("source_entity_id") || "",
+    source_entity_code:
+      existing?.source_entity_code || search.get("source_entity_code") || "",
+    source_entity_name:
+      existing?.source_entity_name || search.get("source_entity_name") || "",
     target_entity_type:
       existing?.target_entity_type ||
-      SOURCE_TO_TARGET_DEFAULT[existing?.source_entity_type || "BUSINESS"] ||
+      search.get("target_entity_type") ||
+      SOURCE_TO_TARGET_DEFAULT[
+        existing?.source_entity_type ||
+          search.get("source_entity_type") ||
+          "BUSINESS"
+      ] ||
       "COMPANY",
     target_entity_id: existing?.target_entity_id || "",
     status: existing?.status || "ACTIVE",
-    notes: existing?.notes || "",
+    notes: existing?.notes || (requestedReturnTo ? `Remediasi ${requestedReturnTo}` : ""),
   };
 
   const loadSources = async (type, q = "") => {
@@ -114,6 +157,10 @@ export default function AkuntingMappingForm({ mappingId }) {
 
   const loadTargets = async (type, companyId = "", q = "") => {
     if (!type) return;
+    if (COMPANY_OWNED_TARGET_TYPES.includes(type) && !companyId) {
+      setTargetOptions([]);
+      return;
+    }
     setLoadingTarget(true);
     try {
       const rowsData = await fetchAkuntingTargets(type, {
@@ -136,8 +183,8 @@ export default function AkuntingMappingForm({ mappingId }) {
         heading={isEdit ? "Edit Akunting Mapping" : "Tambah Akunting Mapping"}
         links={breadcrumbLinks}
       />
-      <MainCard title={<BtnBack href="/akunting-mapping" />} content>
-        {(isEdit && dataLoading && !existing) ? (
+      <MainCard title={<BtnBack href={returnTo} />} content>
+        {isEdit && dataLoading && !existing ? (
           <Typography>Memuat data...</Typography>
         ) : (
           <Formik
@@ -159,7 +206,7 @@ export default function AkuntingMappingForm({ mappingId }) {
                   message: "Mapping tersimpan",
                   alert: { color: "success" },
                 });
-                router.push("/akunting-mapping");
+                router.push(returnTo);
               } catch (error) {
                 openNotification({
                   open: true,
@@ -185,7 +232,9 @@ export default function AkuntingMappingForm({ mappingId }) {
               isSubmitting,
             }) => {
               const selectedSource =
-                sourceOptions.find((o) => String(o.id) === String(values.source_entity_id)) ||
+                sourceOptions.find(
+                  (o) => String(o.id) === String(values.source_entity_id),
+                ) ||
                 (values.source_entity_id
                   ? {
                       id: values.source_entity_id,
@@ -194,16 +243,47 @@ export default function AkuntingMappingForm({ mappingId }) {
                     }
                   : null);
               const selectedTarget =
-                targetOptions.find((o) => String(o.id) === String(values.target_entity_id)) ||
+                targetOptions.find(
+                  (o) => String(o.id) === String(values.target_entity_id),
+                ) ||
                 (values.target_entity_id
-                  ? { id: values.target_entity_id, code: "", name: values.target_entity_id }
+                  ? {
+                      id: values.target_entity_id,
+                      code: "",
+                      name: values.target_entity_id,
+                    }
                   : null);
               const selectedCompany =
-                companyOptions.find((o) => String(o.id) === String(values.company_id)) || null;
+                companyOptions.find(
+                  (o) => String(o.id) === String(values.company_id),
+                ) || null;
+              const isGlobalSource = GLOBAL_OPS_SOURCE_TYPES.includes(
+                values.source_entity_type,
+              );
+              const companyRequired = COMPANY_OWNED_TARGET_TYPES.includes(
+                values.target_entity_type,
+              );
 
               return (
                 <form onSubmit={handleSubmit}>
                   <Grid container spacing={2.5}>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        name="source_instance"
+                        label="Source Instance"
+                        value={values.source_instance}
+                        onChange={handleChange}
+                        error={
+                          touched.source_instance &&
+                          Boolean(errors.source_instance)
+                        }
+                        helperText={
+                          (touched.source_instance && errors.source_instance) ||
+                          "Identitas environment OPS yang stabil"
+                        }
+                      />
+                    </Grid>
                     <Grid item xs={12} md={4}>
                       <TextField
                         select
@@ -216,57 +296,89 @@ export default function AkuntingMappingForm({ mappingId }) {
                           setFieldValue("source_entity_type", next);
                           setFieldValue(
                             "target_entity_type",
-                            SOURCE_TO_TARGET_DEFAULT[next] || values.target_entity_type,
+                            SOURCE_TO_TARGET_DEFAULT[next],
                           );
                           setFieldValue("source_entity_id", "");
                           setFieldValue("source_entity_code", "");
                           setFieldValue("source_entity_name", "");
                           loadSources(next);
                           loadTargets(
-                            SOURCE_TO_TARGET_DEFAULT[next] || values.target_entity_type,
+                            SOURCE_TO_TARGET_DEFAULT[next],
                             values.company_id,
                           );
                         }}
-                        error={touched.source_entity_type && Boolean(errors.source_entity_type)}
-                        helperText={touched.source_entity_type && errors.source_entity_type}
+                        error={
+                          touched.source_entity_type &&
+                          Boolean(errors.source_entity_type)
+                        }
+                        helperText={
+                          touched.source_entity_type &&
+                          errors.source_entity_type
+                        }
                       >
                         {sourceTypes.map((t) => (
                           <MenuItem key={t.value} value={t.value}>
-                            {t.label || t.value}
+                            {GLOBAL_OPS_SOURCE_TYPES.includes(t.value)
+                              ? `${t.label || t.value} (Global OPS)`
+                              : t.label || t.value}
                           </MenuItem>
                         ))}
                       </TextField>
                     </Grid>
 
-                    <Grid item xs={12} md={8}>
+                    <Grid item xs={12} md={4}>
                       <Autocomplete
                         options={sourceOptions}
                         loading={loadingSource}
                         value={selectedSource}
                         getOptionLabel={optionLabel}
-                        isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
+                        isOptionEqualToValue={(a, b) =>
+                          String(a?.id) === String(b?.id)
+                        }
                         onOpen={() => loadSources(values.source_entity_type)}
                         onInputChange={(_, value, reason) => {
-                          if (reason === "input") loadSources(values.source_entity_type, value);
+                          if (reason === "input")
+                            loadSources(values.source_entity_type, value);
                         }}
                         onChange={(_, opt) => {
-                          setFieldValue("source_entity_id", opt?.id ? String(opt.id) : "");
+                          setFieldValue(
+                            "source_entity_id",
+                            opt?.id ? String(opt.id) : "",
+                          );
                           setFieldValue("source_entity_code", opt?.code || "");
                           setFieldValue("source_entity_name", opt?.name || "");
                         }}
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Source (dari OPS / mrt-test)"
-                            error={touched.source_entity_id && Boolean(errors.source_entity_id)}
+                            label={
+                              isGlobalSource
+                                ? "Source (Global OPS)"
+                                : "Source (dari OPS)"
+                            }
+                            error={
+                              touched.source_entity_id &&
+                              Boolean(errors.source_entity_id)
+                            }
                             helperText={
-                              (touched.source_entity_id && errors.source_entity_id) ||
+                              (touched.source_entity_id &&
+                                errors.source_entity_id) ||
                               "Pilih master OPS, atau ketik ID manual di bawah"
                             }
                           />
                         )}
                       />
                     </Grid>
+
+                    {isGlobalSource && (
+                      <Grid item xs={12}>
+                        <Alert severity="warning">
+                          Mapping Supplier/Item biasanya dibuat otomatis saat
+                          pertama digunakan. Mapping manual hanya untuk
+                          remediasi data atau mapping yang gagal.
+                        </Alert>
+                      </Grid>
+                    )}
 
                     <Grid item xs={12} md={4}>
                       <TextField
@@ -275,8 +387,13 @@ export default function AkuntingMappingForm({ mappingId }) {
                         label="Source Entity ID"
                         value={values.source_entity_id}
                         onChange={handleChange}
-                        error={touched.source_entity_id && Boolean(errors.source_entity_id)}
-                        helperText={touched.source_entity_id && errors.source_entity_id}
+                        error={
+                          touched.source_entity_id &&
+                          Boolean(errors.source_entity_id)
+                        }
+                        helperText={
+                          touched.source_entity_id && errors.source_entity_id
+                        }
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -309,16 +426,31 @@ export default function AkuntingMappingForm({ mappingId }) {
                         options={companyOptions}
                         value={selectedCompany}
                         getOptionLabel={optionLabel}
-                        isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
+                        isOptionEqualToValue={(a, b) =>
+                          String(a?.id) === String(b?.id)
+                        }
                         onChange={(_, opt) => {
                           setFieldValue("company_id", opt?.id || "");
+                          setFieldValue("target_entity_id", "");
                           loadTargets(values.target_entity_type, opt?.id || "");
                         }}
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Filter Company (opsional)"
-                            helperText="Membatasi pilihan target unit/site/partner/account"
+                            label={
+                              companyRequired
+                                ? "Target Company *"
+                                : "Target Company"
+                            }
+                            error={
+                              touched.company_id && Boolean(errors.company_id)
+                            }
+                            helperText={
+                              (touched.company_id && errors.company_id) ||
+                              (companyRequired
+                                ? "Company pemilik target wajib dipilih"
+                                : "Company yang dideklarasikan untuk mapping")
+                            }
                           />
                         )}
                       />
@@ -331,17 +463,12 @@ export default function AkuntingMappingForm({ mappingId }) {
                         name="target_entity_type"
                         label="Target Entity Type"
                         value={values.target_entity_type}
-                        onChange={(e) => {
-                          setFieldValue("target_entity_type", e.target.value);
-                          setFieldValue("target_entity_id", "");
-                          loadTargets(e.target.value, values.company_id);
-                        }}
+                        disabled
                       >
-                        {targetTypes.map((t) => (
-                          <MenuItem key={t.value} value={t.value}>
-                            {t.label || t.value}
-                          </MenuItem>
-                        ))}
+                        <MenuItem value={values.target_entity_type}>
+                          {targetTypeLabels[values.target_entity_type] ||
+                            values.target_entity_type}
+                        </MenuItem>
                       </TextField>
                     </Grid>
 
@@ -349,22 +476,42 @@ export default function AkuntingMappingForm({ mappingId }) {
                       <Autocomplete
                         options={targetOptions}
                         loading={loadingTarget}
+                        disabled={companyRequired && !values.company_id}
                         value={selectedTarget}
                         getOptionLabel={optionLabel}
-                        isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
-                        onOpen={() => loadTargets(values.target_entity_type, values.company_id)}
+                        isOptionEqualToValue={(a, b) =>
+                          String(a?.id) === String(b?.id)
+                        }
+                        onOpen={() =>
+                          loadTargets(
+                            values.target_entity_type,
+                            values.company_id,
+                          )
+                        }
                         onInputChange={(_, value, reason) => {
                           if (reason === "input") {
-                            loadTargets(values.target_entity_type, values.company_id, value);
+                            loadTargets(
+                              values.target_entity_type,
+                              values.company_id,
+                              value,
+                            );
                           }
                         }}
-                        onChange={(_, opt) => setFieldValue("target_entity_id", opt?.id || "")}
+                        onChange={(_, opt) =>
+                          setFieldValue("target_entity_id", opt?.id || "")
+                        }
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             label="Target Entity"
-                            error={touched.target_entity_id && Boolean(errors.target_entity_id)}
-                            helperText={touched.target_entity_id && errors.target_entity_id}
+                            error={
+                              touched.target_entity_id &&
+                              Boolean(errors.target_entity_id)
+                            }
+                            helperText={
+                              touched.target_entity_id &&
+                              errors.target_entity_id
+                            }
                           />
                         )}
                       />
@@ -397,11 +544,19 @@ export default function AkuntingMappingForm({ mappingId }) {
                     </Grid>
 
                     <Grid item xs={12}>
-                      <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-                        <Button variant="outlined" href="/akunting-mapping">
+                      <Stack
+                        direction="row"
+                        spacing={1.5}
+                        justifyContent="flex-end"
+                      >
+                        <Button variant="outlined" href={returnTo}>
                           Batal
                         </Button>
-                        <Button type="submit" variant="contained" disabled={isSubmitting}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          disabled={isSubmitting}
+                        >
                           {isSubmitting ? "Menyimpan..." : "Simpan Mapping"}
                         </Button>
                       </Stack>

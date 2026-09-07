@@ -70,15 +70,9 @@ function PurchasingRequestFormBody({
   // Load all spare parts without bisnis filter so search works across all units.
   const { rows: itemOptions = [], loading: itemLoading } =
     usePurchasingRequestBarang({}, true);
-  // Master equipment returns a full array when page/perPages are omitted.
-  // Keep cabang filter optional so the list still appears before branch is chosen.
+  // Load all active equipment so existing and cross-branch units remain selectable.
   const { rows: equipmentOptions = [], loading: equipmentLoading } =
-    usePurchasingRequestEquipment(
-      {
-        ...(values.cabang_id ? { cabang_id: values.cabang_id } : {}),
-      },
-      true,
-    );
+    usePurchasingRequestEquipment({}, true);
 
   const branchOptions = branches.filter(
     (branch) =>

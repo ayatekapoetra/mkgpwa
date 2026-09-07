@@ -11,7 +11,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation, ThemeDirection } from 'config';
 
@@ -26,7 +26,7 @@ const ThemeLayout = () => {
   const theme = useTheme();
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { miniDrawer, themeDirection, onChangeDirection, onChangeMiniDrawer, menuOrientation } = useConfig();
+  const { miniDrawer, themeDirection, onChangeDirection, onChangeMiniDrawer, menuOrientation } = useLayoutConfig();
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
 

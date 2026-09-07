@@ -17,7 +17,7 @@ import Typography from '@mui/material/Typography';
 
 // PROJECT IMPORTS
 import Dot from 'components/@extended/Dot';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { handlerHorizontalActiveItem, handlerActiveItem, handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation, ThemeMode } from 'config';
 
@@ -31,7 +31,7 @@ const NavItem = ({ item, level, isParents = false }) => {
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
   const openItem = menuMaster.openedItem;
 
-  const { menuOrientation } = useConfig();
+  const { menuOrientation } = useLayoutConfig();
   let itemTarget = '_self';
   if (item.target) {
     itemTarget = '_blank';

@@ -13,9 +13,8 @@ import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import MainCard from 'components/MainCard';
 
 // ASSETS
-import { Add, Building3, SearchNormal1, Hashtag, Barcode, InfoCircle } from 'iconsax-react';
+import { Add, SearchNormal1, Hashtag, Barcode, InfoCircle } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
-import FilterCabang from 'components/FilterCabang';
 
 export default function FilterBarang({ count, open, onClose, data, setData, anchor = 'right' }) {
   const onResetFilterHandle = () => {
@@ -24,7 +23,6 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
       kode: '',
       num_part: '',
       serial: '',
-      bisnis_id: '',
       kategori_id: '',
       application_id: '',
       manufacture_id: '',
@@ -82,15 +80,6 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
                   startAdornment={<InfoCircle size="20" />}
                   placeholder="Serial Number"
                   label="Serial Number"
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} lg={12} sx={{ mb: 2 }}>
-                <FilterCabang
-                  value={data.bisnis_id}
-                  name={'bisnis_id'}
-                  label="Bisnis Unit"
-                  startAdornment={<Building3 />}
-                  setData={setData}
                 />
               </Grid>
             </Grid>

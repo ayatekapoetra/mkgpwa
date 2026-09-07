@@ -7,7 +7,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useThemeConfig } from 'hooks/useConfig';
 import { ThemeMode } from 'config';
 
 // ASSETS
@@ -18,7 +18,7 @@ import { Moon, Setting2, Sun1 } from 'iconsax-react';
 const ThemeModeLayout = () => {
   const theme = useTheme();
 
-  const { mode, onChangeMode } = useConfig();
+  const { mode, onChangeMode } = useThemeConfig();
 
   const handleModeChange = (event) => {
     onChangeMode(event.target.value);

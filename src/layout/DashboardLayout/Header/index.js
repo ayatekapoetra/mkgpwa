@@ -14,7 +14,7 @@ import IconButton from 'components/@extended/IconButton';
 import OfflineIndicator from 'components/OfflineIndicator';
 
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from 'config';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation, ThemeMode } from 'config';
 
@@ -27,7 +27,7 @@ const Header = () => {
   const theme = useTheme();
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { menuOrientation } = useConfig();
+  const { menuOrientation } = useLayoutConfig();
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
 

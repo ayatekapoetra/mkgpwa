@@ -18,7 +18,7 @@ import HorizontalBar from './Drawer/HorizontalBar';
 import Loader from 'components/Loader';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from 'config';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation } from 'config';
@@ -31,7 +31,7 @@ const DashboardLayout = ({ children }) => {
   const downXL = useMediaQuery(theme.breakpoints.down('xl'));
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { container, miniDrawer, menuOrientation } = useConfig();
+  const { container, miniDrawer, menuOrientation } = useLayoutConfig();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened ?? false;
 
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;

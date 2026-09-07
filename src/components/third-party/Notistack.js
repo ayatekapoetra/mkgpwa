@@ -7,7 +7,6 @@ import { styled } from '@mui/material/styles';
 import { SnackbarProvider } from 'notistack';
 
 // PROJECT IMPORTS
-import Loader from 'components/Loader';
 import { useGetSnackbar } from 'api/snackbar';
 
 // ASSETS
@@ -37,8 +36,6 @@ const StyledSnackbarProvider = styled(SnackbarProvider)(({ theme }) => ({
 const Notistack = ({ children }) => {
   const { snackbar } = useGetSnackbar();
   const iconSX = { marginRight: 8, fontSize: '1.15rem' };
-
-  if (snackbar === undefined) return <Loader />;
 
   return (
     <StyledSnackbarProvider

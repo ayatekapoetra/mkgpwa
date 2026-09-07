@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 
 // ASSETS
 const Caption = '/assets/images/customization/caption.svg';
@@ -18,7 +18,7 @@ const NoCaption = '/assets/images/customization/no-caption.svg';
 
 const MenuCaption = () => {
   const theme = useTheme();
-  const { menuCaption, onChangeMenuCaption } = useConfig();
+  const { menuCaption, onChangeMenuCaption } = useLayoutConfig();
 
   const handleMenuCaptionChange = () => {
     onChangeMenuCaption();

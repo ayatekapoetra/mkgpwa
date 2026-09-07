@@ -9,25 +9,32 @@ import createCache from '@emotion/cache';
 import rtlPlugin from 'stylis-plugin-rtl';
 
 // PROJECT IMPORTS
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { ThemeDirection } from 'config';
+
+const ltrCache = createCache({
+  key: 'css',
+  prepend: true
+});
+
+const rtlCache = createCache({
+  key: 'rtl',
+  prepend: true,
+  stylisPlugins: [rtlPlugin]
+});
 
 // ==============================|| RTL LAYOUT ||============================== //
 
 const RTLLayout = ({ children }) => {
-  const { themeDirection } = useConfig();
+  const { themeDirection } = useLayoutConfig();
 
   useEffect(() => {
     document.dir = themeDirection;
   }, [themeDirection]);
 
-  const cacheRtl = createCache({
-    key: themeDirection === ThemeDirection.RTL ? 'rtl' : 'css',
-    prepend: true,
-    stylisPlugins: themeDirection === ThemeDirection.RTL ? [rtlPlugin] : []
-  });
+  const cache = themeDirection === ThemeDirection.RTL ? rtlCache : ltrCache;
 
-  return <CacheProvider value={cacheRtl}>{children}</CacheProvider>;
+  return <CacheProvider value={cache}>{children}</CacheProvider>;
 };
 
 RTLLayout.propTypes = {

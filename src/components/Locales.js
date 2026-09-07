@@ -1,48 +1,34 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
 
 // THIRD - PARTY
 import { IntlProvider } from 'react-intl';
 
 // PROJECT IMPORTS
-import useConfig from 'hooks/useConfig';
+import { useLocaleConfig } from 'hooks/useConfig';
 
-// load locales files
-const loadLocaleData = (locale) => {
-  switch (locale) {
-    case 'fr':
-      return import('utils/locales/fr.json');
-    case 'ro':
-      return import('utils/locales/ro.json');
-    case 'zh':
-      return import('utils/locales/zh.json');
-    case 'en':
-    default:
-      return import('utils/locales/en.json');
-  }
+// load locales files (static import for better performance)
+import en from 'utils/locales/en.json';
+import fr from 'utils/locales/fr.json';
+import ro from 'utils/locales/ro.json';
+import zh from 'utils/locales/zh.json';
+
+const localeMap = {
+  en,
+  fr,
+  ro,
+  zh
 };
 
 // ==============================|| LOCALIZATION ||============================== //
 
 const Locales = ({ children }) => {
-  const { i18n } = useConfig();
-
-  const [messages, setMessages] = useState();
-
-  useEffect(() => {
-    loadLocaleData(i18n).then((d) => {
-      setMessages(d.default);
-    });
-  }, [i18n]);
+  const { i18n } = useLocaleConfig();
+  const messages = localeMap[i18n] || en;
 
   return (
-    <>
-      {messages && (
-        <IntlProvider locale={i18n} defaultLocale="en" messages={messages}>
-          {children}
-        </IntlProvider>
-      )}
-    </>
+    <IntlProvider locale={i18n} defaultLocale="en" messages={messages}>
+      {children}
+    </IntlProvider>
   );
 };
 

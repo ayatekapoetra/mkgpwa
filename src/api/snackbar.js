@@ -28,6 +28,7 @@ const initialState = {
 
 export function useGetSnackbar() {
   const { data } = useSWR(endpoints.key, () => initialState, {
+    fallbackData: initialState,
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false

@@ -61,6 +61,7 @@ const permissionDefaults = {
   can_cancel: false,
   can_attachment: false,
   can_upload_attachment: false,
+  can_remove_attachment: false,
   can_print: false,
   can_export: false,
   can_admin_override: false,

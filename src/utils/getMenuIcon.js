@@ -60,6 +60,8 @@ import {
   Messages2,
   Setting3,
   WalletMoney,
+  Danger,
+  SearchStatus,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -136,6 +138,8 @@ const iconMap = {
   BoxRemove: BoxRemove,
   BoxSearch: BoxSearch,
   WalletMoney: WalletMoney,
+  danger: Danger,
+  SearchStatus: SearchStatus,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,

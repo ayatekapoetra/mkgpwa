@@ -40,7 +40,8 @@ export default function ShippingOrderScreen() {
     narasi: '',
     startDate: '',
     endDate: '',
-    gudang_id: ''
+    gudang_id: '',
+    status: ''
   });
   const { data, dataLoading, dataError } = useGetShippingOrder(filtered);
   const [openFilter, setOpenFilter] = useState(false);

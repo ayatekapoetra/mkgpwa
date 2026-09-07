@@ -42,7 +42,7 @@ export default function PurchasingRequestDetail() {
   );
   const { permissions } = usePurchasingRequestPermissions(row);
   const { rows: suppliers = [] } = usePurchasingRequestPemasok(
-    { page: 1, limit: 100 },
+    {},
     Boolean(row),
   );
   const { rows: barangOptions = [] } = usePurchasingRequestBarang(

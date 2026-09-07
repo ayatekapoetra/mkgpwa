@@ -16,7 +16,6 @@ import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import BtnBack from 'components/BtnBack';
-import OptionCabang from 'components/OptionCabang';
 import InputForm from 'components/InputForm';
 import axiosServices from 'utils/axios';
 
@@ -40,7 +39,6 @@ const msgError = {
 const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Barang', to: '/barang' }, { title: 'Create' }];
 
 const initialValues = {
-  bisnis_id: '',
   kode: '',
   serial: '',
   kategori_id: '',
@@ -67,16 +65,18 @@ export default function AddBarangScreen() {
     kode: Yup.string().required('Kode wajib diisi').max(50, 'Kode maksimal 50 karakter'),
     nama: Yup.string().required('Nama wajib diisi').max(250, 'Nama maksimal 250 karakter'),
     satuan: Yup.string().required('Satuan wajib diisi').max(50, 'Satuan maksimal 50 karakter'),
-    bisnis_id: Yup.number().required('Bisnis Unit wajib diisi'),
     min_stok: Yup.number().min(0, 'Min stok minimal 0'),
     actual: Yup.number().min(0, 'Actual minimal 0')
   });
 
   const onSubmitHandle = async (values) => {
+    const payload = { ...values };
+    delete payload.bisnis_id;
+
     const config = {
       url: `/api/master/barang/create`,
       method: 'POST',
-      data: values,
+      data: payload,
       headers: { 'Content-Type': 'application/json' },
       status: 'pending',
       pesan: `INSERT BARANG ${values.nama}`
@@ -104,25 +104,13 @@ export default function AddBarangScreen() {
       <Breadcrumbs custom heading={'Add Barang'} links={breadcrumbLinks} />
       <MainCard title={<BtnBack href={'/barang'} />} secondary={null} content={true}>
         <Formik initialValues={initialValues} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
-          {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
+          {({ errors, handleChange, handleSubmit, touched, values }) => {
             console.log(errors);
             console.log('VALUES--', values);
 
             return (
               <Form noValidate onSubmit={handleSubmit}>
                 <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
-                  <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
-                    <OptionCabang
-                      value={values.bisnis_id}
-                      name={'bisnis_id'}
-                      label="Bisnis Unit"
-                      error={errors.bisnis_id}
-                      touched={Boolean(true)}
-                      startAdornment={<Building3 />}
-                      helperText={Boolean(true) && errors.bisnis_id}
-                      setFieldValue={setFieldValue}
-                    />
-                  </Grid>
                   <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
                     <InputForm
                       label="Kode Barang"

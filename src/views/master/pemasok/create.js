@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { CardActions, Grid, Button, Typography } from "@mui/material";
 
-import { Building3, Send2, User, Location, Call, Sms, Clock } from "iconsax-react";
+import { Send2, User, Location, Call, Sms, Clock } from "iconsax-react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 
@@ -14,7 +14,6 @@ import MainCard from "components/MainCard";
 import { APP_DEFAULT_PATH } from "config";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
 import BtnBack from "components/BtnBack";
-import OptionBisnisUnit from "components/OptionBisnisUnit";
 import InputForm from "components/InputForm";
 import RekeningFields from "./rekening-fields";
 import axiosServices from "utils/axios";
@@ -42,7 +41,6 @@ const breadcrumbLinks = [
 ];
 
 const initialValues = {
-  bisnis_id: "",
   kode: "",
   nama: "",
   email: "",
@@ -58,7 +56,6 @@ export default function AddPemasokScreen() {
   const route = useRouter();
 
   const validationSchema = Yup.object({
-    bisnis_id: Yup.number().required("Bisnis Unit wajib diisi"),
     kode: Yup.string().required("Kode wajib diisi"),
     nama: Yup.string().required("Nama wajib diisi"),
     email: Yup.string().email("Email tidak valid").nullable(),
@@ -77,7 +74,6 @@ export default function AddPemasokScreen() {
 
   const onSubmitHandle = async (values) => {
     const payload = {
-      bisnis_id: values.bisnis_id,
       kode: values.kode,
       nama: values.nama,
       email: values.email || null,
@@ -121,17 +117,6 @@ export default function AddPemasokScreen() {
           {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => (
             <Form noValidate onSubmit={handleSubmit}>
               <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
-                <Grid item xs={12} sm={4} sx={{ mb: 4 }}>
-                  <OptionBisnisUnit
-                    value={values.bisnis_id}
-                    name={"bisnis_id"}
-                    label="Bisnis Unit"
-                    error={errors.bisnis_id}
-                    touched={Boolean(true)}
-                    startAdornment={<Building3 />}
-                    setFieldValue={setFieldValue}
-                  />
-                </Grid>
                 <Grid item xs={12} sm={2} sx={{ mb: 4 }}>
                   <InputForm
                     label="Kode"

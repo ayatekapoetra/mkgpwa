@@ -14,14 +14,15 @@ import componentsOverride from './overrides';
 import { NextAppDirEmotionCacheProvider } from './emotionCache';
 
 import { HEADER_HEIGHT } from 'config';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig, useThemeConfig } from 'hooks/useConfig';
 import getWindowScheme from 'utils/getWindowScheme';
 import { ThemeMode } from 'config';
 
 // ==============================|| DEFAULT THEME - MAIN  ||============================== //
 
 export default function ThemeCustomization({ children }) {
-  const { themeDirection, mode, presetColor, fontFamily, themeContrast } = useConfig();
+  const { themeDirection } = useLayoutConfig();
+  const { mode, presetColor, fontFamily, themeContrast } = useThemeConfig();
   let themeMode = mode;
   if (themeMode === ThemeMode.AUTO) {
     const autoMode = getWindowScheme();
@@ -36,8 +37,7 @@ export default function ThemeCustomization({ children }) {
 
   const themeTypography = useMemo(
     () => Typography(themeMode, fontFamily, theme),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [themeMode, fontFamily]
+    [themeMode, fontFamily, theme]
   );
   const themeCustomShadows = useMemo(() => CustomShadows(theme), [theme]);
 
@@ -70,8 +70,11 @@ export default function ThemeCustomization({ children }) {
     [themeDirection, theme, themeTypography, themeCustomShadows]
   );
 
-  const themes = createTheme(themeOptions);
-  themes.components = componentsOverride(themes);
+  const themes = useMemo(() => {
+    const createdTheme = createTheme(themeOptions);
+    createdTheme.components = componentsOverride(createdTheme);
+    return createdTheme;
+  }, [themeOptions]);
 
   return (
     <StyledEngineProvider injectFirst>

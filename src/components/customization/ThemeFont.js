@@ -14,7 +14,7 @@ import { Inter, Poppins, Public_Sans, Roboto } from 'next/font/google';
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
 import { HEADER_HEIGHT } from 'config';
-import useConfig from 'hooks/useConfig';
+import { useThemeConfig } from 'hooks/useConfig';
 
 const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 const roboto = Roboto({ subsets: ['latin'], weight: ['300', '400', '500', '700'] });
@@ -26,7 +26,7 @@ const publicSans = Public_Sans({ subsets: ['latin'], weight: ['400', '500', '600
 const ThemeFont = () => {
   const theme = useTheme();
 
-  const { fontFamily, onChangeFontFamily } = useConfig();
+  const { fontFamily, onChangeFontFamily } = useThemeConfig();
 
   const handleFontChange = (event) => {
     onChangeFontFamily(event.target.value);

@@ -4,7 +4,6 @@ import InputSkeleton from './InputSkeleton';
 
 const OptionBarang = ({
   value = '',
-  bisnisId = '',
   label = 'Barang',
   name = 'barang_id',
   error = null,
@@ -13,7 +12,7 @@ const OptionBarang = ({
   setFieldValue,
   onSelect
 }) => {
-  const { rows, loading } = usePengajuanDanaBarangs(bisnisId ? { bisnis_id: bisnisId } : {});
+  const { rows, loading } = usePengajuanDanaBarangs();
   const options = Array.isArray(rows) ? rows : [];
 
   if (loading) {

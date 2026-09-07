@@ -9,7 +9,7 @@ import DrawerHeaderStyled from './DrawerHeaderStyled';
 
 import Logo from 'components/logo';
 import { DRAWER_WIDTH, HEADER_HEIGHT } from 'config';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { MenuOrientation } from 'config';
 
 // ==============================|| DRAWER HEADER ||============================== //
@@ -18,7 +18,7 @@ const DrawerHeader = ({ open }) => {
   const theme = useTheme();
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { menuOrientation } = useConfig();
+  const { menuOrientation } = useLayoutConfig();
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 
   return (

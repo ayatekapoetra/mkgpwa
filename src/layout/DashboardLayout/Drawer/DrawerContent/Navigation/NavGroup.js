@@ -26,7 +26,7 @@ import NavCollapse from './NavCollapse';
 import SimpleBar from 'components/third-party/SimpleBar';
 import Transitions from 'components/@extended/Transitions';
 
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { handlerHorizontalActiveItem, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation, ThemeMode } from 'config';
 
@@ -62,7 +62,7 @@ const NavGroup = ({ item, lastItem, remItems, lastItemId, setSelectedItems, sele
   const theme = useTheme();
   const pathname = usePathname();
 
-  const { menuOrientation, menuCaption } = useConfig();
+  const { menuOrientation, menuCaption } = useLayoutConfig();
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
   const selectedID = menuMaster.openedHorizontalItem;

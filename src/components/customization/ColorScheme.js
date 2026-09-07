@@ -7,7 +7,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useThemeConfig } from 'hooks/useConfig';
 import { ThemeMode } from 'config';
 
 // ASSETS
@@ -18,7 +18,7 @@ import { TickSquare } from 'iconsax-react';
 const ColorScheme = () => {
   const theme = useTheme();
   const mode = theme.palette.mode;
-  const { presetColor, onChangePresetColor } = useConfig();
+  const { presetColor, onChangePresetColor } = useThemeConfig();
 
   const colorOptions = [
     {

@@ -11,7 +11,7 @@ import useScrollTrigger from '@mui/material/useScrollTrigger';
 import Navigation from './DrawerContent/Navigation';
 
 import { HEADER_HEIGHT } from 'config';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 
 // ==============================|| HORIZONTAL MENU LIST ||============================== //
 
@@ -38,7 +38,7 @@ function ElevationScroll({ children, window }) {
 
 const CustomAppBar = () => {
   const theme = useTheme();
-  const { container } = useConfig();
+  const { container } = useLayoutConfig();
 
   return (
     <ElevationScroll>

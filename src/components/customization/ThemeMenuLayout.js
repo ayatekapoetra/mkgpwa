@@ -9,7 +9,7 @@ import Stack from '@mui/material/Stack';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
-import useConfig from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import { handlerDrawerOpen } from 'api/menu';
 import { MenuOrientation } from 'config';
 
@@ -23,7 +23,7 @@ const ThemeMenuLayout = () => {
   const theme = useTheme();
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const { menuOrientation, onChangeMenuOrientation, onChangeMiniDrawer } = useConfig();
+  const { menuOrientation, onChangeMenuOrientation, onChangeMiniDrawer } = useLayoutConfig();
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 
   const handleContainerChange = (e) => {

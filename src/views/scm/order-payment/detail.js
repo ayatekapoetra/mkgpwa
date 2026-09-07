@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -25,7 +26,7 @@ import {
 } from "@mui/material";
 
 import {
-  fetchCashAccounts,
+  fetchWallets,
   postOrderPayment,
   useOrderPaymentAccess,
   useOrderPaymentDetail,
@@ -94,8 +95,10 @@ export default function OrderPaymentDetailPage() {
     Boolean(id),
   );
 
-  const [cashAccounts, setCashAccounts] = useState([]);
-  const [coaKredit, setCoaKredit] = useState("");
+  const [walletType, setWalletType] = useState("bank");
+  const [walletId, setWalletId] = useState("");
+  const [wallets, setWallets] = useState([]);
+  const [loadingWallet, setLoadingWallet] = useState(false);
   const [trxDate, setTrxDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
@@ -105,20 +108,32 @@ export default function OrderPaymentDetailPage() {
   const pending = row?.status === "pending";
 
   useEffect(() => {
-    if (!row?.bisnis_id) return;
+    if (!row?.bisnis_id) {
+      setWallets([]);
+      setWalletId("");
+      return;
+    }
     let alive = true;
-    fetchCashAccounts(row.bisnis_id)
-      .then((list) => {
+    setLoadingWallet(true);
+    fetchWallets(row.bisnis_id, walletType)
+      .then((rows) => {
         if (!alive) return;
-        setCashAccounts(Array.isArray(list) ? list : []);
+        setWallets(Array.isArray(rows) ? rows : []);
+        setWalletId("");
       })
       .catch(() => {
-        if (alive) setCashAccounts([]);
+        if (alive) {
+          setWallets([]);
+          setWalletId("");
+        }
+      })
+      .finally(() => {
+        if (alive) setLoadingWallet(false);
       });
     return () => {
       alive = false;
     };
-  }, [row?.bisnis_id]);
+  }, [row?.bisnis_id, walletType]);
 
   useEffect(() => {
     if (!row) return;
@@ -127,45 +142,47 @@ export default function OrderPaymentDetailPage() {
       const d = new Date(row.trx_date);
       if (!Number.isNaN(d.getTime())) setTrxDate(d.toISOString().slice(0, 10));
     }
-    if (row.coa_kredit) setCoaKredit(String(row.coa_kredit));
   }, [row]);
 
   const canPost = permissions.can_post && pending;
 
-  const accountOptions = useMemo(
-    () =>
-      cashAccounts.map((a) => ({
-        value: String(a.id),
-        label: a.label || `${a.kode} — ${a.name}`,
-        type: a.type,
-      })),
-    [cashAccounts],
+  const selectedWallet = useMemo(
+    () => wallets.find((w) => String(w.id) === String(walletId)),
+    [wallets, walletId],
   );
 
   const handlePost = async () => {
-    if (!coaKredit) {
+    if (!walletId) {
       openNotification({
         open: true,
         title: "Validasi",
-        message: "Pilih akun kas/bank terlebih dahulu",
+        message: "Pilih bank/kas terlebih dahulu",
+        alert: { color: "warning" },
+      });
+      return;
+    }
+    if (!selectedWallet?.coa_id) {
+      openNotification({
+        open: true,
+        title: "Validasi",
+        message: "Wallet belum punya COA di master bank/kas",
         alert: { color: "warning" },
       });
       return;
     }
     if (
       !window.confirm(
-        "Posting pembayaran ini? Status akan menjadi Sudah Bayar dan jurnal kas akan dicatat.",
+        "Posting pembayaran ini? Status akan menjadi Sudah Bayar dan jurnal kas/bank akan dicatat.",
       )
     ) {
       return;
     }
     setPosting(true);
     try {
-      await postOrderPayment(id, {
-        coa_kredit: Number(coaKredit),
-        trx_date: trxDate,
-        narasi,
-      });
+      const body = { trx_date: trxDate, narasi };
+      if (walletType === "bank") body.bank_id = Number(walletId);
+      else body.kas_id = Number(walletId);
+      await postOrderPayment(id, body);
       openNotification({
         open: true,
         title: "Berhasil",
@@ -331,29 +348,8 @@ export default function OrderPaymentDetailPage() {
             <Typography variant="subtitle1" fontWeight={700} mb={2}>
               Posting pembayaran
             </Typography>
-            <Grid container spacing={2} maxWidth={720}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  select
-                  fullWidth
-                  required
-                  label="Akun Kas / Bank"
-                  value={coaKredit}
-                  onChange={(e) => setCoaKredit(e.target.value)}
-                  helperText={
-                    accountOptions.length
-                      ? "Pilih sumber dana"
-                      : "Tidak ada akun kas/bank untuk unit ini"
-                  }
-                >
-                  {accountOptions.map((a) => (
-                    <MenuItem key={a.value} value={a.value}>
-                      {a.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={6}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={3}>
                 <TextField
                   fullWidth
                   type="date"
@@ -363,6 +359,51 @@ export default function OrderPaymentDetailPage() {
                   onChange={(e) => setTrxDate(e.target.value)}
                 />
               </Grid>
+              <Grid item xs={12} md={3}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Tipe sumber dana"
+                  value={walletType}
+                  onChange={(e) => setWalletType(e.target.value)}
+                >
+                  <MenuItem value="bank">Bank</MenuItem>
+                  <MenuItem value="kas">Kas</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Autocomplete
+                  loading={loadingWallet}
+                  options={wallets}
+                  value={
+                    wallets.find((w) => String(w.id) === String(walletId)) ||
+                    null
+                  }
+                  getOptionLabel={(o) => o.label || o.name || ""}
+                  isOptionEqualToValue={(a, b) =>
+                    String(a.id) === String(b.id)
+                  }
+                  onChange={(_, o) => setWalletId(o?.id || "")}
+                  renderInput={(p) => (
+                    <TextField
+                      {...p}
+                      label={walletType === "bank" ? "Rekening bank *" : "Kas *"}
+                      required
+                      helperText={
+                        selectedWallet
+                          ? selectedWallet.coa_id
+                            ? `COA: ${selectedWallet.coa_kode || ""} — ${selectedWallet.coa_name || ""}`
+                            : "Wallet belum punya COA"
+                          : wallets.length
+                            ? "Pilih rekening/kas"
+                            : `Tidak ada ${walletType === "bank" ? "bank" : "kas"} untuk unit ini`
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6} />
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -377,7 +418,7 @@ export default function OrderPaymentDetailPage() {
                 <Stack direction="row" spacing={1.5}>
                   <Button
                     variant="contained"
-                    disabled={posting || !coaKredit}
+                    disabled={posting || !walletId || !selectedWallet?.coa_id}
                     onClick={handlePost}
                   >
                     {posting ? "Memposting…" : "Posting Bayar"}

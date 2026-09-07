@@ -49,12 +49,21 @@ import { calculateHeaderTotals } from "./utils";
 export default function PurchaseOrderDetail() {
   const params = useParams();
   const router = useRouter();
-  const { permissions: access } = usePurchaseOrderAccess();
+  const {
+    permissions: access,
+    loading: accessLoading,
+    error: accessError,
+  } = usePurchaseOrderAccess();
+  const canRead = !accessLoading && !accessError && access.can_read;
   const { row, rowLoading, rowError, mutate } = useShowPurchaseOrder(
     params.id,
-    access.can_read,
+    canRead,
   );
-  const { permissions } = usePurchaseOrderPermissions(row);
+  const {
+    permissions,
+    loading: permissionsLoading,
+    error: permissionsError,
+  } = usePurchaseOrderPermissions(row, canRead);
   const rollbackPreview = usePurchaseOrderRollbackPreview(
     params.id,
     Boolean(row && permissions.can_rollback),
@@ -103,7 +112,12 @@ export default function PurchaseOrderDetail() {
       [item.id]: { ...getItemDraft(item), [field]: value },
     }));
 
-  const runAction = async (callback, successMessage, action = "Proses") => {
+  const runAction = async (
+    callback,
+    successMessage,
+    action = "Proses",
+    redirectTo,
+  ) => {
     setLoading(true);
     try {
       await callback();
@@ -112,6 +126,7 @@ export default function PurchaseOrderDetail() {
       setMode("view");
       setDialog(null);
       setReason("");
+      if (redirectTo) router.push(redirectTo);
     } catch (error) {
       const apiError = getPurchaseOrderError(error, `${action} gagal`);
       notify("error", apiError.message, `${action} gagal`);
@@ -161,6 +176,7 @@ export default function PurchaseOrderDetail() {
       () => verifyPurchaseOrder(params.id, { rekening_id: row?.rekening_id }),
       "PO berhasil diverifikasi dan difinalisasi",
       "Verifikasi",
+      "/purchasing-orders",
     );
   };
 
@@ -239,7 +255,11 @@ export default function PurchaseOrderDetail() {
     }
   };
 
-  if (rowLoading) {
+  if (
+    accessLoading ||
+    (canRead && rowLoading) ||
+    (Boolean(row) && permissionsLoading)
+  ) {
     return (
       <Stack alignItems="center" sx={{ py: 10 }}>
         <CircularProgress />
@@ -247,15 +267,28 @@ export default function PurchaseOrderDetail() {
     );
   }
 
-  if (rowError || !row) {
+  if (accessError || rowError || permissionsError) {
     return (
       <Alert severity="error">
-        Gagal memuat Purchase Order. {rowError?.message}
+        Gagal memuat Purchase Order. {(accessError || rowError || permissionsError)?.message}
       </Alert>
     );
   }
 
+  if (!access.can_read) {
+    return (
+      <Alert severity="warning">
+        Anda tidak memiliki hak akses untuk melihat Purchase Order.
+      </Alert>
+    );
+  }
+
+  if (!row) {
+    return <Alert severity="error">Purchase Order tidak ditemukan.</Alert>;
+  }
+
   const attachments = row.files || [];
+  const canManageAttachments = access.can_update && access.can_remove;
 
   return (
     <>
@@ -335,8 +368,8 @@ export default function PurchaseOrderDetail() {
             </Stack>
             <AttachmentCard
               files={attachments}
-              canUpload={permissions.can_upload_attachment}
-              canDelete={permissions.can_attachment && row.status === "open"}
+              canUpload={canManageAttachments}
+              canDelete={canManageAttachments}
               onUpload={handleUploadAttachments}
               onDelete={handleDeleteAttachment}
               uploading={uploading}

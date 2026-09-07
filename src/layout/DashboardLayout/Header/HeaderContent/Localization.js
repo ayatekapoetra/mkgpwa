@@ -17,7 +17,7 @@ import Typography from '@mui/material/Typography';
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
 import Transitions from 'components/@extended/Transitions';
-import useConfig from 'hooks/useConfig';
+import { useLocaleConfig } from 'hooks/useConfig';
 import { ThemeMode } from 'config';
 
 // ASSETS
@@ -29,7 +29,7 @@ const Localization = () => {
   const theme = useTheme();
   const matchesXs = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { i18n, onChangeLocalization } = useConfig();
+  const { i18n, onChangeLocalization } = useLocaleConfig();
 
   const anchorRef = useRef(null);
   const [open, setOpen] = useState(false);

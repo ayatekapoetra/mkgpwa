@@ -24,8 +24,6 @@ import AlertNotification from 'components/@extended/AlertNotification';
 const queryClient = new QueryClient();
 
 const ProviderWrapper = ({ children }) => {
-  console.log('ProviderWrapper rendering');
-  
   return (
     <ConfigProvider>
       <ThemeCustomization>

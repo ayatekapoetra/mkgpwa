@@ -37,6 +37,7 @@ import {
   deletePengajuanDana,
   deletePengajuanDanaItem,
   rejectPengajuanDana,
+  removePengajuanDanaAttachment,
   returnPengajuanDana,
   uploadPengajuanDanaAttachments,
   usePengajuanDanaAccess,
@@ -160,6 +161,8 @@ export default function PengajuanDanaDetailPage() {
   const [loadingAction, setLoadingAction] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [uploadingAttachments, setUploadingAttachments] = useState(false);
+  const [attachmentToRemove, setAttachmentToRemove] = useState(null);
+  const [removingAttachment, setRemovingAttachment] = useState(false);
 
   const totals = useMemo(
     () => (row?.items || []).reduce(
@@ -263,6 +266,32 @@ export default function PengajuanDanaDetailPage() {
       });
     } finally {
       setUploadingAttachments(false);
+    }
+  };
+
+  const handleRemoveAttachment = async () => {
+    if (!attachmentToRemove || removingAttachment || !permissions.can_remove_attachment) return;
+
+    setRemovingAttachment(true);
+    try {
+      const result = await removePengajuanDanaAttachment(id, attachmentToRemove.id);
+      openNotification({
+        open: true,
+        title: 'success',
+        message: result?.message || 'Lampiran berhasil dihapus',
+        alert: { color: 'success' }
+      });
+      setAttachmentToRemove(null);
+      await Promise.all([mutate(), mutatePermissions()]);
+    } catch (error) {
+      openNotification({
+        open: true,
+        title: 'error',
+        message: error?.message || 'Gagal menghapus lampiran',
+        alert: { color: 'error' }
+      });
+    } finally {
+      setRemovingAttachment(false);
     }
   };
 
@@ -449,7 +478,20 @@ export default function PengajuanDanaDetailPage() {
                             <Typography variant="caption" color="text.secondary">Tipe: {file.datatype || '-'}</Typography>
                           </Box>
                         </Stack>
-                        <Button component="a" href={file.url} target="_blank" rel="noreferrer" variant="outlined" size="small">Zoom</Button>
+                        <Stack direction="row" spacing={1}>
+                          <Button component="a" href={file.url} target="_blank" rel="noreferrer" variant="outlined" size="small">Zoom</Button>
+                          {permissions.can_remove_attachment && (
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              startIcon={<Trash size={15} />}
+                              onClick={() => setAttachmentToRemove(file)}
+                            >
+                              Hapus
+                            </Button>
+                          )}
+                        </Stack>
                       </Stack>
                     ))}
                   </Stack>
@@ -588,6 +630,18 @@ export default function PengajuanDanaDetailPage() {
           onClose={handleCloseDialog}
           onSubmit={handleAction}
           submitLabel="Hapus"
+        />
+
+        <ActionDialog
+          open={Boolean(attachmentToRemove)}
+          title="Hapus Lampiran"
+          message={`Lampiran ${attachmentToRemove?.url?.split('/').pop() || ''} akan dinonaktifkan dari dokumen. File tidak akan dihapus permanen dari penyimpanan.`}
+          loading={removingAttachment}
+          reason=""
+          onReasonChange={() => {}}
+          onClose={() => setAttachmentToRemove(null)}
+          onSubmit={handleRemoveAttachment}
+          submitLabel="Hapus Lampiran"
         />
       </MainCard>
     </Fragment>
