@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import dynamic from 'next/dynamic';
 
 // MATERIAL - UI
 import { useTheme } from '@mui/material/styles';
@@ -12,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 
 // THIRD PARTY
-import ReactApexChart from 'react-apexcharts';
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 export default function ChartPart({ data, params }) {
   const theme = useTheme();
