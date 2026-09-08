@@ -1,32 +1,43 @@
-import useSWR from 'swr';
-import { useMemo } from 'react';
+import useSWR from "swr";
+import { useMemo } from "react";
 
 // UTIL
-import { fetcher } from 'utils/axios';
+import { fetcher } from "utils/axios";
 
 export const endpoints = {
-  key: '/maintenance/signages/breakdown/list'
+  key: "/maintenance/signages/breakdown/list",
 };
 
 export const useGetSignages = (params) => {
-  const url = params ? endpoints.key + `?${new URLSearchParams(params)}` : endpoints.key;
+  const filtered = Object.entries(params || {})
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
+  const url = Object.keys(filtered).length
+    ? endpoints.key + `?${new URLSearchParams(filtered)}`
+    : endpoints.key;
 
   const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
     refreshInterval: 180000, // 3 minutes
     revalidateIfStale: false,
     revalidateOnFocus: false,
-    revalidateOnReconnect: false
+    revalidateOnReconnect: false,
   });
 
   // Debug: Log full API response structure
-  console.log('[useGetSignages] Full API response:', data);
-  console.log('[useGetSignages] data keys:', data ? Object.keys(data) : 'no data');
-  console.log('[useGetSignages] data.BDtot:', data?.BDtot);
-  console.log('[useGetSignages] data.WTtot:', data?.WTtot);
-  console.log('[useGetSignages] data.WPtot:', data?.WPtot);
-  console.log('[useGetSignages] data.WStot:', data?.WStot);
-  console.log('[useGetSignages] data.rows:', data?.rows);
-  console.log('[useGetSignages] data.rows keys:', data?.rows ? Object.keys(data.rows) : 'no rows');
+  console.log("[useGetSignages] Full API response:", data);
+  console.log(
+    "[useGetSignages] data keys:",
+    data ? Object.keys(data) : "no data",
+  );
+  console.log("[useGetSignages] data.BDtot:", data?.BDtot);
+  console.log("[useGetSignages] data.WTtot:", data?.WTtot);
+  console.log("[useGetSignages] data.WPtot:", data?.WPtot);
+  console.log("[useGetSignages] data.WStot:", data?.WStot);
+  console.log("[useGetSignages] data.rows:", data?.rows);
+  console.log(
+    "[useGetSignages] data.rows keys:",
+    data?.rows ? Object.keys(data.rows) : "no rows",
+  );
 
   const memoizedValue = useMemo(
     () => ({
@@ -46,9 +57,9 @@ export const useGetSignages = (params) => {
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.rows?.data?.length
+      dataEmpty: !isLoading && !data?.rows?.data?.length,
     }),
-    [data, error, isLoading, isValidating]
+    [data, error, isLoading, isValidating],
   );
 
   return memoizedValue;
