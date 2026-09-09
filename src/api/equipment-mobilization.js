@@ -9,6 +9,13 @@ export const endpoints = {
   create: '/create'
 };
 
+const buildQueryString = (params = {}) => new URLSearchParams(
+  Object.entries(params).reduce((acc, [key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') acc[key] = value;
+    return acc;
+  }, {})
+).toString();
+
 const unwrapError = (error, fallback) => {
   const diagnostic = error?.response?.data?.diagnostic;
   if (typeof diagnostic?.message === 'string' && diagnostic.message) return diagnostic.message;
@@ -67,14 +74,8 @@ export function useEquipmentMobilizationAccess() {
 }
 
 export function useGetEquipmentMobilizations(params) {
-  const qs = params ? `?${new URLSearchParams(
-    Object.entries(params).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && String(value).trim() !== '') {
-        acc[key] = value;
-      }
-      return acc;
-    }, {})
-  ).toString()}` : '';
+  const query = buildQueryString(params);
+  const qs = query ? `?${query}` : '';
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(
     `${endpoints.key}${endpoints.list}${qs}`,
@@ -96,6 +97,54 @@ export function useGetEquipmentMobilizations(params) {
       mutate
     };
   }, [data, error, isLoading, isValidating, mutate]);
+}
+
+const filenameFromDisposition = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback;
+  const utfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    try {
+      return decodeURIComponent(utfMatch[1]);
+    } catch {
+      return utfMatch[1];
+    }
+  }
+  return contentDisposition.match(/filename="?([^";]+)"?/i)?.[1] || fallback;
+};
+
+const messageFromBlob = async (blob, fallback) => {
+  const text = await blob.text();
+  if (!text) return fallback;
+  try {
+    const payload = JSON.parse(text);
+    return payload?.diagnostic?.message || payload?.message || fallback;
+  } catch {
+    return text;
+  }
+};
+
+export async function downloadEquipmentMobilizations(params = {}, format) {
+  const exportFilters = { ...params, page: undefined, limit: undefined };
+  const query = buildQueryString(exportFilters);
+  const extension = format === 'pdf' ? 'pdf' : 'xlsx';
+  const fallback = `mobilisasi-equipment-${new Date().toISOString().slice(0, 10)}.${extension}`;
+
+  try {
+    const response = await axiosServices.get(`${endpoints.key}/download/${format}${query ? `?${query}` : ''}`, {
+      responseType: 'blob',
+      timeout: 300000,
+      skipOfflineQueue: true
+    });
+    return {
+      blob: response.data,
+      filename: filenameFromDisposition(response.headers?.['content-disposition'], fallback)
+    };
+  } catch (error) {
+    if (error?.response?.data instanceof Blob) {
+      throw new Error(await messageFromBlob(error.response.data, 'Gagal mengunduh laporan mobilisasi'));
+    }
+    throw new Error(unwrapError(error, 'Gagal mengunduh laporan mobilisasi'));
+  }
 }
 
 export function useShowEquipmentMobilization(id) {

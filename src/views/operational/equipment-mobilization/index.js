@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import moment from 'moment';
+import { useSnackbar } from 'notistack';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -19,7 +20,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { Eye, Filter } from 'iconsax-react';
+import { DocumentDownload, DocumentText, Eye, Filter } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Paginate from 'components/Paginate';
@@ -28,6 +29,7 @@ import { APP_DEFAULT_PATH } from 'config';
 import {
   MOBILIZATION_STATUS_COLOR,
   MOBILIZATION_STATUS_LABEL,
+  downloadEquipmentMobilizations,
   useEquipmentMobilizationAccess,
   useGetEquipmentMobilizations
 } from 'api/equipment-mobilization';
@@ -43,8 +45,10 @@ const breadcrumbLinks = [
 const pickName = (...values) => values.find((v) => !!v) || '-';
 
 export default function EquipmentMobilizationScreen() {
+  const { enqueueSnackbar } = useSnackbar();
   const { permissions, accessLoading } = useEquipmentMobilizationAccess();
   const [openFilter, setOpenFilter] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState('');
   const [filters, setFilters] = useState({
     page: 1,
     limit: 20,
@@ -60,7 +64,7 @@ export default function EquipmentMobilizationScreen() {
   });
 
   const { data, dataLoading, dataError } = useGetEquipmentMobilizations(filters);
-  const rows = data?.data || [];
+  const rows = useMemo(() => data?.data || [], [data?.data]);
 
   const summary = useMemo(() => {
     const base = { all: rows.length, DRAFT: 0, OPEN: 0, ARRIVED: 0, unitTotal: 0, unitArrived: 0 };
@@ -76,6 +80,26 @@ export default function EquipmentMobilizationScreen() {
 
   const canCreate = !accessLoading && permissions?.can_insert !== false;
 
+  const handleDownload = async (format) => {
+    try {
+      setDownloadFormat(format);
+      const { blob, filename } = await downloadEquipmentMobilizations(filters, format);
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      enqueueSnackbar(`Laporan mobilisasi ${format.toUpperCase()} berhasil diunduh`, { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Gagal mengunduh laporan mobilisasi', { variant: 'error' });
+    } finally {
+      setDownloadFormat('');
+    }
+  };
+
   return (
     <Fragment>
       <Breadcrumbs custom heading="Equipment Mobilization" links={breadcrumbLinks} />
@@ -90,11 +114,27 @@ export default function EquipmentMobilizationScreen() {
           )
         }
         secondary={
-          <Tooltip title="Filter">
-            <IconButton color="secondary" onClick={() => setOpenFilter(true)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
-              <Filter />
-            </IconButton>
-          </Tooltip>
+          <Stack direction="row" gap={1}>
+            <Tooltip title="Download PDF">
+              <span>
+                <IconButton aria-label="download-pdf" color="error" onClick={() => handleDownload('pdf')} disabled={Boolean(downloadFormat)}>
+                  {downloadFormat === 'pdf' ? <CircularProgress size={20} color="inherit" /> : <DocumentDownload />}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Download Excel">
+              <span>
+                <IconButton aria-label="download-excel" color="success" onClick={() => handleDownload('excel')} disabled={Boolean(downloadFormat)}>
+                  {downloadFormat === 'excel' ? <CircularProgress size={20} color="inherit" /> : <DocumentText />}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Filter">
+              <IconButton color="secondary" onClick={() => setOpenFilter(true)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
+                <Filter />
+              </IconButton>
+            </Tooltip>
+          </Stack>
         }
         content={false}
       >
