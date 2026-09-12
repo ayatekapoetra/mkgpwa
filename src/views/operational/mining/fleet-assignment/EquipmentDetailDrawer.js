@@ -97,7 +97,11 @@ function AuditTimelineItem({ event, isLast }) {
 export default function EquipmentDetailDrawer({ item, open, onClose }) {
   const { enqueueSnackbar } = useSnackbar();
   const equipmentId = item?.equipment_id || "";
-  const audit = useFleetEquipmentAudit(equipmentId, {}, Boolean(open && equipmentId));
+  const audit = useFleetEquipmentAudit(
+    equipmentId,
+    { date_ops: item?.date_ops || "", days: 3, future_days: 1 },
+    Boolean(open && equipmentId && item?.date_ops)
+  );
 
   const [statusSwitch, setStatusSwitch] = useState(() => String(item?.status || "").toLowerCase() || "beroperasi");
   const [activeItemId, setActiveItemId] = useState(() => item?.item_id || "");
