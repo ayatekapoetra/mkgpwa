@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
+import moment from "moment";
+import "moment/locale/id";
 
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -310,7 +312,7 @@ export default function EquipmentDetailDrawer({ item, open, onClose }) {
                 <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Waktu Mulai" value={formatDateTime(item?.start_time)} /></Grid>
                 <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Waktu Selesai" value={formatDateTime(item?.finish_time)} /></Grid>
                 <Grid item xs={12} sm={6}><InfoTile icon={<BuildIcon fontSize="small" />} label="Material" value={item?.material_name} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Tanggal / Shift" value={item?.date_ops ? `${item.date_ops} · Shift ${item.shift_id || "-"}` : "-"} /></Grid>
+                <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Tanggal / Shift" value={item?.date_ops ? `${moment(item.date_ops).locale("id").format("dddd, DD MMM YYYY")} · Shift ${item.shift_id || "-"}` : "-"} /></Grid>
               </Grid>
             </Box>
 
