@@ -13,8 +13,8 @@ export const endpoints = {
   prepItems: '/ready-delor' // Data item prepare for delivery order
 };
 
-export const useGetDelorByPemasok = (enabled = true) => {
-  const key = enabled ? `${endpoints.key}${endpoints.prepOrder}` : null;
+export const useGetDelorByPemasok = (bisnisId) => {
+  const key = bisnisId ? `${endpoints.key}${endpoints.prepOrder}?${new URLSearchParams({ bisnis_id: bisnisId })}` : null;
 
   const { data, isLoading, error, isValidating } = useSWR(key, fetcher, {
     revalidateIfStale: false,
@@ -143,8 +143,11 @@ export const useShowDeliveryOrder = (id) => {
   return memoizedValue;
 };
 
-export const useGetPrepareDo = (pemasok_id) => {
-  const key = pemasok_id ? `${endpoints.key}${endpoints.prepItems}?${new URLSearchParams({ pemasok_id })}` : null;
+export const useGetPrepareDo = (params, enabled = true) => {
+  const normalizedParams = typeof params === 'object' ? params : { pemasok_id: params, page: 1, perPage: 24 };
+  const key = enabled && normalizedParams?.pemasok_id
+    ? `${endpoints.key}${endpoints.prepItems}?${new URLSearchParams(normalizedParams)}`
+    : null;
   const { data, isLoading, error, isValidating, mutate } = useSWR(key, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: false,
@@ -153,14 +156,18 @@ export const useGetPrepareDo = (pemasok_id) => {
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows,
+      data: data?.rows?.data || [],
+      page: data?.rows?.page || 1,
+      perPage: data?.rows?.perPage || normalizedParams?.perPage || 24,
+      total: data?.rows?.total || 0,
+      lastPage: data?.rows?.lastPage || 1,
       dataLoading: isLoading,
       dataError: error,
       dataValidating: isValidating,
-      dataEmpty: !isLoading && !data?.data?.length,
+      dataEmpty: !isLoading && !(data?.rows?.data?.length || 0),
       mutate
     }),
-    [data, error, isLoading, isValidating, mutate]
+    [data, error, isLoading, isValidating, mutate, normalizedParams?.perPage]
   );
 
   return memoizedValue;

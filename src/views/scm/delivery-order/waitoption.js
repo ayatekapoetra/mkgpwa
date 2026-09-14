@@ -18,6 +18,8 @@ import InputLabel from '@mui/material/InputLabel';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Pagination from '@mui/material/Pagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
@@ -25,76 +27,65 @@ import MainCard from 'components/MainCard';
 // ASSETS
 import { Add, Category2, HambergerMenu, Heart } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
-import { useCallback, useState } from 'react';
-import { useSeachKeyword } from 'hooks/useSeachKeyword';
+import { useEffect, useState } from 'react';
 
-export default function WaitOption({ data = [], mutate = null, remove, push, open, onClose, anchor = 'top' }) {
+export default function WaitOption({
+  data = [],
+  remove,
+  push,
+  values,
+  pemasok,
+  loading = false,
+  page = 1,
+  perPage = 24,
+  total = 0,
+  lastPage = 1,
+  setQuery,
+  open,
+  onClose,
+  anchor = 'top'
+}) {
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState('card');
-  const filteredData = useSeachKeyword(data, ['narasi', 'kode_pd', 'kode_pr', 'kode_po', 'kode_transfer'], search);
+  const selectedIds = new Set((values?.items || []).map((item) => Number(item.wait_id || item.id)));
 
-  const handleSearchKeyword = useCallback(
-    (teks) => {
-      const arrayID = filteredData.map((m) => m.id);
-      if (teks != '') {
-        mutate((currentData) => {
-          const rowUpdated = currentData?.rows.map((item) =>
-            arrayID.includes(item.id) ? { ...item, visibled: true } : { ...item, visibled: false }
-          );
-          return { ...currentData, rows: rowUpdated };
-        }, false);
-      } else {
-        mutate((currentData) => {
-          const rowUpdated = currentData?.rows.map((item) => ({ ...item, visibled: true }));
-          return { ...currentData, rows: rowUpdated };
-        }, false);
-      }
-    },
-    [filteredData, mutate] // ✅ mutate ditambahkan di sini
-  );
+  useEffect(() => {
+    setSearch('');
+    setQuery?.((current) => ({ ...current, page: 1, search: '' }));
+  }, [pemasok, setQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery?.((current) => (current.search === search ? current : { ...current, page: 1, search }));
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search, setQuery]);
 
   // MEMILIH ITEM UTK MASUK KE FORMIK FORM
-  const handleSelect = (id, push, remove, values) => {
-    mutate((currentData) => {
-      const updatedRows = currentData?.rows.map((item) => {
-        if (item.id === id) {
-          const isSelected = !item.selected;
-          const remainingQty = getRemainingQty(item);
+  const handleSelect = (id) => {
+    const index = values.items.findIndex((item) => Number(item.wait_id || item.id) === Number(id));
+    if (index !== -1) {
+      remove(index);
+      return;
+    }
 
-          // Tambah ke Formik jika selected
-          if (isSelected) {
-            if (!values.items.some((itm) => itm.id === item.id)) {
-              // console.log('item....', item);
-
-              push({
-                id: item.id,
-                barang_id: item.barang?.id || null,
-                narasi: item.narasi,
-                barang: item.barang,
-                qty_do: item.qty_do,
-                is_pickup: 'N',
-                existing_pickup: item.pickup,
-                remaining_qty: remainingQty,
-                satuan: item.satuan,
-                noberkas: item.kode_po || item.kode_pd || item.kode_transfer,
-                harga: item.harga,
-                pickup: remainingQty
-              });
-            }
-          } else {
-            // Hapus dari Formik jika unselect
-            const index = values.items.findIndex((itm) => itm.id === id);
-            if (index !== -1) remove(index);
-          }
-
-          return { ...item, selected: isSelected };
-        }
-        return item;
-      });
-
-      // setStateSelected(updatedRows.filter((row) => row.selected));
-      return { ...currentData, rows: updatedRows };
-    }, false);
+    const item = data.find((row) => Number(row.id) === Number(id));
+    if (!item) return;
+    const remainingQty = getRemainingQty(item);
+    push({
+      id: item.id,
+      barang_id: item.barang?.id || null,
+      narasi: item.narasi,
+      barang: item.barang,
+      qty_do: item.qty_do,
+      is_pickup: 'N',
+      existing_pickup: item.pickup,
+      remaining_qty: remainingQty,
+      satuan: item.satuan,
+      noberkas: item.kode_po || item.kode_pd || item.kode_transfer,
+      harga: item.harga,
+      pickup: remainingQty
+    });
   };
 
   return (
@@ -129,27 +120,31 @@ export default function WaitOption({ data = [], mutate = null, remove, push, ope
               flexDirection: 'column'
             }}
             content={true}
-            title={<HeaderFilter count={data?.length | '0'} onClose={onClose} viewMode={viewMode} onViewModeChange={setViewMode} />}
+            title={<HeaderFilter count={total} onClose={onClose} viewMode={viewMode} onViewModeChange={setViewMode} />}
           >
-            {viewMode === 'card' ? (
+            {loading ? (
+              <Stack alignItems="center" justifyContent="center" sx={{ minHeight: 240 }}>
+                <CircularProgress />
+              </Stack>
+            ) : viewMode === 'card' ? (
               <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start" sx={{ flex: 1, overflow: 'auto' }}>
-                {data
-                  ?.filter((row) => row.visibled !== false)
-                  .map((obj, idx) => (
+                {data.map((obj, idx) => (
                     <CardOptions
-                      key={idx}
-                      data={obj}
-                      handleSelect={() => handleSelect(obj.id, push, remove, { items: data.filter((i) => i.selected) })}
+                      key={obj.id || idx}
+                      data={{ ...obj, selected: selectedIds.has(Number(obj.id)) }}
+                      handleSelect={() => handleSelect(obj.id)}
                     />
                   ))}
               </Grid>
             ) : (
               <Stack spacing={1.5} sx={{ flex: 1, overflow: 'auto' }}>
-                {data
-                  ?.filter((row) => row.visibled !== false)
-                  .map((obj, idx) => (
-                    <ListOptions key={idx} data={obj} handleSelect={() => handleSelect(obj.id, push, remove, { items: data.filter((i) => i.selected) })} />
-                  ))}
+                {data.map((obj, idx) => (
+                  <ListOptions
+                    key={obj.id || idx}
+                    data={{ ...obj, selected: selectedIds.has(Number(obj.id)) }}
+                    handleSelect={() => handleSelect(obj.id)}
+                  />
+                ))}
               </Stack>
             )}
           </MainCard>
@@ -161,13 +156,17 @@ export default function WaitOption({ data = [], mutate = null, remove, push, ope
                 </InputLabel>
                 <InputSearch
                   value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    handleSearchKeyword(e.target.value);
-                  }}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </Stack>
-              <Stack>{data?.filter((f) => f.visibled)?.length || '0'} rows effected</Stack>
+              <Stack>{total ? `${((page - 1) * perPage) + 1}-${Math.min(page * perPage, total)} dari ${total}` : '0 data'}</Stack>
+              <Pagination
+                count={Math.max(1, lastPage)}
+                page={Math.min(page, Math.max(1, lastPage))}
+                onChange={(_, nextPage) => setQuery?.((current) => ({ ...current, page: nextPage }))}
+                disabled={loading}
+                color="primary"
+              />
               <Stack style={{ width: '30%' }}>
                 <Button variant="dashed" color="secondary" fullWidth onClick={onClose}>
                   Okey

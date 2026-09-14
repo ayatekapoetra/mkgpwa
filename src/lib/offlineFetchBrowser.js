@@ -7,6 +7,8 @@ const requestStore = localforage.createInstance({
   storeName: 'lf_requests'
 });
 
+let replayPromise = null;
+
 export async function saveRequest(config) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const payload = {
@@ -60,6 +62,20 @@ export async function offlineFetch(config) {
 }
 
 export async function replayRequests(onProgress = null, onConflict = null) {
+  if (replayPromise) return replayPromise;
+
+  const replay = () => replayPendingRequests(onProgress, onConflict);
+  replayPromise = typeof navigator !== 'undefined' && navigator.locks
+    ? navigator.locks.request('offline-request-replay', { mode: 'exclusive' }, replay)
+    : replay();
+  try {
+    return await replayPromise;
+  } finally {
+    replayPromise = null;
+  }
+}
+
+async function replayPendingRequests(onProgress = null, onConflict = null) {
   const requests = await getAllRequests();
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     console.log('▶️ Mulai replay, total:', requests.length);
@@ -70,6 +86,7 @@ export async function replayRequests(onProgress = null, onConflict = null) {
 
   for (const req of requests) {
     if (req.status === 'terkirim') {
+      await deleteRequest(req.key);
       synced++;
       continue;
     }
@@ -88,17 +105,15 @@ export async function replayRequests(onProgress = null, onConflict = null) {
         url: req.url,
         method: req.method,
         data: req.data,
-        headers: req.headers
+        headers: req.headers,
+        skipOfflineQueue: true
       });
 
       if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         console.log(`✅ Replay sukses [${req.key}] → ${req.url}`, resp.status);
       }
 
-      await requestStore.setItem(req.key, {
-        ...req,
-        status: 'terkirim'
-      });
+      await deleteRequest(req.key);
 
       synced++;
       window.dispatchEvent(new Event('queue-updated'));

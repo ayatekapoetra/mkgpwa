@@ -10,9 +10,10 @@ const OptionPemasokDelor = ({
   name = 'pemasok_id',
   error = null, // Tambahkan prop error
   touched = false, // Tambahkan prop touched
-  setFieldValue
+  setFieldValue,
+  clearItems
 }) => {
-  const { data: array, dataLoading } = useGetDelorByPemasok(Boolean(bisnisId));
+  const { data: array, dataLoading } = useGetDelorByPemasok(bisnisId);
 
   if (bisnisId && dataLoading) {
     return <InputSkeleton height={30} />;
@@ -30,6 +31,7 @@ const OptionPemasokDelor = ({
           noOptionsText={bisnisId ? 'Pemasok tidak tersedia' : 'Pilih bisnis unit terlebih dahulu'}
           value={safeArray.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
+            if (newValue?.id != value) clearItems?.();
             setFieldValue(name, newValue?.id || '');
             setFieldValue('pemasok', newValue || null);
           }}

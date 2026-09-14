@@ -1,7 +1,7 @@
 'use client';
 
 // REACT
-import { Fragment } from 'react';
+import { Fragment, useRef } from 'react';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
@@ -14,10 +14,10 @@ import moment from 'moment';
 import { Formik } from 'formik';
 import axiosServices from 'utils/axios';
 import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
 import BtnBack from 'components/BtnBack';
 import FormikFormCreate from './form';
-import AlertNotification from 'components/@extended/AlertNotification';
 import { openNotification } from 'api/notification';
 
 const breadcrumbLinks = [
@@ -38,6 +38,10 @@ const msgError = {
   message: 'Delivery Order gagal dibuat...',
   alert: { color: 'error' }
 };
+
+function getErrorMessage(error) {
+  return error?.diagnostic?.message || (typeof error?.diagnostic?.error === 'string' ? error.diagnostic.error : null) || error?.message || msgError.message;
+}
 
 const initialValues = {
   do_date: moment().format('YYYY-MM-DD'),
@@ -62,6 +66,8 @@ function toSqlDateTime(value) {
 
 export default function FormCreateScreen() {
   const router = useRouter();
+  const submissionKey = useRef(uuidv4());
+  const submitting = useRef(false);
   const dateTimeSchema = Yup.string()
     .required('Tanggal wajib diisi')
     .test('valid-datetime', 'Format tanggal dan waktu tidak valid', (value) => !value || moment(value, 'DD-MM-YYYY HH:mm', true).isValid());
@@ -81,27 +87,59 @@ export default function FormCreateScreen() {
       .of(
         Yup.object().shape({
           is_pickup: Yup.string().oneOf(['Y', 'N']).default('N'),
-          pickup: Yup.number().required('Qty item wajib diisi').min(1, 'Jumlah minimal 1')
+          pickup: Yup.number()
+            .required('Qty item wajib diisi')
+            .integer('Qty item harus berupa bilangan bulat')
+            .min(1, 'Jumlah minimal 1')
+            .test('remaining-qty', 'Qty melebihi sisa pesanan', function (value) {
+              return value == null || value <= Number(this.parent.remaining_qty || 0);
+            })
         })
       )
       .min(1, 'Minimal 1 item harus diisi')
   });
 
   const onSubmitHandle = async (values) => {
+    if (submitting.current) return;
+    submitting.current = true;
     try {
       const payload = {
-        ...values,
+        bisnis_id: values.bisnis_id,
+        pemasok_id: values.pemasok_id,
+        do_date: values.do_date,
         delivered_at: toSqlDateTime(values.delivered_at),
-        est_received: toSqlDateTime(values.est_received)
+        est_received: toSqlDateTime(values.est_received),
+        narasi: values.narasi,
+        via: values.via,
+        type: values.type,
+        jenis: values.jenis,
+        forwarder: values.forwarder,
+        items: values.items.map((item) => ({
+          id: item.id,
+          barang_id: item.barang_id,
+          narasi: item.narasi,
+          noberkas: item.noberkas,
+          satuan: item.satuan,
+          pickup: Number(item.pickup),
+          harga: item.harga,
+          is_pickup: item.is_pickup
+        }))
       };
 
-      const resp = await axiosServices.post('/scm/delivery-order/create', payload);
-      console.log('resp-api.', resp);
+      await axiosServices.post('/scm/delivery-order/create', payload, {
+        skipOfflineQueue: true,
+        headers: {
+          'Idempotency-Key': submissionKey.current,
+          'X-Request-Id': `delor-${uuidv4()}`
+        }
+      });
+      submissionKey.current = uuidv4();
       openNotification(msgSuccess);
       router.push('/delivery-order');
     } catch (error) {
-      // console.log('err-api.', error);
-      openNotification(msgError);
+      openNotification({ ...msgError, message: getErrorMessage(error) });
+    } finally {
+      submitting.current = false;
     }
   };
 
@@ -109,7 +147,6 @@ export default function FormCreateScreen() {
     <Fragment>
       <Breadcrumbs custom heading={'Create Delivery Order'} links={breadcrumbLinks} />
       <MainCard title={<BtnBack href={'/delivery-order'} />} content={true}>
-        <AlertNotification />
         <Formik initialValues={initialValues} validationSchema={validationSchema} enableReinitialize={true} onSubmit={onSubmitHandle}>
           {(formikProps) => {
             return <FormikFormCreate {...formikProps} />;

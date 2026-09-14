@@ -21,8 +21,8 @@ import { useTable, useFilters, useGlobalFilter, useBlockLayout, useResizeColumns
 
 import { DefaultColumnFilter, renderFilterTypes } from 'utils/react-table';
 
-const TableItems = ({ data = [], setFieldValue, remove, mutate }) => {
-  const columns = useTableColumns(setFieldValue, remove, mutate);
+const TableItems = ({ data = [], setFieldValue, remove }) => {
+  const columns = useTableColumns(setFieldValue, remove);
 
   const filterTypes = useMemo(() => renderFilterTypes, []);
   const defaultColumn = useMemo(
@@ -122,7 +122,7 @@ const TableItems = ({ data = [], setFieldValue, remove, mutate }) => {
 
 export default TableItems;
 
-function useTableColumns(setFieldValue, remove, mutate) {
+function useTableColumns(setFieldValue, remove) {
   return useMemo(
     () => [
       {
@@ -252,10 +252,6 @@ function useTableColumns(setFieldValue, remove, mutate) {
               color="error"
               onClick={() => {
                 remove?.(row.index);
-                mutate?.((currentData) => {
-                  const result = currentData.rows.map((m) => (m.id === itemId ? { ...m, selected: !m.selected } : m));
-                  return { ...currentData, rows: result };
-                }, false);
               }}
             >
               <CloseSquare />
@@ -264,6 +260,6 @@ function useTableColumns(setFieldValue, remove, mutate) {
         }
       }
     ],
-    [setFieldValue, remove, mutate]
+    [setFieldValue, remove]
   );
 }

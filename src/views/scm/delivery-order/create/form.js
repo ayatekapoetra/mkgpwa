@@ -29,12 +29,15 @@ import OptionPemasokDelor from 'components/OptionPemasokDelor';
 import WaitOption from '../waitoption';
 import TableItems from './table';
 
-export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBlur, handleChange, values, touched, errors }) {
+export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBlur, handleChange, values, touched, errors, isSubmitting }) {
   const { bisnisOptions, jenisItemOptions, typeKirimOptions, viaKirimOptions } = useDropdownOptions();
-  console.log('errors.', errors);
 
   const [openOption, setOpenOption] = useState();
-  const { data, mutate } = useGetPrepareDo(values.pemasok_id);
+  const [prepareParams, setPrepareParams] = useState({ page: 1, perPage: 24, search: '' });
+  const { data, dataLoading, page, perPage, total, lastPage } = useGetPrepareDo(
+    { ...prepareParams, pemasok_id: values.pemasok_id, bisnis_id: values.bisnis_id },
+    Boolean(openOption && values.pemasok_id)
+  );
 
   return (
     <Form noValidate onSubmit={handleSubmit}>
@@ -120,6 +123,7 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
             touched={touched.pemasok_id}
             helperText={touched.pemasok_id && errors.pemasok_id}
             setFieldValue={setFieldValue}
+            clearItems={() => setFieldValue('items', [], false)}
           />
         </Grid>
         <Grid item xs={12} sm={4} lg={4}>
@@ -197,10 +201,16 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
             <>
               <WaitOption
                 data={data}
-                mutate={mutate}
                 push={push}
                 remove={remove}
+                values={values}
                 pemasok={values.pemasok_id}
+                loading={dataLoading}
+                page={page}
+                perPage={perPage}
+                total={total}
+                lastPage={lastPage}
+                setQuery={setPrepareParams}
                 open={openOption}
                 onClose={() => setOpenOption(!openOption)}
               />
@@ -217,7 +227,7 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
                       )
                     }
                   >
-                    <TableItems data={values.items} values={values} setFieldValue={setFieldValue} remove={remove} mutate={mutate} />
+                    <TableItems data={values.items} values={values} setFieldValue={setFieldValue} remove={remove} />
                   </MainCard>
                 </Grid>
               </Grid>
@@ -229,8 +239,8 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
         <Button type="button" variant="dashed" color="secondary">
           Cancel
         </Button>
-        <Button type="submit" variant="contained" color="primary">
-          Simpan
+        <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+          {isSubmitting ? 'Menyimpan...' : 'Simpan'}
         </Button>
       </CardActions>
     </Form>

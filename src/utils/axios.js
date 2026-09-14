@@ -1,7 +1,7 @@
 // utils/axios.js
 import axios from "axios";
 import { getSession } from "next-auth/react";
-import { replayRequests, saveRequest } from "lib/offlineFetch";
+import { saveRequest } from "lib/offlineFetch";
 
 const axiosServices = axios.create({
   baseURL:
@@ -128,16 +128,3 @@ export const fetcherPost = async (args) => {
 
   return res.data;
 };
-
-// Saat browser online kembali → replay queue
-if (typeof window !== "undefined") {
-  window.addEventListener("online", () => {
-    if (
-      typeof window !== "undefined" &&
-      window.location.hostname === "localhost"
-    ) {
-      console.log("Back online → replaying queued requests");
-    }
-    replayRequests();
-  });
-}
