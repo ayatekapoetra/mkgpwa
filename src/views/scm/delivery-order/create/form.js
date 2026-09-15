@@ -1,7 +1,7 @@
 'use client';
 
 // REACT
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // MATERIAL - UI
 import Typography from '@mui/material/Typography';
@@ -248,25 +248,12 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
 }
 
 const FormHelpers = ({ setFieldValue, values }) => {
-  const prevBisnisIdRef = useRef(values.bisnis_id);
-
   useEffect(() => {
     if (values.pemasok_id) {
       setFieldValue('phone_pemasok', values.pemasok?.phone || '', false);
       setFieldValue('alamat_pemasok', values.pemasok?.alamat || '', false);
     }
   }, [values.pemasok_id, values.pemasok, setFieldValue]);
-
-  useEffect(() => {
-    if (prevBisnisIdRef.current !== values.bisnis_id) {
-      prevBisnisIdRef.current = values.bisnis_id;
-      setFieldValue('pemasok_id', '', false);
-      setFieldValue('pemasok', null, false);
-      setFieldValue('phone_pemasok', '', false);
-      setFieldValue('alamat_pemasok', '', false);
-      setFieldValue('items', [], false);
-    }
-  }, [values.bisnis_id, setFieldValue]);
 
   return null;
 };
