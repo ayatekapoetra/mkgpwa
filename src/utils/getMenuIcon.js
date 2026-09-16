@@ -62,6 +62,8 @@ import {
   WalletMoney,
   Danger,
   SearchStatus,
+  UsdCoin,
+  TruckTick,
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -140,9 +142,12 @@ const iconMap = {
   WalletMoney: WalletMoney,
   danger: Danger,
   SearchStatus: SearchStatus,
+  UsdCoin: UsdCoin,
+  TruckTick: TruckTick,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,
+  fleetassignment: Truck,
   truckremove: Health,
   barang: Box,
   material: Layer,
