@@ -35,14 +35,17 @@ import ScheduleIcon from "@mui/icons-material/Schedule";
 import BuildIcon from "@mui/icons-material/Build";
 import HistoryIcon from "@mui/icons-material/History";
 import SaveIcon from "@mui/icons-material/Save";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import useSWR from "swr";
 
 import {
   useFleetEquipmentAudit,
-  updateEquipmentStatus,
+  updateOperationalDetails,
   revalidateFleetData,
   useFleetKegiatanOptions,
   useFleetMaterialOptions,
 } from "api/fleet-assignment";
+import { fetcher } from "utils/axios";
 import { formatDateTime, statusColor, statusGradient, statusGlow, statusLabel } from "./shared";
 import DailyBreakdownDrawer from "./DailyBreakdownDrawer";
 
@@ -51,6 +54,31 @@ const parseActivityTime = (value) => {
   const parsed = new Date(typeof value === "string" ? value.replace(" ", "T") : value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
+
+const dateTimeInput = (value) => {
+  const parsed = parseActivityTime(value);
+  if (!parsed) return "";
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+};
+
+const unwrapOptions = (value) => {
+  const payload = value?.rows ?? value?.data?.rows ?? value?.data ?? value;
+  if (Array.isArray(payload)) return payload;
+  return Array.isArray(payload?.data) ? payload.data : [];
+};
+
+const detailValues = (item) => ({
+  operator_id: item?.operator_id || "",
+  kegiatan_id: item?.kegiatan_id || "",
+  material_id: item?.material_id || "",
+  lokasi_pit_id: item?.lokasi_pit_id || "",
+  lokasi_site_id: item?.lokasi_site_id || "",
+  date_ops: item?.date_ops ? moment(item.date_ops).format("YYYY-MM-DD") : "",
+  shift_id: item?.shift_id || "",
+  start_time: dateTimeInput(item?.start_time),
+  finish_time: dateTimeInput(item?.finish_time),
+});
 
 function InfoTile({ icon, label, value }) {
   return (
@@ -96,7 +124,7 @@ function AuditTimelineItem({ event, isLast }) {
   );
 }
 
-export default function EquipmentDetailDrawer({ item, open, onClose }) {
+export default function EquipmentDetailDrawer({ item, open, onClose, canUpdate = true }) {
   const { enqueueSnackbar } = useSnackbar();
   const equipmentId = item?.equipment_id || "";
   const audit = useFleetEquipmentAudit(
@@ -107,36 +135,48 @@ export default function EquipmentDetailDrawer({ item, open, onClose }) {
 
   const [statusSwitch, setStatusSwitch] = useState(() => String(item?.status || "").toLowerCase() || "beroperasi");
   const [activeItemId, setActiveItemId] = useState(() => item?.item_id || "");
-  const [pendingStatus, setPendingStatus] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [selectedKegiatan, setSelectedKegiatan] = useState(null);
-  const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [details, setDetails] = useState(() => detailValues(item));
 
   const equipmentKategori = String(item?.equipment_kategori || item?.ctgunit || "").toUpperCase();
   const intervalStart = parseActivityTime(item?.start_time);
   const intervalFinish = parseActivityTime(item?.finish_time);
   const currentTime = new Date();
   const breakdownAllowed = Boolean(intervalStart && intervalFinish && currentTime >= intervalStart && currentTime <= intervalFinish);
-  const needsKegiatan = pendingStatus === "beroperasi" || pendingStatus === "standby";
-  const needsMaterial = pendingStatus === "beroperasi";
-
   const kegiatanSWR = useFleetKegiatanOptions(
-    { kategori: equipmentKategori, status: pendingStatus || "" },
-    Boolean(open && needsKegiatan && equipmentKategori)
+    { kategori: equipmentKategori, status: "editable" },
+    Boolean(open && editingDetails && equipmentKategori)
   );
-  const materialSWR = useFleetMaterialOptions(Boolean(open && needsMaterial));
+  const materialSWR = useFleetMaterialOptions(Boolean(open && editingDetails));
+  const masterQuery = new URLSearchParams({ page: "1", perPages: "1000" }).toString();
+  const { data: operatorData, isLoading: operatorLoading } = useSWR(editingDetails ? `/master/karyawan/oprdrv?cabang_id=${item?.cabang_id || ""}` : null, fetcher, { revalidateOnFocus: false });
+  const { data: pitData, isLoading: pitLoading } = useSWR(editingDetails ? `/master/lokasi-kerja/list?${masterQuery}` : null, fetcher, { revalidateOnFocus: false });
+  const { data: siteData, isLoading: siteLoading } = useSWR(editingDetails ? `/master/penyewa/list?${masterQuery}` : null, fetcher, { revalidateOnFocus: false });
+  const { data: shiftData, isLoading: shiftLoading } = useSWR(editingDetails ? "/master/shift/list" : null, fetcher, { revalidateOnFocus: false });
 
   const kegiatanOptions = kegiatanSWR.options || [];
+  const detailKegiatanOptions = details.kegiatan_id && !kegiatanOptions.some((option) => String(option.id) === String(details.kegiatan_id))
+    ? [{ id: details.kegiatan_id, nama: item?.kegiatan_name || `Kegiatan #${details.kegiatan_id}`, legacy: true }, ...kegiatanOptions]
+    : kegiatanOptions;
   const materialOptions = materialSWR.options || [];
+  const operatorOptions = unwrapOptions(operatorData);
+  const pitOptions = unwrapOptions(pitData);
+  const siteOptions = unwrapOptions(siteData);
+  const shiftOptions = unwrapOptions(shiftData);
+  const selectedDetailKegiatan = detailKegiatanOptions.find((option) => String(option.id) === String(details.kegiatan_id)) || null;
+  const detailKegiatanChanged = String(details.kegiatan_id || "") !== String(item?.kegiatan_id || "");
+  const detailTargetStatus = !detailKegiatanChanged
+    ? statusSwitch
+    : String(selectedDetailKegiatan?.subctg || "").trim().toLowerCase() === "standby" ? "standby" : "beroperasi";
 
   useEffect(() => {
     const currentStatus = String(item?.status || "").toLowerCase() || "beroperasi";
     setStatusSwitch(currentStatus);
     setActiveItemId(item?.item_id || "");
-    setPendingStatus(null);
-    setSelectedKegiatan(null);
-    setSelectedMaterial(null);
+    setEditingDetails(false);
+    setDetails(detailValues(item));
   }, [item]);
 
   const handleStatusSelect = (_, newValue) => {
@@ -145,50 +185,50 @@ export default function EquipmentDetailDrawer({ item, open, onClose }) {
       setBreakdownOpen(true);
       return;
     }
-    setPendingStatus(newValue);
-    setSelectedKegiatan(null);
-    setSelectedMaterial(null);
+    setDetails(detailValues(item));
+    setEditingDetails(true);
   };
 
-  const handleSave = async () => {
-    if (!pendingStatus) return;
-    if (needsKegiatan && !selectedKegiatan) {
-      enqueueSnackbar("Kegiatan wajib dipilih", { variant: "error" });
+  const setDetail = (field, value) => setDetails((current) => ({ ...current, [field]: value }));
+
+  const handleEditDetails = () => {
+    setDetails(detailValues(item));
+    setEditingDetails(true);
+  };
+
+  const handleCancelDetails = () => {
+    setDetails(detailValues(item));
+    setEditingDetails(false);
+  };
+
+  const handleSaveDetails = async () => {
+    const required = ["operator_id", "kegiatan_id", "lokasi_pit_id", "lokasi_site_id", "date_ops", "shift_id", "start_time", "finish_time"];
+    if (required.some((field) => !details[field])) {
+      enqueueSnackbar("Lengkapi seluruh Operational Details", { variant: "error" });
       return;
     }
-    if (needsMaterial && !selectedMaterial) {
-      enqueueSnackbar("Material wajib dipilih", { variant: "error" });
+    if (new Date(details.finish_time) <= new Date(details.start_time)) {
+      enqueueSnackbar("Waktu selesai harus lebih besar dari waktu mulai", { variant: "error" });
       return;
     }
+
     setSaving(true);
     try {
-      const result = await updateEquipmentStatus(activeItemId, pendingStatus, null, {
+      await updateOperationalDetails({
+        item_id: activeItemId,
         equipment_id: equipmentId,
-        kegiatan_id: selectedKegiatan?.id || null,
-        kegiatan_name: selectedKegiatan?.nama || null,
-        material_id: selectedMaterial?.id || null,
-        material_name: selectedMaterial?.nama || null,
+        ...details,
       });
-      enqueueSnackbar(`Status berhasil diubah ke ${pendingStatus}`, { variant: "success" });
-      setActiveItemId(result?.item_id || activeItemId);
-      setStatusSwitch(pendingStatus);
-      setPendingStatus(null);
-      setSelectedKegiatan(null);
-      setSelectedMaterial(null);
+      enqueueSnackbar("Operational Details berhasil diperbarui", { variant: "success" });
+      setEditingDetails(false);
       await Promise.all([revalidateFleetData(), audit.mutate()]);
       onClose?.();
     } catch (error) {
-      const msg = error?.diagnostic?.message || error?.response?.data?.diagnostic?.message || error?.message || "Gagal mengubah status";
+      const msg = error?.diagnostic?.message || error?.response?.data?.diagnostic?.message || error?.message || "Gagal memperbarui Operational Details";
       enqueueSnackbar(msg, { variant: "error" });
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleCancel = () => {
-    setPendingStatus(null);
-    setSelectedKegiatan(null);
-    setSelectedMaterial(null);
   };
 
   const code = item?.equipment_abbr || item?.equipment_kode || item?.kode || "-";
@@ -198,7 +238,6 @@ export default function EquipmentDetailDrawer({ item, open, onClose }) {
   const glow = statusGlow(status);
   const isHE = equipmentKategori === "HE";
   const TypeIcon = isHE ? PrecisionManufacturingIcon : LocalShippingIcon;
-  const canSave = pendingStatus && (!needsKegiatan || selectedKegiatan) && (!needsMaterial || selectedMaterial);
 
   return (
     <>
@@ -243,7 +282,7 @@ export default function EquipmentDetailDrawer({ item, open, onClose }) {
             {/* Status Switcher */}
             <Box>
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 1 }}>Status Equipment</Typography>
-              <ToggleButtonGroup value={pendingStatus || statusSwitch} exclusive onChange={handleStatusSelect} fullWidth disabled={saving} sx={{ gap: 1, position: "relative", "& .MuiToggleButtonGroup-grouped": { mr: 1, border: 1, borderColor: "divider", borderRadius: "8px !important", "&:last-child": { mr: 0 } }, "& .MuiToggleButton-root": { py: 1.25, fontWeight: 700, gap: 0.75, textTransform: "none", fontSize: "0.875rem" } }}>
+              <ToggleButtonGroup value={statusSwitch} exclusive onChange={handleStatusSelect} fullWidth disabled={saving || editingDetails || !canUpdate} sx={{ gap: 1, position: "relative", "& .MuiToggleButtonGroup-grouped": { mr: 1, border: 1, borderColor: "divider", borderRadius: "8px !important", "&:last-child": { mr: 0 } }, "& .MuiToggleButton-root": { py: 1.25, fontWeight: 700, gap: 0.75, textTransform: "none", fontSize: "0.875rem" } }}>
                 {saving && <Backdrop open sx={{ position: "absolute", zIndex: 1, bgcolor: "rgba(255,255,255,0.6)", borderRadius: 2 }}><CircularProgress size={24} /></Backdrop>}
                 <ToggleButton value="beroperasi" sx={{ "&.Mui-selected": { bgcolor: "success.main", color: "#fff", "&:hover": { bgcolor: "success.dark" } } }}><CheckCircleIcon fontSize="small" /> Beroperasi</ToggleButton>
                 <ToggleButton value="standby" sx={{ "&.Mui-selected": { bgcolor: "warning.main", color: "#fff", "&:hover": { bgcolor: "warning.dark" } } }}><WarningAmberIcon fontSize="small" /> Standby</ToggleButton>
@@ -254,66 +293,61 @@ export default function EquipmentDetailDrawer({ item, open, onClose }) {
                   Breakdown hanya dapat dibuat ketika waktu sekarang berada dalam interval aktivitas equipment.
                 </Typography>
               )}
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                Status Beroperasi atau Standby mengikuti Kegiatan yang dipilih melalui Edit Operational Details.
+              </Typography>
             </Box>
-
-            {/* Kegiatan & Material Selection (muncul saat pendingStatus) */}
-            {pendingStatus && pendingStatus !== "breakdown" && (
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Konfirmasi Perubahan Status
-                </Typography>
-                <Stack spacing={2}>
-                  {needsKegiatan && (
-                    <Autocomplete
-                      fullWidth
-                      options={kegiatanOptions}
-                      value={selectedKegiatan}
-                      onChange={(_, val) => setSelectedKegiatan(val)}
-                      loading={kegiatanSWR.isLoading}
-                      noOptionsText={kegiatanSWR.error ? "Gagal memuat kegiatan" : "Tidak ada kegiatan yang sesuai"}
-                      getOptionLabel={(opt) => opt?.nama || ""}
-                      isOptionEqualToValue={(opt, val) => String(opt?.id) === String(val?.id)}
-                      renderInput={(params) => <TextField {...params} label="Kegiatan" required size="small" />}
-                    />
-                  )}
-                  {needsMaterial && (
-                    <Autocomplete
-                      fullWidth
-                      options={materialOptions}
-                      value={selectedMaterial}
-                      onChange={(_, val) => setSelectedMaterial(val)}
-                      loading={materialSWR.isLoading}
-                      noOptionsText={materialSWR.error ? "Gagal memuat material" : "Tidak ada material"}
-                      getOptionLabel={(opt) => opt?.nama || ""}
-                      isOptionEqualToValue={(opt, val) => String(opt?.id) === String(val?.id)}
-                      renderInput={(params) => <TextField {...params} label="Material" required size="small" />}
-                    />
-                  )}
-                  <Stack direction="row" spacing={1.5}>
-                    <Button fullWidth variant="outlined" color="error" onClick={handleCancel} disabled={saving}>Batal</Button>
-                    <Button fullWidth variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving || !canSave}>
-                      {saving ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null} Simpan
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Box>
-            )}
 
             <Divider />
 
             {/* Operational Info */}
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 1 }}>Operational Details</Typography>
-              <Grid container spacing={1.25}>
-                <Grid item xs={12} sm={6}><InfoTile icon={<PersonIcon fontSize="small" />} label="Operator" value={item?.operator_nama ? `${item.operator_nama} (${item.operator_nik || "-"})` : "-"} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<BuildIcon fontSize="small" />} label="Kegiatan" value={item?.kegiatan_name} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<LocationOnIcon fontSize="small" />} label="Lokasi Pit" value={item?.lokasi_pit_nama} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<LocationOnIcon fontSize="small" />} label="Lokasi Site" value={item?.lokasi_site_nama} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Waktu Mulai" value={formatDateTime(item?.start_time)} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Waktu Selesai" value={formatDateTime(item?.finish_time)} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<BuildIcon fontSize="small" />} label="Material" value={item?.material_name} /></Grid>
-                <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Tanggal / Shift" value={item?.date_ops ? `${moment(item.date_ops).locale("id").format("dddd, DD MMM YYYY")} · Shift ${item.shift_id || "-"}` : "-"} /></Grid>
-              </Grid>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>Operational Details</Typography>
+                {!editingDetails && canUpdate && status !== "breakdown" && <Button size="small" startIcon={<EditOutlinedIcon />} onClick={handleEditDetails}>Edit</Button>}
+              </Stack>
+              {editingDetails ? (
+                <Stack spacing={1.5}>
+                  <Grid container spacing={1.25}>
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete options={operatorOptions} loading={operatorLoading} value={operatorOptions.find((option) => String(option.id) === String(details.operator_id)) || null} onChange={(_, value) => setDetail("operator_id", value?.id || "")} getOptionLabel={(option) => [option?.nama, option?.nik].filter(Boolean).join(" - ")} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Operator" />} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete options={detailKegiatanOptions} loading={kegiatanSWR.isLoading} value={selectedDetailKegiatan} onChange={(_, value) => setDetail("kegiatan_id", value?.id || "")} getOptionLabel={(option) => option?.legacy ? `${option.nama} (data saat ini)` : option?.nama || ""} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Kegiatan" helperText={detailKegiatanChanged && selectedDetailKegiatan ? `Status akan menjadi ${detailTargetStatus === "standby" ? "Standby" : "Beroperasi"}` : ""} />} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete options={pitOptions} loading={pitLoading} value={pitOptions.find((option) => String(option.id) === String(details.lokasi_pit_id)) || null} onChange={(_, value) => setDetail("lokasi_pit_id", value?.id || "")} getOptionLabel={(option) => option?.nama || ""} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Lokasi Pit" />} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete options={siteOptions} loading={siteLoading} value={siteOptions.find((option) => String(option.id) === String(details.lokasi_site_id)) || null} onChange={(_, value) => setDetail("lokasi_site_id", value?.id || "")} getOptionLabel={(option) => option?.nama || ""} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Lokasi Site" />} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}><TextField fullWidth required size="small" type="datetime-local" label="Waktu Mulai" value={details.start_time} onChange={(event) => setDetail("start_time", event.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid item xs={12} sm={6}><TextField fullWidth required size="small" type="datetime-local" label="Waktu Selesai" value={details.finish_time} onChange={(event) => setDetail("finish_time", event.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete options={materialOptions} loading={materialSWR.isLoading} value={materialOptions.find((option) => String(option.id) === String(details.material_id)) || null} onChange={(_, value) => setDetail("material_id", value?.id || "")} getOptionLabel={(option) => option?.nama || ""} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} size="small" label="Material (Opsional)" />} />
+                    </Grid>
+                    <Grid item xs={12} sm={3}><TextField fullWidth required size="small" type="date" label="Tanggal Operasional" value={details.date_ops} onChange={(event) => setDetail("date_ops", event.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid item xs={12} sm={3}>
+                      <Autocomplete options={shiftOptions} loading={shiftLoading} value={shiftOptions.find((option) => String(option.id) === String(details.shift_id)) || null} onChange={(_, value) => setDetail("shift_id", value?.id || "")} getOptionLabel={(option) => option?.nama || option?.kode || ""} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Shift" />} />
+                    </Grid>
+                  </Grid>
+                  <Stack direction="row" spacing={1.5}>
+                    <Button fullWidth variant="outlined" color="secondary" onClick={handleCancelDetails} disabled={saving}>Batal</Button>
+                    <Button fullWidth variant="contained" startIcon={<SaveIcon />} onClick={handleSaveDetails} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Perubahan"}</Button>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Grid container spacing={1.25}>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<PersonIcon fontSize="small" />} label="Operator" value={item?.operator_nama ? `${item.operator_nama} (${item.operator_nik || "-"})` : "-"} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<BuildIcon fontSize="small" />} label="Kegiatan" value={item?.kegiatan_name} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<LocationOnIcon fontSize="small" />} label="Lokasi Pit" value={item?.lokasi_pit_nama} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<LocationOnIcon fontSize="small" />} label="Lokasi Site" value={item?.lokasi_site_nama} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Waktu Mulai" value={formatDateTime(item?.start_time)} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Waktu Selesai" value={formatDateTime(item?.finish_time)} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<BuildIcon fontSize="small" />} label="Material" value={item?.material_name} /></Grid>
+                  <Grid item xs={12} sm={6}><InfoTile icon={<ScheduleIcon fontSize="small" />} label="Tanggal / Shift" value={item?.date_ops ? `${moment(item.date_ops).locale("id").format("dddd, DD MMM YYYY")} · Shift ${item.shift_id || "-"}` : "-"} /></Grid>
+                </Grid>
+              )}
             </Box>
 
             <Divider />

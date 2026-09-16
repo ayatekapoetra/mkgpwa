@@ -7,9 +7,12 @@ export const fleetAssignmentEndpoints = {
   access: '/operation/fleet-assignment/access',
   matrix: '/operation/fleet-assignment/matrix',
   summary: '/operation/fleet-assignment/summary',
+  eligibleEquipment: '/operation/fleet-assignment/eligible-equipment',
+  batchStandby: '/operation/fleet-assignment/batch-standby',
   status: '/operation/fleet-assignment/status',
   kegiatanOptions: '/operation/fleet-assignment/kegiatan-options',
   materialOptions: '/operation/fleet-assignment/material-options',
+  operationalDetails: '/operation/fleet-assignment/operational-details',
   audit: (equipmentId) => `/operation/fleet-assignment/${equipmentId}/audit`
 };
 
@@ -51,7 +54,8 @@ export const normalizeFleetSummary = (value) => {
     beroperasi: Number(payload.beroperasi ?? payload.working ?? 0),
     standby: Number(payload.standby ?? 0),
     breakdown: Number(payload.breakdown ?? 0),
-    total: Number(payload.total ?? (payload.beroperasi ?? payload.working ?? 0) + (payload.standby ?? 0) + (payload.breakdown ?? 0))
+    nostatus: Number(payload.nostatus ?? payload.no_status ?? 0),
+    total: Number(payload.total ?? (payload.beroperasi ?? payload.working ?? 0) + (payload.standby ?? 0) + (payload.breakdown ?? 0) + (payload.nostatus ?? payload.no_status ?? 0))
   };
 };
 
@@ -111,6 +115,27 @@ export function useFleetSummary(params = {}, enabled = true) {
   }), [swr]);
 }
 
+export function useFleetEligibleEquipment(params = {}, enabled = true) {
+  const swr = useFleetGet(fleetAssignmentEndpoints.eligibleEquipment, params, enabled);
+  return useMemo(() => {
+    const payload = unwrapFleetResponse(swr.data) || {};
+    return {
+      availability: {
+        ...payload,
+        data: Array.isArray(payload.data) ? payload.data : [],
+        total: Number(payload.total ?? 0),
+        eligible_total: Number(payload.eligible_total ?? 0)
+      },
+      ...swr
+    };
+  }, [swr]);
+}
+
+export async function createFleetStandbyBatch(payload) {
+  const response = await axiosServices.post(fleetAssignmentEndpoints.batchStandby, payload, onlineConfig);
+  return unwrapFleetResponse(response.data);
+}
+
 export async function revalidateFleetData() {
   await Promise.all([
     mutateCache((key) => Array.isArray(key) && String(key[0]).startsWith(fleetAssignmentEndpoints.matrix)),
@@ -147,6 +172,11 @@ export async function updateEquipmentStatus(itemId, status, reason, extra = {}) 
     },
     onlineConfig
   );
+  return unwrapFleetResponse(response.data);
+}
+
+export async function updateOperationalDetails(payload) {
+  const response = await axiosServices.post(fleetAssignmentEndpoints.operationalDetails, payload, onlineConfig);
   return unwrapFleetResponse(response.data);
 }
 

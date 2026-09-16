@@ -16,17 +16,18 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
-import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import SpeedIcon from "@mui/icons-material/Speed";
+import AddIcon from "@mui/icons-material/Add";
 
 import MainCard from "components/MainCard";
 import {
@@ -38,7 +39,6 @@ import {
 import {
   localDate,
   statusColor,
-  statusGradient,
   statusGlow,
   statusLabel,
   formatTime,
@@ -53,13 +53,15 @@ function SummaryCard({ summary, loading }) {
     { key: "beroperasi", label: "Beroperasi", caption: "Unit produktif", value: summary.beroperasi, icon: <CheckCircleIcon />, accent: "#16844a", soft: "#eaf8f0" },
     { key: "standby", label: "Standby", caption: "Menunggu aktivitas", value: summary.standby, icon: <WarningAmberIcon />, accent: "#c66b08", soft: "#fff5e5" },
     { key: "breakdown", label: "Breakdown", caption: "Perlu penanganan", value: summary.breakdown, icon: <ErrorOutlineIcon />, accent: "#c53c3c", soft: "#fff0ef" },
+    { key: "nostatus", label: "Tanpa Status", caption: "Belum dilaporkan", value: summary.nostatus, icon: <HelpOutlineIcon />, accent: "#68737d", soft: "#f0f3f5" },
     { key: "total", label: "Total Armada", caption: "Unit terpantau", value: summary.total, icon: <SpeedIcon />, accent: "#2767a8", soft: "#edf5ff" },
   ];
 
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 1 }}>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))", lg: "repeat(5, minmax(0, 1fr))" }, gap: 0.75 }}>
       {cards.map((card) => {
         const percentage = card.key === "total" ? (total > 0 ? 100 : 0) : total > 0 ? Math.round((Number(card.value) || 0) / total * 100) : 0;
+        const isTotal = card.key === "total";
         return (
           <Card
             key={card.key}
@@ -67,44 +69,40 @@ function SummaryCard({ summary, loading }) {
             sx={{
               background: `linear-gradient(145deg, #ffffff 0%, ${card.soft} 145%)`,
               color: "#17212b",
-              borderRadius: 2,
+              borderRadius: 1.5,
               position: "relative",
               overflow: "hidden",
               border: "1px solid rgba(28,43,56,0.09)",
-              boxShadow: "0 5px 16px rgba(24,39,52,0.07)",
+              boxShadow: isTotal ? "0 4px 12px rgba(39,103,168,0.12)" : "0 3px 10px rgba(24,39,52,0.06)",
+              gridColumn: { xs: isTotal ? "span 2" : "auto", sm: "auto" },
               transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
               "&::before": { content: '""', position: "absolute", inset: "0 auto 0 0", width: 4, bgcolor: card.accent },
-              "&::after": { content: '""', position: "absolute", width: 70, height: 70, borderRadius: "50%", right: -28, top: -35, bgcolor: card.soft, opacity: 0.9 },
-              "&:hover": { transform: "translateY(-3px)", borderColor: card.accent, boxShadow: "0 10px 25px rgba(24,39,52,0.12)" },
+              "&::after": { content: '""', position: "absolute", width: 48, height: 48, borderRadius: "50%", right: -19, top: -24, bgcolor: card.soft, opacity: 0.9 },
+              "&:hover": { transform: "translateY(-2px)", borderColor: card.accent, boxShadow: "0 7px 18px rgba(24,39,52,0.1)" },
             }}
           >
-            <CardContent sx={{ p: 1.35, pl: 1.65, position: "relative", zIndex: 1, "&:last-child": { pb: 1.35 } }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+            <CardContent sx={{ p: 1, pl: 1.35, position: "relative", zIndex: 1, "&:last-child": { pb: 1 } }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={0.75}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ color: "#65717c", fontSize: "0.62rem", fontWeight: 800, letterSpacing: 0.7, textTransform: "uppercase" }}>
+                  <Typography sx={{ color: "#65717c", fontSize: "0.58rem", fontWeight: 800, letterSpacing: 0.55, textTransform: "uppercase" }} noWrap>
                     {card.label}
                   </Typography>
-                  <Typography sx={{ color: "#929aa1", fontSize: "0.58rem", mt: 0.15 }} noWrap>
-                    {card.caption}
+                  <Typography sx={{ color: "#17212b", fontSize: "1.35rem", fontWeight: 900, lineHeight: 1.05, mt: 0.25, letterSpacing: -0.5 }}>
+                    {loading ? <CircularProgress size={16} sx={{ color: card.accent }} /> : card.value}
                   </Typography>
                 </Box>
-                <Box sx={{ width: 30, height: 30, borderRadius: 1.25, display: "grid", placeItems: "center", bgcolor: card.soft, color: card.accent, flexShrink: 0, "& svg": { fontSize: 17 } }}>
+                <Box sx={{ width: 28, height: 28, borderRadius: 1.15, display: "grid", placeItems: "center", bgcolor: card.soft, color: card.accent, flexShrink: 0, "& svg": { fontSize: 16 } }}>
                   {card.icon}
                 </Box>
               </Stack>
 
-              <Stack direction="row" alignItems="flex-end" justifyContent="space-between" sx={{ mt: 1 }}>
-                <Typography sx={{ color: "#17212b", fontSize: "1.65rem", fontWeight: 900, lineHeight: 0.95, letterSpacing: -0.7 }}>
-                  {loading ? <CircularProgress size={20} sx={{ color: card.accent }} /> : card.value}
-                </Typography>
-                <Typography sx={{ color: card.accent, fontSize: "0.62rem", fontWeight: 900 }}>
-                  {percentage}%
-                </Typography>
-              </Stack>
-
-              <Box sx={{ mt: 1.05, height: 3, borderRadius: 3, bgcolor: "rgba(31,46,59,0.08)", overflow: "hidden" }}>
+              <Box sx={{ mt: 0.7, height: 2, borderRadius: 3, bgcolor: "rgba(31,46,59,0.08)", overflow: "hidden" }}>
                 <Box sx={{ width: `${percentage}%`, height: "100%", borderRadius: 3, bgcolor: card.accent, transition: "width 0.35s ease" }} />
               </Box>
+              <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.35 }}>
+                <Typography sx={{ color: "#929aa1", fontSize: "0.52rem" }} noWrap>{card.caption}</Typography>
+                <Typography sx={{ color: card.accent, fontSize: "0.55rem", fontWeight: 900 }}>{percentage}%</Typography>
+              </Stack>
             </CardContent>
           </Card>
         );
@@ -116,93 +114,57 @@ function SummaryCard({ summary, loading }) {
 function EquipmentCard({ item, onClick }) {
   const status = String(item.status || "").toLowerCase();
   const color = statusColor(status);
-  const gradient = statusGradient(status);
   const glow = statusGlow(status);
   const code = item.equipment_abbr || item.equipment_kode || item.kode || item.code || item.kdunit || "-";
-  const isHE = String(item.equipment_kategori || item.ctgunit || "").toUpperCase() === "HE";
-  const Icon = isHE ? PrecisionManufacturingIcon : LocalShippingIcon;
-  const activity = item.kegiatan_name || "Belum ada kegiatan";
-  const operator = item.operator_nama || "Belum ada operator";
-  const tilt = (String(code).split("").reduce((total, char) => total + char.charCodeAt(0), 0) % 3 - 1) * 0.45;
+  const category = String(item.equipment_kategori || item.ctgunit || "-").toUpperCase();
+  const shortStatus = status === "beroperasi" ? "WORK" : status === "standby" ? "STAN" : status === "breakdown" ? "B-DOWN" : statusLabel(status).toUpperCase();
+  const background = status === "breakdown"
+    ? "linear-gradient(145deg, rgba(211,47,47,0.05), rgba(211,47,47,0.13))"
+    : "none";
 
   return (
-    <Box
-      role="button"
-      tabIndex={0}
-      aria-label={`Buka detail ${code}, status ${statusLabel(status)}`}
-      onClick={onClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }}
-      sx={{
-        background: "linear-gradient(145deg, #fffef9 0%, #f2eee1 100%)",
-        color: "#18232f",
-        borderRadius: "5px 5px 10px 10px",
-        minHeight: 100,
-        display: "flex",
-        flexDirection: "column",
-        cursor: "pointer",
-        position: "relative",
-        overflow: "hidden",
-        border: "1px solid rgba(41, 51, 62, 0.16)",
-        boxShadow: "0 2px 2px rgba(0,0,0,0.16), 0 9px 18px rgba(0,0,0,0.22)",
-        transform: `rotate(${tilt}deg)`,
-        transformOrigin: "50% 8px",
-        transition: "transform 0.22s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.22s ease",
-        "&:hover": { transform: "translateY(-5px) rotate(0deg)", boxShadow: `0 14px 28px rgba(0,0,0,0.3), ${glow}` },
-        "&:focus-visible": { outline: "3px solid", outlineColor: `${color}.light`, outlineOffset: 3, transform: "rotate(0deg)" },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 5,
-          background: gradient,
-          pointerEvents: "none",
-        },
-        "&::after": {
-          content: '""',
-          position: "absolute",
-          top: 9,
-          left: "50%",
-          width: 9,
-          height: 9,
-          borderRadius: "50%",
-          transform: "translateX(-50%)",
-          background: "radial-gradient(circle at 35% 30%, #fff 0%, #aeb5bb 28%, #4e5963 72%)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.45)",
-          zIndex: 2,
-        },
-      }}
-    >
-      <Box sx={{ px: 1.6, pt: 2.7, pb: 1.2, display: "flex", alignItems: "flex-start", gap: 1.2 }}>
-        <Box sx={{ width: 40, height: 40, flexShrink: 0, borderRadius: 1.5, background: gradient, display: "grid", placeItems: "center", color: "#fff", boxShadow: glow }}>
-          <Icon sx={{ fontSize: 23 }} />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography fontWeight={900} fontSize="1.05rem" lineHeight={1.15} noWrap sx={{ letterSpacing: 0.25 }}>
-            {code}
-          </Typography>
-          <Typography sx={{ color: "#69737c", fontSize: "0.68rem", mt: 0.3 }} noWrap>
-            {item.equipment_model || item.equipment_nama || (isHE ? "Heavy Equipment" : "Dump Truck")}
-          </Typography>
-        </Box>
+    <Tooltip title={`${item.equipment_model || item.equipment_nama || category} · ${item.kegiatan_name || "Belum ada kegiatan"} · ${formatTime(item.start_time)}-${formatTime(item.finish_time)}`} arrow>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-label={`Buka detail ${code}, status ${statusLabel(status)}`}
+        onClick={onClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }}
+        sx={{
+          height: 76,
+          minWidth: 0,
+          px: 0.7,
+          py: 0.85,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: 1.4,
+          border: 2,
+          borderColor: `${color}.main`,
+          background,
+          boxShadow: `0 3px 9px rgba(24,39,52,0.09), ${glow}`,
+          transition: "transform 0.16s ease, box-shadow 0.16s ease",
+          "&:hover": { transform: "translateY(-3px)", boxShadow: `0 8px 17px rgba(24,39,52,0.15), ${glow}` },
+          "&:focus-visible": { outline: "3px solid", outlineColor: `${color}.light`, outlineOffset: 2 },
+        }}
+      >
+        <Typography sx={{ position: "absolute", top: 4, right: 5, color: `${color}.dark`, fontSize: "0.48rem", fontWeight: 900 }}>{category}</Typography>
+        <Typography sx={{ width: "100%", textAlign: "center", fontSize: "0.72rem", fontWeight: 900, lineHeight: 1.1, mt: 0.3 }} noWrap>{code}</Typography>
+        <Typography sx={{ mt: 0.75, color: `${color}.dark`, fontSize: "0.58rem", fontWeight: 900, letterSpacing: 0.45 }}>{shortStatus}</Typography>
       </Box>
-
-      <Box sx={{ px: 1.6, py: 0.8, bgcolor: "rgba(38,50,61,0.055)", borderTop: "1px solid rgba(55,66,76,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography sx={{ color: "#778088", fontSize: "0.61rem", fontWeight: 700 }}>INTERVAL</Typography>
-        <Typography sx={{ fontFamily: "monospace", fontSize: "0.68rem", fontWeight: 800, letterSpacing: 0.2 }}>
-          {formatTime(item.start_time)} - {formatTime(item.finish_time)}
-        </Typography>
-      </Box>
-    </Box>
+    </Tooltip>
   );
 }
 
 function MatrixSkeleton() {
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)", xl: "repeat(4, 1fr)" }, gap: 2 }}>
-      {Array.from({ length: 15 }).map((_, i) => (
-        <Skeleton key={i} variant="rounded" height={188} sx={{ borderRadius: 1.5 }} />
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))", sm: "repeat(6, minmax(0, 1fr))", md: "repeat(8, minmax(0, 1fr))", lg: "repeat(12, minmax(0, 1fr))" }, gap: 0.8 }}>
+      {Array.from({ length: 24 }).map((_, i) => (
+        <Skeleton key={i} variant="rounded" height={76} sx={{ borderRadius: 1.4 }} />
       ))}
     </Box>
   );
@@ -277,65 +239,6 @@ export default function FleetAssignmentWorkspace() {
             Real-time equipment status matrix dari Daily Activity
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: "100%", md: "auto" } }}>
-          <Box
-            sx={{
-              width: quickSearchOpen ? { xs: "100%", sm: 270 } : 40,
-              flex: quickSearchOpen ? { xs: 1, md: "0 0 auto" } : "0 0 40px",
-              display: "flex",
-              justifyContent: "flex-end",
-              transition: "width 0.24s cubic-bezier(0.2,0.8,0.2,1)",
-            }}
-          >
-            {quickSearchOpen ? (
-              <TextField
-                autoFocus
-                fullWidth
-                size="small"
-                placeholder="Cari equipment / operator..."
-                value={quickSearch}
-                onChange={(e) => setQuickSearch(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setQuickSearchOpen(false)} aria-label="Tutup pencarian">
-                        <CloseIcon sx={{ fontSize: 17 }} />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 5, bgcolor: "background.paper", pr: 0.4 },
-                }}
-              />
-            ) : (
-              <IconButton
-                aria-label="Buka pencarian equipment"
-                onClick={() => setQuickSearchOpen(true)}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  border: 1,
-                  borderColor: quickSearch ? "primary.main" : "divider",
-                  bgcolor: quickSearch ? "primary.main" : "background.paper",
-                  color: quickSearch ? "primary.contrastText" : "text.secondary",
-                  boxShadow: quickSearch ? "0 5px 14px rgba(25,118,210,0.25)" : "none",
-                  "&:hover": { bgcolor: quickSearch ? "primary.dark" : "action.hover" },
-                }}
-              >
-                <SearchIcon fontSize="small" />
-              </IconButton>
-            )}
-          </Box>
-          <Badge color="primary" variant="dot" invisible={activeFilterCount === 0}>
-            <Button variant="outlined" startIcon={<FilterListIcon />} onClick={() => setFilterOpen(true)} sx={{ borderRadius: 2, px: 2.5, whiteSpace: "nowrap" }}>
-              Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-            </Button>
-          </Badge>
-        </Stack>
       </Stack>
 
       <FleetAssignmentFilter
@@ -351,10 +254,71 @@ export default function FleetAssignmentWorkspace() {
 
       {enabled && (
         <MainCard
-          divider={false}
+          title={(
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/fleet-assignment/create")} disabled={!access.permissions.insert} sx={{ borderRadius: 1.5, whiteSpace: "nowrap" }}>
+              Add Data
+            </Button>
+          )}
+          secondary={(
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" sx={{ width: "100%" }}>
+              <Box
+                sx={{
+                  width: quickSearchOpen ? { xs: "100%", sm: 270 } : 40,
+                  flex: quickSearchOpen ? { xs: 1, sm: "0 0 auto" } : "0 0 40px",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  transition: "width 0.24s cubic-bezier(0.2,0.8,0.2,1)",
+                }}
+              >
+                {quickSearchOpen ? (
+                  <TextField
+                    autoFocus
+                    fullWidth
+                    size="small"
+                    placeholder="Cari equipment / operator..."
+                    value={quickSearch}
+                    onChange={(e) => setQuickSearch(e.target.value)}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: "text.secondary" }} /></InputAdornment>,
+                      endAdornment: <InputAdornment position="end"><IconButton size="small" onClick={() => setQuickSearchOpen(false)} aria-label="Tutup pencarian"><CloseIcon sx={{ fontSize: 17 }} /></IconButton></InputAdornment>,
+                      sx: { borderRadius: 5, bgcolor: "background.paper", pr: 0.4 },
+                    }}
+                  />
+                ) : (
+                  <IconButton
+                    aria-label="Buka pencarian equipment"
+                    onClick={() => setQuickSearchOpen(true)}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      border: 1,
+                      borderColor: quickSearch ? "primary.main" : "divider",
+                      bgcolor: quickSearch ? "primary.main" : "background.paper",
+                      color: quickSearch ? "primary.contrastText" : "text.secondary",
+                      boxShadow: quickSearch ? "0 5px 14px rgba(25,118,210,0.25)" : "none",
+                      "&:hover": { bgcolor: quickSearch ? "primary.dark" : "action.hover" },
+                    }}
+                  >
+                    <SearchIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+              <Badge color="primary" variant="dot" invisible={activeFilterCount === 0}>
+                <Button variant="outlined" startIcon={<FilterListIcon />} onClick={() => setFilterOpen(true)} sx={{ borderRadius: 1.5, px: { xs: 1.5, sm: 2.5 }, whiteSpace: "nowrap" }}>
+                  Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+                </Button>
+              </Badge>
+            </Stack>
+          )}
+          divider
           contentSX={{ p: 0, "&:last-child": { pb: 0 } }}
+          sx={{
+            "& .MuiCardHeader-root": { p: { xs: 1.5, sm: 2 }, flexWrap: { xs: "wrap", sm: "nowrap" }, gap: 1 },
+            "& .MuiCardHeader-content": { flex: { xs: "1 0 auto", sm: "1 1 auto" } },
+            "& .MuiCardHeader-action": { width: { xs: "100%", sm: "auto" }, ml: { xs: 0, sm: "auto" } },
+          }}
         >
-          <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+          <Box sx={{ p: { xs: 1, sm: 1.25 } }}>
             <SummaryCard summary={summary.summary} loading={summary.isLoading} />
           </Box>
           <Divider />
@@ -378,15 +342,10 @@ export default function FleetAssignmentWorkspace() {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" },
-                  gap: { xs: 2, md: 2.4 },
-                  p: { xs: 2, md: 3 },
+                  gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))", sm: "repeat(6, minmax(0, 1fr))", md: "repeat(8, minmax(0, 1fr))", lg: "repeat(12, minmax(0, 1fr))" },
+                  gap: 0.8,
+                  p: { xs: 0.5, md: 1 },
                   borderRadius: 2.5,
-                  // backgroundColor: "#26343d",
-                  // backgroundImage: "radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1px), linear-gradient(135deg, rgba(255,255,255,0.025), transparent 55%)",
-                  // backgroundSize: "12px 12px, 100% 100%",
-                  // border: "8px solid #46545c",
-                  // boxShadow: "inset 0 0 0 2px rgba(0,0,0,0.3), inset 0 12px 30px rgba(0,0,0,0.18), 0 8px 24px rgba(20,30,38,0.16)",
                 }}
               >
                 {filteredData.map((item, index) => (
@@ -406,6 +365,7 @@ export default function FleetAssignmentWorkspace() {
         item={selectedItem}
         open={Boolean(selectedItem)}
         onClose={() => setSelectedItem(null)}
+        canUpdate={access.permissions.update}
       />
     </Stack>
   );
