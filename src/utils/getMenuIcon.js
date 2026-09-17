@@ -25,10 +25,8 @@ import {
   Shield,
   ShieldTick,
   Book,
-  Permission,
   Category,
   Windows,
-  Home,
   Home2,
   House2,
   HomeTrendUp,
@@ -64,6 +62,8 @@ import {
   SearchStatus,
   UsdCoin,
   TruckTick,
+  Hospital,
+  Lifebuoy
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -144,6 +144,8 @@ const iconMap = {
   SearchStatus: SearchStatus,
   UsdCoin: UsdCoin,
   TruckTick: TruckTick,
+  Hospital: Hospital,
+  Lifebuoy: Lifebuoy,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,
