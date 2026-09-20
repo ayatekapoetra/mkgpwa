@@ -197,7 +197,7 @@ export default function FleetAssignmentWorkspace() {
   const matrixParams = useMemo(() => ({
     date_ops: scope.date_ops, shift_id: scope.shift_id, area: scope.area,
     lokasi_site_id: scope.lokasi_site_id, ctgunit: scope.ctgunit,
-    status: scope.status, search: scope.search, perPage: 1000,
+    status: scope.status, search: scope.search,
   }), [scope]);
 
   const summaryParams = useMemo(() => ({

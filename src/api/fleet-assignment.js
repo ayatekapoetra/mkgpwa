@@ -36,15 +36,12 @@ export const normalizeFleetPermissions = (value) => {
   });
 };
 
-export const normalizeFleetMatrix = (value, fallbackPerPage = 25) => {
+export const normalizeFleetMatrix = (value) => {
   const payload = unwrapFleetResponse(value) || {};
   const data = Array.isArray(payload) ? payload : Array.isArray(payload.data) ? payload.data : Array.isArray(payload.rows) ? payload.rows : [];
   return {
     data,
-    total: Number(payload.total ?? data.length),
-    page: Number(payload.page ?? 1),
-    perPage: Number(payload.perPage ?? payload.per_page ?? fallbackPerPage),
-    lastPage: Number(payload.lastPage ?? payload.last_page ?? 1)
+    total: Number(payload.total ?? data.length)
   };
 };
 
@@ -102,9 +99,9 @@ export function useFleetAssignmentAccess() {
 export function useFleetMatrix(params = {}, enabled = true) {
   const swr = useFleetGet(fleetAssignmentEndpoints.matrix, params, enabled, true);
   return useMemo(() => ({
-    matrix: normalizeFleetMatrix(swr.data, params.perPage),
+    matrix: normalizeFleetMatrix(swr.data),
     ...swr
-  }), [params.perPage, swr]);
+  }), [swr]);
 }
 
 export function useFleetSummary(params = {}, enabled = true) {
