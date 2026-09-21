@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSnackbar } from "notistack";
 import moment from "moment";
 import "moment/locale/id";
@@ -233,6 +234,7 @@ export default function EquipmentDetailDrawer({ item, open, onClose, canUpdate =
 
   const code = item?.equipment_abbr || item?.equipment_kode || item?.kode || "-";
   const status = String(item?.status || "").toLowerCase();
+  const breakdownHref = item?.daily_breakdown_id ? `/daily-breakdown/${item.daily_breakdown_id}` : "";
   const color = statusColor(status);
   const gradient = statusGradient(status);
   const glow = statusGlow(status);
@@ -282,20 +284,40 @@ export default function EquipmentDetailDrawer({ item, open, onClose, canUpdate =
             {/* Status Switcher */}
             <Box>
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 1 }}>Status Equipment</Typography>
-              <ToggleButtonGroup value={statusSwitch} exclusive onChange={handleStatusSelect} fullWidth disabled={saving || editingDetails || !canUpdate} sx={{ gap: 1, position: "relative", "& .MuiToggleButtonGroup-grouped": { mr: 1, border: 1, borderColor: "divider", borderRadius: "8px !important", "&:last-child": { mr: 0 } }, "& .MuiToggleButton-root": { py: 1.25, fontWeight: 700, gap: 0.75, textTransform: "none", fontSize: "0.875rem" } }}>
-                {saving && <Backdrop open sx={{ position: "absolute", zIndex: 1, bgcolor: "rgba(255,255,255,0.6)", borderRadius: 2 }}><CircularProgress size={24} /></Backdrop>}
-                <ToggleButton value="beroperasi" sx={{ "&.Mui-selected": { bgcolor: "success.main", color: "#fff", "&:hover": { bgcolor: "success.dark" } } }}><CheckCircleIcon fontSize="small" /> Beroperasi</ToggleButton>
-                <ToggleButton value="standby" sx={{ "&.Mui-selected": { bgcolor: "warning.main", color: "#fff", "&:hover": { bgcolor: "warning.dark" } } }}><WarningAmberIcon fontSize="small" /> Standby</ToggleButton>
-                <ToggleButton value="breakdown" disabled={!breakdownAllowed} sx={{ "&.Mui-selected": { bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" } } }}><ErrorOutlineIcon fontSize="small" /> Breakdown</ToggleButton>
-              </ToggleButtonGroup>
-              {!breakdownAllowed && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                  Breakdown hanya dapat dibuat ketika waktu sekarang berada dalam interval aktivitas equipment.
-                </Typography>
+              {status === "breakdown" ? (
+                <Stack spacing={1.5}>
+                  <Alert severity={breakdownHref ? "info" : "warning"}>
+                    {breakdownHref
+                      ? "Equipment sedang Breakdown. Perubahan ke Beroperasi atau Standby harus diproses melalui Daily Breakdown aktif terbaru agar penyelesaian pekerjaan dan waktu ready tercatat."
+                      : "Data Daily Breakdown aktif untuk equipment ini tidak ditemukan. Hubungi administrator sebelum mengubah status equipment."}
+                  </Alert>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    <Button fullWidth variant="contained" color="success" startIcon={<CheckCircleIcon />} component={breakdownHref ? Link : "button"} href={breakdownHref || undefined} disabled={!canUpdate || !breakdownHref}>
+                      Proses ke Beroperasi
+                    </Button>
+                    <Button fullWidth variant="contained" color="warning" startIcon={<WarningAmberIcon />} component={breakdownHref ? Link : "button"} href={breakdownHref || undefined} disabled={!canUpdate || !breakdownHref}>
+                      Proses ke Standby
+                    </Button>
+                  </Stack>
+                </Stack>
+              ) : (
+                <>
+                  <ToggleButtonGroup value={statusSwitch} exclusive onChange={handleStatusSelect} fullWidth disabled={saving || editingDetails || !canUpdate} sx={{ gap: 1, position: "relative", "& .MuiToggleButtonGroup-grouped": { mr: 1, border: 1, borderColor: "divider", borderRadius: "8px !important", "&:last-child": { mr: 0 } }, "& .MuiToggleButton-root": { py: 1.25, fontWeight: 700, gap: 0.75, textTransform: "none", fontSize: "0.875rem" } }}>
+                    {saving && <Backdrop open sx={{ position: "absolute", zIndex: 1, bgcolor: "rgba(255,255,255,0.6)", borderRadius: 2 }}><CircularProgress size={24} /></Backdrop>}
+                    <ToggleButton value="beroperasi" sx={{ "&.Mui-selected": { bgcolor: "success.main", color: "#fff", "&:hover": { bgcolor: "success.dark" } } }}><CheckCircleIcon fontSize="small" /> Beroperasi</ToggleButton>
+                    <ToggleButton value="standby" sx={{ "&.Mui-selected": { bgcolor: "warning.main", color: "#fff", "&:hover": { bgcolor: "warning.dark" } } }}><WarningAmberIcon fontSize="small" /> Standby</ToggleButton>
+                    <ToggleButton value="breakdown" disabled={!breakdownAllowed} sx={{ "&.Mui-selected": { bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" } } }}><ErrorOutlineIcon fontSize="small" /> Breakdown</ToggleButton>
+                  </ToggleButtonGroup>
+                  {!breakdownAllowed && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                      Breakdown hanya dapat dibuat ketika waktu sekarang berada dalam interval aktivitas equipment.
+                    </Typography>
+                  )}
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                    Status Beroperasi atau Standby mengikuti Kegiatan yang dipilih melalui Edit Operational Details.
+                  </Typography>
+                </>
               )}
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                Status Beroperasi atau Standby mengikuti Kegiatan yang dipilih melalui Edit Operational Details.
-              </Typography>
             </Box>
 
             <Divider />

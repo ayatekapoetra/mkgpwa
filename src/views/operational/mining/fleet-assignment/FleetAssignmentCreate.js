@@ -63,6 +63,7 @@ const CATEGORIES = [
   { id: 'explorasi', nama: 'EXPLORASI' }
 ];
 const EMPTY_MASTERS = { sites: [], pits: [], contractors: [], _failed: [] };
+const INPUT_SX = { '& .MuiInputBase-root': { height: 40 } };
 const REASON_LABELS = {
   MOBILIZATION_NOT_ARRIVED: 'Mobilisasi belum tiba di tujuan',
   ALREADY_ASSIGNED: 'Sudah memiliki status pada shift ini',
@@ -81,7 +82,7 @@ function MasterAutocomplete({ label, options, value, onChange, required = false,
       getOptionLabel={optionLabel}
       isOptionEqualToValue={(option, current) => String(option.id) === String(current.id)}
       disabled={disabled}
-      renderInput={(params) => <TextField {...params} label={label} required={required} />}
+      renderInput={(params) => <TextField {...params} size="small" label={label} required={required} sx={INPUT_SX} />}
     />
   );
 }
@@ -102,6 +103,7 @@ function Metric({ label, value, color, icon }) {
 
 function EquipmentOption({ equipment, selected, onToggle }) {
   const eligible = equipment.eligible;
+  const isBreakdown = equipment.default_status === 'breakdown';
   const isHE = equipment.kategori === 'HE';
   const Icon = isHE ? ConstructionOutlinedIcon : LocalShippingOutlinedIcon;
   const code = equipment.abbr || equipment.kode || equipment.id;
@@ -126,13 +128,14 @@ function EquipmentOption({ equipment, selected, onToggle }) {
         position: 'relative',
         p: 1.4,
         cursor: eligible ? 'pointer' : 'not-allowed',
-        borderColor: selected ? 'primary.main' : 'divider',
-        bgcolor: selected ? 'primary.lighter' : eligible ? 'background.paper' : 'action.disabledBackground',
+        borderWidth: 1,
+        borderColor: isBreakdown ? 'error.main' : selected ? 'primary.main' : 'divider',
+        bgcolor: selected ? (isBreakdown ? 'error.lighter' : 'primary.lighter') : eligible ? 'background.paper' : 'action.disabledBackground',
         opacity: eligible ? 1 : 0.68,
-        boxShadow: selected ? '0 7px 18px rgba(24,118,210,0.14)' : 'none',
+        boxShadow: selected ? (isBreakdown ? '0 7px 18px rgba(211,47,47,0.16)' : '0 7px 18px rgba(24,118,210,0.14)') : 'none',
         transition: 'transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease',
-        '&:hover': eligible ? { transform: 'translateY(-2px)', borderColor: 'primary.main', boxShadow: '0 8px 20px rgba(35,52,68,0.1)' } : {},
-        '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light', outlineOffset: 2 }
+        '&:hover': eligible ? { transform: 'translateY(-2px)', borderColor: isBreakdown ? 'error.dark' : 'primary.main', boxShadow: isBreakdown ? '0 8px 20px rgba(211,47,47,0.16)' : '0 8px 20px rgba(35,52,68,0.1)' } : {},
+        '&:focus-visible': { outline: '3px solid', outlineColor: isBreakdown ? 'error.light' : 'primary.light', outlineOffset: 2 }
       }}
     >
       <Stack direction="row" spacing={1.2} alignItems="flex-start">
@@ -151,7 +154,7 @@ function EquipmentOption({ equipment, selected, onToggle }) {
             <Chip size="small" label={equipment.kategori} color={isHE ? 'secondary' : 'primary'} variant="outlined" sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800 }} />
             {eligible ? (
               <Typography variant="caption" color={equipment.default_status === 'breakdown' ? 'error.main' : 'success.main'} fontWeight={700}>
-                {equipment.default_status === 'breakdown' ? 'Akan dibuat Breakdown' : 'Siap ditambahkan'}
+                {equipment.default_status === 'breakdown' ? 'Breakdown' : 'Ready Operation'}
               </Typography>
             ) : (
               <Typography variant="caption" color="warning.dark" noWrap title={reason}>{reason}</Typography>
@@ -191,7 +194,7 @@ export default function FleetAssignmentCreate() {
     lokasi_site_id: header.lokasi_site_id,
     lokasi_pit_id: header.lokasi_pit_id
   }), [header.date_ops, header.shift_id, header.lokasi_pit_id, header.lokasi_site_id]);
-  const contextComplete = Object.values(availabilityParams).every(Boolean);
+  const contextComplete = Boolean(header.date_ops && header.shift_id && header.lokasi_site_id);
   const equipmentQuery = useFleetEligibleEquipment(availabilityParams, access.permissions.read && contextComplete);
   const equipment = equipmentQuery.availability.data;
 
@@ -257,7 +260,7 @@ export default function FleetAssignmentCreate() {
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ position: 'relative' }}>
           <Box>
             <Stack direction="row" spacing={1} alignItems="center"><AddTaskOutlinedIcon /><Typography variant="h3" color="inherit">Standby Initialization</Typography></Stack>
-            <Typography sx={{ mt: 0.7, color: 'rgba(255,255,255,0.72)', maxWidth: 650 }}>Pilih armada di lokasi penyewa. Unit baru disiapkan sebagai Standby, sementara unit Breakdown tetap dilanjutkan sebagai Breakdown.</Typography>
+            <Typography sx={{ mt: 0.7, color: 'rgba(255,255,255,0.72)', maxWidth: 650 }}>Pilih armada di lokasi penyewa. Unit baru disiapkan sebagai Standby, sementara unit dengan Daily Breakdown aktif tetap dilanjutkan sebagai Breakdown.</Typography>
           </Box>
           <Stack direction="row" spacing={1}>
             <Metric label="Dipilih" value={selectedIds.length} color="#81d4fa" icon={<CheckCircleOutlineIcon />} />
@@ -271,12 +274,12 @@ export default function FleetAssignmentCreate() {
 
       <MainCard title="Informasi Operasional" subheader="Konteks ini digunakan untuk mencari posisi terakhir equipment dan membentuk header Daily Activity.">
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} lg={3}><TextField fullWidth required type="date" label="Tanggal Operasional" value={header.date_ops} onChange={(event) => updateHeader({ date_ops: event.target.value })} InputLabelProps={{ shrink: true }} /></Grid>
-          <Grid item xs={12} sm={6} lg={3}><FormControl fullWidth required><InputLabel>Shift</InputLabel><Select label="Shift" value={header.shift_id} onChange={(event) => updateHeader({ shift_id: String(event.target.value) })}><MenuItem value="1">Siang</MenuItem><MenuItem value="2">Malam</MenuItem></Select></FormControl></Grid>
+          <Grid item xs={12} sm={6} lg={3}><TextField fullWidth required size="small" type="date" label="Tanggal Operasional" value={header.date_ops} onChange={(event) => updateHeader({ date_ops: event.target.value })} InputLabelProps={{ shrink: true }} sx={INPUT_SX} /></Grid>
+          <Grid item xs={12} sm={6} lg={3}><FormControl fullWidth required size="small" sx={INPUT_SX}><InputLabel>Shift</InputLabel><Select label="Shift" value={header.shift_id} onChange={(event) => updateHeader({ shift_id: String(event.target.value) })}><MenuItem value="1">Siang</MenuItem><MenuItem value="2">Malam</MenuItem></Select></FormControl></Grid>
           <Grid item xs={12} sm={6} lg={3}><MasterAutocomplete required label="Site Penyewa" options={masters.sites || []} value={header.lokasi_site_id} disabled={mastersLoading} onChange={(option) => updateHeader({ lokasi_site_id: String(option?.id || '') })} /></Grid>
           <Grid item xs={12} sm={6} lg={3}><MasterAutocomplete required label="Lokasi Pit" options={masters.pits || []} value={header.lokasi_pit_id} disabled={mastersLoading} onChange={(option) => updateHeader({ lokasi_pit_id: String(option?.id || '') })} /></Grid>
           <Grid item xs={12} sm={6} lg={4}><MasterAutocomplete required label="Kontraktor" options={masters.contractors || []} value={header.kontraktor_id} disabled={mastersLoading} onChange={(option) => updateHeader({ kontraktor_id: String(option?.id || '') })} /></Grid>
-          <Grid item xs={12} sm={6} lg={4}><FormControl fullWidth required><InputLabel>Cuaca</InputLabel><Select label="Cuaca" value={header.cuaca} onChange={(event) => updateHeader({ cuaca: event.target.value })}>{WEATHER.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}</Select></FormControl></Grid>
+          <Grid item xs={12} sm={6} lg={4}><FormControl fullWidth required size="small" sx={INPUT_SX}><InputLabel>Cuaca</InputLabel><Select label="Cuaca" value={header.cuaca} onChange={(event) => updateHeader({ cuaca: event.target.value })}>{WEATHER.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}</Select></FormControl></Grid>
           <Grid item xs={12} sm={6} lg={4}><MasterAutocomplete required label="Kategori Kegiatan" options={CATEGORIES} value={header.category_id} onChange={(option) => updateHeader({ category_id: option?.id || '' })} /></Grid>
           <Grid item xs={12}><TextField fullWidth multiline minRows={2} label="Catatan Umum" value={header.notes} onChange={(event) => updateHeader({ notes: event.target.value })} /></Grid>
         </Grid>
@@ -285,11 +288,11 @@ export default function FleetAssignmentCreate() {
       <MainCard
         sx={{ mt: 2 }}
         title="Pilih Equipment"
-        subheader={contextComplete ? `${equipmentQuery.availability.eligible_total} dari ${equipmentQuery.availability.total} unit tersedia` : 'Lengkapi tanggal, shift, site, dan lokasi Pit untuk memuat equipment.'}
+        subheader={contextComplete ? `${equipmentQuery.availability.eligible_total} dari ${equipmentQuery.availability.total} unit tersedia` : 'Lengkapi tanggal, shift, dan site penyewa untuk memuat equipment.'}
         secondary={contextComplete && <Chip icon={<LocationOnOutlinedIcon />} label={equipmentQuery.availability.site?.nama || 'Memuat lokasi...'} color="primary" variant="outlined" />}
       >
         {!contextComplete ? (
-          <Box sx={{ py: 7, textAlign: 'center' }}><LocationOnOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} /><Typography color="text.secondary" sx={{ mt: 1 }}>Equipment akan muncul setelah konteks lokasi lengkap.</Typography></Box>
+          <Box sx={{ py: 7, textAlign: 'center' }}><LocationOnOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} /><Typography color="text.secondary" sx={{ mt: 1 }}>Equipment akan muncul setelah tanggal, shift, dan site penyewa dipilih.</Typography></Box>
         ) : equipmentQuery.error ? (
           <Alert severity="error">{fleetErrorMessage(equipmentQuery.error, 'Gagal memuat equipment pada penyewa terpilih.')}</Alert>
         ) : (
