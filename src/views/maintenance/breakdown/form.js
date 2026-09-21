@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import moment from 'moment';
 import 'moment/locale/id';
 import {
@@ -45,6 +46,8 @@ const emptyForm = {
   lokasi_id: '',
   breakdown_at: '',
   smu: '',
+  status: 0,
+  ready_at: '',
   hmkm_start: '',
   hmkm_end: '',
   shift_id: '',
@@ -55,6 +58,13 @@ const emptyForm = {
 };
 
 const EMPTY_MASTERS = { cabangs: [], equipments: [], lokasis: [], penyewas: [], shifts: [], pengawases: [] };
+
+const BREAKDOWN_STATUS_OPTIONS = [
+  { code: 0, label: 'Tunggu Teknisi' },
+  { code: 1, label: 'Tunggu Spare Part' },
+  { code: 8, label: 'In Progress' },
+  { code: 9, label: 'Selesai' }
+];
 
 export default function BreakdownForm({ headerId }) {
   const router = useRouter();
@@ -92,11 +102,17 @@ export default function BreakdownForm({ headerId }) {
   useEffect(() => {
     if (isEdit && detail) {
       const m = parseApiDate(detail.breakdown_at);
+      const latestReadyAt = (detail.items || [])
+        .map((item) => parseApiDate(item.ready_at))
+        .filter(Boolean)
+        .sort((a, b) => b.valueOf() - a.valueOf())[0];
       setForm({
         equipment_id: detail.equipment_id || '',
         lokasi_id: detail.lokasi_id || '',
         breakdown_at: m ? m.format('YYYY-MM-DDTHH:mm') : '',
         smu: detail.smu || '',
+        status: Number(detail.status ?? 0),
+        ready_at: latestReadyAt ? latestReadyAt.format('YYYY-MM-DDTHH:mm') : '',
         hmkm_start: detail.hmkm_start || '',
         hmkm_end: detail.hmkm_end || '',
         shift_id: detail.shift_id || '',
@@ -149,6 +165,10 @@ export default function BreakdownForm({ headerId }) {
       shift_id: form.shift_id || undefined,
       pengawas_id: form.pengawas_id || undefined,
       smu: form.smu ? Number(form.smu) : undefined,
+      ...(isEdit ? { status: Number(form.status) } : {}),
+      ...(isEdit && Number(form.status) === 9 && form.ready_at
+        ? { ready_at: moment(form.ready_at).format('YYYY-MM-DD HH:mm:ss') }
+        : {}),
       hmkm_start: form.hmkm_start ? Number(form.hmkm_start) : undefined,
       hmkm_end: form.hmkm_end ? Number(form.hmkm_end) : undefined,
       items: form.items
@@ -164,6 +184,11 @@ export default function BreakdownForm({ headerId }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isEdit && Number(form.status) === 9 && !form.ready_at) {
+      setErrors((current) => ({ ...current, ready_at: 'Waktu ready wajib diisi untuk status Selesai' }));
+      openNotification({ open: true, message: 'Waktu ready wajib diisi', alert: { color: 'warning', variant: 'filled' }, variant: 'alert' });
+      return;
+    }
     const validation = validateBreakdownForm(form);
     if (!validation.isValid) {
       setErrors(validation.errors);
@@ -175,7 +200,10 @@ export default function BreakdownForm({ headerId }) {
     try {
       const payload = buildPayload();
       if (isEdit) {
-        await updateDailyBreakdown(headerId, payload);
+        const updated = await updateDailyBreakdown(headerId, payload);
+        if (Number(updated?.status) !== payload.status) {
+          throw new Error('Status breakdown tidak tersimpan sesuai pilihan');
+        }
         openNotification({ open: true, message: 'Breakdown berhasil diupdate', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
       } else {
         await createDailyBreakdown(payload);
@@ -217,6 +245,20 @@ export default function BreakdownForm({ headerId }) {
 
       {(!isEdit || (!dataLoading && detail)) && (
         <form onSubmit={handleSubmit}>
+          {isEdit && (
+            <Alert
+              severity="info"
+              sx={{ mb: 2 }}
+              action={
+                <Button component={Link} href={`/daily-breakdown/${headerId}`} color="inherit" size="small">
+                  Kelola Work Order
+                </Button>
+              }
+            >
+              Status otomatis menjadi Selesai setelah seluruh Work Order berstatus DONE, atau dapat dioverride melalui pilihan Status Breakdown.
+            </Alert>
+          )}
+
           <MainCard title="Informasi Peralatan" sx={{ mb: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={4}>
@@ -359,16 +401,59 @@ export default function BreakdownForm({ headerId }) {
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  label="SMU"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  value={form.smu}
-                  onChange={(e) => setField('smu', e.target.value)}
-                  placeholder="0"
-                />
+                {isEdit ? (
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Status Breakdown</InputLabel>
+                    <Select
+                      label="Status Breakdown"
+                      value={form.status}
+                      onChange={(e) => {
+                        const status = Number(e.target.value);
+                        setForm((current) => ({
+                          ...current,
+                          status,
+                          ready_at: status === 9 ? current.ready_at || moment().format('YYYY-MM-DDTHH:mm') : ''
+                        }));
+                      }}
+                    >
+                      {BREAKDOWN_STATUS_OPTIONS.map((option) => (
+                        <MenuItem key={option.code} value={option.code}>
+                          {option.code} - {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Override status header breakdown secara manual
+                    </Typography>
+                  </FormControl>
+                ) : (
+                  <TextField
+                    label="SMU"
+                    type="number"
+                    size="small"
+                    fullWidth
+                    value={form.smu}
+                    onChange={(e) => setField('smu', e.target.value)}
+                    placeholder="0"
+                  />
+                )}
               </Grid>
+              {isEdit && Number(form.status) === 9 && (
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    label="Waktu Ready"
+                    type="datetime-local"
+                    size="small"
+                    fullWidth
+                    required
+                    InputLabelProps={{ shrink: true }}
+                    value={form.ready_at}
+                    onChange={(e) => setField('ready_at', e.target.value)}
+                    error={!!errors.ready_at}
+                    helperText={errors.ready_at || 'Menjadi akhir breakdown dan awal activity standby'}
+                  />
+                </Grid>
+              )}
             </Grid>
           </MainCard>
 
@@ -418,13 +503,18 @@ export default function BreakdownForm({ headerId }) {
                       <Grid item xs={12} md={3}>
                         <FormControl fullWidth size="small">
                           <InputLabel>Status Item</InputLabel>
-                          <Select label="Status Item" value={item.status} onChange={(e) => updateItem(index, 'status', e.target.value)}>
+                          <Select label="Status Item" value={item.status} disabled={isEdit} onChange={(e) => updateItem(index, 'status', e.target.value)}>
                             {ITEM_STATUS.map((opt) => (
                               <MenuItem key={opt.code} value={opt.code}>
                                 {opt.label}
                               </MenuItem>
                             ))}
                           </Select>
+                          {isEdit && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                              Status dikelola melalui Work Order
+                            </Typography>
+                          )}
                         </FormControl>
                       </Grid>
                     </Grid>
