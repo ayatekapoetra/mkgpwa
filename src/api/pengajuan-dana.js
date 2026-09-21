@@ -72,7 +72,7 @@ const normalizeList = (payload, params = {}) => {
 
 export const usePengajuanDanaAccess = () => {
   const { data, error, isLoading, isValidating, mutate } = useSWR(endpoints.access, fetcher, {
-    revalidateIfStale: false,
+    revalidateIfStale: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: true
   });
@@ -116,7 +116,7 @@ export const useGetPengajuanDana = (params = {}, enabled = true) => {
 
 export const useShowPengajuanDana = (id, enabled = true) => {
   const { data, error, isLoading, isValidating, mutate } = useSWR(id && enabled ? endpoints.detail(id) : null, fetcher, {
-    revalidateIfStale: false,
+    revalidateIfStale: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
   });
@@ -135,7 +135,7 @@ export const useShowPengajuanDana = (id, enabled = true) => {
 
 export const usePengajuanDanaPermissions = (id, enabled = true) => {
   const { data, error, isLoading, isValidating, mutate } = useSWR(id && enabled ? endpoints.permissions(id) : null, fetcher, {
-    revalidateIfStale: false,
+    revalidateIfStale: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
   });

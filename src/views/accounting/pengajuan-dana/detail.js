@@ -315,6 +315,8 @@ export default function PengajuanDanaDetailPage() {
     return <ErrorScreen error={{ message: 'Data pengajuan tidak ditemukan' }} variant="data" showDetails={false} />;
   }
 
+  console.log('permissions-----', permissions);
+  
   return (
     <Fragment>
       <Breadcrumbs custom heading="Detail Pengajuan Dana" links={breadcrumbLinks} />
