@@ -35,9 +35,9 @@ const PANELS = [
   },
   {
     slug: 'produksi',
-    href: '/panel/produksi',
-    title: 'Produksi',
-    description: 'Ringkasan panel produksi dan indikator ritase operasional.',
+    href: '/panel/fleet-monitoring',
+    title: 'Fleet Monitoring',
+    description: 'Ringkasan panel fleet dan indikator equipment operasional.',
     category: 'Produksi',
     color: 'primary',
     icon: TruckFast

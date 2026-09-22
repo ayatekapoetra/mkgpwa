@@ -64,21 +64,22 @@ const makeQuery = (endpoint, params) => {
   return `${endpoint}${query ? `?${query}` : ''}`;
 };
 
-const useOnlinePolling = (enabled) => {
-  const [interval, setIntervalValue] = useState(15000);
+const useOnlinePolling = (enabled, pollingInterval = 15000) => {
+  const [interval, setIntervalValue] = useState(pollingInterval);
   useEffect(() => {
     if (!enabled || typeof document === 'undefined') return undefined;
-    const update = () => setIntervalValue(document.hidden ? 60000 : 15000);
+    const update = () => setIntervalValue(document.hidden ? Math.max(60000, pollingInterval) : pollingInterval);
     update();
     document.addEventListener('visibilitychange', update);
     return () => document.removeEventListener('visibilitychange', update);
-  }, [enabled]);
+  }, [enabled, pollingInterval]);
   return enabled ? interval : 0;
 };
 
 const useFleetGet = (endpoint, params, enabled = true, polling = false) => {
   const url = enabled && endpoint ? makeQuery(endpoint, params) : null;
-  const refreshInterval = useOnlinePolling(Boolean(url && polling));
+  const pollingInterval = typeof polling === 'number' ? polling : 15000;
+  const refreshInterval = useOnlinePolling(Boolean(url && polling), pollingInterval);
   return useSWR(url ? [url, onlineConfig] : null, fetcher, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
@@ -96,16 +97,16 @@ export function useFleetAssignmentAccess() {
   }), [data, error, isLoading, mutate]);
 }
 
-export function useFleetMatrix(params = {}, enabled = true) {
-  const swr = useFleetGet(fleetAssignmentEndpoints.matrix, params, enabled, true);
+export function useFleetMatrix(params = {}, enabled = true, pollingInterval = 15000) {
+  const swr = useFleetGet(fleetAssignmentEndpoints.matrix, params, enabled, pollingInterval);
   return useMemo(() => ({
     matrix: normalizeFleetMatrix(swr.data),
     ...swr
   }), [swr]);
 }
 
-export function useFleetSummary(params = {}, enabled = true) {
-  const swr = useFleetGet(fleetAssignmentEndpoints.summary, params, enabled, true);
+export function useFleetSummary(params = {}, enabled = true, pollingInterval = 15000) {
+  const swr = useFleetGet(fleetAssignmentEndpoints.summary, params, enabled, pollingInterval);
   return useMemo(() => ({
     summary: normalizeFleetSummary(swr.data),
     ...swr
