@@ -8,9 +8,26 @@ export const REQUIRED_EQUIPMENT_ACTIVITY_IDS = new Set([
   '77', '40', '41', '42', '43', '47', '66', '78', '79', '80', '81', '45', '68', '46', '65', '74', '1', '48', '67'
 ]);
 
+export const getLocalDate = (date = new Date()) => {
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+};
+
+const toLocalDateTime = (date) => {
+  if (Number.isNaN(date.getTime())) return '';
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
+const addDays = (date, days) => {
+  const value = new Date(`${date}T00:00:00`);
+  value.setDate(value.getDate() + days);
+  return getLocalDate(value);
+};
+
 export const emptyHeader = () => ({
-  date_ops: new Date().toISOString().slice(0, 10),
+  date_ops: getLocalDate(),
   shift_id: '1',
+  cabang_id: '',
   lokasi_site_id: '',
   lokasi_site_nama: '',
   lokasi_pit_id: '',
@@ -22,7 +39,7 @@ export const emptyHeader = () => ({
   notes: ''
 });
 
-export const emptyBatch = (status, date = new Date().toISOString().slice(0, 10), shift = '1') => ({
+export const emptyBatch = (status, date = getLocalDate(), shift = '1') => ({
   client_id: `${status}-${Date.now()}-${Math.random()}`,
   status,
   sequence: '',
@@ -39,6 +56,63 @@ export const emptyBatch = (status, date = new Date().toISOString().slice(0, 10),
   equipment_ids: [],
   equipment_assignments: {}
 });
+
+export function nextBatch(source, status = source.status) {
+  const start = new Date(source.finish_time);
+  const sourceStart = new Date(source.start_time);
+  const sourceFinish = new Date(source.finish_time);
+  const duration = sourceFinish > sourceStart ? sourceFinish.getTime() - sourceStart.getTime() : 60 * 60 * 1000;
+  const finish = new Date(start.getTime() + duration);
+  const toLocalInput = (value) => {
+    const offset = value.getTimezoneOffset() * 60000;
+    return new Date(value.getTime() - offset).toISOString().slice(0, 16);
+  };
+
+  return {
+    ...source,
+    client_id: `${status}-${Date.now()}-${Math.random()}`,
+    status,
+    start_time: Number.isNaN(start.getTime()) ? source.start_time : toLocalInput(start),
+    finish_time: Number.isNaN(finish.getTime()) ? source.finish_time : toLocalInput(finish),
+    equipment_ids: [...source.equipment_ids],
+    equipment_assignments: Object.fromEntries(
+      Object.entries(source.equipment_assignments).map(([id, assignment]) => [id, { ...assignment }])
+    )
+  };
+}
+
+export function alignBatchToOperation(batch, date, shift) {
+  const startClock = String(batch.start_time || '').slice(11, 16);
+  const finishClock = String(batch.finish_time || '').slice(11, 16);
+  if (!date || !startClock || !finishClock) return batch;
+
+  const isNightShift = String(shift) === '2';
+  const startHour = Number(startClock.slice(0, 2));
+  const startDate = isNightShift && startHour < 7 ? addDays(date, 1) : date;
+  const start = new Date(`${startDate}T${startClock}:00`);
+  let finish = new Date(`${startDate}T${finishClock}:00`);
+  if (finish <= start) finish.setDate(finish.getDate() + 1);
+
+  return { ...batch, start_time: toLocalDateTime(start), finish_time: toLocalDateTime(finish) };
+}
+
+export function moveBatchToSchedule(batch, date, previousShift, nextShift) {
+  const aligned = alignBatchToOperation(batch, date, previousShift);
+  if (String(previousShift) === String(nextShift)) return aligned;
+
+  const start = new Date(aligned.start_time);
+  const finish = new Date(aligned.finish_time);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(finish.getTime())) return emptyBatch(batch.status, date, nextShift);
+
+  const previousAnchor = new Date(`${date}T${String(previousShift) === '2' ? '18:00' : '07:00'}:00`);
+  const nextAnchor = new Date(`${date}T${String(nextShift) === '2' ? '18:00' : '07:00'}:00`);
+  const offset = start.getTime() - previousAnchor.getTime();
+  const duration = finish.getTime() - start.getTime();
+  const nextStart = new Date(nextAnchor.getTime() + offset);
+  const nextFinish = new Date(nextStart.getTime() + duration);
+
+  return { ...batch, start_time: toLocalDateTime(nextStart), finish_time: toLocalDateTime(nextFinish) };
+}
 
 export const optionLabel = (option) => option?.nama || option?.name || option?.kode || option?.teks || '';
 

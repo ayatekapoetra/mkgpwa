@@ -7,6 +7,7 @@ export const fleetAssignmentEndpoints = {
   access: '/operation/fleet-assignment/access',
   matrix: '/operation/fleet-assignment/matrix',
   summary: '/operation/fleet-assignment/summary',
+  options: '/operation/fleet-assignment/options',
   eligibleEquipment: '/operation/fleet-assignment/eligible-equipment',
   batchStandby: '/operation/fleet-assignment/batch-standby',
   status: '/operation/fleet-assignment/status',
@@ -123,6 +124,21 @@ export function useFleetEligibleEquipment(params = {}, enabled = true) {
         data: Array.isArray(payload.data) ? payload.data : [],
         total: Number(payload.total ?? 0),
         eligible_total: Number(payload.eligible_total ?? 0)
+      },
+      ...swr
+    };
+  }, [swr]);
+}
+
+export function useFleetAssignmentOptions(params = {}, enabled = true) {
+  const swr = useFleetGet(fleetAssignmentEndpoints.options, params, enabled);
+  return useMemo(() => {
+    const payload = unwrapFleetResponse(swr.data) || {};
+    return {
+      options: {
+        sites: Array.isArray(payload.sites) ? payload.sites : [],
+        pits: Array.isArray(payload.pits) ? payload.pits : [],
+        equipments: Array.isArray(payload.equipments) ? payload.equipments : []
       },
       ...swr
     };

@@ -6,6 +6,7 @@ import axiosServices, { fetcher } from 'utils/axios';
 export const dailyActivityEndpoints = {
   list: '/operation/daily-activity/items',
   access: '/operation/daily-activity/access',
+  options: '/operation/daily-activity/options',
   detail: (id) => `/operation/daily-activity/by-header/${id}`,
   download: (format) => `/operation/daily-activity/download/${format}`,
   create: '/operation/daily-activity-bulk',
@@ -96,6 +97,14 @@ export async function deleteDailyActivity(id) {
   return getPayload(response.data);
 }
 
+export async function getDailyActivityOptions(params = {}) {
+  const response = await axiosServices.get(dailyActivityEndpoints.options, {
+    ...onlineConfig,
+    params: compactParams(params)
+  });
+  return getPayload(response.data);
+}
+
 const filenameFromDisposition = (value, fallback) => {
   const match = value?.match(/filename="?([^";]+)"?/i);
   return match?.[1] || fallback;
@@ -134,6 +143,7 @@ export async function downloadDailyActivities(params = {}, format = 'pdf') {
 
 export async function getDailyActivityMasters() {
   const requests = [
+    ['/master/cabang/list', 'branches'],
     ['/public/penyewa/list', 'sites'],
     ['/master/lokasi-kerja/list', 'pits'],
     ['/public/equipment/list', 'equipments'],
@@ -143,10 +153,16 @@ export async function getDailyActivityMasters() {
     ['/master/material-ritase/list', 'materials'],
     ['/master/bisnis-unit/list', 'contractors']
   ];
-  const responses = await Promise.all(requests.map(([url]) => axiosServices.get(url, onlineConfig)));
+  const responses = await Promise.allSettled(requests.map(([url]) => axiosServices.get(url, onlineConfig)));
   return responses.reduce((result, response, index) => {
-    const value = getPayload(response.data);
-    result[requests[index][1]] = Array.isArray(value?.data) ? value.data : Array.isArray(value) ? value : [];
+    const key = requests[index][1];
+    if (response.status === 'rejected') {
+      result[key] = [];
+      result._failed.push(key);
+      return result;
+    }
+    const value = getPayload(response.value.data);
+    result[key] = Array.isArray(value?.data) ? value.data : Array.isArray(value) ? value : [];
     return result;
-  }, {});
+  }, { _failed: [] });
 }

@@ -203,7 +203,7 @@ export default function EquipmentDetailDrawer({ item, open, onClose, canUpdate =
   };
 
   const handleSaveDetails = async () => {
-    const required = ["operator_id", "kegiatan_id", "lokasi_pit_id", "lokasi_site_id", "date_ops", "shift_id", "start_time", "finish_time"];
+    const required = ["kegiatan_id", "lokasi_pit_id", "lokasi_site_id", "date_ops", "shift_id", "start_time", "finish_time"];
     if (required.some((field) => !details[field])) {
       enqueueSnackbar("Lengkapi seluruh Operational Details", { variant: "error" });
       return;
@@ -332,7 +332,7 @@ export default function EquipmentDetailDrawer({ item, open, onClose, canUpdate =
                 <Stack spacing={1.5}>
                   <Grid container spacing={1.25}>
                     <Grid item xs={12} sm={6}>
-                      <Autocomplete options={operatorOptions} loading={operatorLoading} value={operatorOptions.find((option) => String(option.id) === String(details.operator_id)) || null} onChange={(_, value) => setDetail("operator_id", value?.id || "")} getOptionLabel={(option) => [option?.nama, option?.nik].filter(Boolean).join(" - ")} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Operator" />} />
+                      <Autocomplete options={operatorOptions} loading={operatorLoading} value={operatorOptions.find((option) => String(option.id) === String(details.operator_id)) || null} onChange={(_, value) => setDetail("operator_id", value?.id || "")} getOptionLabel={(option) => [option?.nama, option?.nik].filter(Boolean).join(" - ")} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} size="small" label="Operator (Opsional)" />} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Autocomplete options={detailKegiatanOptions} loading={kegiatanSWR.isLoading} value={selectedDetailKegiatan} onChange={(_, value) => setDetail("kegiatan_id", value?.id || "")} getOptionLabel={(option) => option?.legacy ? `${option.nama} (data saat ini)` : option?.nama || ""} isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)} renderInput={(params) => <TextField {...params} required size="small" label="Kegiatan" helperText={detailKegiatanChanged && selectedDetailKegiatan ? `Status akan menjadi ${detailTargetStatus === "standby" ? "Standby" : "Beroperasi"}` : ""} />} />

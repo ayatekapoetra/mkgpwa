@@ -41,6 +41,7 @@ import {
   createFleetStandbyBatch,
   fleetErrorMessage,
   useFleetAssignmentAccess,
+  useFleetAssignmentOptions,
   useFleetEligibleEquipment
 } from 'api/fleet-assignment';
 import { localDate, statusLabel } from './shared';
@@ -48,6 +49,7 @@ import { localDate, statusLabel } from './shared';
 const INITIAL_HEADER = {
   date_ops: localDate(),
   shift_id: '1',
+  cabang_id: '',
   lokasi_site_id: '',
   lokasi_pit_id: '',
   kontraktor_id: '',
@@ -62,7 +64,7 @@ const CATEGORIES = [
   { id: 'rental', nama: 'RENTAL' },
   { id: 'explorasi', nama: 'EXPLORASI' }
 ];
-const EMPTY_MASTERS = { sites: [], pits: [], contractors: [], _failed: [] };
+const EMPTY_MASTERS = { branches: [], sites: [], pits: [], contractors: [], _failed: [] };
 const INPUT_SX = { '& .MuiInputBase-root': { height: 40 } };
 const REASON_LABELS = {
   MOBILIZATION_NOT_ARRIVED: 'Mobilisasi belum tiba di tujuan',
@@ -71,17 +73,20 @@ const REASON_LABELS = {
 };
 
 const optionLabel = (option) => option?.nama || option?.name || option?.kode || option?.abbr || '';
+const branchLabel = (option) => `[${option?.kode || option?.initial || '-'}] ${option?.nama || option?.name || ''}`;
 const selectedOption = (options, id) => options.find((option) => String(option.id) === String(id)) || null;
 
-function MasterAutocomplete({ label, options, value, onChange, required = false, disabled = false }) {
+function MasterAutocomplete({ label, options, value, onChange, required = false, disabled = false, loading = false, getOptionLabel = optionLabel, renderOption }) {
   return (
     <Autocomplete
       options={options}
       value={selectedOption(options, value)}
       onChange={(_, option) => onChange(option)}
-      getOptionLabel={optionLabel}
+      getOptionLabel={getOptionLabel}
       isOptionEqualToValue={(option, current) => String(option.id) === String(current.id)}
       disabled={disabled}
+      loading={loading}
+      renderOption={renderOption}
       renderInput={(params) => <TextField {...params} size="small" label={label} required={required} sx={INPUT_SX} />}
     />
   );
@@ -174,6 +179,7 @@ export default function FleetAssignmentCreate() {
   const [mastersLoading, setMastersLoading] = useState(true);
   const [mastersError, setMastersError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedEquipment, setSelectedEquipment] = useState({});
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [saving, setSaving] = useState(false);
@@ -188,21 +194,29 @@ export default function FleetAssignmentCreate() {
     return () => { active = false; };
   }, []);
 
+  const branchOptions = masters.branches || [];
+  const placementParams = useMemo(() => ({
+    cabang_id: header.cabang_id,
+    lokasi_site_id: header.lokasi_site_id
+  }), [header.cabang_id, header.lokasi_site_id]);
+  const placementQuery = useFleetAssignmentOptions(
+    placementParams,
+    access.permissions.read && Boolean(header.cabang_id)
+  );
+
   const availabilityParams = useMemo(() => ({
     date_ops: header.date_ops,
     shift_id: header.shift_id,
+    cabang_id: header.cabang_id,
     lokasi_site_id: header.lokasi_site_id,
     lokasi_pit_id: header.lokasi_pit_id
-  }), [header.date_ops, header.shift_id, header.lokasi_pit_id, header.lokasi_site_id]);
-  const contextComplete = Boolean(header.date_ops && header.shift_id && header.lokasi_site_id);
+  }), [header.cabang_id, header.date_ops, header.shift_id, header.lokasi_pit_id, header.lokasi_site_id]);
+  const contextComplete = Boolean(header.date_ops && header.shift_id && header.cabang_id && header.lokasi_site_id);
   const equipmentQuery = useFleetEligibleEquipment(availabilityParams, access.permissions.read && contextComplete);
-  const equipment = equipmentQuery.availability.data;
-
-  useEffect(() => {
-    const rows = equipmentQuery.data?.rows?.data || equipmentQuery.data?.data?.rows?.data || [];
-    const eligibleIds = new Set(rows.filter((item) => item.eligible).map((item) => String(item.id)));
-    setSelectedIds((current) => current.filter((id) => eligibleIds.has(String(id))));
-  }, [equipmentQuery.data]);
+  const equipment = useMemo(() => {
+    const positionedIds = new Set(placementQuery.options.equipments.map((item) => String(item.id)));
+    return equipmentQuery.availability.data.filter((item) => item.eligible && positionedIds.has(String(item.id)));
+  }, [equipmentQuery.availability.data, placementQuery.options.equipments]);
 
   const visibleEquipment = useMemo(() => equipment.filter((item) => {
     if (categoryFilter !== 'ALL' && item.kategori !== categoryFilter) return false;
@@ -211,21 +225,27 @@ export default function FleetAssignmentCreate() {
   }), [categoryFilter, deferredSearch, equipment]);
   const visibleEligible = visibleEquipment.filter((item) => item.eligible);
   const allVisibleSelected = visibleEligible.length > 0 && visibleEligible.every((item) => selectedIds.includes(String(item.id)));
-  const selectedRows = equipment.filter((item) => selectedIds.includes(String(item.id)));
+  const selectedRows = selectedIds.map((id) => selectedEquipment[id] || equipment.find((item) => String(item.id) === id)).filter(Boolean);
+  const unavailableSelected = selectedRows.filter((item) => !equipment.some((available) => String(available.id) === String(item.id)));
   const heCount = selectedRows.filter((item) => item.kategori === 'HE').length;
   const dtCount = selectedRows.filter((item) => item.kategori === 'DT').length;
 
   const updateHeader = (patch) => setHeader((current) => ({ ...current, ...patch }));
-  const toggleEquipment = (id) => setSelectedIds((current) => current.includes(String(id)) ? current.filter((item) => item !== String(id)) : [...current, String(id)]);
+  const toggleEquipment = (equipmentItem) => {
+    const id = String(equipmentItem.id);
+    setSelectedEquipment((current) => ({ ...current, [id]: equipmentItem }));
+    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  };
   const toggleAllVisible = () => {
     const visibleIds = visibleEligible.map((item) => String(item.id));
+    setSelectedEquipment((current) => ({ ...current, ...Object.fromEntries(visibleEligible.map((item) => [String(item.id), item])) }));
     setSelectedIds((current) => allVisibleSelected
       ? current.filter((id) => !visibleIds.includes(id))
       : [...new Set([...current, ...visibleIds])]);
   };
 
   const handleSave = async () => {
-    const required = ['date_ops', 'shift_id', 'lokasi_site_id', 'lokasi_pit_id', 'kontraktor_id', 'cuaca', 'category_id'];
+    const required = ['date_ops', 'shift_id', 'cabang_id', 'lokasi_site_id', 'lokasi_pit_id', 'kontraktor_id', 'cuaca', 'category_id'];
     if (required.some((field) => !header[field])) {
       openNotification({ message: 'Lengkapi seluruh informasi operasional terlebih dahulu.', type: 'warning' });
       return;
@@ -271,13 +291,15 @@ export default function FleetAssignmentCreate() {
       </Box>
 
       {(mastersError || masters._failed?.length > 0) && <Alert severity="warning" sx={{ mb: 2 }}>Sebagian master data gagal dimuat. Muat ulang halaman jika pilihan yang dibutuhkan tidak tersedia.</Alert>}
+      {placementQuery.error && <Alert severity="error" sx={{ mb: 2 }}>{fleetErrorMessage(placementQuery.error, 'Gagal memuat site dan lokasi berdasarkan cabang.')}</Alert>}
 
       <MainCard title="Informasi Operasional" subheader="Konteks ini digunakan untuk mencari posisi terakhir equipment dan membentuk header Daily Activity.">
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} lg={3}><TextField fullWidth required size="small" type="date" label="Tanggal Operasional" value={header.date_ops} onChange={(event) => updateHeader({ date_ops: event.target.value })} InputLabelProps={{ shrink: true }} sx={INPUT_SX} /></Grid>
           <Grid item xs={12} sm={6} lg={3}><FormControl fullWidth required size="small" sx={INPUT_SX}><InputLabel>Shift</InputLabel><Select label="Shift" value={header.shift_id} onChange={(event) => updateHeader({ shift_id: String(event.target.value) })}><MenuItem value="1">Siang</MenuItem><MenuItem value="2">Malam</MenuItem></Select></FormControl></Grid>
-          <Grid item xs={12} sm={6} lg={3}><MasterAutocomplete required label="Site Penyewa" options={masters.sites || []} value={header.lokasi_site_id} disabled={mastersLoading} onChange={(option) => updateHeader({ lokasi_site_id: String(option?.id || '') })} /></Grid>
-          <Grid item xs={12} sm={6} lg={3}><MasterAutocomplete required label="Lokasi Pit" options={masters.pits || []} value={header.lokasi_pit_id} disabled={mastersLoading} onChange={(option) => updateHeader({ lokasi_pit_id: String(option?.id || '') })} /></Grid>
+          <Grid item xs={12} sm={6} lg={6}><MasterAutocomplete required label="Cabang" options={branchOptions} value={header.cabang_id} disabled={mastersLoading} getOptionLabel={branchLabel} renderOption={(props, option) => <li {...props} key={option.id}><Stack><Typography fontWeight={700}>{branchLabel(option)}</Typography><Typography variant="caption" color="text.secondary">{option.bisnis?.name || option.bisnis?.nama || option.bisnis_nama || '-'}</Typography></Stack></li>} onChange={(option) => updateHeader({ cabang_id: String(option?.id || ''), lokasi_site_id: '', lokasi_pit_id: '' })} /></Grid>
+          <Grid item xs={12} sm={6} lg={6}><MasterAutocomplete required label="Site Penyewa" options={placementQuery.options.sites} value={header.lokasi_site_id} disabled={!header.cabang_id || placementQuery.isLoading} loading={placementQuery.isLoading} onChange={(option) => updateHeader({ lokasi_site_id: String(option?.id || '') })} /></Grid>
+          <Grid item xs={12} sm={6} lg={6}><MasterAutocomplete required label="Lokasi Pit" options={placementQuery.options.pits} value={header.lokasi_pit_id} disabled={!header.cabang_id || placementQuery.isLoading} loading={placementQuery.isLoading} onChange={(option) => updateHeader({ lokasi_pit_id: String(option?.id || '') })} /></Grid>
           <Grid item xs={12} sm={6} lg={4}><MasterAutocomplete required label="Kontraktor" options={masters.contractors || []} value={header.kontraktor_id} disabled={mastersLoading} onChange={(option) => updateHeader({ kontraktor_id: String(option?.id || '') })} /></Grid>
           <Grid item xs={12} sm={6} lg={4}><FormControl fullWidth required size="small" sx={INPUT_SX}><InputLabel>Cuaca</InputLabel><Select label="Cuaca" value={header.cuaca} onChange={(event) => updateHeader({ cuaca: event.target.value })}>{WEATHER.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}</Select></FormControl></Grid>
           <Grid item xs={12} sm={6} lg={4}><MasterAutocomplete required label="Kategori Kegiatan" options={CATEGORIES} value={header.category_id} onChange={(option) => updateHeader({ category_id: option?.id || '' })} /></Grid>
@@ -288,15 +310,25 @@ export default function FleetAssignmentCreate() {
       <MainCard
         sx={{ mt: 2 }}
         title="Pilih Equipment"
-        subheader={contextComplete ? `${equipmentQuery.availability.eligible_total} dari ${equipmentQuery.availability.total} unit tersedia` : 'Lengkapi tanggal, shift, dan site penyewa untuk memuat equipment.'}
+        subheader={contextComplete ? `${equipment.length} unit tersedia` : 'Lengkapi tanggal, shift, cabang, dan site penyewa untuk memuat equipment.'}
         secondary={contextComplete && <Chip icon={<LocationOnOutlinedIcon />} label={equipmentQuery.availability.site?.nama || 'Memuat lokasi...'} color="primary" variant="outlined" />}
       >
         {!contextComplete ? (
-          <Box sx={{ py: 7, textAlign: 'center' }}><LocationOnOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} /><Typography color="text.secondary" sx={{ mt: 1 }}>Equipment akan muncul setelah tanggal, shift, dan site penyewa dipilih.</Typography></Box>
+          <Box sx={{ py: 7, textAlign: 'center' }}><LocationOnOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} /><Typography color="text.secondary" sx={{ mt: 1 }}>Equipment akan muncul setelah tanggal, shift, cabang, dan site penyewa dipilih.</Typography></Box>
         ) : equipmentQuery.error ? (
           <Alert severity="error">{fleetErrorMessage(equipmentQuery.error, 'Gagal memuat equipment pada penyewa terpilih.')}</Alert>
         ) : (
           <>
+            {unavailableSelected.length > 0 && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>Unit berikut tetap dipilih, tetapi tidak tersedia pada Cabang dan Site saat ini:</Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {unavailableSelected.map((item) => (
+                    <Chip key={item.id} label={item.abbr || item.kode || item.id} onDelete={() => toggleEquipment(item)} size="small" />
+                  ))}
+                </Stack>
+              </Alert>
+            )}
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
               <TextField
                 size="small"
@@ -319,7 +351,7 @@ export default function FleetAssignmentCreate() {
               <Box sx={{ py: 7, textAlign: 'center' }}><WarningAmberOutlinedIcon sx={{ fontSize: 44, color: 'warning.main' }} /><Typography fontWeight={700} sx={{ mt: 1 }}>Tidak ada equipment ditemukan</Typography><Typography variant="body2" color="text.secondary">Periksa posisi mobilisasi, kategori, atau kata pencarian.</Typography></Box>
             ) : (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))', xl: 'repeat(4, minmax(0, 1fr))' }, gap: 1.25 }}>
-                {visibleEquipment.map((item) => <EquipmentOption key={item.id} equipment={item} selected={selectedIds.includes(String(item.id))} onToggle={() => toggleEquipment(item.id)} />)}
+                {visibleEquipment.map((item) => <EquipmentOption key={item.id} equipment={item} selected={selectedIds.includes(String(item.id))} onToggle={() => toggleEquipment(item)} />)}
               </Box>
             )}
           </>
@@ -330,7 +362,7 @@ export default function FleetAssignmentCreate() {
         <Box><Typography fontWeight={800}>{selectedIds.length} equipment dipilih</Typography><Typography variant="caption" color="text.secondary">Standby: DT #48, HE #67 · Breakdown: DT #39, HE #3</Typography></Box>
         <Stack direction="row" spacing={1.25} justifyContent="flex-end">
           <Button color="secondary" onClick={() => router.push('/fleet-assignment')} disabled={saving}>Batal</Button>
-          <LoadingButton variant="contained" loading={saving} disabled={!selectedIds.length || equipmentQuery.isLoading} onClick={handleSave}>Simpan Fleet Assignment</LoadingButton>
+          <LoadingButton variant="contained" loading={saving} disabled={!selectedIds.length || unavailableSelected.length > 0 || equipmentQuery.isLoading || placementQuery.isLoading} onClick={handleSave}>Simpan Fleet Assignment</LoadingButton>
         </Stack>
       </Stack>
     </Box>
