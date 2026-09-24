@@ -27,6 +27,7 @@ const addDays = (date, days) => {
 export const emptyHeader = () => ({
   date_ops: getLocalDate(),
   shift_id: '1',
+  area: '',
   cabang_id: '',
   lokasi_site_id: '',
   lokasi_site_nama: '',

@@ -77,7 +77,7 @@ const EMPTY_PLACEMENT_OPTIONS = { sites: [], pits: [], equipments: [] };
 const REQUIRED_HEADER_FIELDS = [
   "date_ops",
   "shift_id",
-  "cabang_id",
+  "area",
   "lokasi_site_id",
   "lokasi_pit_id",
   "kontraktor",
@@ -90,9 +90,6 @@ const DRAFT_KEY = "daily-activity:create-draft:v1";
 function selectValue(options, id) {
   return options.find((option) => String(option.id) === String(id)) || null;
 }
-
-const branchLabel = (option) =>
-  `[${option?.kode || option?.initial || "-"}] ${option?.nama || option?.name || ""}`;
 
 function MasterSelect({
   label,
@@ -403,7 +400,7 @@ function BatchCard({
                   limitTags={2}
                   options={equipmentOptions}
                   loading={equipmentLoading}
-                  disabled={!header.cabang_id || !header.lokasi_site_id}
+                  disabled={!header.area || !header.lokasi_site_id}
                   noOptionsText={header.lokasi_site_id ? "Tidak ada unit pada mobilisasi terakhir" : "Pilih cabang dan site terlebih dahulu"}
                   value={batch.equipment_ids
                     .map((id) => selectValue(masters.equipments, id) || selectValue(equipmentOptions, id))
@@ -572,6 +569,13 @@ export default function DailyActivityForm({ headerId = null }) {
   const [draftReady, setDraftReady] = useState(edit);
   const [draftSavedAt, setDraftSavedAt] = useState("");
   const restoredDraft = useRef(false);
+  const areaOptions = useMemo(
+    () =>
+      [...new Set(masters.branches.map((item) => String(item.area || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b))
+        .map((area) => ({ id: area, nama: area })),
+    [masters.branches],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -609,17 +613,20 @@ export default function DailyActivityForm({ headerId = null }) {
   }, [detail, edit]);
 
   useEffect(() => {
-    if (edit || !session?.cabang_id) return;
-    setHeader((current) =>
-      current.cabang_id
-        ? current
-        : { ...current, cabang_id: String(session.cabang_id) },
-    );
-  }, [edit, session?.cabang_id]);
+    if (header.area || !masters.branches.length) return;
+    const branchId = header.cabang_id || (!edit ? session?.cabang_id : "");
+    const branch = selectValue(masters.branches, branchId);
+    if (!branch?.area) return;
+    setHeader((current) => current.area ? current : {
+      ...current,
+      area: String(branch.area),
+      cabang_id: current.cabang_id || String(branch.id),
+    });
+  }, [edit, header.area, header.cabang_id, masters.branches, session?.cabang_id]);
 
   useEffect(() => {
     let active = true;
-    if (!header.cabang_id) {
+    if (!header.area) {
       setPlacementOptions(EMPTY_PLACEMENT_OPTIONS);
       setPlacementError("");
       return () => { active = false; };
@@ -628,7 +635,7 @@ export default function DailyActivityForm({ headerId = null }) {
     setPlacementLoading(true);
     setPlacementError("");
     getDailyActivityOptions({
-      cabang_id: header.cabang_id,
+      area: header.area,
       lokasi_site_id: header.lokasi_site_id
     })
       .then((value) => {
@@ -649,7 +656,7 @@ export default function DailyActivityForm({ headerId = null }) {
       });
 
     return () => { active = false; };
-  }, [header.cabang_id, header.lokasi_site_id]);
+  }, [header.area, header.lokasi_site_id]);
 
   useEffect(() => {
     if (edit || restoredDraft.current) return;
@@ -951,7 +958,7 @@ export default function DailyActivityForm({ headerId = null }) {
       ...header,
       shift_id: Number(header.shift_id),
       author_id: session?.employee_id || null,
-      cabang_id: Number(header.cabang_id),
+      cabang_id: header.cabang_id ? Number(header.cabang_id) : null,
     };
     try {
       if (edit) {
@@ -1089,29 +1096,14 @@ export default function DailyActivityForm({ headerId = null }) {
           <Grid item xs={12} md={6}>
             <MasterSelect
               required
-              label="Cabang"
-              options={masters.branches}
-              value={header.cabang_id}
-              error={errors.header.cabang_id}
-              getOptionLabel={branchLabel}
-              renderOption={(props, item) => (
-                <li {...props} key={item.id}>
-                  <Stack>
-                    <Typography fontWeight={700}>
-                      {branchLabel(item)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {item.bisnis?.name ||
-                        item.bisnis?.nama ||
-                        item.bisnis_nama ||
-                        "-"}
-                    </Typography>
-                  </Stack>
-                </li>
-              )}
+              label="Area Cabang"
+              options={areaOptions}
+              value={header.area}
+              error={errors.header.area}
               onChange={(item) =>
                 updateHeader({
-                  cabang_id: String(item?.id || ""),
+                  area: String(item?.id || ""),
+                  cabang_id: "",
                   lokasi_site_id: "",
                   lokasi_site_nama: "",
                   lokasi_pit_id: "",
@@ -1127,7 +1119,7 @@ export default function DailyActivityForm({ headerId = null }) {
               options={placementOptions.sites}
               value={header.lokasi_site_id}
               error={errors.header.lokasi_site_id}
-              disabled={!header.cabang_id}
+              disabled={!header.area}
               loading={placementLoading}
               onChange={(item) =>
                 updateHeader({
@@ -1160,12 +1152,13 @@ export default function DailyActivityForm({ headerId = null }) {
               options={placementOptions.pits}
               value={header.lokasi_pit_id}
               error={errors.header.lokasi_pit_id}
-              disabled={!header.cabang_id}
+              disabled={!header.area}
               loading={placementLoading}
               onChange={(item) =>
                 updateHeader({
                   lokasi_pit_id: String(item?.id || ""),
                   lokasi_pit_nama: optionLabel(item),
+                  cabang_id: String(item?.cabang_id || ""),
                 })
               }
             />
