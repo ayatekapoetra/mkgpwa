@@ -148,11 +148,16 @@ function BatchCard({
     header.ctgunit.toUpperCase() === "DRILL"
       ? ["AD", "MD"]
       : [header.ctgunit.toUpperCase()];
-  const equipmentOptions = availableEquipments.filter(
-    (item) =>
-      !header.ctgunit ||
-      allowedCategories.includes(String(item.kategori || "").toUpperCase()),
-  );
+  const equipmentOptions = availableEquipments
+    .filter(
+      (item) =>
+        !header.ctgunit ||
+        allowedCategories.includes(String(item.kategori || "").toUpperCase()),
+    )
+    .filter(
+      (item, index, array) =>
+        array.findIndex((other) => String(other.id) === String(item.id)) === index,
+    );
   const activities = masters.activities.filter((item) => {
     const subcategory = String(item.subctg || "").toLowerCase();
     if (batch.status === "breakdown") return subcategory === "breakdown";
