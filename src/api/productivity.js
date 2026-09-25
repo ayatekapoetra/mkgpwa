@@ -26,6 +26,32 @@ const buildQueryString = (params = {}) => {
   return searchParams.toString();
 };
 
+export const useGetProductivityV2 = (params) => {
+  const query = buildQueryString(params);
+  const url = `${endpoint}/v2/list${query ? `?${query}` : ''}`;
+  const { data, isLoading, error, isValidating, mutate } = useSWR([url, { skipOfflineQueue: true }], fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return useMemo(
+    () => ({
+      data: data?.rows?.data || [],
+      total: data?.rows?.total || 0,
+      page: data?.rows?.page || 1,
+      perPage: data?.rows?.perPage || 25,
+      lastPage: data?.rows?.lastPage || 1,
+      summary: data?.summary || null,
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
 export const useGetProductivityBase = (params) => {
   const query = buildQueryString(params);
   const url = `${endpoint}/base/list${query ? `?${query}` : ''}`;

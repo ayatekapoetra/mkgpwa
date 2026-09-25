@@ -29,7 +29,7 @@ const selectedOptions = (options, selected) => {
   return options.filter((option) => ids.has(String(option.id)));
 };
 
-export default function FilterCustomersProductivity({ open, count, params, setParams, onClose, pelangganNama }) {
+export default function FilterCustomersProductivity({ open, count, params, setParams, onApply, onReset, onClose, pelangganNama }) {
   const { data: equipmentData = [], dataLoading: equipmentLoading } = usePublicEquipment();
   const { data: shiftResponse, isLoading: shiftLoading } = useSWR('/public/shift/list', fetcher, {
     revalidateIfStale: false,
@@ -45,10 +45,10 @@ export default function FilterCustomersProductivity({ open, count, params, setPa
       ? shiftRaw
       : [];
 
-  const update = (values) => setParams((previous) => ({ ...previous, ...values, page: 1 }));
+  const update = (values) => setParams((previous) => ({ ...previous, ...values }));
   const reset = () => {
     const dates = defaultDates();
-    update({ ...dates, equipment_ids: [], shift_ids: [] });
+    onReset({ ...dates, equipment_ids: [], shift_ids: [] });
   };
 
   return (
@@ -126,9 +126,12 @@ export default function FilterCustomersProductivity({ open, count, params, setPa
             </Grid>
           </Grid>
         </MainCard>
-        <CardActions>
+        <CardActions sx={{ gap: 1 }}>
           <Button onClick={reset} variant="dashed" color="secondary" fullWidth>
             Reset Filter
+          </Button>
+          <Button onClick={onApply} variant="contained" fullWidth>
+            Terapkan
           </Button>
         </CardActions>
       </Stack>

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
@@ -80,8 +79,7 @@ const TOGGLEABLE_COLUMNS = [
   { id: 'eu', label: 'EU' },
   { id: 'mttfs', label: 'MTTFS' },
   { id: 'mttr', label: 'MTTR' },
-  { id: 'mtbs', label: 'MTBS' },
-  { id: 'mtbf', label: 'MTBF' }
+  { id: 'mtbs', label: 'MTBS' }
 ];
 
 const ALL_COLUMNS = [...FIXED_COLUMNS, ...TOGGLEABLE_COLUMNS];
@@ -120,8 +118,6 @@ const renderCell = (column, row, formatDecimalFn, formatPercentFn) => {
       return row.MTTR ? formatDecimalFn(row.MTTR) : '-';
     case 'mtbs':
       return row.MTBS ? formatDecimalFn(row.MTBS) : '-';
-    case 'mtbf':
-      return formatDecimalFn(row.MTBF);
     default:
       return '-';
   }
@@ -129,46 +125,20 @@ const renderCell = (column, row, formatDecimalFn, formatPercentFn) => {
 
 const cellSx = { whiteSpace: 'nowrap', verticalAlign: 'top' };
 
-const METRIC_LOADING_KEYS = {
-  hmkm: 'hmkm',
-  standby: 'standby',
-  opportunity: 'opportunity',
-  operating: 'operating',
-  wh: 'PA',
-  pa: 'PA',
-  ma: 'MA',
-  ua: 'UA',
-  eu: 'EU',
-  mttfs: 'MTTFS',
-  mttr: 'MTTR',
-  mtbs: 'MTBS',
-  mtbf: 'MTBF'
-};
-
 const CENTERED_COLUMN_IDS = new Set([
   'hmkm', 'standby', 'opportunity', 'operating', 'wh',
-  'pa', 'ma', 'ua', 'eu', 'mttfs', 'mttr', 'mtbs', 'mtbf'
+  'pa', 'ma', 'ua', 'eu', 'mttfs', 'mttr', 'mtbs'
 ]);
 
 const CLICKABLE_COLUMN_IDS = new Set(['standby', 'opportunity', 'operating']);
 
-const MetricCell = ({ column, row, metricLoading, formatDecimalFn, formatPercentFn, onCellClick, disableDetail }) => {
-  const loadingKey = METRIC_LOADING_KEYS[column.id];
-  const isLoading = loadingKey && metricLoading?.[loadingKey];
+const MetricCell = ({ column, row, formatDecimalFn, formatPercentFn, onCellClick, disableDetail }) => {
   const isCentered = CENTERED_COLUMN_IDS.has(column.id);
   const isClickable = !disableDetail && CLICKABLE_COLUMN_IDS.has(column.id);
   const centerSx = isCentered ? { ...cellSx, textAlign: 'center' } : cellSx;
   const clickableSx = isClickable
     ? { ...centerSx, cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' }, textDecoration: 'underline', textDecorationStyle: 'dotted' }
     : centerSx;
-
-  if (isLoading) {
-    return (
-      <TableCell key={column.id} sx={clickableSx}>
-        <CircularProgress size={16} />
-      </TableCell>
-    );
-  }
 
   if (column.id === 'project') {
     return (
@@ -194,8 +164,8 @@ export default function ListProductivity({
   total = 0,
   page = 1,
   perPage = 25,
+  lastPage = 1,
   loading = false,
-  metricLoading = {},
   filterParams = {},
   disableDetail = false,
   onPageChange,
@@ -324,7 +294,6 @@ export default function ListProductivity({
                       key={column.id}
                       column={column}
                       row={row}
-                      metricLoading={metricLoading}
                       formatDecimalFn={formatDecimal}
                       formatPercentFn={formatPercent}
                       onCellClick={handleCellClick}
@@ -339,7 +308,7 @@ export default function ListProductivity({
       </TableContainer>
 
       <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Paginate page={page} lastPage={Math.max(Math.ceil(total / perPage), 1)} total={total} onPageChange={onPageChange} />
+        <Paginate page={page} lastPage={lastPage} total={total} onPageChange={onPageChange} />
       </Box>
     </Paper>
   );

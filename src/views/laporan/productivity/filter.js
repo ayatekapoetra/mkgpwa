@@ -29,18 +29,18 @@ const selectedOptions = (options, selected) => {
   return options.filter((option) => ids.has(String(option.id)));
 };
 
-export default function FilterProductivity({ open, count, params, setParams, onClose }) {
+export default function FilterProductivity({ open, count, params, setParams, onApply, onReset, onClose }) {
   const { penyewa: penyewaData = [], penyewaLoading } = usePublicPenyewa();
   const { data: equipmentData = [], dataLoading: equipmentLoading } = usePublicEquipment();
   const { data: shiftData = [], dataLoading: shiftLoading } = useGetShiftKerja();
   const penyewaOptions = Array.isArray(penyewaData) ? penyewaData : [];
   const equipmentOptions = Array.isArray(equipmentData) ? equipmentData : [];
   const shiftOptions = Array.isArray(shiftData) ? shiftData : [];
-  const update = (values) => setParams((previous) => ({ ...previous, ...values, page: 1 }));
+  const update = (values) => setParams((previous) => ({ ...previous, ...values }));
 
   const reset = () => {
     const dates = defaultDates();
-    update({ ...dates, penyewa_ids: [], equipment_ids: [], shift_ids: [] });
+    onReset({ ...dates, penyewa_ids: [], equipment_ids: [], shift_ids: [] });
   };
 
   return (
@@ -121,9 +121,12 @@ export default function FilterProductivity({ open, count, params, setParams, onC
             </Grid>
           </Grid>
         </MainCard>
-        <CardActions>
+        <CardActions sx={{ gap: 1 }}>
           <Button onClick={reset} variant="dashed" color="secondary" fullWidth>
             Reset Filter
+          </Button>
+          <Button onClick={onApply} variant="contained" fullWidth>
+            Terapkan
           </Button>
         </CardActions>
       </Stack>

@@ -7,10 +7,12 @@ import { useSnackbar } from 'notistack';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
@@ -18,21 +20,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
 import CircularLoader from 'components/CircularLoader';
-import {
-  useGetCustomersProductivityBase,
-  useGetCustomersProductivityHmkm,
-  useGetCustomersProductivityStandby,
-  useGetCustomersProductivityOpportunity,
-  useGetCustomersProductivityOperating,
-  useGetCustomersProductivityPa,
-  useGetCustomersProductivityMa,
-  useGetCustomersProductivityUa,
-  useGetCustomersProductivityEu,
-  useGetCustomersProductivityMttfs,
-  useGetCustomersProductivityMttr,
-  useGetCustomersProductivityMtbs,
-  downloadCustomersProductivity
-} from 'api/customers-productivity';
+import { downloadCustomersProductivity, useGetCustomersProductivityV2 } from 'api/customers-productivity';
 import FilterCustomersProductivity from './filter';
 import ListProductivity from './list';
 
@@ -65,13 +53,16 @@ export default function CustomersProductivityScreen() {
   const defaultDates = useMemo(() => getDefaultDates(), []);
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
-  const [params, setParams] = useState({
-    page: 1,
-    perPage: 25,
+  const [draftParams, setDraftParams] = useState({
     startdate: defaultDates.startdate,
     enddate: defaultDates.enddate,
     equipment_ids: [],
     shift_ids: []
+  });
+  const [params, setParams] = useState({
+    page: 1,
+    perPage: 25,
+    ...draftParams
   });
 
   useEffect(() => {
@@ -87,18 +78,7 @@ export default function CustomersProductivityScreen() {
     }
   }, [status, session, router]);
 
-  const result = useGetCustomersProductivityBase(params);
-  const hmkmResult = useGetCustomersProductivityHmkm(params);
-  const standbyResult = useGetCustomersProductivityStandby(params);
-  const opportunityResult = useGetCustomersProductivityOpportunity(params);
-  const operatingResult = useGetCustomersProductivityOperating(params);
-  const paResult = useGetCustomersProductivityPa(params);
-  const maResult = useGetCustomersProductivityMa(params);
-  const uaResult = useGetCustomersProductivityUa(params);
-  const euResult = useGetCustomersProductivityEu(params);
-  const mttfsResult = useGetCustomersProductivityMttfs(params);
-  const mttrResult = useGetCustomersProductivityMttr(params);
-  const mtbsResult = useGetCustomersProductivityMtbs(params);
+  const result = useGetCustomersProductivityV2(params);
 
   const pelangganNama =
     result.pelangganNama || session?.pelanggan_nama || session?.nama || session?.name || '-';
@@ -117,66 +97,15 @@ export default function CustomersProductivityScreen() {
     }
   };
 
-  const mapMetric = (rows, field) => {
-    const map = new Map();
-    (rows || []).forEach((row) => {
-      if (row.row_key) map.set(row.row_key, row[field] ?? 0);
-    });
-    return map;
+  const applyFilters = () => {
+    setParams((previous) => ({ ...previous, ...draftParams, page: 1 }));
+    setOpenFilter(false);
   };
 
-  const hmkmMap = useMemo(() => mapMetric(hmkmResult.data, 'hmkm'), [hmkmResult.data]);
-  const standbyMap = useMemo(() => mapMetric(standbyResult.data, 'standby'), [standbyResult.data]);
-  const opportunityMap = useMemo(
-    () => mapMetric(opportunityResult.data, 'opportunity'),
-    [opportunityResult.data]
-  );
-  const operatingMap = useMemo(
-    () => mapMetric(operatingResult.data, 'operating'),
-    [operatingResult.data]
-  );
-  const paMap = useMemo(() => mapMetric(paResult.data, 'PA'), [paResult.data]);
-  const whMap = useMemo(() => mapMetric(paResult.data, 'WH'), [paResult.data]);
-  const maMap = useMemo(() => mapMetric(maResult.data, 'MA'), [maResult.data]);
-  const uaMap = useMemo(() => mapMetric(uaResult.data, 'UA'), [uaResult.data]);
-  const euMap = useMemo(() => mapMetric(euResult.data, 'EU'), [euResult.data]);
-  const mttfsMap = useMemo(() => mapMetric(mttfsResult.data, 'MTTFS'), [mttfsResult.data]);
-  const mttrMap = useMemo(() => mapMetric(mttrResult.data, 'MTTR'), [mttrResult.data]);
-  const mtbsMap = useMemo(() => mapMetric(mtbsResult.data, 'MTBS'), [mtbsResult.data]);
-
-  const mergedData = useMemo(
-    () =>
-      (result.data || []).map((row) => ({
-        ...row,
-        hmkm: hmkmMap.get(row.row_key) ?? 0,
-        standby: standbyMap.get(row.row_key) ?? 0,
-        opportunity: opportunityMap.get(row.row_key) ?? 0,
-        operating: operatingMap.get(row.row_key) ?? 0,
-        PA: paMap.get(row.row_key) ?? 0,
-        WH: whMap.get(row.row_key) ?? 0,
-        MA: maMap.get(row.row_key) ?? 0,
-        UA: uaMap.get(row.row_key) ?? 0,
-        EU: euMap.get(row.row_key) ?? 0,
-        MTTFS: mttfsMap.get(row.row_key) ?? 0,
-        MTTR: mttrMap.get(row.row_key) ?? 0,
-        MTBS: mtbsMap.get(row.row_key) ?? 0
-      })),
-    [
-      result.data,
-      hmkmMap,
-      standbyMap,
-      opportunityMap,
-      operatingMap,
-      paMap,
-      whMap,
-      maMap,
-      uaMap,
-      euMap,
-      mttfsMap,
-      mttrMap,
-      mtbsMap
-    ]
-  );
+  const resetFilters = (resetParams) => {
+    setDraftParams(resetParams);
+    setParams((previous) => ({ ...previous, ...resetParams, page: 1 }));
+  };
 
   if (status === 'loading') return <CircularLoader />;
 
@@ -239,6 +168,22 @@ export default function CustomersProductivityScreen() {
             Menampilkan data Productivity Equipment untuk pelanggan: <strong>{pelangganNama}</strong>
           </Alert>
           {result.dataError ? <Alert severity="error">{errorMessage(result.dataError)}</Alert> : null}
+          {result.summary ? (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                Terakhir diperbarui: {result.summary.refreshedAt ? new Date(result.summary.refreshedAt).toLocaleString('id-ID') : '-'}
+              </Typography>
+              <Chip
+                size="small"
+                variant="outlined"
+                color={result.summary.stale ? 'warning' : 'success'}
+                label={result.summary.stale ? 'Data stale' : 'Data terbaru'}
+              />
+              {result.summary.whLiveToday ? (
+                <Chip size="small" variant="outlined" color="info" label="WH hari ini: live" />
+              ) : null}
+            </Stack>
+          ) : null}
           {result.dataLoading && !result.data.length ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight={120}>
               <CircularProgress />
@@ -247,31 +192,21 @@ export default function CustomersProductivityScreen() {
           <FilterCustomersProductivity
             open={openFilter}
             count={result.total}
-            params={params}
-            setParams={setParams}
+            params={draftParams}
+            setParams={setDraftParams}
+            onApply={applyFilters}
+            onReset={resetFilters}
             onClose={() => setOpenFilter(false)}
             pelangganNama={pelangganNama}
           />
           <ListProductivity
-            data={mergedData}
+            data={result.data}
             total={result.total}
             page={result.page}
             perPage={result.perPage}
+            lastPage={result.lastPage}
             loading={result.dataLoading}
             filterParams={params}
-            metricLoading={{
-              hmkm: hmkmResult.dataLoading,
-              standby: standbyResult.dataLoading,
-              opportunity: opportunityResult.dataLoading,
-              operating: operatingResult.dataLoading,
-              PA: paResult.dataLoading,
-              MA: maResult.dataLoading,
-              UA: uaResult.dataLoading,
-              EU: euResult.dataLoading,
-              MTTFS: mttfsResult.dataLoading,
-              MTTR: mttrResult.dataLoading,
-              MTBS: mtbsResult.dataLoading
-            }}
             onPageChange={(page) => setParams((previous) => ({ ...previous, page }))}
             onRowsPerPageChange={(perPage) =>
               setParams((previous) => ({ ...previous, perPage, page: 1 }))
