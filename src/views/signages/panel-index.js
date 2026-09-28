@@ -20,7 +20,8 @@ import {
   ClipboardText,
   PresentionChart,
   ArrowRight2,
-  MonitorMobbile
+  MonitorMobbile,
+  Driver
 } from 'iconsax-react';
 
 const PANELS = [
@@ -41,6 +42,15 @@ const PANELS = [
     category: 'Produksi',
     color: 'primary',
     icon: TruckFast
+  },
+  {
+    slug: 'operator-driver-monitoring',
+    href: '/panel/operator-driver-monitoring',
+    title: 'Operator Driver Monitoring',
+    description: 'Monitoring status operator & driver: beroperasi, standby, breakdown.',
+    category: 'Produksi',
+    color: 'success',
+    icon: Driver
   },
   {
     slug: 'produksi-pit-cycle-time-monitoring',
