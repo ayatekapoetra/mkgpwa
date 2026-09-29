@@ -173,7 +173,6 @@ export default function EquipmentMobilizationShowScreen({ id }) {
   const status = String(data.status || '').toUpperCase();
   const origin = `${pickName(data.origin_tenant?.nama, data.originTenant?.nama)} · ${pickName(data.origin_branch?.nama, data.originBranch?.nama)}`;
   const destination = `${pickName(data.destination_tenant?.nama, data.destinationTenant?.nama)} · ${pickName(data.destination_branch?.nama, data.destinationBranch?.nama)}`;
-  const usedBy = pickName(data.used_by?.nama, data.usedBy?.nama);
 
   const breadcrumbLinks = [
     { title: 'Home', to: APP_DEFAULT_PATH },
@@ -229,17 +228,13 @@ export default function EquipmentMobilizationShowScreen({ id }) {
             </Typography>
             <LinearProgress variant="determinate" value={progress.percent} sx={{ mt: 0.75, height: 7, borderRadius: 999 }} />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Typography variant="caption" color="text.secondary">Asal</Typography>
             <Typography variant="subtitle1">{origin}</Typography>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Typography variant="caption" color="text.secondary">Tujuan</Typography>
             <Typography variant="subtitle1">{destination}</Typography>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Typography variant="caption" color="text.secondary">Pengguna Equipment</Typography>
-            <Typography variant="subtitle1">{usedBy}</Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography variant="caption" color="text.secondary">Catatan</Typography>

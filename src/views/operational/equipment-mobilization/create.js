@@ -72,7 +72,6 @@ const validationSchema = Yup.object().shape({
   destination_branch_id: Yup.mixed().required('Cabang tujuan wajib dipilih'),
   origin_tenant_id: Yup.mixed().required('Penyewa asal wajib dipilih'),
   destination_tenant_id: Yup.mixed().required('Penyewa tujuan wajib dipilih'),
-  usedby: Yup.mixed().required('Pengguna Equipment wajib dipilih'),
   save_as: Yup.string().oneOf(['draft', 'open']).required(),
   notes: Yup.string().nullable(),
   items: Yup.array()
@@ -91,7 +90,6 @@ const initialValues = {
   destination_branch_id: '',
   origin_tenant_id: '',
   destination_tenant_id: '',
-  usedby: '',
   notes: '',
   save_as: 'open',
   items: [{ equipment_id: '', karyawan_id: '' }]
@@ -142,7 +140,6 @@ export default function EquipmentMobilizationCreatePage() {
         destination_branch_id: Number(values.destination_branch_id),
         origin_tenant_id: Number(values.origin_tenant_id),
         destination_tenant_id: Number(values.destination_tenant_id),
-        usedby: Number(values.usedby),
         notes: values.notes?.trim() || null,
         save_as: values.save_as === 'open' ? 'open' : 'draft',
         request_id: `web-mob-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -214,7 +211,7 @@ export default function EquipmentMobilizationCreatePage() {
                       touched={touched.destination_branch_id}
                     />
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid item xs={12} md={6}>
                     <OptionPenyewa
                       label="Penyewa Asal"
                       name="origin_tenant_id"
@@ -224,7 +221,7 @@ export default function EquipmentMobilizationCreatePage() {
                       touched={touched.origin_tenant_id}
                     />
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid item xs={12} md={6}>
                     <OptionPenyewa
                       label="Penyewa Tujuan"
                       name="destination_tenant_id"
@@ -232,16 +229,6 @@ export default function EquipmentMobilizationCreatePage() {
                       setFieldValue={setFieldValue}
                       error={errors.destination_tenant_id}
                       touched={touched.destination_tenant_id}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={4}>
-                    <OptionPenyewa
-                      label="Pengguna Equipment"
-                      name="usedby"
-                      value={values.usedby}
-                      setFieldValue={setFieldValue}
-                      error={errors.usedby}
-                      touched={touched.usedby}
                     />
                   </Grid>
                   <Grid item xs={12}>
