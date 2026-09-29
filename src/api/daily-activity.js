@@ -6,6 +6,7 @@ import axiosServices, { fetcher } from 'utils/axios';
 export const dailyActivityEndpoints = {
   list: '/operation/daily-activity/items',
   access: '/operation/daily-activity/access',
+  tagAreas: '/operation/daily-activity/tag-areas',
   options: '/operation/daily-activity/options',
   detail: (id) => `/operation/daily-activity/by-header/${id}`,
   download: (format) => `/operation/daily-activity/download/${format}`,
@@ -95,6 +96,12 @@ export async function updateDailyActivityStatus(id, status, header, items) {
 export async function deleteDailyActivity(id) {
   const response = await axiosServices.post(dailyActivityEndpoints.destroy(id), null, onlineConfig);
   return getPayload(response.data);
+}
+
+export async function getDailyActivityTagAreas() {
+  const response = await axiosServices.get(dailyActivityEndpoints.tagAreas, onlineConfig);
+  const payload = getPayload(response.data);
+  return Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
 }
 
 export async function getDailyActivityOptions(params = {}) {

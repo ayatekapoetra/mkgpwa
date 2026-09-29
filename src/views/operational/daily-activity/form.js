@@ -38,6 +38,7 @@ import {
   createDailyActivity,
   getDailyActivityMasters,
   getDailyActivityOptions,
+  getDailyActivityTagAreas,
   updateDailyActivityStatus,
   useDailyActivity,
   useDailyActivityAccess,
@@ -573,13 +574,11 @@ export default function DailyActivityForm({ headerId = null }) {
   const [dirty, setDirty] = useState(false);
   const [draftReady, setDraftReady] = useState(edit);
   const [draftSavedAt, setDraftSavedAt] = useState("");
+  const [tagAreaOptions, setTagAreaOptions] = useState([]);
   const restoredDraft = useRef(false);
   const areaOptions = useMemo(
-    () =>
-      [...new Set(masters.branches.map((item) => String(item.area || "").trim()).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b))
-        .map((area) => ({ id: area, nama: area })),
-    [masters.branches],
+    () => (tagAreaOptions.length ? tagAreaOptions : []),
+    [tagAreaOptions],
   );
 
   useEffect(() => {
@@ -601,6 +600,13 @@ export default function DailyActivityForm({ headerId = null }) {
         }),
       )
       .finally(() => mounted && setMasterLoading(false));
+    getDailyActivityTagAreas()
+      .then((areas) => {
+        if (mounted) setTagAreaOptions(areas);
+      })
+      .catch(() => {
+        // tag areas optional; keep empty on failure
+      });
     return () => {
       mounted = false;
     };
@@ -618,16 +624,18 @@ export default function DailyActivityForm({ headerId = null }) {
   }, [detail, edit]);
 
   useEffect(() => {
-    if (header.area || !masters.branches.length) return;
+    if (header.area || !masters.branches.length || !tagAreaOptions.length) return;
     const branchId = header.cabang_id || (!edit ? session?.cabang_id : "");
     const branch = selectValue(masters.branches, branchId);
     if (!branch?.area) return;
+    const areaExists = tagAreaOptions.some((item) => String(item.id) === String(branch.area));
+    if (!areaExists) return;
     setHeader((current) => current.area ? current : {
       ...current,
       area: String(branch.area),
       cabang_id: current.cabang_id || String(branch.id),
     });
-  }, [edit, header.area, header.cabang_id, masters.branches, session?.cabang_id]);
+  }, [edit, header.area, header.cabang_id, masters.branches, session?.cabang_id, tagAreaOptions]);
 
   useEffect(() => {
     let active = true;

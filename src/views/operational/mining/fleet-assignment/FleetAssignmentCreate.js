@@ -35,7 +35,7 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import LoadingButton from 'components/@extended/LoadingButton';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
-import { getDailyActivityMasters } from 'api/daily-activity';
+import { getDailyActivityMasters, getDailyActivityTagAreas } from 'api/daily-activity';
 import { openNotification } from 'api/notification';
 import {
   createFleetStandbyBatch,
@@ -183,6 +183,7 @@ export default function FleetAssignmentCreate() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [saving, setSaving] = useState(false);
+  const [tagAreaOptions, setTagAreaOptions] = useState([]);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
 
   useEffect(() => {
@@ -191,15 +192,13 @@ export default function FleetAssignmentCreate() {
       .then((result) => { if (active) setMasters(result); })
       .catch((error) => { if (active) setMastersError(error); })
       .finally(() => { if (active) setMastersLoading(false); });
+    getDailyActivityTagAreas()
+      .then((areas) => { if (active) setTagAreaOptions(areas); })
+      .catch(() => {});
     return () => { active = false; };
   }, []);
 
-  const areaOptions = useMemo(
-    () => [...new Set((masters.branches || []).map((item) => String(item.area || '').trim()).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b))
-      .map((area) => ({ id: area, nama: area })),
-    [masters.branches]
-  );
+  const areaOptions = useMemo(() => tagAreaOptions, [tagAreaOptions]);
   const placementParams = useMemo(() => ({
     area: header.area,
     lokasi_site_id: header.lokasi_site_id
