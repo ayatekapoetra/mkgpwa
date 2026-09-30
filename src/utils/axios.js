@@ -3,11 +3,13 @@ import axios from "axios";
 import { getSession } from "next-auth/react";
 import { saveRequest } from "lib/offlineFetch";
 
+const DEFAULT_TIMEOUT = 60000; // 60 detik — beberapa endpoint master/list lambat di backend
+
 const axiosServices = axios.create({
   baseURL:
     process.env.NEXT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || "",
   withCredentials: false,
-  timeout: 30000,
+  timeout: DEFAULT_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },
@@ -65,11 +67,42 @@ axiosServices.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+function shouldRetry(error) {
+  const config = error.config || {};
+
+  // Jangan retry jika sudah diminta eksplisit atau sudah melewati batas percobaan
+  if (config.skipRetry) return false;
+
+  const status = error.response?.status;
+  const isTimeout = error.code === "ECONNABORTED" || error.code === "ETIMEDOUT";
+
+  // Hanya retry untuk timeout / error jaringan (bukan error HTTP 4xx/5xx dari server)
+  return isTimeout || !status || status >= 500;
+}
+
 axiosServices.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
+    const config = error.config || {};
+
+    // Retry otomatis untuk timeout / gangguan jaringan sementara
+    if (shouldRetry(error)) {
+      config.__retryCount = config.__retryCount || 0;
+      const maxRetries = config.retryCount ?? 1;
+
+      if (config.__retryCount < maxRetries) {
+        config.__retryCount += 1;
+
+        // Beri jeda singkat agar server sempat pulih (backoff sederhana)
+        const delay = config.retryDelay ?? 1000 * config.__retryCount;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        return axiosServices(config);
+      }
+    }
+
     if (
       typeof window !== "undefined" &&
       typeof navigator !== "undefined" &&
