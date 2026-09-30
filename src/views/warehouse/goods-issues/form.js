@@ -115,7 +115,7 @@ export default function GoodsIssueForm({
     }
     setLoadingEquipment(true);
     try {
-      const params = new URLSearchParams({ bisnis_id: bisnisId, page: 1, limit: 100 });
+      const params = new URLSearchParams({ bisnis_id: bisnisId });
       const response = await axiosServices.get(`/warehouse/goods-issues/options/equipment?${params.toString()}`);
       setEquipmentOptions(response.data?.data || []);
     } catch {
