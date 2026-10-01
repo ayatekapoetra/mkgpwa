@@ -20,6 +20,7 @@ import { Add, Box1, BoxTick, DollarCircle, Trash } from 'iconsax-react';
 import { FieldArray } from 'formik';
 
 import axiosServices from 'utils/axios';
+import { useWorkOrderList } from 'api/work-order';
 
 export function createEmptyItem() {
   return {
@@ -65,6 +66,43 @@ export function createEmptyItemFromMro(mroItem) {
   };
 }
 
+export function createEmptyItemFromPrepareGI(data) {
+  const barang = data?.barang || {};
+  const equipment = data?.equipment || {};
+  return {
+    ...createEmptyItem(),
+    barang_id: barang.id || '',
+    mro_item_id: data?.mro_id || null,
+    qty_pakai: data?.qty_to_issue || data?.qty_requested || '',
+    equipment_id: data?.equipment_id || equipment.id || '',
+    remark: '',
+    barang_option: barang.id
+      ? {
+          id: barang.id,
+          kode: barang.kode || '',
+          nama: barang.nama || '',
+          num_part: barang.num_part || null,
+          satuan_pakai: barang.satuan_pakai || '',
+          satuan_order: barang.satuan_order || '',
+          pembagi_pakai: barang.pembagi_pakai || 0
+        }
+      : null,
+    equipment_option: equipment.id
+      ? {
+          id: equipment.id,
+          kode: equipment.kode || '',
+          nama: equipment.nama || '',
+          model: equipment.model || '',
+          identity: equipment.identity || ''
+        }
+      : null,
+    satuan_pakai: barang.satuan_pakai || '',
+    satuan_order: barang.satuan_order || '',
+    pembagi_pakai: barang.pembagi_pakai || 0,
+    stok_pakai: data?.qty_available || 0
+  };
+}
+
 export default function GoodsIssueForm({
   values,
   errors,
@@ -76,7 +114,8 @@ export default function GoodsIssueForm({
   gudangOptions,
   bisnisOptions,
   mode = 'create',
-  isFromMro = false
+  isFromMro = false,
+  giPrepareData = null
 }) {
   const theme = useTheme();
   const [barangOptions, setBarangOptions] = useState({});
@@ -89,6 +128,29 @@ export default function GoodsIssueForm({
   const barangSearchTimers = useRef({});
   const barangFetchSeq = useRef({});
   const barangCacheRef = useRef({});
+
+  // Autocomplete Kode Work Order
+  const [woKeyword, setWoKeyword] = useState('');
+  const woSearchEnabled = !isFromMro && woKeyword.trim().length >= 2;
+  const { data: woOptions, dataLoading: woLoading } = useWorkOrderList(
+    woSearchEnabled ? { search_kode: woKeyword, perPage: 50, page: 1 } : {},
+    woSearchEnabled
+  );
+
+  // Hanya tampilkan WO yang statusnya selain DONE & CLOSE (masih aktif/perlu barang)
+  const activeWoOptions = useMemo(
+    () => (woOptions || []).filter((w) => w.status !== 'DONE' && w.status !== 'CLOSE'),
+    [woOptions]
+  );
+
+  const selectedWo = useMemo(() => {
+    if (isFromMro && giPrepareData?.kdwo) {
+      return { id: giPrepareData.wo_id, kode_wo: giPrepareData.kdwo, equipment: { kode: giPrepareData.equipment_id ? '' : '' } };
+    }
+    if (!values.kdwo) return null;
+    const found = (activeWoOptions || []).find((w) => w.kode_wo === values.kdwo);
+    return found || null;
+  }, [isFromMro, giPrepareData, values.kdwo, activeWoOptions]);
 
   const gudangId = values.gudang_id;
   const bisnisId = values.bisnis_id;
@@ -234,7 +296,8 @@ export default function GoodsIssueForm({
             helperText={touched.trx_date && errors.trx_date}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        
+        <Grid item xs={12} md={5}>
           <Autocomplete
             options={bisnisOptions || []}
             value={selectedBisnis}
@@ -294,6 +357,68 @@ export default function GoodsIssueForm({
           />
         </Grid>
         <Grid item xs={12} md={4}>
+          <Autocomplete
+            options={activeWoOptions || []}
+            value={selectedWo}
+            fullWidth
+            openOnFocus
+            disabled={isFromMro}
+            getOptionLabel={(option) => `${option.kode_wo || '-'} - ${option.equipment?.kode || option.unit || '-'}`}
+            isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)}
+            onInputChange={(_e, val) => setWoKeyword(val)}
+            onChange={(_e, option) => {
+              setFieldValue('kdwo', option?.kode_wo || '');
+              setFieldValue('wo_id', option?.id || null);
+            }}
+            loading={woLoading}
+            filterOptions={(x) => x}
+            renderOption={(props, option) => {
+              const { key, ...optionProps } = props;
+              const kodeWo = option.kode_wo || '-';
+              const kodeEquipment = option.equipment?.kode || option.unit || '-';
+              const cabang = option.breakdown?.cabang?.nama || option.cabang?.nama || '';
+              const issue = option.problem_issue || '';
+              const truncatedIssue = issue.length > 30 ? `${issue.slice(0, 30)}...` : issue;
+              return (
+                <Box component="li" key={key} {...optionProps} sx={{ alignItems: 'flex-start !important', py: 1 }}>
+                  <Stack spacing={0.25} sx={{ width: '100%' }}>
+                    <Typography variant="body2" fontWeight={700}>
+                      {kodeWo} - {kodeEquipment}
+                    </Typography>
+                    {cabang ? (
+                      <Typography variant="caption" color="text.secondary">
+                        {cabang}
+                      </Typography>
+                    ) : null}
+                    {issue ? (
+                      <Typography variant="caption" color="error.main" sx={{ lineHeight: 1.3 }}>
+                        {truncatedIssue}
+                      </Typography>
+                    ) : null}
+                  </Stack>
+                </Box>
+              );
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Kode Work Order *"
+                size="small"
+                required
+                placeholder={isFromMro ? '' : 'Ketik min 2 huruf untuk cari WO...'}
+                error={touched.kdwo && Boolean(errors.kdwo)}
+                helperText={
+                  touched.kdwo && errors.kdwo
+                    ? errors.kdwo
+                    : isFromMro
+                      ? 'Dari Material Request (readonly)'
+                      : 'Wajib — pilih Work Order yang masih aktif'
+                }
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
           <TextField
             label="Penerima"
             name="penerima"
@@ -305,7 +430,7 @@ export default function GoodsIssueForm({
             helperText={touched.penerima && errors.penerima}
           />
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={12}>
           <TextField
             label="Narasi"
             name="narasi"
@@ -528,6 +653,7 @@ export default function GoodsIssueForm({
                             value={selectedEquipment}
                             fullWidth
                             openOnFocus
+                            disabled={isFromMro}
                             loading={loadingEquipment}
                             getOptionLabel={(option) => option.kode || option.nama || option.model || '-'}
                             isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)}
@@ -550,10 +676,10 @@ export default function GoodsIssueForm({
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="Equipment (opsional)"
+                                label="Equipment"
                                 size="small"
                                 error={Boolean(itemTouched.equipment_id && itemErrors.equipment_id)}
-                                helperText={itemTouched.equipment_id && itemErrors.equipment_id}
+                                helperText={isFromMro ? 'Dari Material Request (readonly)' : itemTouched.equipment_id && itemErrors.equipment_id}
                               />
                             )}
                           />

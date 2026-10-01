@@ -22,8 +22,26 @@ export const endpoints = {
   show: '/show',
   update: '/update',
   addAction: '/actions',
-  deleteAction: '/actions'
+  deleteAction: '/actions',
+  access: '/access'
 };
+
+export function useWorkOrderAccess() {
+  const { data, isLoading, error } = useSWR(`${endpoints.key}${endpoints.access}`, fetcher, {
+    revalidateIfStale: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
+
+  return useMemo(
+    () => ({
+      permissions: data?.data?.permissions || null,
+      loading: isLoading,
+      error
+    }),
+    [data, error, isLoading]
+  );
+}
 
 export const useWorkOrderList = (params, enabled = true) => {
   const query = new URLSearchParams(compactObject(params)).toString();
@@ -91,6 +109,21 @@ export async function updateWorkOrderAction(actionId, payload) {
 export async function deleteWorkOrderAction(actionId) {
   const response = await axiosServices.post(`${endpoints.key}${endpoints.deleteAction}/${actionId}/delete`, {}, { skipOfflineQueue: true });
   return response.data;
+}
+
+export async function closeWorkOrder(id, reason = '') {
+  const response = await axiosServices.post(`${endpoints.key}/${id}/close`, { close_reason: reason || undefined }, { skipOfflineQueue: true });
+  return response.data?.rows || response.data;
+}
+
+export async function reopenWorkOrder(id, reopenReason) {
+  const response = await axiosServices.post(`${endpoints.key}/${id}/reopen`, { reopen_reason: reopenReason }, { skipOfflineQueue: true });
+  return response.data?.rows || response.data;
+}
+
+export async function getWorkOrderAudit(id) {
+  const response = await axiosServices.get(`${endpoints.key}/${id}/audit`, { skipOfflineQueue: true });
+  return response.data?.rows || [];
 }
 
 export async function getTeknisiOptions() {

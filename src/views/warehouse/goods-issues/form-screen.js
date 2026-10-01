@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import * as Yup from 'yup';
@@ -19,15 +19,17 @@ import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
 import { useGetGudang } from 'api/gudang';
 import { useGetBisnisUnit } from 'api/bisnis-unit';
-import { useShowGoodsIssue, createGoodsIssueDraft, updateGoodsIssueDraft, createGoodsIssueFromMaterialRequest } from 'api/goods-issue';
+import { useShowGoodsIssue, createGoodsIssueDraft, updateGoodsIssueDraft } from 'api/goods-issue';
+import { prepareGoodsIssue } from 'api/material-request';
 import { generateIdempotencyKey } from 'utils/idempotency';
 
-import GoodsIssueForm, { createEmptyItem, createEmptyItemFromMro } from './form';
+import GoodsIssueForm, { createEmptyItem, createEmptyItemFromMro, createEmptyItemFromPrepareGI } from './form';
 
 const validationSchema = Yup.object().shape({
   trx_date: Yup.date().required('Tanggal transaksi wajib diisi'),
   bisnis_id: Yup.number().integer().positive().required('Bisnis wajib dipilih'),
   gudang_id: Yup.number().integer().positive().required('Gudang wajib dipilih'),
+  kdwo: Yup.string().trim().required('Kode Work Order wajib dipilih').max(100, 'Maksimal 100 karakter'),
   penerima: Yup.string().trim().required('Penerima wajib diisi').max(200, 'Maksimal 200 karakter'),
   narasi: Yup.string().trim().max(1000, 'Maksimal 1000 karakter'),
   items: Yup.array().of(
@@ -44,13 +46,42 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const materialRequestId = searchParams.get('mro');
-  const isFromMro = Boolean(materialRequestId && mode === 'create');
+  const mrosParam = searchParams.get('mros');
+  const mroIdList = mrosParam ? mrosParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const isFromMro = Boolean((materialRequestId || mroIdList.length > 0) && mode === 'create');
+  const kdwoFromWo = searchParams.get('kdwo') || '';
+  const woIdFromWo = searchParams.get('wo') || '';
+  const isFromWo = Boolean(woIdFromWo && mode === 'create');
 
   const bisnisUnitHook = useGetBisnisUnit({ my_units: true });
   const bisnisRows = bisnisUnitHook?.bisnisUnit?.rows || [];
   const bisnisLoading = bisnisUnitHook?.bisnisUnitLoading || false;
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
   const { data: detail, dataLoading: detailLoading, dataError } = useShowGoodsIssue(id);
+
+  // Prepare data dari Material Request (pre-fill GI form), support single (mro) & multi (mros)
+  const [giPrepareList, setGiPrepareList] = useState([]);
+  const [giPrepareLoading, setGiPrepareLoading] = useState(false);
+  useEffect(() => {
+    const ids = mrosParam
+      ? mrosParam.split(',').map((s) => s.trim()).filter(Boolean)
+      : materialRequestId
+        ? [materialRequestId]
+        : [];
+    if (ids.length === 0) return;
+    let active = true;
+    setGiPrepareLoading(true);
+    Promise.all(ids.map((mid) => prepareGoodsIssue(mid).catch(() => null)))
+      .then((list) => {
+        if (active) setGiPrepareList(list.filter(Boolean));
+      })
+      .finally(() => {
+        if (active) setGiPrepareLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [materialRequestId, mrosParam]);
 
   const breadcrumbLinks = useMemo(() => {
     const links = [
@@ -102,6 +133,22 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
       };
     }
 
+    if (isFromMro && giPrepareList.length > 0) {
+      // Pre-fill dari Material Request (prepare-gi) — support single & multi item
+      const first = giPrepareList[0];
+      const narasi = `Kebutuhan ${first.kdwo || ''} untuk ${giPrepareList.map((p) => p.barang?.nama || p.barang?.kode).join(', ')}`.trim();
+      return {
+        trx_date: moment().format('YYYY-MM-DD'),
+        bisnis_id: first.gudang?.bisnis_id || '',
+        gudang_id: first.gudang?.id || '',
+        penerima: '',
+        narasi,
+        kdwo: first.kdwo || '',
+        wo_id: first.wo_id || null,
+        items: giPrepareList.map((p) => createEmptyItemFromPrepareGI(p))
+      };
+    }
+
     if (isFromMro && detail?.header) {
       return {
         trx_date: detail.header.trx_date || moment().format('YYYY-MM-DD'),
@@ -119,9 +166,11 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
       gudang_id: '',
       penerima: '',
       narasi: '',
+      kdwo: kdwoFromWo || '',
+      wo_id: woIdFromWo ? Number(woIdFromWo) : null,
       items: [createEmptyItem()]
     };
-  }, [detail, mode, isFromMro]);
+  }, [detail, mode, isFromMro, giPrepareList, kdwoFromWo, woIdFromWo]);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
@@ -131,6 +180,9 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
         gudang_id: Number(values.gudang_id),
         penerima: values.penerima,
         narasi: values.narasi || '',
+        kdwo: kdwoFromWo || values.kdwo || '',
+        wo_id: woIdFromWo ? Number(woIdFromWo) : (values.wo_id ? Number(values.wo_id) : null),
+        source_type: isFromMro ? 'MATERIAL_REQUEST' : 'MANUAL',
         idempotency_key: generateIdempotencyKey(),
         items: values.items.map((item) => ({
           barang_id: Number(item.barang_id),
@@ -150,10 +202,12 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
         if (!response?.success) throw new Error(response?.message || 'Draft gagal diperbarui');
         openNotification({ open: true, title: 'success', message: 'Draft Goods Issue berhasil diperbarui', alert: { color: 'success' } });
         router.push(`/goods-issues/${id}`);
-      } else if (isFromMro && materialRequestId) {
-        const response = await createGoodsIssueFromMaterialRequest(materialRequestId, payload);
-        if (!response?.success) throw new Error(response?.message || 'Goods Issue dari Material Request gagal dibuat');
-        openNotification({ open: true, title: 'success', message: 'Draft Goods Issue dari MRO berhasil dibuat', alert: { color: 'success' } });
+      } else if (isFromMro && giPrepareList.length > 0) {
+        // Dari Material Request (ops_material_request) → pakai create draft biasa
+        // karena payload sudah pre-fill barang, gudang, wo_id, mro_item_id per item
+        const response = await createGoodsIssueDraft(payload);
+        if (!response?.success) throw new Error(response?.message || 'Draft Goods Issue dari Material Request gagal dibuat');
+        openNotification({ open: true, title: 'success', message: 'Draft Goods Issue dari Material Request berhasil dibuat', alert: { color: 'success' } });
         router.push(`/goods-issues/${response.data?.id || response.data?.header?.id}`);
       } else {
         const response = await createGoodsIssueDraft(payload);
@@ -173,7 +227,7 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
     }
   };
 
-  if (bisnisLoading || gudangLoading || (mode === 'edit' && detailLoading) || (isFromMro && detailLoading)) {
+  if (bisnisLoading || gudangLoading || (mode === 'edit' && detailLoading) || (isFromMro && giPrepareLoading)) {
     return (
       <Stack sx={{ py: 8 }} alignItems="center">
         <CircularProgress size={28} />
@@ -181,15 +235,23 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
     );
   }
 
-  if ((mode === 'edit' || isFromMro) && dataError) {
+  if (mode === 'edit' && dataError) {
     return <Alert severity="warning">Gagal memuat data Goods Issue.</Alert>;
   }
+
+  const heading = mode === 'edit'
+    ? 'Edit Draft Goods Issue'
+    : isFromMro && giPrepareList.length > 0
+      ? `Goods Issue dari Material Request — WO: ${giPrepareList[0].kdwo || '-'} (${giPrepareList.length} item)`
+      : isFromMro
+        ? 'Goods Issue dari Material Request'
+        : 'Create Goods Issue';
 
   return (
     <Fragment>
       <Breadcrumbs
         custom
-        heading={mode === 'edit' ? 'Edit Draft Goods Issue' : isFromMro ? 'Goods Issue dari Material Request' : 'Create Goods Issue'}
+        heading={heading}
         links={breadcrumbLinks}
       />
       <MainCard
@@ -205,6 +267,7 @@ export default function GoodsIssueFormScreen({ id = null, mode = 'create' }) {
               gudangOptions={gudangRows || []}
               bisnisOptions={bisnisRows || []}
               isFromMro={isFromMro}
+              giPrepareData={giPrepareList.length > 0 ? giPrepareList[0] : null}
             />
           )}
         </Formik>

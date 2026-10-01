@@ -40,7 +40,8 @@ export const WORK_ORDER_STATUS = [
   { code: 'WV', label: 'Wait Vendor', color: '#c084fc', bg: '#f3e8ff', text: '#6d28d9', muiColor: 'secondary' },
   { code: 'WTT', label: 'Wait Transport', color: '#a78bfa', bg: '#ede9fe', text: '#5b21b6', muiColor: 'secondary' },
   { code: 'IP', label: 'In Progress', color: '#60a5fa', bg: '#dbeafe', text: '#1e40af', muiColor: 'info' },
-  { code: 'DONE', label: 'Selesai', color: '#34d399', bg: '#d1fae5', text: '#065f46', muiColor: 'success' }
+  { code: 'DONE', label: 'Selesai', color: '#34d399', bg: '#d1fae5', text: '#065f46', muiColor: 'success' },
+  { code: 'CLOSE', label: 'Closed', color: '#ef4444', bg: '#fee2e2', text: '#991b1b', muiColor: 'error' }
 ];
 
 const WO_STATUS_BY_CODE = WORK_ORDER_STATUS.reduce((acc, item) => {

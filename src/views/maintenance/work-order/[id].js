@@ -27,10 +27,12 @@ import {
   Paper,
   Select,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography
 } from '@mui/material';
-import { Add, Clock, Trash, Camera, Edit2, CloseSquare } from "iconsax-react";
+import { Add, Clock, Trash, Camera, Edit2, CloseSquare, Lock, Unlock } from "iconsax-react";
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import BtnBack from 'components/BtnBack';
@@ -38,8 +40,9 @@ import LoadingButton from 'components/@extended/LoadingButton';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
-import { addWorkOrderAction, deleteWorkOrderAction, getTeknisiOptions, updateWorkOrder, updateWorkOrderAction, useWorkOrderDetail } from 'api/work-order';
+import { addWorkOrderAction, closeWorkOrder, deleteWorkOrderAction, getTeknisiOptions, reopenWorkOrder, updateWorkOrder, updateWorkOrderAction, useWorkOrderAccess, useWorkOrderDetail } from 'api/work-order';
 import { calculateDuration, formatBreakdownAt, formatDateIssue, getWorkOrderStatusInfo, parseApiDate, WORK_ORDER_STATUS } from '../breakdown/utils';
+import MaterialRequestTab from './MaterialRequestTab';
 
 moment.locale('id');
 
@@ -69,7 +72,11 @@ const toDatetimeLocal = (value, fallbackFormat = 'DD-MM-YYYY HH:mm') => {
 export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefOverride, listHref = '/daily-breakdown', listTitle = 'Daily Breakdown' }) {
   const router = useRouter();
   const { data: detail, dataLoading, dataError, mutate } = useWorkOrderDetail(woId);
+  const { permissions: woPermissions } = useWorkOrderAccess();
   const [teknisiOptions, setTeknisiOptions] = useState([]);
+
+  const canClose = !!woPermissions?.can_validate;
+  const canReopen = !!woPermissions?.can_approve;
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [form, setForm] = useState({ services_at: '', ready_at: '' });
@@ -83,6 +90,14 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deletingAction, setDeletingAction] = useState(false);
+
+  const [closeDialog, setCloseDialog] = useState(false);
+  const [closeReason, setCloseReason] = useState('');
+  const [closing, setClosing] = useState(false);
+  const [reopenDialog, setReopenDialog] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
+  const [reopening, setReopening] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     getTeknisiOptions()
@@ -120,7 +135,6 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
         services_at: form.services_at ? moment(form.services_at).format('YYYY-MM-DD HH:mm:ss') : null,
         ready_at: form.ready_at ? moment(form.ready_at).format('YYYY-MM-DD HH:mm:ss') : null
       };
-      if (payload.ready_at) payload.status = 'DONE';
       await updateWorkOrder(woId, payload);
       openNotification({ open: true, message: 'Status work order berhasil diupdate', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
       mutate();
@@ -234,6 +248,42 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
     reader.readAsDataURL(file);
   };
 
+  const handleCloseWorkOrder = async () => {
+    setClosing(true);
+    try {
+      await closeWorkOrder(woId, closeReason);
+      openNotification({ open: true, message: 'Work order berhasil ditutup (CLOSED)', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
+      setCloseDialog(false);
+      setCloseReason('');
+      mutate();
+    } catch (error) {
+      const message = error?.response?.data?.diagnostic?.message || error?.message || 'Gagal menutup work order';
+      openNotification({ open: true, message, alert: { color: 'error', variant: 'filled' }, variant: 'alert' });
+    } finally {
+      setClosing(false);
+    }
+  };
+
+  const handleReopenWorkOrder = async () => {
+    if (!reopenReason || reopenReason.trim().length < 10) {
+      openNotification({ open: true, message: 'Alasan reopen wajib diisi (minimal 10 karakter)', alert: { color: 'warning', variant: 'filled' }, variant: 'alert' });
+      return;
+    }
+    setReopening(true);
+    try {
+      await reopenWorkOrder(woId, reopenReason.trim());
+      openNotification({ open: true, message: 'Work order dibuka kembali', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
+      setReopenDialog(false);
+      setReopenReason('');
+      mutate();
+    } catch (error) {
+      const message = error?.response?.data?.diagnostic?.message || error?.message || 'Gagal membuka kembali work order';
+      openNotification({ open: true, message, alert: { color: 'error', variant: 'filled' }, variant: 'alert' });
+    } finally {
+      setReopening(false);
+    }
+  };
+
   const backHref = backHrefOverride || (breakdownId ? `/daily-breakdown/${breakdownId}` : listHref);
   const breadcrumbLinks = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Maintenances' }, { title: listTitle, to: listHref }, { title: 'Work Order' }];
 
@@ -263,11 +313,34 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
 
   const actions = detail.actions || [];
   const duration = calculateDuration(detail.services_at || detail.breakdown?.breakdown_at, detail.ready_at);
-
+  const OPTIONS_STATUS = WORK_ORDER_STATUS.slice(0, -1);
   return (
     <Box>
       <Breadcrumbs custom heading="Work Order" links={breadcrumbLinks} />
 
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
+        <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)}>
+          <Tab label="Detail & Tindakan" />
+          <Tab label="Material Request" />
+        </Tabs>
+      </Box>
+
+      {activeTab === 1 && (
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <MainCard title={<BtnBack href={backHref} />}>
+              <MaterialRequestTab
+                woId={woId}
+                woStatus={detail.status}
+                kdwo={detail.kode_wo}
+                equipmentId={detail.equipment_id}
+              />
+            </MainCard>
+          </Grid>
+        </Grid>
+      )}
+
+      {activeTab === 0 && (
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid item xs={12} md={7}>
           <MainCard title={<BtnBack href={backHref} />}>
@@ -315,7 +388,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
               <Typography variant="subtitle1" fontWeight={700}>
                 {actions.length} Aktivitas Teknisi
               </Typography>
-              <Button variant="contained" size="small" color="success" startIcon={<Add size={16} />} onClick={() => setShowAddAction(!showAddAction)}>
+              <Button variant="contained" size="small" color="success" startIcon={<Add size={16} />} onClick={() => setShowAddAction(!showAddAction)} disabled={detail?.status === 'CLOSE'}>
                 Catatan
               </Button>
             </Stack>
@@ -344,7 +417,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                                     {formatDateTime(act.starttime)}{act.starttime && act.endtime ? ` – ${formatTime(act.endtime)}` : ''}
                                   </Typography>
                                 </Stack>
-                                <Stack direction="row" spacing={0.5}>
+                                <Stack direction="row" spacing={0.5} sx={{ display: detail?.status === 'CLOSE' ? 'none' : 'flex' }}>
                                   <IconButton size="small" color="primary" onClick={() => handleEditAction(act)}>
                                     <Edit2 size={16} />
                                   </IconButton>
@@ -517,7 +590,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
               <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select label="Status" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
-                  {WORK_ORDER_STATUS.map((opt) => (
+                  {OPTIONS_STATUS?.map((opt) => (
                     <MenuItem key={opt.code} value={opt.code}>{opt.code} • {opt.label}</MenuItem>
                   ))}
                 </Select>
@@ -542,16 +615,127 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                 InputLabelProps={{ shrink: true }}
                 value={form.ready_at}
                 onChange={(e) => setForm((prev) => ({ ...prev, ready_at: e.target.value }))}
-                helperText="Otomatis dari waktu selesai aksi terakhir dan akan mengubah status menjadi DONE"
+                helperText="Otomatis dari waktu selesai aksi terakhir"
               />
 
-              <LoadingButton variant="contained" fullWidth loading={updating} onClick={handleUpdateStatus}>
+              <LoadingButton variant="contained" fullWidth loading={updating} onClick={handleUpdateStatus} disabled={detail?.status === 'CLOSE'}>
                 Update Status
               </LoadingButton>
+
+              {(selectedStatus === 'DONE' || detail?.status === 'DONE' || detail?.status === 'CLOSE') && (
+                <>
+                  <LoadingButton
+                    variant="contained"
+                    color="error"
+                    fullWidth
+                    loading={closing}
+                    disabled={detail?.status === 'CLOSE' || !canClose}
+                    onClick={() => setCloseDialog(true)}
+                    startIcon={<Lock size={18} />}
+                    sx={{ mt: 1 }}
+                  >
+                    {detail?.status === 'CLOSE' ? 'Work Order Closed' : 'CLOSE Work Order'}
+                  </LoadingButton>
+                  {!canClose && detail?.status !== 'CLOSE' && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                      Butuh akses validate untuk menutup work order
+                    </Typography>
+                  )}
+                </>
+              )}
+
+              {detail?.status === 'CLOSE' && (
+                <>
+                  <LoadingButton
+                    variant="contained"
+                    color="warning"
+                    fullWidth
+                    loading={reopening}
+                    disabled={!canReopen}
+                    onClick={() => setReopenDialog(true)}
+                    startIcon={<Unlock size={18} />}
+                    sx={{ mt: 1 }}
+                  >
+                    REOPEN Work Order
+                  </LoadingButton>
+                  {!canReopen && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                      Butuh akses approve untuk membuka kembali work order
+                    </Typography>
+                  )}
+                </>
+              )}
             </Stack>
           </MainCard>
         </Grid>
       </Grid>
+      )}
+
+      <Dialog open={closeDialog} onClose={() => setCloseDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Lock size={20} /> Tutup Work Order
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="warning">
+              Setelah ditutup, transaksi berikut akan dikunci untuk WO ini:
+              <Box component="ul" sx={{ m: 0, pl: 2.5, mt: 0.5 }}>
+                <li>Tidak ada permintaan material baru</li>
+                <li>Tidak ada pengeluaran barang baru (Goods Issue)</li>
+                <li>Tidak ada order ke supplier baru (Purchase Request)</li>
+                <li>Tidak bisa tambah tindakan teknisi</li>
+              </Box>
+            </Alert>
+            <TextField
+              label="Alasan (opsional)"
+              multiline
+              minRows={2}
+              size="small"
+              fullWidth
+              value={closeReason}
+              onChange={(e) => setCloseReason(e.target.value)}
+              placeholder="Contoh: Perbaikan selesai, semua part terpenuhi"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setCloseDialog(false); setCloseReason(''); }}>Batal</Button>
+          <LoadingButton variant="contained" color="error" loading={closing} onClick={handleCloseWorkOrder}>
+            CLOSE
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={reopenDialog} onClose={() => setReopenDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Unlock size={20} /> Buka Kembali Work Order
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="info">
+              Membuka kembali akan mengizinkan transaksi material & tindakan teknisi untuk WO ini.
+            </Alert>
+            <TextField
+              label="Alasan reopen (wajib, min 10 karakter)"
+              multiline
+              minRows={3}
+              size="small"
+              fullWidth
+              value={reopenReason}
+              onChange={(e) => setReopenReason(e.target.value)}
+              error={!!reopenReason && reopenReason.trim().length > 0 && reopenReason.trim().length < 10}
+              helperText={reopenReason && reopenReason.trim().length > 0 && reopenReason.trim().length < 10 ? `Minimal 10 karakter (saat ini ${reopenReason.trim().length})` : 'Wajib diisi'}
+              placeholder="Contoh: Masih ada part yang belum diterima dari supplier untuk PR-xxx"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setReopenDialog(false); setReopenReason(''); }}>Batal</Button>
+          <LoadingButton variant="contained" color="warning" loading={reopening} onClick={handleReopenWorkOrder}>
+            REOPEN
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}>
         <DialogTitle>Hapus Catatan</DialogTitle>
