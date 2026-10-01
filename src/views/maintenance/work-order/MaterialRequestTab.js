@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Alert,
@@ -35,6 +34,8 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography
 } from '@mui/material';
@@ -108,6 +109,10 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
   const [deleteDialog, setDeleteDialog] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Mode & form untuk "Sparepart Manual" (barang tidak ditemukan di master)
+  const [itemMode, setItemMode] = useState('search'); // 'search' | 'manual'
+  const [manualForm, setManualForm] = useState({ narasi: '', aliaspart: '', qty: 1, uom_used: '' });
+
   // State untuk "Keluarkan Barang" global (semua item belum keluar)
   const [giPreparing, setGiPreparing] = useState(false);
   const [giConfirm, setGiConfirm] = useState(null); // { mroIds: [], items: [{mro_id, kdwo, barang, qty_requested, qty_available, qty_to_issue}], skipped: [] }
@@ -129,7 +134,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
   }, [optionData]);
 
   const cartTotalQty = cart.reduce((sum, c) => sum + Number(c.qty || 0), 0);
-  const cartHasInsufficientStok = cart.some((c) => Number(c.stok || 0) < Number(c.qty || 0));
+  const cartHasInsufficientStok = cart.some((c) => !c.isManual && Number(c.stok || 0) < Number(c.qty || 0));
 
   const handleAddToCart = (barang) => {
     setCart((prev) => {
@@ -140,6 +145,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
       return [
         ...prev,
         {
+          uid: `b-${barang.id}`,
           barang_id: barang.id,
           kode: barang.kode,
           nama: barang.nama,
@@ -147,18 +153,52 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
           satuan: barang.satuan_pakai || barang.satuan_order || '',
           stok: barang.stok_pakai || 0,
           qty: 1,
-          uom_used: barang.satuan_pakai || barang.satuan_order || ''
+          uom_used: barang.satuan_pakai || barang.satuan_order || '',
+          isManual: false
         }
       ];
     });
   };
 
-  const handleCartQtyChange = (barangId, qty) => {
-    setCart((prev) => prev.map((c) => (c.barang_id === barangId ? { ...c, qty: Math.max(0, Number(qty) || 0) } : c)));
+  const handleCartQtyChange = (uid, qty) => {
+    setCart((prev) => prev.map((c) => (c.uid === uid ? { ...c, qty: Math.max(0, Number(qty) || 0) } : c)));
   };
 
-  const handleRemoveFromCart = (barangId) => {
-    setCart((prev) => prev.filter((c) => c.barang_id !== barangId));
+  const handleRemoveFromCart = (uid) => {
+    setCart((prev) => prev.filter((c) => c.uid !== uid));
+  };
+
+  // Tambah item manual (barang tidak ditemukan di master)
+  const handleAddManualToCart = () => {
+    const narasi = (manualForm.narasi || '').trim();
+    if (!narasi) {
+      openNotification({ open: true, message: 'Deskripsi barang wajib diisi', alert: { color: 'warning', variant: 'filled' }, variant: 'alert' });
+      return;
+    }
+    const qty = Number(manualForm.qty || 0);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      openNotification({ open: true, message: 'Qty harus lebih dari 0', alert: { color: 'warning', variant: 'filled' }, variant: 'alert' });
+      return;
+    }
+
+    setCart((prev) => [
+      ...prev,
+      {
+        uid: `m-${Date.now()}-${prev.length}`,
+        barang_id: '',
+        kode: '',
+        nama: narasi,
+        num_part: '',
+        satuan: manualForm.uom_used || '',
+        stok: 0,
+        qty,
+        uom_used: manualForm.uom_used || '',
+        narasi,
+        aliaspart: (manualForm.aliaspart || '').trim(),
+        isManual: true
+      }
+    ]);
+    setManualForm({ narasi: '', aliaspart: '', qty: 1, uom_used: '' });
   };
 
   const resetForm = () => {
@@ -191,9 +231,11 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
       const payload = {
         gudang_id: selectedGudang.id,
         items: cart.map((c) => ({
-          barang_id: c.barang_id,
+          barang_id: c.barang_id || null,
           qty: Number(c.qty),
-          uom_used: c.uom_used
+          uom_used: c.uom_used || '',
+          narasi: c.isManual ? c.narasi : '',
+          aliaspart: c.isManual ? c.aliaspart : ''
         }))
       };
       const response = await createMaterialRequestFromWo(woId, payload);
@@ -239,7 +281,19 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
     router.push(`/goods-issues/create?mros=${ids.join(',')}`);
   };
 
-  // Aksi global "Keluarkan Barang" — bawa semua item yang belum keluar
+  // Aksi global "Order Barang" — redirect ke Purchasing Request dengan pre-fill item MR belum keluar
+  const handleOrderBarang = () => {
+    // Sertakan semua item belum keluar, termasuk item manual (barang_id kosong)
+    const itemsToOrder = (mrList || []).filter((m) => !m.kdout);
+    if (itemsToOrder.length === 0) {
+      openNotification({ open: true, message: 'Tidak ada item yang bisa di-order', alert: { color: 'info', variant: 'filled' }, variant: 'alert' });
+      return;
+    }
+    const mroIds = itemsToOrder.map((m) => m.id).join(',');
+    router.push(`/purchasing-request/create?wo=${woId}&mro=${mroIds}`);
+  };
+
+  // Aksi global "Keluarkan Barang" — bawa semua item yang belum keluar (hanya item dengan barang_id)
   const handleKeluarkanSemua = async () => {
     const itemsToIssue = (mrList || []).filter((m) => !m.kdout && m.barang_id);
     if (itemsToIssue.length === 0) {
@@ -355,9 +409,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                 variant="outlined"
                 color="warning"
                 startIcon={<ShoppingBag size={16} />}
-                component={Link}
-                href={`/operational/material-request-order?wo=${woId}`}
-                target="_blank"
+                onClick={handleOrderBarang}
                 sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
               >
                 Order Barang
@@ -568,34 +620,118 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
             {/* STEP 1: Cari & Pilih Barang */}
             {formStep === 1 && (
               <Stack spacing={2}>
-                {/* Search bar */}
-                <TextField
-                  label="Cari barang (kode, nama, atau nomor part)"
-                  placeholder="Contoh: kampas kopling, oli, filter..."
-                  size="medium"
+                {/* Toggle mode: Cari Barang / Sparepart Manual */}
+                <ToggleButtonGroup
+                  value={itemMode}
+                  exclusive
                   fullWidth
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  helperText={`Menampilkan stok di gudang: ${selectedGudang?.nama || '-'}${debouncedKeyword !== keyword ? ' (mencari...)' : ''} — klik baris barang untuk menambah ke keranjang`}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchNormal1 size={20} color="text.secondary" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: keyword && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setKeyword('')}>
-                          <CloseCircle size={16} />
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
+                  size="small"
+                  onChange={(_e, val) => val && setItemMode(val)}
+                  sx={{ '& .MuiToggleButton-root': { textTransform: 'none', fontWeight: 600 } }}
+                >
+                  <ToggleButton value="search">
+                    <SearchNormal1 size={16} style={{ marginRight: 6 }} />
+                    Cari Barang
+                  </ToggleButton>
+                  <ToggleButton value="manual">
+                    <Warning2 size={16} style={{ marginRight: 6 }} />
+                    Sparepart Manual (tidak ditemukan)
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {/* MODE: Cari Barang dari master */}
+                {itemMode === 'search' && (
+                  <>
+                    <TextField
+                      label="Cari barang (kode, nama, atau nomor part)"
+                      placeholder="Contoh: kampas kopling, oli, filter..."
+                      size="medium"
+                      fullWidth
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      helperText={`Menampilkan stok di gudang: ${selectedGudang?.nama || '-'}${debouncedKeyword !== keyword ? ' (mencari...)' : ''} — klik baris barang untuk menambah ke keranjang`}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchNormal1 size={20} color="text.secondary" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: keyword && (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setKeyword('')}>
+                              <CloseCircle size={16} />
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+                  </>
+                )}
+
+                {/* MODE: Sparepart Manual */}
+                {itemMode === 'manual' && (
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'warning.lighter' }}>
+                    <Stack spacing={1.5}>
+                      <Alert severity="info" icon={<Warning2 size={18} />}>
+                        Gunakan ini jika barang/sparepart <strong>tidak ditemukan</strong> di master.
+                        Deskripsi akan disimpan ke kolom <code>description</code> saat dibuat Purchasing Request.
+                      </Alert>
+                      <TextField
+                        label="Deskripsi Barang / Sparepart *"
+                        placeholder="Contoh: Seal hydraulic OEM EX-200 (custom)"
+                        size="small"
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        value={manualForm.narasi}
+                        onChange={(e) => setManualForm((p) => ({ ...p, narasi: e.target.value }))}
+                        helperText="Wajib diisi — deskripsi ini akan menjadi item di Purchasing Request"
+                      />
+                      <Stack direction="row" spacing={1.5} flexWrap="wrap">
+                        <TextField
+                          label="Qty *"
+                          type="number"
+                          size="small"
+                          value={manualForm.qty}
+                          onChange={(e) => setManualForm((p) => ({ ...p, qty: e.target.value }))}
+                          sx={{ width: 100 }}
+                          inputProps={{ min: 1, style: { textAlign: 'center' } }}
+                        />
+                        <TextField
+                          label="Satuan"
+                          size="small"
+                          value={manualForm.uom_used}
+                          onChange={(e) => setManualForm((p) => ({ ...p, uom_used: e.target.value }))}
+                          placeholder="pcs / set / ltr"
+                          sx={{ width: 140 }}
+                        />
+                        <TextField
+                          label="Part No / Alias (opsional)"
+                          size="small"
+                          value={manualForm.aliaspart}
+                          onChange={(e) => setManualForm((p) => ({ ...p, aliaspart: e.target.value }))}
+                          placeholder="PN-xxx"
+                          sx={{ flex: 1, minWidth: 160 }}
+                        />
+                      </Stack>
+                      <Stack direction="row" justifyContent="flex-end">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Add size={16} />}
+                          onClick={handleAddManualToCart}
+                        >
+                          Tambah ke Keranjang
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                )}
 
                 {/* Layout 2 kolom: hasil pencarian (kiri) + keranjang (kanan) */}
                 <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
-                  {/* Kiri: Hasil pencarian */}
+                  {/* Kiri: Hasil pencarian (hanya saat mode search) */}
+                  {itemMode === 'search' && (
                   <Box sx={{ flex: 1.4, minWidth: 0 }}>
                     {barangLoading && (
                       <Stack alignItems="center" sx={{ py: 3 }}>
@@ -696,6 +832,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       </Paper>
                     )}
                   </Box>
+                  )}
 
                   {/* Kanan: Keranjang (selalu visible) */}
                   <Box sx={{ flex: 1, minWidth: 280 }}>
@@ -734,15 +871,19 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                               const qtyNum = Number(c.qty || 0);
                               const kurang = stokNum < qtyNum;
                               return (
-                                <Paper key={c.barang_id} variant="outlined" sx={{ p: 1, borderRadius: 1, borderLeft: '3px solid', borderLeftColor: kurang ? 'warning.main' : 'primary.main' }}>
+                                <Paper key={c.uid} variant="outlined" sx={{ p: 1, borderRadius: 1, borderLeft: '3px solid', borderLeftColor: kurang ? 'warning.main' : 'primary.main' }}>
                                   <Stack direction="row" spacing={1} alignItems="flex-start">
                                     <Avatar sx={{ width: 28, height: 28, fontSize: 11, fontWeight: 700, bgcolor: 'primary.lighter', color: 'primary.main', flexShrink: 0 }}>
                                       {idx + 1}
                                     </Avatar>
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                                      <Typography variant="body2" fontWeight={700} noWrap>
-                                        {c.kode}
-                                      </Typography>
+                                      {c.isManual ? (
+                                        <Chip label="Manual" size="small" color="warning" sx={{ mb: 0.25, height: 18, fontSize: 10 }} />
+                                      ) : (
+                                        <Typography variant="body2" fontWeight={700} noWrap>
+                                          {c.kode || '-'}
+                                        </Typography>
+                                      )}
                                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }} noWrap>
                                         {c.nama}
                                       </Typography>
@@ -751,7 +892,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                                           <IconButton
                                             size="small"
                                             sx={{ p: 0.2, border: '1px solid', borderColor: 'divider', borderRadius: 0.5, width: 22, height: 22 }}
-                                            onClick={() => handleCartQtyChange(c.barang_id, Math.max(1, qtyNum - 1))}
+                                            onClick={() => handleCartQtyChange(c.uid, Math.max(1, qtyNum - 1))}
                                           >
                                             <Typography variant="caption" fontWeight={700}>-</Typography>
                                           </IconButton>
@@ -759,25 +900,27 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                                             type="number"
                                             size="small"
                                             value={c.qty}
-                                            onChange={(e) => handleCartQtyChange(c.barang_id, e.target.value)}
+                                            onChange={(e) => handleCartQtyChange(c.uid, e.target.value)}
                                             sx={{ width: 50 }}
                                             inputProps={{ min: 1, style: { textAlign: 'center', fontWeight: 700, padding: '2px 0' } }}
                                           />
                                           <IconButton
                                             size="small"
                                             sx={{ p: 0.2, border: '1px solid', borderColor: 'divider', borderRadius: 0.5, width: 22, height: 22 }}
-                                            onClick={() => handleCartQtyChange(c.barang_id, qtyNum + 1)}
+                                            onClick={() => handleCartQtyChange(c.uid, qtyNum + 1)}
                                           >
                                             <Typography variant="caption" fontWeight={700}>+</Typography>
                                           </IconButton>
                                           <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>{c.satuan}</Typography>
                                         </Stack>
-                                        <IconButton size="small" color="error" onClick={() => handleRemoveFromCart(c.barang_id)} sx={{ p: 0.3 }}>
+                                        <IconButton size="small" color="error" onClick={() => handleRemoveFromCart(c.uid)} sx={{ p: 0.3 }}>
                                           <Trash size={14} />
                                         </IconButton>
                                       </Stack>
                                       <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                                        {stokNum <= 0 ? (
+                                        {c.isManual ? (
+                                          <Chip label="Manual" size="small" color="warning" variant="outlined" sx={{ height: 18, fontSize: 10 }} />
+                                        ) : stokNum <= 0 ? (
                                           <Chip label={`Stok habis`} size="small" color="error" sx={{ height: 18, fontSize: 10 }} />
                                         ) : kurang ? (
                                           <Chip label={`Stok ${stokNum} (kurang)`} size="small" color="warning" sx={{ height: 18, fontSize: 10 }} />
@@ -843,27 +986,31 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       </TableHead>
                       <TableBody>
                         {cart.map((c) => (
-                          <TableRow key={c.barang_id}>
+                          <TableRow key={c.uid}>
                             <TableCell>
-                              <Typography variant="body2" fontWeight={600}>{c.kode}</Typography>
-                              <Typography variant="caption" color="text.secondary">{c.nama}</Typography>
+                              {c.isManual ? (
+                                <Chip label="Manual" size="small" color="warning" sx={{ mb: 0.5 }} />
+                              ) : (
+                                <Typography variant="body2" fontWeight={600}>{c.kode || '-'}</Typography>
+                              )}
+                              <Typography variant="caption" color="text.secondary" display="block">{c.nama}</Typography>
                             </TableCell>
                             <TableCell align="center">
-                              <StokBadge stok={c.stok} qty={c.qty} />
+                              {c.isManual ? <Chip label="N/A" size="small" variant="outlined" /> : <StokBadge stok={c.stok} qty={c.qty} />}
                             </TableCell>
                             <TableCell align="center">
                               <TextField
                                 type="number"
                                 size="small"
                                 value={c.qty}
-                                onChange={(e) => handleCartQtyChange(c.barang_id, e.target.value)}
+                                onChange={(e) => handleCartQtyChange(c.uid, e.target.value)}
                                 sx={{ width: 70 }}
                                 inputProps={{ min: 1, style: { textAlign: 'center', fontWeight: 700 } }}
                               />
                             </TableCell>
-                            <TableCell align="center">{c.satuan}</TableCell>
+                            <TableCell align="center">{c.satuan || '-'}</TableCell>
                             <TableCell align="center">
-                              <IconButton size="small" color="error" onClick={() => handleRemoveFromCart(c.barang_id)}>
+                              <IconButton size="small" color="error" onClick={() => handleRemoveFromCart(c.uid)}>
                                 <Trash size={15} />
                               </IconButton>
                             </TableCell>

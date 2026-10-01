@@ -35,6 +35,8 @@ export const EMPTY_REQUEST_ITEM = {
   qty_req: 1,
   stn: "",
   description: "",
+  woid: null,
+  mro_id: null,
 };
 
 /** Renders a rich spare-part option so similar parts are easier to distinguish. */
