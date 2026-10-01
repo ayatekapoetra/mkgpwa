@@ -565,9 +565,24 @@ export default function GoodsIssueForm({
                             value={selectedRack}
                             fullWidth
                             openOnFocus
-                            getOptionLabel={(option) => `${option.kode} - ${option.nama} | ${option.stok_pakai ?? 0} ${item.satuan_pakai || ''}`}
+                            getOptionDisabled={(option) => Boolean(option?.locked)}
+                            getOptionLabel={(option) => `${option.kode} - ${option.nama} | ${option.stok_pakai ?? 0} ${item.satuan_pakai || ''}${option?.locked ? ' | Terkunci' : ''}`}
                             isOptionEqualToValue={(option, value) => String(option?.id) === String(value?.id)}
                             onChange={(_, option) => setFieldValue(`items.${index}.rack_id`, option?.id || '')}
+                            renderOption={(props, option) => (
+                              <Box component="li" {...props} key={option.id} sx={{ alignItems: 'flex-start !important', py: 1 }}>
+                                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {option.kode} - {option.nama}
+                                  </Typography>
+                                  {option?.locked ? (
+                                    <Chip size="small" label="Terkunci (SO overdue)" color="error" sx={{ height: 20 }} />
+                                  ) : (
+                                    <Chip size="small" label={`${option.stok_pakai ?? 0} ${item.satuan_pakai || ''}`.trim()} color="success" variant="outlined" sx={{ height: 20 }} />
+                                  )}
+                                </Stack>
+                              </Box>
+                            )}
                             renderInput={(params) => (
                               <TextField
                                 {...params}

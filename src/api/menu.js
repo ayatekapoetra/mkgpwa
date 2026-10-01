@@ -142,6 +142,14 @@ export function useGetMenu() {
           url: '/laporan/event-history',
           icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
           breadcrumbs: true
+        },
+        {
+          id: 'stokopname-report',
+          title: 'Laporan Stockopname',
+          type: 'item',
+          url: '/laporan/stokopname',
+          icon: getMenuIcon('BoxTime') || getMenuIcon('documentText'),
+          breadcrumbs: true
         }
       ];
 
@@ -205,6 +213,30 @@ export function useGetMenu() {
           type: 'item',
           url: '/goods-issues',
           icon: getMenuIcon('box') || getMenuIcon('documentText'),
+          breadcrumbs: true
+        });
+      }
+
+      const hasStokopname = warehouseMenu.children.some((item) => item?.url === '/warehouse/stokopname' || item?.id === 'stokopname');
+      if (!hasStokopname) {
+        warehouseMenu.children.push({
+          id: 'stokopname',
+          title: 'Stockopname',
+          type: 'item',
+          url: '/warehouse/stokopname',
+          icon: getMenuIcon('clipboardText') || getMenuIcon('box'),
+          breadcrumbs: true
+        });
+      }
+
+      const hasRacks = warehouseMenu.children.some((item) => item?.url === '/warehouse/racks' || item?.id === 'racks');
+      if (!hasRacks) {
+        warehouseMenu.children.push({
+          id: 'racks',
+          title: 'Rack Cycle Time',
+          type: 'item',
+          url: '/warehouse/racks',
+          icon: getMenuIcon('BoxTime') || getMenuIcon('box'),
           breadcrumbs: true
         });
       }
