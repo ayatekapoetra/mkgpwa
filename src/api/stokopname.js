@@ -154,3 +154,17 @@ export async function closeStokopname(id) {
   const response = await axiosServices.post(`${endpoints.key}/${id}/close`, {}, { skipOfflineQueue: true });
   return response.data;
 }
+
+export async function downloadStokopnameTemplate(params) {
+  const query = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    query.set(key, value);
+  });
+  const response = await axiosServices.get(`${endpoints.key}/print-template?${query.toString()}`, {
+    responseType: 'blob',
+    timeout: 120000,
+    skipOfflineQueue: true
+  });
+  return response;
+}

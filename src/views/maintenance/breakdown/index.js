@@ -428,6 +428,11 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
   }, [open, filters]);
 
   const toggleStatus = (code) => {
+    // "all" (Semua) → reset filter status menjadi kosong (tampilkan semua status)
+    if (code === 'all') {
+      setLocal((prev) => ({ ...prev, status: [] }));
+      return;
+    }
     setLocal((prev) => {
       const arr = Array.isArray(prev.status) ? prev.status : [];
       return {
@@ -436,6 +441,8 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
       };
     });
   };
+
+  const isAllActive = !Array.isArray(local.status) || local.status.length === 0;
 
   const isFiltered = useMemo(() => hasActiveFilters(local), [local]);
 
@@ -456,6 +463,19 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
                 Status Breakdown
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip
+                  label="Semua"
+                  size="small"
+                  onClick={() => toggleStatus('all')}
+                  color={isAllActive ? 'primary' : 'default'}
+                  variant={isAllActive ? 'filled' : 'outlined'}
+                  sx={{
+                    bgcolor: isAllActive ? '#6366f1' : 'transparent',
+                    color: isAllActive ? '#fff' : 'text.primary',
+                    borderColor: '#6366f1',
+                    '&:hover': { bgcolor: isAllActive ? '#6366f1' : '#eef2ff' }
+                  }}
+                />
                 {BREAKDOWN_STATUS.map((opt) => {
                   const active = local.status?.includes(opt.code);
                   return (

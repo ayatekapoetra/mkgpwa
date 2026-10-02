@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import * as Yup from 'yup';
@@ -11,6 +11,9 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
+
+import { DocumentDownload } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -19,7 +22,7 @@ import BtnBack from 'components/BtnBack';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
 import { useGetGudang } from 'api/gudang';
-import { useShowStokopname, createStokopnameDraft, updateStokopnameDraft } from 'api/stokopname';
+import { useShowStokopname, createStokopnameDraft, updateStokopnameDraft, downloadStokopnameTemplate } from 'api/stokopname';
 
 import StokopnameForm, { createEmptyItem } from './form';
 
@@ -42,6 +45,37 @@ export default function StokopnameFormScreen({ id = null, mode = 'create' }) {
   const router = useRouter();
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
   const { data: detail, dataLoading: detailLoading, dataError } = useShowStokopname(id);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+
+  const handleDownloadTemplate = async (gudangId, rackId) => {
+    if (!gudangId || !rackId) return;
+    setDownloadingTemplate(true);
+    try {
+      const response = await downloadStokopnameTemplate({ gudang_id: gudangId, rack_id: rackId });
+      const disposition = response.headers?.['content-disposition'] || '';
+      const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      const asciiMatch = disposition.match(/filename="?([^";]+)"?/i);
+      let filename = utfMatch?.[1] ? decodeURIComponent(utfMatch[1]) : asciiMatch?.[1] || `template-stockopname-${rackId}.pdf`;
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      openNotification({ title: 'success', message: 'Template stockopname berhasil diunduh', alert: { color: 'success' } });
+    } catch (error) {
+      openNotification({
+        title: 'error',
+        message: error?.response?.data?.message || error?.message || 'Gagal mengunduh template',
+        alert: { color: 'error' }
+      });
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  };
 
   const breadcrumbLinks = useMemo(() => {
     const links = [
@@ -146,7 +180,9 @@ export default function StokopnameFormScreen({ id = null, mode = 'create' }) {
   return (
     <Fragment>
       <Breadcrumbs custom heading={heading} links={breadcrumbLinks} />
-      <MainCard title={<BtnBack href={mode === 'edit' ? `/warehouse/stokopname/${id}` : '/warehouse/stokopname'} />} content>
+      <MainCard 
+        title={<BtnBack href={mode === 'edit' ? `/warehouse/stokopname/${id}` : '/warehouse/stokopname'} />} 
+        content>
         <AlertNotification />
         <Formik enableReinitialize initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
           {(formikProps) => (
@@ -154,6 +190,19 @@ export default function StokopnameFormScreen({ id = null, mode = 'create' }) {
               <StokopnameForm {...formikProps} gudangOptions={gudangRows || []} />
               <Stack direction="row" spacing={1} justifyContent="flex-end">
                 <BtnBack href="/warehouse/stokopname" />
+                <Tooltip title={formikProps.values.rack_id ? 'Download template hitung fisik (PDF)' : 'Pilih rack terlebih dahulu'}>
+                  <span>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={downloadingTemplate ? <CircularProgress size={16} /> : <DocumentDownload size={18} />}
+                      disabled={!formikProps.values.rack_id || downloadingTemplate}
+                      onClick={() => handleDownloadTemplate(formikProps.values.gudang_id, formikProps.values.rack_id)}
+                    >
+                      Template
+                    </Button>
+                  </span>
+                </Tooltip>
                 <Button type="button" variant="contained" onClick={formikProps.submitForm} disabled={formikProps.isSubmitting}>
                   {formikProps.isSubmitting ? 'Menyimpan...' : 'Save Draft'}
                 </Button>
