@@ -219,7 +219,15 @@ export default function FleetAssignmentCreate() {
   const equipmentQuery = useFleetEligibleEquipment(availabilityParams, access.permissions.read && contextComplete);
   const equipment = useMemo(() => {
     const positionedIds = new Set(placementQuery.options.equipments.map((item) => String(item.id)));
-    return equipmentQuery.availability.data.filter((item) => item.eligible && positionedIds.has(String(item.id)));
+    const seen = new Set();
+
+    return equipmentQuery.availability.data.filter((item) => {
+      const equipmentId = item.id ?? item.equipment_id ?? item.kode ?? item.abbr;
+      const key = String(equipmentId);
+      if (!item.eligible || !positionedIds.has(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [equipmentQuery.availability.data, placementQuery.options.equipments]);
 
   const visibleEquipment = useMemo(() => equipment.filter((item) => {

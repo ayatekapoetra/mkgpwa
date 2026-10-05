@@ -6,6 +6,7 @@ import moment from 'moment';
 import 'moment/locale/id';
 import {
   Alert,
+  Autocomplete,
   Avatar,
   Box,
   Button,
@@ -466,14 +467,24 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                     />
                   </Stack>
 
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Teknisi</InputLabel>
-                    <Select label="Teknisi" value={actionForm.teknisi_id} onChange={(e) => setActionForm((prev) => ({ ...prev, teknisi_id: e.target.value }))}>
-                      {teknisiOptions.map((opt) => (
-                        <MenuItem key={opt.id} value={opt.id}>{opt.nama} {opt.subtitle ? `(${opt.subtitle})` : ''}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete
+                    fullWidth
+                    size="small"
+                    options={teknisiOptions}
+                    value={teknisiOptions.find((opt) => opt.id == actionForm.teknisi_id) || null}
+                    isOptionEqualToValue={(option, value) => option.id == value?.id}
+                    getOptionLabel={(option) => option?.nama || ''}
+                    onChange={(_, option) => setActionForm((prev) => ({ ...prev, teknisi_id: option?.id || '' }))}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Stack>
+                          <Typography variant="body2">{option.nama}</Typography>
+                          {option.subtitle && <Typography variant="caption" color="text.secondary">{option.subtitle}</Typography>}
+                        </Stack>
+                      </Box>
+                    )}
+                    renderInput={(params) => <TextField {...params} label="Teknisi" />}
+                  />
 
                   <TextField
                     label="Narasi"
@@ -538,14 +549,24 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                     />
                   </Stack>
 
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Teknisi</InputLabel>
-                    <Select label="Teknisi" value={editForm.teknisi_id} onChange={(e) => setEditForm((prev) => ({ ...prev, teknisi_id: e.target.value }))}>
-                      {teknisiOptions.map((opt) => (
-                        <MenuItem key={opt.id} value={opt.id}>{opt.nama} {opt.subtitle ? `(${opt.subtitle})` : ''}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete
+                    fullWidth
+                    size="small"
+                    options={teknisiOptions}
+                    value={teknisiOptions.find((opt) => opt.id == editForm.teknisi_id) || null}
+                    isOptionEqualToValue={(option, value) => option.id == value?.id}
+                    getOptionLabel={(option) => option?.nama || ''}
+                    onChange={(_, option) => setEditForm((prev) => ({ ...prev, teknisi_id: option?.id || '' }))}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Stack>
+                          <Typography variant="body2">{option.nama}</Typography>
+                          {option.subtitle && <Typography variant="caption" color="text.secondary">{option.subtitle}</Typography>}
+                        </Stack>
+                      </Box>
+                    )}
+                    renderInput={(params) => <TextField {...params} label="Teknisi" />}
+                  />
 
                   <TextField
                     label="Narasi"
