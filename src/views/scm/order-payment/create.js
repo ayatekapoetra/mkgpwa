@@ -69,6 +69,26 @@ const formatLongDate = (v) => {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const attachmentUrl = (attachment) =>
+  attachment?.url ||
+  attachment?.file_url ||
+  attachment?.download_url ||
+  attachment?.path ||
+  "";
+
+const attachmentName = (attachment, index) =>
+  attachment?.name ||
+  attachment?.filename ||
+  attachment?.original_name ||
+  attachment?.file_name ||
+  `Berkas ${index + 1}`;
+
+const isImageAttachment = (attachment) => {
+  const type = String(attachment?.datatype || attachment?.mime_type || attachment?.type || "").toLowerCase();
+  const url = attachmentUrl(attachment).toLowerCase();
+  return type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|heic)(\?|$)/i.test(url);
+};
+
 /**
  * Add Pembayaran — multi-faktur, multi-pemasok, satu bisnis_id.
  *
@@ -93,6 +113,57 @@ export default function OrderPaymentCreatePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [detailRow, setDetailRow] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const handleProofSelect = (id, event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      openNotification({
+        open: true,
+        title: "Format tidak didukung",
+        message: "Bukti pembayaran harus berupa file gambar.",
+        alert: { color: "warning" },
+      });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      openNotification({
+        open: true,
+        title: "Ukuran file terlalu besar",
+        message: "Ukuran bukti pembayaran maksimal 5 MB.",
+        alert: { color: "warning" },
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAllocations((prev) =>
+        prev.map((row) =>
+          String(row.id) === String(id)
+            ? {
+                ...row,
+                paymentProof: {
+                  name: file.name,
+                  type: file.type,
+                  dataUrl: reader.result,
+                },
+              }
+            : row,
+        ),
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeProof = (id) => {
+    setAllocations((prev) =>
+      prev.map((row) =>
+        String(row.id) === String(id) ? { ...row, paymentProof: null } : row,
+      ),
+    );
+  };
 
   useEffect(() => {
     if (!bisnisId) {
@@ -167,6 +238,7 @@ export default function OrderPaymentCreatePage() {
           faktur_id: Number(a.id),
           amount: Number(a.amount) || 0,
           pemasok_id: a.pemasok_id,
+          paymentProof: a.paymentProof,
         }))
         .filter((a) => a.amount > 0),
     [allocations],
@@ -180,6 +252,13 @@ export default function OrderPaymentCreatePage() {
   const selectedWallet = wallets.find(
     (w) => String(w.id) === String(walletId),
   );
+  const previousAttachments = Array.isArray(detailRow?.attachments)
+    ? detailRow.attachments
+    : Array.isArray(detailRow?.lampiran)
+      ? detailRow.lampiran
+      : Array.isArray(detailRow?.files)
+        ? detailRow.files
+        : [];
 
   const canSubmit =
     bisnisId &&
@@ -211,6 +290,7 @@ export default function OrderPaymentCreatePage() {
         allocations: payloadAllocations.map((a) => ({
           faktur_id: a.faktur_id,
           amount: a.amount,
+          bukti_pembayaran: a.paymentProof?.dataUrl || undefined,
         })),
         post: Boolean(post),
       };
@@ -218,6 +298,21 @@ export default function OrderPaymentCreatePage() {
       else body.kas_id = Number(walletId);
 
       const data = await createOrderPayment(body);
+      const proofs = Object.fromEntries(
+        allocations
+          .filter((allocation) => allocation.paymentProof?.dataUrl)
+          .map((allocation) => [String(allocation.id), allocation.paymentProof]),
+      );
+      if (data?.id && Object.keys(proofs).length && typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(
+            `order-payment-proofs:${data.id}`,
+            JSON.stringify(proofs),
+          );
+        } catch (_) {
+          // The payment is already saved; storage limits should not block navigation.
+        }
+      }
       openNotification({
         open: true,
         title: "Berhasil",
@@ -361,88 +456,205 @@ export default function OrderPaymentCreatePage() {
             centang faktur yang akan dibayar.
           </Alert>
         ) : (
-          <Box sx={{ overflowX: "auto", mb: 2 }}>
-            <Box
-              component="table"
-              sx={{
-                width: "100%",
-                minWidth: 900,
-                borderCollapse: "collapse",
-                fontSize: 13,
-                "& th, & td": {
-                  padding: "10px 12px",
-                  whiteSpace: "nowrap",
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                  textAlign: "left",
-                },
-                "& th": { backgroundColor: "grey.50", fontWeight: 700 },
-              }}
-            >
-              <thead>
-                <tr>
-                  <th />
-                  <th>Faktur</th>
-                  <th>Pemasok</th>
-                  <th>PO / PD</th>
-                  <th style={{ textAlign: "right" }}>Sisa</th>
-                  <th style={{ textAlign: "right" }}>Bayar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allocations.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      <Stack direction="row" spacing={0.5}>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => setDetailRow(row)}
+          <Stack spacing={1.5} sx={{ mb: 2 }}>
+            {allocations.map((row) => {
+              const invoiceCode = row.kdfb || row.faktur_kode || `Faktur #${row.id}`;
+              const gross = Number(row.grandtotal ?? row.total) || 0;
+              const remaining = Number(row.sisa) || 0;
+              const amount = Number(row.amount) || 0;
+              const status = row.status_label || row.sts_paid || "Outstanding";
+              const proof = row.paymentProof;
+
+              return (
+                <Card
+                  key={row.id}
+                  variant="outlined"
+                  sx={{
+                    overflow: "hidden",
+                    borderRadius: 2.5,
+                    borderColor: "divider",
+                    transition: "box-shadow 180ms ease, border-color 180ms ease",
+                    "&:hover": {
+                      borderColor: "primary.light",
+                      boxShadow: "0 8px 24px rgba(31, 41, 55, 0.08)",
+                    },
+                  }}
+                >
+                  <Box
+                    sx={(theme) => ({
+                      px: { xs: 1.5, sm: 2 },
+                      py: 1.25,
+                      background: `linear-gradient(100deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.info.main, 0.025)})`,
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                    })}
+                  >
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      justifyContent="space-between"
+                      alignItems={{ sm: "center" }}
+                      spacing={1}
+                    >
+                      <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+                        <Box
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 1.5,
+                            display: "grid",
+                            placeItems: "center",
+                            flexShrink: 0,
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                          }}
                         >
-                          <Eye size={16} />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => removeAlloc(row.id)}
-                        >
-                          <Trash size={16} />
-                        </IconButton>
+                          <Receipt2 size={18} />
+                        </Box>
+                        <Box minWidth={0}>
+                          <Typography variant="subtitle2" fontWeight={800} noWrap>
+                            {invoiceCode}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" noWrap display="block">
+                            {row.pemasok_nama || "Pemasok belum tersedia"}
+                          </Typography>
+                        </Box>
                       </Stack>
-                    </td>
-                    <td>
-                      <Typography variant="body2" fontWeight={700}>
-                        {row.kdfb || row.faktur_kode}
-                      </Typography>
-                    </td>
-                    <td>
-                      <Typography variant="body2" noWrap>
-                        {row.pemasok_nama || "—"}
-                      </Typography>
-                    </td>
-                    <td>{row.no_po || row.no_pd || "—"}</td>
-                    <td style={{ textAlign: "right" }}>{money(row.sisa)}</td>
-                    <td style={{ textAlign: "right" }}>
-                      <TextField
-                        size="small"
-                        type="number"
-                        value={row.amount}
-                        onChange={(e) =>
-                          setAmount(row.id, e.target.value, row.sisa)
-                        }
-                        inputProps={{
-                          min: 0,
-                          max: row.sisa,
-                          step: "0.01",
-                        }}
-                        sx={{ width: 140 }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Box>
-          </Box>
+                      <Stack direction="row" spacing={0.75} alignItems="center">
+                        <Chip
+                          size="small"
+                          label={status}
+                          color={String(status).toLowerCase().includes("lunas") ? "success" : "warning"}
+                          variant="outlined"
+                        />
+                        <Tooltip title="Lihat detail faktur">
+                          <IconButton size="small" color="primary" onClick={() => setDetailRow(row)}>
+                            <Eye size={17} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Hapus dari alokasi">
+                          <IconButton size="small" color="error" onClick={() => removeAlloc(row.id)}>
+                            <Trash size={17} />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Stack>
+                  </Box>
+
+                  <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
+                    <Grid container spacing={1.5}>
+                      <Grid item xs={12} md={7}>
+                        <Grid container spacing={1.25}>
+                          <Grid item xs={12} sm={6}>
+                            <InfoField label="Purchase Order" value={row.no_po || "—"} bold />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <InfoField label="Pengajuan Dana" value={row.no_pd || "—"} bold />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <InfoField label="Cabang" value={row.cabang_nama || "—"} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <InfoField label="Metode" value={row.metode || "—"} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <InfoField label="Tanggal faktur" value={formatLongDate(row.date_faktur)} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <InfoField label="Jatuh tempo" value={formatLongDate(row.due_date)} accent={remaining > 0 ? "warning.dark" : "success.main"} />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <InfoField
+                              label="Rekening tujuan"
+                              value={[row.bank, row.norekening, row.penerima].filter(Boolean).join(" · ") || "Belum tersedia"}
+                            />
+                          </Grid>
+                        </Grid>
+                      </Grid>
+
+                      <Grid item xs={12} md={5}>
+                        <Box
+                          sx={{
+                            height: "100%",
+                            p: 1.5,
+                            borderRadius: 2,
+                            bgcolor: "grey.50",
+                            border: "1px solid",
+                            borderColor: "divider",
+                          }}
+                        >
+                          <Stack direction="row" justifyContent="space-between" spacing={1}>
+                            <InfoField label="Total faktur" value={money(gross)} />
+                            <InfoField label="Sisa" value={money(remaining)} accent="warning.dark" />
+                          </Stack>
+                          <Divider sx={{ my: 1.25 }} />
+                          <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                            Nominal dibayar
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            value={row.amount}
+                            onChange={(e) => setAmount(row.id, e.target.value, row.sisa)}
+                            inputProps={{ min: 0, max: row.sisa, step: "0.01" }}
+                            InputProps={{ startAdornment: <Typography color="text.secondary" mr={1}>Rp</Typography> }}
+                          />
+                          <Typography variant="caption" color="text.secondary" display="block" mt={0.75}>
+                            Maksimal {money(remaining)} · {amount > 0 ? `${((amount / Math.max(remaining, 1)) * 100).toFixed(1)}% dari sisa` : "Belum dialokasikan"}
+                          </Typography>
+                        </Box>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <Box
+                          sx={{
+                            p: 1.25,
+                            borderRadius: 2,
+                            border: "1px dashed",
+                            borderColor: proof ? "success.main" : "divider",
+                            bgcolor: proof ? "success.lighter" : "background.default",
+                          }}
+                        >
+                          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1.25}>
+                            <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+                              <Gallery size={19} color={proof ? "#2e7d32" : "#64748b"} />
+                              <Box minWidth={0}>
+                                <Typography variant="body2" fontWeight={700}>
+                                  Bukti pembayaran <Typography component="span" variant="caption" color="text.secondary">(opsional)</Typography>
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap display="block">
+                                  {proof?.name || "Upload foto / screenshot bukti transfer"}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Button component="label" size="small" variant={proof ? "outlined" : "contained"} startIcon={<Gallery size={15} />}>
+                                {proof ? "Ganti bukti" : "Upload bukti"}
+                                <input hidden type="file" accept="image/*" onChange={(e) => handleProofSelect(row.id, e)} />
+                              </Button>
+                              {proof && (
+                                <Button size="small" color="error" onClick={() => removeProof(row.id)}>
+                                  Hapus
+                                </Button>
+                              )}
+                            </Stack>
+                          </Stack>
+                          {proof?.dataUrl && (
+                            <Box
+                              component="img"
+                              src={proof.dataUrl}
+                              alt={`Bukti pembayaran ${invoiceCode}`}
+                              sx={{ mt: 1.25, width: 92, height: 64, objectFit: "cover", borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}
+                            />
+                          )}
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Stack>
         )}
 
         <Stack
@@ -626,54 +838,88 @@ export default function OrderPaymentCreatePage() {
                 )}
               </SectionCard>
 
-              {/* Image upload / lampiran */}
+              {/* Berkas dari proses sebelumnya */}
               <SectionCard
                 icon={<Gallery size={18} />}
-                title="Lampiran / Nota"
+                title="Berkas dari Proses Sebelumnya"
                 accent="#f59e0b"
               >
-                {Array.isArray(detailRow.attachments) && detailRow.attachments.length > 0 ? (
-                  <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-                    {detailRow.attachments.map((att, idx) =>
-                      att.url ? (
-                        <Tooltip key={idx} title="Klik untuk membuka">
+                {previousAttachments.length > 0 ? (
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} flexWrap="wrap" useFlexGap>
+                    {previousAttachments.map((att, idx) => {
+                      const url = attachmentUrl(att);
+                      if (!url) return null;
+                      const name = attachmentName(att, idx);
+                      return isImageAttachment(att) ? (
+                        <Tooltip key={`${url}-${idx}`} title={`${name} · Klik untuk membuka`}>
                           <Box
                             component="a"
-                            href={att.url}
+                            href={url}
                             target="_blank"
                             rel="noopener noreferrer"
                             sx={{
                               display: "block",
-                              width: 120,
-                              height: 120,
+                              width: { xs: "100%", sm: 138 },
+                              height: 110,
                               borderRadius: 2,
                               overflow: "hidden",
                               border: "1px solid",
                               borderColor: "divider",
                               bgcolor: "grey.100",
-                              "&:hover img": { transform: "scale(1.05)" }
+                              "&:hover img": { transform: "scale(1.05)" },
                             }}
                           >
                             <Box
                               component="img"
-                              src={att.url}
-                              alt={`Lampiran ${idx + 1}`}
+                              src={url}
+                              alt={name}
                               sx={{
                                 width: "100%",
                                 height: "100%",
                                 objectFit: "cover",
-                                transition: "transform 0.2s ease"
+                                transition: "transform 0.2s ease",
                               }}
                             />
                           </Box>
                         </Tooltip>
-                      ) : null
-                    )}
+                      ) : (
+                        <Box
+                          key={`${url}-${idx}`}
+                          component="a"
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            width: { xs: "100%", sm: 250 },
+                            minHeight: 64,
+                            px: 1.25,
+                            py: 1,
+                            borderRadius: 2,
+                            color: "text.primary",
+                            textDecoration: "none",
+                            border: "1px solid",
+                            borderColor: "divider",
+                            bgcolor: "background.default",
+                            "&:hover": { borderColor: "primary.main", bgcolor: "primary.lighter" },
+                          }}
+                        >
+                          <Gallery size={22} />
+                          <Typography variant="body2" fontWeight={600} noWrap title={name}>
+                            {name}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
                   </Stack>
                 ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    Tidak ada lampiran/nota.
-                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="body2" color="text.secondary">
+                      Tidak ada berkas dari proses sebelumnya.
+                    </Typography>
+                  </Stack>
                 )}
               </SectionCard>
 
