@@ -12,6 +12,7 @@ export const endpoints = {
   outstanding: "/scm/order-payments/outstanding",
   detail: (id) => `/scm/order-payments/${id}`,
   post: (id) => `/scm/order-payments/${id}/post`,
+  remove: (id) => `/scm/order-payments/${id}`,
 };
 
 const permissionDefaults = {
@@ -207,6 +208,21 @@ export async function postOrderPayment(id, body) {
       typeof diag.error === "string"
         ? diag.error
         : "Gagal memposting pembayaran",
+    );
+  }
+  return res?.data?.rows ?? res?.data?.data ?? res?.data;
+}
+
+export async function removeOrderPayment(id) {
+  const res = await axiosServices.delete(endpoints.remove(id), {
+    skipOfflineQueue: true,
+  });
+  const diag = res?.data?.diagnostic;
+  if (diag?.error) {
+    throw new Error(
+      typeof diag.error === "string"
+        ? diag.error
+        : "Gagal melakukan rollback pembayaran",
     );
   }
   return res?.data?.rows ?? res?.data?.data ?? res?.data;

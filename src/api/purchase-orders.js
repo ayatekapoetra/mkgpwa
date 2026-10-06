@@ -402,9 +402,14 @@ export const usePurchaseOrderAuditTrail = (id, enabled = true) => {
   );
 
   return useMemo(() => {
-    const payload = normalizeDetail(data);
+    const payload = data?.rows ?? data?.data ?? data ?? [];
+    const rows = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
     return {
-      rows: Array.isArray(payload) ? payload : [],
+      rows,
       loading: Boolean(id) && isLoading,
       error,
       validating: isValidating,

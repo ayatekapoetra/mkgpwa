@@ -390,6 +390,10 @@ export default function PurchaseOrderDetail() {
               </Typography>
               {audit.loading ? (
                 <CircularProgress size={20} />
+              ) : audit.error ? (
+                <Alert severity="error">
+                  Gagal memuat audit trail. {audit.error?.message || "Terjadi kesalahan pada server."}
+                </Alert>
               ) : (
                 <AuditTimeline rows={audit.rows} />
               )}

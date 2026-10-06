@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import NextLink from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import {
   Alert,
   Autocomplete,
@@ -14,7 +16,15 @@ import {
   Card,
   CardContent,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   Link as MuiLink,
   MenuItem,
   Stack,
@@ -23,10 +33,14 @@ import {
   Typography,
 } from "@mui/material";
 import { Gallery, Receipt2 } from "iconsax-react";
+import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
+import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 
 import {
   fetchWallets,
   postOrderPayment,
+  removeOrderPayment,
   useOrderPaymentAccess,
   useOrderPaymentDetail,
 } from "api/order-payments";
@@ -46,7 +60,12 @@ const dateId = (v) => {
   if (!v) return "—";
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return String(v).slice(0, 10);
-  return d.toLocaleDateString("id-ID");
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(d);
 };
 
 const attachmentUrl = (attachment) =>
@@ -71,26 +90,53 @@ const isImageAttachment = (attachment) => {
 
 const paymentProofStorageKey = (id) => `order-payment-proofs:${id}`;
 
-function Field({ label, value }) {
+function Field({ label, value, inverse = false }) {
   return (
-    <Box mb={1.5}>
-      <Typography variant="caption" color="text.secondary" display="block">
+    <Box
+      sx={{
+        minHeight: 64,
+        p: 1.25,
+        borderRadius: 1.75,
+        bgcolor: inverse ? "rgba(255,255,255,.09)" : "grey.50",
+        border: "1px solid",
+        borderColor: inverse ? "rgba(255,255,255,.12)" : "divider",
+      }}
+    >
+      <Typography
+        variant="caption"
+        color={inverse ? "inherit" : "text.secondary"}
+        display="block"
+        sx={{
+          mb: 0.45,
+          opacity: inverse ? 0.68 : 1,
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: 0.7,
+          lineHeight: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </Typography>
-      <Typography variant="body1" fontWeight={600}>
+      <Typography
+        variant="body2"
+        fontWeight={700}
+        color={inverse ? "inherit" : "text.primary"}
+        sx={{ lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}
+      >
         {value ?? "—"}
       </Typography>
     </Box>
   );
 }
 
-function ReferenceLink({ href, children }) {
+function ReferenceLink({ href, children, inverse = false }) {
   return (
     <MuiLink
       component={NextLink}
       href={href}
       variant="body1"
-      color="primary"
+      color={inverse ? "inherit" : "primary"}
       fontWeight={600}
       sx={{
         display: "inline-flex",
@@ -103,6 +149,119 @@ function ReferenceLink({ href, children }) {
       <LinkOutlinedIcon sx={{ fontSize: 17 }} />
       {children}
     </MuiLink>
+  );
+}
+
+function AttachmentGallery({ attachments = [], empty = "Belum ada dokumen", accent = "divider" }) {
+  const visible = attachments.filter((attachment) => attachmentUrl(attachment));
+  if (!visible.length) {
+    return <Typography variant="caption" color="text.secondary">{empty}</Typography>;
+  }
+
+  return (
+    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      {visible.map((attachment, index) => {
+        const url = attachmentUrl(attachment);
+        const name = attachmentName(attachment, index);
+        return isImageAttachment(attachment) ? (
+          <Tooltip key={`${url}-${index}`} title={`${name} · Buka berkas`}>
+            <Box
+              component="a"
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                display: "block",
+                width: 86,
+                height: 64,
+                borderRadius: 1.5,
+                overflow: "hidden",
+                border: "1px solid",
+                borderColor: accent,
+                "&:hover img": { transform: "scale(1.05)" },
+              }}
+            >
+              <Box component="img" src={url} alt={name} sx={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .2s ease" }} />
+            </Box>
+          </Tooltip>
+        ) : (
+          <Box
+            key={`${url}-${index}`}
+            component="a"
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ display: "flex", alignItems: "center", gap: 0.75, p: 0.85, border: "1px solid", borderColor: accent, borderRadius: 1.5, color: "text.primary", textDecoration: "none", maxWidth: "100%" }}
+          >
+            <Gallery size={17} />
+            <Typography variant="caption" noWrap>{name}</Typography>
+            <OpenInNewOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+          </Box>
+        );
+      })}
+    </Stack>
+  );
+}
+
+function LocalProofGallery({ proofs = [] }) {
+  if (!proofs.length) {
+    return <Typography variant="caption" color="text.secondary">Belum ada upload baru</Typography>;
+  }
+  return (
+    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      {proofs.map((proof, index) => (
+        <Tooltip key={`${proof.dataUrl}-${index}`} title={`${proof.name || "Bukti pembayaran"} · Buka gambar`}>
+          <Box component="a" href={proof.dataUrl} target="_blank" rel="noopener noreferrer" sx={{ display: "block", width: 86, height: 64, borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "primary.main" }}>
+            <Box component="img" src={proof.dataUrl} alt={proof.name || "Bukti pembayaran"} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </Box>
+        </Tooltip>
+      ))}
+    </Stack>
+  );
+}
+
+function DocumentDropzone({ onFiles, disabled = false }) {
+  const [dragging, setDragging] = useState(false);
+
+  const acceptFiles = (files) => {
+    if (!disabled && files?.length) onFiles(files);
+    setDragging(false);
+  };
+
+  return (
+    <Box
+      component="label"
+      onDragEnter={(event) => { event.preventDefault(); if (!disabled) setDragging(true); }}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={(event) => { event.preventDefault(); setDragging(false); }}
+      onDrop={(event) => { event.preventDefault(); acceptFiles(event.dataTransfer.files); }}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        minHeight: 88,
+        px: 1.5,
+        border: "1px dashed",
+        borderColor: dragging ? "primary.main" : "primary.light",
+        borderRadius: 2,
+        color: disabled ? "text.disabled" : "primary.main",
+        bgcolor: dragging ? "primary.100" : "primary.lighter",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all .2s ease",
+        "&:hover": disabled ? {} : { bgcolor: "primary.100", borderColor: "primary.main" },
+      }}
+    >
+      <CloudUploadOutlinedIcon sx={{ fontSize: 30 }} />
+      <Box>
+        <Typography variant="body2" fontWeight={800}>
+          {dragging ? "Lepaskan file di sini" : "Tambah bukti pembayaran"}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Tarik file ke sini atau klik untuk memilih · gambar · maks. 5 MB/file
+        </Typography>
+      </Box>
+      <input hidden type="file" accept="image/*" multiple disabled={disabled} onChange={(event) => { acceptFiles(event.target.files); event.target.value = ""; }} />
+    </Box>
   );
 }
 
@@ -125,6 +284,8 @@ export default function OrderPaymentDetailPage() {
   );
   const [narasi, setNarasi] = useState("");
   const [posting, setPosting] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [rollbackOpen, setRollbackOpen] = useState(false);
   const [localProofs, setLocalProofs] = useState({});
 
   const pending = row?.status === "pending";
@@ -176,38 +337,42 @@ export default function OrderPaymentDetailPage() {
     }
   }, [id]);
 
-  const handleProofUpload = (invoiceId, event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      openNotification({
-        open: true,
-        title: "Format tidak didukung",
-        message: "Bukti pembayaran harus berupa file gambar.",
-        alert: { color: "warning" },
-      });
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      openNotification({
-        open: true,
-        title: "Ukuran file terlalu besar",
-        message: "Ukuran bukti pembayaran maksimal 5 MB.",
-        alert: { color: "warning" },
-      });
-      return;
-    }
+  const handleProofUpload = (files) => {
+    const selectedFiles = Array.from(files || []);
+    const validFiles = selectedFiles.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        openNotification({
+          open: true,
+          title: "Format tidak didukung",
+          message: `${file.name} bukan file gambar.`,
+          alert: { color: "warning" },
+        });
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        openNotification({
+          open: true,
+          title: "Ukuran file terlalu besar",
+          message: `${file.name} melebihi batas 5 MB.`,
+          alert: { color: "warning" },
+        });
+        return false;
+      }
+      return true;
+    });
+    if (!validFiles.length) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
+    Promise.all(validFiles.map((file) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    }))).then((results) => {
+      const uploaded = results.filter(Boolean);
+      if (!uploaded.length) return;
       const nextProofs = {
         ...localProofs,
-        [String(invoiceId)]: {
-          name: file.name,
-          type: file.type,
-          dataUrl: reader.result,
-        },
+        __header: [...(Array.isArray(localProofs.__header) ? localProofs.__header : []), ...uploaded],
       };
       setLocalProofs(nextProofs);
       if (id && typeof window !== "undefined") {
@@ -217,11 +382,38 @@ export default function OrderPaymentDetailPage() {
           // The preview remains available even if browser storage is full.
         }
       }
-    };
-    reader.readAsDataURL(file);
+    });
   };
 
-  const canPost = permissions.can_post && pending;
+  const uploadedProofs = useMemo(() => [
+    ...(Array.isArray(localProofs.__header) ? localProofs.__header : []),
+    ...Object.entries(localProofs)
+      .filter(([key, value]) => key !== "__header" && value?.dataUrl)
+      .map(([, value]) => value),
+  ], [localProofs]);
+
+  const previousAttachments = useMemo(() => {
+    const seen = new Set();
+    return (row?.items || []).flatMap((item) => item.attachments || []).filter((attachment) => {
+      const key = attachmentUrl(attachment);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [row?.items]);
+
+  const itemSummary = useMemo(() => {
+    const items = Array.isArray(row?.items) ? row.items : [];
+    const totalAfterPpn = items.reduce((total, item) => total + (Number(item.faktur_grandtotal) || Number(item.subtotal) || 0), 0);
+    const ppn = items.reduce((total, item) => total + (Number(item.faktur_ppn_rp) || Number(item.ppn_rp) || 0), 0);
+    return {
+      invoices: items.length,
+      discount: items.reduce((total, item) => total + (Number(item.faktur_potongan) || Number(item.potongan) || 0), 0),
+      ppn,
+      beforePpn: totalAfterPpn - ppn,
+      afterPpn: totalAfterPpn,
+    };
+  }, [row?.items]);
 
   const selectedWallet = useMemo(
     () => wallets.find((w) => String(w.id) === String(walletId)),
@@ -279,6 +471,33 @@ export default function OrderPaymentDetailPage() {
     }
   };
 
+  const handleRollback = async () => {
+    setRemoving(true);
+    try {
+      await removeOrderPayment(id);
+      setRollbackOpen(false);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(paymentProofStorageKey(id));
+      }
+      openNotification({
+        open: true,
+        title: "Berhasil",
+        message: "Pembayaran berhasil di-rollback",
+        alert: { color: "success" },
+      });
+      router.push("/orders-payments");
+    } catch (err) {
+      openNotification({
+        open: true,
+        title: "Gagal rollback",
+        message: err?.message || "Gagal melakukan rollback pembayaran",
+        alert: { color: "error" },
+      });
+    } finally {
+      setRemoving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box py={8} display="flex" justifyContent="center">
@@ -298,6 +517,17 @@ export default function OrderPaymentDetailPage() {
   const paymentAttachments = Array.isArray(row.payment_attachments)
     ? row.payment_attachments
     : [];
+  const sourceIsPo = Boolean(row.no_po || row.reff);
+  const sourceLabel = sourceIsPo ? "Purchase Order" : "Pengajuan Dana";
+  const sourceValue = sourceIsPo
+    ? row.no_po && row.reff
+      ? <ReferenceLink inverse href={`/purchasing-orders/${row.reff}`}>{row.no_po}</ReferenceLink>
+      : row.no_po || "—"
+    : row.no_pd && row.reff_pd
+      ? <ReferenceLink inverse href={`/pengajuan-dana/${row.reff_pd}`}>{row.no_pd}</ReferenceLink>
+      : row.no_pd || "—";
+  const canPost = permissions.can_post && pending;
+  const canRemove = permissions.can_delete && pending;
 
   return (
     <>
@@ -322,255 +552,150 @@ export default function OrderPaymentDetailPage() {
         }
         content
       >
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Field label="No. Bayar" value={row.kdbayar} />
-            <Field label="Party" value={row.party_name} />
-            <Field
-              label="PO"
-              value={
-                row.no_po && row.reff ? (
-                  <ReferenceLink href={`/purchasing-orders/${row.reff}`}>
-                    {row.no_po}
-                  </ReferenceLink>
-                ) : (
-                  row.no_po || "—"
-                )
-              }
-            />
-            <Field
-              label="PD"
-              value={
-                row.no_pd && row.reff_pd ? (
-                  <ReferenceLink href={`/pengajuan-dana/${row.reff_pd}`}>
-                    {row.no_pd}
-                  </ReferenceLink>
-                ) : (
-                  row.no_pd || "—"
-                )
-              }
-            />
-            <Field label="Faktur" value={row.faktur_kode || "—"} />
+        <Box
+          sx={{
+            p: { xs: 2, md: 2.5 },
+            borderRadius: 3,
+            color: "common.white",
+            background: "linear-gradient(135deg, #19324d 0%, #285f78 58%, #2b8b87 100%)",
+            boxShadow: "0 16px 36px rgba(25, 50, 77, .18)",
+          }}
+        >
+          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ width: 48, height: 48, borderRadius: 2, display: "grid", placeItems: "center", bgcolor: "rgba(255,255,255,.16)" }}>
+                <Receipt2 size={26} />
+              </Box>
+              <Box>
+                <Typography variant="overline" sx={{ opacity: 0.72, letterSpacing: 1.2 }}>Order Payment</Typography>
+                <Typography variant="h4" fontWeight={800}>{row.kdbayar || `Pembayaran #${id}`}</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.78, mt: 0.25 }}>{row.party_name || "Pihak pembayaran belum tersedia"}</Typography>
+              </Box>
+            </Stack>
+            <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
+              <Typography variant="caption" sx={{ opacity: 0.72 }}>Total pembayaran</Typography>
+              <Typography variant="h3" fontWeight={900}>Rp {money(row.roundtotal || row.total)}</Typography>
+              <Chip size="small" label={row.status_label || row.status} sx={{ mt: 0.75, color: "common.white", bgcolor: row.status === "paid" ? "rgba(46, 190, 125, .82)" : "rgba(245, 177, 66, .9)", fontWeight: 800 }} />
+            </Box>
+          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1.5 }}>
+            <Grid item xs={12} sm={6} md={3}><Field inverse label={sourceLabel} value={sourceValue} /></Grid>
+            <Grid item xs={12} sm={6} md={3}><Field inverse label="Faktur" value={row.faktur_kode || "—"} /></Grid>
+            <Grid item xs={12} sm={6} md={3}><Field inverse label="Tanggal transaksi" value={dateId(row.trx_date)} /></Grid>
+            <Grid item xs={12} sm={6} md={3}><Field inverse label="Cabang" value={`${row.cabang_kode || ""}${row.cabang_kode && row.cabang_nama ? " · " : ""}${row.cabang_nama || "—"}`} /></Grid>
+            <Grid item xs={12} sm={6} md={4}><Field inverse label="Unit Bisnis" value={`${row.bisnis_nama || "—"}`} /></Grid>
+            <Grid item xs={12} sm={6} md={4}><Field inverse label="Rekening tujuan" value={row.nm_bank ? `${row.nm_bank} · ${row.no_rekening || ""} · ${row.an_rekening || row.penerima || ""}` : row.penerima || "—"} /></Grid>
+            <Grid item xs={12} sm={6} md={4}><Field inverse label="Akun kas / bank" value={row.coa_kode ? `${row.coa_kode} — ${row.coa_name || ""}` : "Belum dipilih"} /></Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Field
-              label="Total"
-              value={money(row.roundtotal || row.total)}
-            />
-            <Field
-              label="Unit / Cabang"
-              value={`${row.bisnis_kode || row.bisnis_nama || "—"} · ${row.cabang_nama || "—"}`}
-            />
-            <Field
-              label="Rekening tujuan"
-              value={
-                row.nm_bank
-                  ? `${row.nm_bank} · ${row.no_rekening || ""} · ${row.an_rekening || row.penerima || ""}`
-                  : row.penerima || "—"
-              }
-            />
-            <Field label="Tanggal" value={dateId(row.trx_date)} />
-            <Field
-              label="Akun kas/bank"
-              value={
-                row.coa_kode
-                  ? `${row.coa_kode} — ${row.coa_name || ""}`
-                  : "Belum dipilih"
-              }
-            />
-          </Grid>
-        </Grid>
+        </Box>
 
         <Card variant="outlined" sx={{ mt: 2, borderRadius: 2.5 }}>
           <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
             <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
-              <Gallery size={20} />
+              <Gallery size={21} />
               <Box>
-                <Typography variant="subtitle1" fontWeight={800}>
-                  Dokumen Pembayaran
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Berkas sebelumnya, bukti sistem, dan upload baru
-                </Typography>
+                <Typography variant="subtitle1" fontWeight={800}>Dokumen Pembayaran</Typography>
+                <Typography variant="caption" color="text.secondary">Semua berkas pendukung pembayaran dalam satu header dokumen</Typography>
               </Box>
             </Stack>
-            <Divider sx={{ my: 2 }} />
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
-          <Box>
-            <Typography variant="subtitle1" fontWeight={800}>
-              Alokasi Faktur
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Dokumen sebelumnya dan bukti pembayaran per alokasi
-            </Typography>
-          </Box>
-          <Chip size="small" label={`${(row.items || []).length} faktur`} variant="outlined" />
-        </Stack>
-            <Stack spacing={1.5}>
-          {(row.items || []).map((it) => {
-            const attachments = Array.isArray(it.attachments) ? it.attachments : [];
-            const proof = localProofs[String(it.trx_beli)] || it.payment_proof || it.bukti_pembayaran;
-            return (
-              <Card key={it.id} variant="outlined" sx={{ borderRadius: 2.5, overflow: "hidden" }}>
-                <Box sx={{ px: 2, py: 1.25, bgcolor: "primary.lighter", borderBottom: "1px solid", borderColor: "divider" }}>
-                  <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
-                      <Box sx={{ width: 34, height: 34, borderRadius: 1.5, display: "grid", placeItems: "center", bgcolor: "primary.main", color: "primary.contrastText", flexShrink: 0 }}>
-                        <Receipt2 size={18} />
-                      </Box>
-                      <Box minWidth={0}>
-                        <Typography variant="subtitle2" fontWeight={800} noWrap>
-                          {it.faktur_kode || `Faktur #${it.trx_beli}`}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap display="block">
-                          {it.barang_nama || it.description || it.barang_kode || "Alokasi pembayaran"}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="subtitle1" fontWeight={800} color="primary.main">
-                      Rp {money(it.subtotal)}
-                    </Typography>
-                  </Stack>
-                </Box>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Grid container spacing={1.5}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Field label="Barang / deskripsi" value={it.barang_nama || it.description || it.barang_kode || "—"} />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Field label="Akun debit" value={it.debit_kode ? `${it.debit_kode} — ${it.debit_name || ""}` : "—"} />
-                    </Grid>
-                    <Grid item xs={6} sm={3} md={2}>
-                      <Field label="Qty" value={it.qty} />
-                    </Grid>
-                    <Grid item xs={6} sm={3} md={2}>
-                      <Field label="Harga satuan" value={`Rp ${money(it.harga_stn)}`} />
-                    </Grid>
-                    <Grid item xs={12} md={2}>
-                      <Field label="Subtotal" value={`Rp ${money(it.subtotal)}`} />
-                    </Grid>
+            <Divider sx={{ mb: 2 }} />
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Berkas dari proses sebelumnya</Typography>
+                <AttachmentGallery attachments={previousAttachments} empty="Tidak ada berkas sebelumnya" />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Bukti pembayaran dari sistem</Typography>
+                <AttachmentGallery attachments={paymentAttachments} empty="Belum ada bukti dari sistem" accent="success.main" />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Upload file baru</Typography>
+                <DocumentDropzone onFiles={handleProofUpload} disabled={!pending} />
+                <Box sx={{ mt: 1 }}><LocalProofGallery proofs={uploadedProofs} /></Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
 
-                    <Grid item xs={12}>
-                      <Divider sx={{ my: 0.5 }} />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.75}>
-                        Berkas dari proses sebelumnya
-                      </Typography>
-                      {attachments.length ? (
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                          {attachments.map((attachment, index) => {
-                            const url = attachmentUrl(attachment);
-                            if (!url) return null;
-                            const name = attachmentName(attachment, index);
-                            return isImageAttachment(attachment) ? (
-                              <Tooltip key={`${url}-${index}`} title={`${name} · Buka berkas`}>
-                                <Box component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ display: "block", width: 78, height: 58, borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "divider", "&:hover img": { transform: "scale(1.05)" } }}>
-                                  <Box component="img" src={url} alt={name} sx={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .2s ease" }} />
-                                </Box>
-                              </Tooltip>
-                            ) : (
-                              <Box key={`${url}-${index}`} component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ display: "flex", alignItems: "center", gap: 0.75, p: 0.75, border: "1px solid", borderColor: "divider", borderRadius: 1.5, color: "text.primary", textDecoration: "none", maxWidth: "100%" }}>
-                                <Gallery size={17} />
-                                <Typography variant="caption" noWrap>{name}</Typography>
-                              </Box>
-                            );
-                          })}
-                        </Stack>
-                      ) : (
-                        <Typography variant="caption" color="text.secondary">Tidak ada berkas sebelumnya</Typography>
-                      )}
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.75}>
-                        Bukti pembayaran dari sistem
-                      </Typography>
-                      {paymentAttachments.length ? (
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                          {paymentAttachments.map((attachment, index) => {
-                            const url = attachmentUrl(attachment);
-                            if (!url) return null;
-                            const name = attachmentName(attachment, index);
-                            return isImageAttachment(attachment) ? (
-                              <Tooltip key={`${url}-${index}`} title={`${name} · Buka berkas`}>
-                                <Box component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ display: "block", width: 78, height: 58, borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "success.main", "&:hover img": { transform: "scale(1.05)" } }}>
-                                  <Box component="img" src={url} alt={name} sx={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .2s ease" }} />
-                                </Box>
-                              </Tooltip>
-                            ) : (
-                              <Box key={`${url}-${index}`} component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ display: "flex", alignItems: "center", gap: 0.75, p: 0.75, border: "1px solid", borderColor: "success.main", borderRadius: 1.5, color: "text.primary", textDecoration: "none", maxWidth: "100%" }}>
-                                <Gallery size={17} />
-                                <Typography variant="caption" noWrap>{name}</Typography>
-                              </Box>
-                            );
-                          })}
-                        </Stack>
-                      ) : (
-                        <Typography variant="caption" color="text.secondary">Belum ada bukti dari sistem</Typography>
-                      )}
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.75}>
-                        Bukti pembayaran
-                      </Typography>
-                      {proof?.dataUrl || typeof proof === "string" ? (
-                        <Box component="a" href={proof?.dataUrl || proof} target="_blank" rel="noopener noreferrer" sx={{ display: "inline-block", width: 110, height: 70, borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "success.main" }}>
-                          <Box component="img" src={proof?.dataUrl || proof} alt="Bukti pembayaran" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <Card variant="outlined" sx={{ mt: 2, borderRadius: 2.5 }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+              <Box>
+                <Typography variant="subtitle1" fontWeight={800}>Alokasi Faktur</Typography>
+                <Typography variant="caption" color="text.secondary">Rincian nilai yang dialokasikan ke setiap faktur</Typography>
+              </Box>
+              <Chip size="small" label={`${(row.items || []).length} Items`} variant="outlined" />
+            </Stack>
+            <Stack spacing={1.5}>
+              {(row.items || []).map((it) => (
+                <Card key={it.id} variant="outlined" sx={{ borderRadius: 2.5, overflow: "hidden" }}>
+                  <Box sx={{ px: 2, py: 1.25, bgcolor: "primary.lighter", borderBottom: "1px solid", borderColor: "divider" }}>
+                    <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1}>
+                      <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+                        <Box sx={{ width: 34, height: 34, borderRadius: 1.5, display: "grid", placeItems: "center", bgcolor: "primary.main", color: "primary.contrastText", flexShrink: 0 }}><Receipt2 size={18} /></Box>
+                        <Box minWidth={0}>
+                          <Typography variant="subtitle2" fontWeight={800} noWrap>{it.faktur_kode || `Faktur #${it.trx_beli}`}</Typography>
+                          <Typography variant="caption" color="text.secondary" noWrap display="block">{it.barang_nama || it.description || it.barang_kode || "Alokasi pembayaran"}</Typography>
                         </Box>
-                      ) : (
-                        <Box
-                          component="label"
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 1,
-                            minHeight: 76,
-                            px: 1.5,
-                            border: "1px dashed",
-                            borderColor: "primary.light",
-                            borderRadius: 2,
-                            color: "primary.main",
-                            bgcolor: "primary.lighter",
-                            cursor: "pointer",
-                            transition: "background-color .2s ease, border-color .2s ease",
-                            "&:hover": {
-                              bgcolor: "primary.100",
-                              borderColor: "primary.main",
-                            },
-                          }}
-                        >
-                          <Gallery size={22} />
-                          <Box>
-                            <Typography variant="body2" fontWeight={700}>
-                              Upload bukti pembayaran
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Klik untuk memilih foto atau screenshot · opsional · maks. 5 MB
-                            </Typography>
-                          </Box>
-                          <input
-                            hidden
-                            type="file"
-                            accept="image/*"
-                            onChange={(event) => handleProofUpload(it.trx_beli, event)}
-                          />
-                        </Box>
-                      )}
+                      </Stack>
+                      <Typography variant="subtitle1" fontWeight={800} color="primary.main">Rp {money(it.subtotal)}</Typography>
+                    </Stack>
+                  </Box>
+                  <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                    <Grid container spacing={1.5}>
+                      <Grid item xs={12} sm={6} md={3}><Field label="Barang / deskripsi" value={it.barang_nama || it.description || it.barang_kode || "—"} /></Grid>
+                      <Grid item xs={12} sm={6} md={3}><Field label="Akun debit" value={it.debit_kode ? `${it.debit_kode} — ${it.debit_name || ""}` : "—"} /></Grid>
+                      <Grid item xs={6} sm={3} md={2}><Field label="Qty" value={it.qty} /></Grid>
+                      <Grid item xs={6} sm={3} md={2}><Field label="Harga satuan" value={`Rp ${money(it.harga_stn)}`} /></Grid>
+                      <Grid item xs={12} md={2}><Field label="Subtotal" value={`Rp ${money(it.subtotal)}`} /></Grid>
                     </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            );
-          })}
-          {!(row.items || []).length ? (
-            <Alert severity="info">Tidak ada alokasi faktur pada pembayaran ini.</Alert>
-          ) : null}
+                  </CardContent>
+                </Card>
+              ))}
+              {!(row.items || []).length ? <Alert severity="info">Tidak ada alokasi faktur pada pembayaran ini.</Alert> : null}
             </Stack>
           </CardContent>
         </Card>
 
-        {canPost ? (
+        <Card variant="outlined" sx={{ mt: 2, borderRadius: 2.5, bgcolor: "grey.50" }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+              <Box>
+                <Typography variant="subtitle1" fontWeight={800}>Summary Items</Typography>
+                <Typography variant="caption" color="text.secondary">Ringkasan nilai faktur sebelum pembayaran diposting</Typography>
+              </Box>
+              <Chip size="small" color="primary" variant="outlined" label={`${itemSummary.invoices} alokasi`} />
+            </Stack>
+            <Grid container spacing={1.5}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Total potongan</Typography>
+                  <Typography variant="h5" fontWeight={800}>Rp {money(itemSummary.discount)}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Total PPN</Typography>
+                  <Typography variant="h5" fontWeight={800}>Rp {money(itemSummary.ppn)}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Nilai sebelum PPN</Typography>
+                  <Typography variant="h5" fontWeight={800} color="primary.main">Rp {money(itemSummary.beforePpn)}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Nilai setelah PPN</Typography>
+                  <Typography variant="h5" fontWeight={800} color="success.main">Rp {money(itemSummary.afterPpn)}</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+         {canPost ? (
           <>
             <Divider sx={{ my: 3 }} />
             <Typography variant="subtitle1" fontWeight={700} mb={2}>
@@ -642,33 +767,119 @@ export default function OrderPaymentDetailPage() {
                   onChange={(e) => setNarasi(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12}>
-                <Stack direction="row" spacing={1.5}>
-                  <Button
-                    variant="contained"
-                    disabled={posting || !walletId || !selectedWallet?.coa_id}
-                    onClick={handlePost}
-                  >
-                    {posting ? "Memposting…" : "Posting Bayar"}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => router.push("/orders-payments")}
-                  >
-                    Kembali
-                  </Button>
-                </Stack>
-              </Grid>
-            </Grid>
-          </>
-        ) : null}
+             </Grid>
+           </>
+         ) : null}
 
-        {!pending ? (
-          <Alert severity="success" sx={{ mt: 3 }}>
-            Pembayaran sudah diposting
-            {row.coa_kode ? ` ke ${row.coa_kode} — ${row.coa_name || ""}` : ""}.
-          </Alert>
-        ) : null}
+         <Stack direction="row" justifyContent="space-between" spacing={1.5} sx={{ mt: 3 }}>
+           <Stack direction="row" spacing={1.5}>
+             {canPost ? (
+               <Button
+                 variant="contained"
+                 disabled={posting || !walletId || !selectedWallet?.coa_id}
+                 onClick={handlePost}
+               >
+                 {posting ? "Memposting…" : "Posting Bayar"}
+               </Button>
+             ) : null}
+           </Stack>
+           <Stack direction="row" spacing={1.5}>
+             <Button
+               variant="outlined"
+               onClick={() => router.push("/orders-payments")}
+             >
+               Kembali
+             </Button>
+             {canRemove ? (
+               <Button
+               variant="outlined"
+               color="error"
+               disabled={removing}
+                onClick={() => setRollbackOpen(true)}
+               >
+                 {removing ? "Rollback..." : "Rollback Pembayaran"}
+               </Button>
+             ) : null}
+           </Stack>
+         </Stack>
+
+         {!pending ? (
+           <Alert severity="success" sx={{ mt: 3 }}>
+             Pembayaran sudah diposting
+             {row.coa_kode ? ` ke ${row.coa_kode} — ${row.coa_name || ""}` : ""}.
+           </Alert>
+         ) : null}
+
+         <Dialog
+           open={rollbackOpen}
+           onClose={() => (removing ? null : setRollbackOpen(false))}
+           fullWidth
+           maxWidth="sm"
+           PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
+         >
+           <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25, pb: 1 }}>
+             <Box
+               sx={{
+                 width: 42,
+                 height: 42,
+                 borderRadius: "50%",
+                 display: "grid",
+                 placeItems: "center",
+                 bgcolor: "error.lighter",
+                 color: "error.main",
+               }}
+             >
+               <WarningAmberRoundedIcon />
+             </Box>
+             <Box>
+               <Typography variant="h5">Rollback pembayaran?</Typography>
+               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                 {row.kdbayar || `Pembayaran #${id}`}
+               </Typography>
+             </Box>
+           </DialogTitle>
+           <DialogContent>
+             <Alert severity="warning" sx={{ mb: 1.5, borderRadius: 2 }}>
+               Tindakan ini tidak dapat dibatalkan setelah berhasil diproses.
+             </Alert>
+             <Typography variant="body2" color="text.secondary">
+               Sistem akan menghapus pembayaran pending beserta data alokasinya dan mengembalikan dokumen sumber ke tahap sebelumnya.
+             </Typography>
+             <List dense disablePadding sx={{ mt: 1.25 }}>
+               <ListItem disableGutters>
+                 <ListItemIcon sx={{ minWidth: 34, color: "error.main" }}>
+                   <DeleteSweepOutlinedIcon fontSize="small" />
+                 </ListItemIcon>
+                 <ListItemText primary="Data pembayaran dan alokasi faktur akan dihapus." />
+               </ListItem>
+               <ListItem disableGutters>
+                 <ListItemIcon sx={{ minWidth: 34, color: "primary.main" }}>
+                   <RestoreOutlinedIcon fontSize="small" />
+                 </ListItemIcon>
+                 <ListItemText primary="PO dikembalikan ke status verify dan PD ke approval." />
+               </ListItem>
+             </List>
+           </DialogContent>
+           <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+             <Button
+               variant="text"
+               onClick={() => setRollbackOpen(false)}
+               disabled={removing}
+             >
+               Batal
+             </Button>
+             <Button
+               variant="contained"
+               color="error"
+               onClick={handleRollback}
+               disabled={removing}
+               startIcon={removing ? <CircularProgress size={16} color="inherit" /> : <RestoreOutlinedIcon />}
+             >
+               {removing ? "Memproses..." : "Ya, Rollback Pembayaran"}
+             </Button>
+           </DialogActions>
+         </Dialog>
+
       </MainCard>
     </>
   );
