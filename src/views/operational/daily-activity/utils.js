@@ -58,7 +58,7 @@ export const emptyBatch = (status, date = getLocalDate(), shift = '1') => ({
   equipment_assignments: {}
 });
 
-export function nextBatch(source, status = source.status) {
+export function nextBatch(source, status = source.status, preserveTimes = false) {
   const start = new Date(source.finish_time);
   const sourceStart = new Date(source.start_time);
   const sourceFinish = new Date(source.finish_time);
@@ -73,8 +73,16 @@ export function nextBatch(source, status = source.status) {
     ...source,
     client_id: `${status}-${Date.now()}-${Math.random()}`,
     status,
-    start_time: Number.isNaN(start.getTime()) ? source.start_time : toLocalInput(start),
-    finish_time: Number.isNaN(finish.getTime()) ? source.finish_time : toLocalInput(finish),
+    start_time: preserveTimes
+      ? source.start_time
+      : Number.isNaN(start.getTime())
+        ? source.start_time
+        : toLocalInput(start),
+    finish_time: preserveTimes
+      ? source.finish_time
+      : Number.isNaN(finish.getTime())
+        ? source.finish_time
+        : toLocalInput(finish),
     equipment_ids: [...source.equipment_ids],
     equipment_assignments: Object.fromEntries(
       Object.entries(source.equipment_assignments).map(([id, assignment]) => [id, { ...assignment }])

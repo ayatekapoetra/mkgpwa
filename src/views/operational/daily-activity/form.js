@@ -871,7 +871,7 @@ export default function DailyActivityForm({ headerId = null }) {
     setDirty(true);
   };
   const duplicateBatch = (batch) => {
-    setBatches((current) => [...current, nextBatch(batch)]);
+    setBatches((current) => [...current, nextBatch(batch, batch.status, true)]);
     setDirty(true);
   };
   const removeBatch = (id) => {
