@@ -461,11 +461,26 @@ export default function OrderPaymentDetailPage() {
 
   const itemSummary = useMemo(() => {
     const items = Array.isArray(row?.items) ? row.items : [];
-    const totalAfterPpn = items.reduce((total, item) => total + (Number(item.faktur_grandtotal) || Number(item.subtotal) || 0), 0);
-    const ppn = items.reduce((total, item) => total + (Number(item.faktur_ppn_rp) || Number(item.ppn_rp) || 0), 0);
+
+    // `faktur_grandtotal`, `faktur_potongan`, `faktur_ppn_rp` adalah nilai level faktur
+    // (dari trx_faktur_belis). Satu faktur bisa punya beberapa baris item (beda barang),
+    // jadi nilai faktur harus dijumlahkan per faktur unik agar tidak dobel.
+    const invoices = [];
+    const seenInvoice = new Set();
+    items.forEach((item) => {
+      const key = String(item.trx_beli ?? item.faktur_kode ?? '');
+      if (key && seenInvoice.has(key)) return;
+      if (key) seenInvoice.add(key);
+      invoices.push(item);
+    });
+
+    const totalAfterPpn = invoices.reduce((total, item) => total + (Number(item.faktur_grandtotal) || Number(item.subtotal) || 0), 0);
+    const ppn = invoices.reduce((total, item) => total + (Number(item.faktur_ppn_rp) || Number(item.ppn_rp) || 0), 0);
+    const discount = invoices.reduce((total, item) => total + (Number(item.faktur_potongan) || Number(item.potongan) || 0), 0);
+
     return {
       invoices: items.length,
-      discount: items.reduce((total, item) => total + (Number(item.faktur_potongan) || Number(item.potongan) || 0), 0),
+      discount,
       ppn,
       beforePpn: totalAfterPpn - ppn,
       afterPpn: totalAfterPpn,
