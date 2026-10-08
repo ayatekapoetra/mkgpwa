@@ -8,14 +8,13 @@ import ListFetchFailed from './ListFetchFailed.js';
 import Notification from './Notification.js';
 import MobileSection from './MobileSection';
 
-import { useLayoutConfig, useLocaleConfig } from 'hooks/useConfig';
+import { useLayoutConfig } from 'hooks/useConfig';
 import DrawerHeader from 'layout/DashboardLayout/Drawer/DrawerHeader';
 import { MenuOrientation } from 'config';
 
 // ==============================|| HEADER - CONTENT ||============================== //
 
 const HeaderContent = () => {
-  const { i18n } = useLocaleConfig();
   const { menuOrientation } = useLayoutConfig();
 
   const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));

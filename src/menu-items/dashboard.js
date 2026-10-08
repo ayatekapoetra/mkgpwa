@@ -1,7 +1,7 @@
 'use client';
 
 // third-party
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 // assets
 import {
@@ -135,18 +135,19 @@ const loadingMenu = {
 // ==============================|| MENU ITEMS - API ||============================== //
 
 export const MenuFromAPI = () => {
+  const { messages } = useIntl();
   // const { data: session, status } = useSession();
   const { menu, menuLoading } = useGetMenu();
   if (menuLoading) return loadingMenu;
 
   const subChildrenList = (children) => {
     return children?.map((subList) => {
-      return fillItem(subList);
+      return fillItem(subList, undefined, messages);
     });
   };
 
   const itemList = (subList) => {
-    let list = fillItem(subList);
+    let list = fillItem(subList, undefined, messages);
 
     // if collapsible item, we need to feel its children as well
     if (subList.type === 'collapse') {
@@ -159,14 +160,16 @@ export const MenuFromAPI = () => {
     return itemList(subList);
   });
 
-  let menuList = fillItem(menu, childrenList);
+  let menuList = fillItem(menu, childrenList, messages);
   return menuList;
 };
 
-function fillItem(item, children) {
+function fillItem(item, children, messages) {
+  const title = item?.title || '';
   return {
     ...item,
-    title: <FormattedMessage id={`${item?.title}`} />,
+    // API-defined labels without a translation are displayed as plain text.
+    title: messages[title] ? <FormattedMessage id={title} /> : title,
     icon: (() => {
       if (typeof item?.icon === 'function' || typeof item?.icon === 'object') {
         return item.icon;

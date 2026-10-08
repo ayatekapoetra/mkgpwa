@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 // MATERIAL - UI
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import StyledEngineProvider from '@mui/material/StyledEngineProvider';
+import { prefixer } from 'stylis';
+import rtlPlugin from 'stylis-plugin-rtl';
 
 // PROJECT IMPORTS
 import Palette from './palette';
@@ -16,7 +17,7 @@ import { NextAppDirEmotionCacheProvider } from './emotionCache';
 import { HEADER_HEIGHT } from 'config';
 import { useLayoutConfig, useThemeConfig } from 'hooks/useConfig';
 import getWindowScheme from 'utils/getWindowScheme';
-import { ThemeMode } from 'config';
+import { ThemeDirection, ThemeMode } from 'config';
 
 // ==============================|| DEFAULT THEME - MAIN  ||============================== //
 
@@ -77,14 +78,19 @@ export default function ThemeCustomization({ children }) {
   }, [themeOptions]);
 
   return (
-    <StyledEngineProvider injectFirst>
-      <NextAppDirEmotionCacheProvider options={{ key: 'mui' }}>
-        <ThemeProvider theme={themes}>
-          <CssBaseline enableColorScheme />
-          {children}
-        </ThemeProvider>
-      </NextAppDirEmotionCacheProvider>
-    </StyledEngineProvider>
+    <NextAppDirEmotionCacheProvider
+      key={themeDirection}
+      options={{
+        key: themeDirection === ThemeDirection.RTL ? 'mui-rtl' : 'mui',
+        prepend: true,
+        ...(themeDirection === ThemeDirection.RTL && { stylisPlugins: [prefixer, rtlPlugin] })
+      }}
+    >
+      <ThemeProvider theme={themes}>
+        <CssBaseline enableColorScheme />
+        {children}
+      </ThemeProvider>
+    </NextAppDirEmotionCacheProvider>
   );
 }
 
