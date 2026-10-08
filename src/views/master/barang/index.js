@@ -30,18 +30,14 @@ const BarangScreen = () => {
     nama: '',
     kode: '',
     num_part: '',
-    serial: '',
     kategori_id: '',
     application_id: '',
     manufacture_id: '',
-    brand_id: ''
+    brand_id: '',
+    satuan: '',
+    stn_pakai: ''
   });
   const { data, dataLoading, dataError, pagination } = useGetBarang(params);
-
-  console.log('Barang index - data:', data);
-  console.log('Barang index - pagination:', pagination);
-  console.log('Barang index - dataLoading:', dataLoading);
-  console.log('Barang index - dataError:', dataError);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
@@ -49,8 +45,7 @@ const BarangScreen = () => {
 
   if (dataLoading) return <Typography variant="body1">Loading...</Typography>;
   if (dataError) {
-    console.log('Data error details:', dataError);
-    return <p>Error fetching data: {JSON.stringify(dataError)}</p>;
+    return <Typography color="error">Gagal mengambil data barang.</Typography>;
   }
 
   return (
@@ -73,7 +68,7 @@ const BarangScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <FilterBarang data={params} setData={setParams} open={openFilter} count={Array.isArray(data) ? data.length : 0} onClose={toggleFilterHandle} />
+        <FilterBarang data={params} setData={setParams} open={openFilter} count={pagination.total} onClose={toggleFilterHandle} />
         <ListTableBarang data={{ data: data || [] }} />
 
         <Stack sx={{ p: 2 }}>

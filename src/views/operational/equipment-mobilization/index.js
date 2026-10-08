@@ -34,6 +34,7 @@ import {
   useGetEquipmentMobilizations
 } from 'api/equipment-mobilization';
 import FilterEquipmentMobilization from './filter';
+import Tab from 'themes/overrides/Tab';
 
 moment.locale('id');
 
@@ -188,7 +189,7 @@ export default function EquipmentMobilizationScreen() {
         ) : (
           <Stack>
             <Box sx={{ width: '100%', overflowX: 'auto' }}>
-              <Table sx={{ minWidth: 1100 }}>
+              <Table sx={{ minWidth: 1400, whiteSpace: 'nowrap' }}>
                 <TableHead>
                   <TableRow>
                     <TableCell align="center">Aksi</TableCell>
@@ -199,6 +200,7 @@ export default function EquipmentMobilizationScreen() {
                     <TableCell align="center">Unit</TableCell>
                     <TableCell align="center">Progress</TableCell>
                     <TableCell>Status</TableCell>
+                    <TableCell>Note</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -234,22 +236,21 @@ export default function EquipmentMobilizationScreen() {
                             </Tooltip>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="subtitle2">{row.document_no || `-`}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {row.notes || '-'}
-                            </Typography>
+                            <Typography variant="body2">{row.document_no || `-`}</Typography>
                           </TableCell>
                           <TableCell>
-                            {row.started_at || row.movement_date
-                              ? moment(row.started_at || row.movement_date).format('DD MMM YYYY HH:mm')
-                              : '-'}
+                            <Typography variant="body2">
+                              {row.started_at || row.movement_date
+                                ? moment(row.started_at || row.movement_date).format('DD MMM YYYY HH:mm')
+                                : '-'}
+                            </Typography>
                           </TableCell>
-                          <TableCell sx={{ maxWidth: 220 }}>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
                             <Typography variant="body2" noWrap title={origin}>
                               {origin}
                             </Typography>
                           </TableCell>
-                          <TableCell sx={{ maxWidth: 220 }}>
+                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
                             <Typography variant="body2" noWrap title={destination}>
                               {destination}
                             </Typography>
@@ -267,6 +268,11 @@ export default function EquipmentMobilizationScreen() {
                               label={MOBILIZATION_STATUS_LABEL[status] || status || '-'}
                               color={MOBILIZATION_STATUS_COLOR[status] || 'default'}
                             />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="caption" color="text.secondary">
+                              {row.notes || '-'}
+                            </Typography>
                           </TableCell>
                         </TableRow>
                       );

@@ -29,9 +29,9 @@ const Paginate = ({
   }
 
   return (
-    <Stack direction="row" justifyContent="space-between" alignItems="center">
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
       <div>total {total} rows</div>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
         <Button
           variant="outlined"
           color="primary"

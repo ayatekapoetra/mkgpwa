@@ -63,7 +63,8 @@ import {
   UsdCoin,
   TruckTick,
   Hospital,
-  Lifebuoy
+  Lifebuoy,
+  Framer
 } from 'iconsax-react';
 
 const normalizeIconKey = (value) =>
@@ -154,6 +155,7 @@ const iconMap = {
   barang: Box,
   material: Layer,
   PresentionChart: PresentionChart,
+  Framer: Framer,
   'lokasi-kerja': Location,
   'kegiatan-kerja': Task,
   penyewa: Profile2User,

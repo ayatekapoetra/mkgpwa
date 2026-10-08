@@ -26,13 +26,7 @@ const ResizeHandle = styled('div')(({ theme, isresizing }) => ({
 }));
 
 export default function ListTableBarang({ data = { data: [] } }) {
-  console.log('ListTableBarang received data:', data);
-  console.log('data.data:', data.data);
-  console.log('data.data type:', typeof data.data);
-  console.log('data.data length:', Array.isArray(data.data) ? data.data.length : 'not array');
-
   const tableData = useMemo(() => (Array.isArray(data.data) ? data.data : []), [data]);
-  console.log('tableData:', tableData);
 
   const columns = useMemo(
     () => [
@@ -106,7 +100,7 @@ export default function ListTableBarang({ data = { data: [] } }) {
         cell: (info) => info.getValue() || '-'
       },
       {
-        header: 'Satuan',
+        header: 'Stn.Ord',
         accessorKey: 'satuan',
         size: 80,
         minSize: 80,
@@ -114,12 +108,20 @@ export default function ListTableBarang({ data = { data: [] } }) {
         cell: (info) => info.getValue() || '-'
       },
       {
-        header: 'Min Stok',
-        accessorKey: 'min_stok',
-        size: 80,
-        minSize: 80,
+        header: 'Stn.Used',
+        accessorKey: 'stn_pakai',
+        size: 110,
+        minSize: 100,
         enableResizing: true,
-        cell: (info) => info.getValue() || '0'
+        cell: (info) => info.getValue() || '-'
+      },
+      {
+        header: 'Ratio',
+        accessorKey: 'pembagi_pakai',
+        size: 110,
+        minSize: 100,
+        enableResizing: true,
+        cell: (info) => info.getValue() ?? '-'
       },
       {
         header: 'Kategori',

@@ -2,7 +2,7 @@
 import { FormattedMessage } from 'react-intl';
 
 // ASSETS
-import { Book1, I24Support, MessageProgramming, Truck, Box, Airdrop, VoiceCricle, Building3 } from 'iconsax-react';
+import { Book1, I24Support, MessageProgramming, Truck, Box, Airdrop, VoiceCricle, Building3, UsdCoin } from 'iconsax-react';
 
 // ICONS
 const icons = {
@@ -13,7 +13,8 @@ const icons = {
   equipment: Truck,
   barang: Box,
   material: Airdrop,
-  unit: Building3
+  unit: Building3,
+  hargaBeli: UsdCoin
 };
 
 // ==============================|| MENU ITEMS - PAGES ||============================== //
@@ -54,6 +55,13 @@ const MasterPage = {
       type: 'item',
       url: '/material',
       icon: icons.material
+    },
+    {
+      id: 'harga-beli',
+      title: <FormattedMessage id="Harga Beli" />,
+      type: 'item',
+      url: '/harga-beli',
+      icon: icons.hargaBeli
     },
     {
       id: 'unit-bisnis',

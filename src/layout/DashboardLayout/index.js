@@ -36,8 +36,6 @@ const DashboardLayout = ({ children }) => {
 
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 
-  console.log('XXX-XXX');
-
   // set media wise responsive drawer
   useEffect(() => {
     if (!miniDrawer) {

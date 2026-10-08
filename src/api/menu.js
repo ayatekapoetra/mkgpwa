@@ -92,6 +92,23 @@ export function useGetMenu() {
       }
     }
 
+    const masterMenu = dashboardChildren.find((item) => {
+      const title = (item?.title || '').toString().trim().toLowerCase();
+      const id = (item?.id || '').toString().trim().toLowerCase();
+      return title === 'master' || id === 'master' || id.includes('master-page');
+    });
+
+    if (masterMenu && Array.isArray(masterMenu.children) && !masterMenu.children.some((item) => item?.url === '/harga-beli')) {
+      masterMenu.children.push({
+        id: 'harga-beli',
+        title: 'Harga Beli',
+        type: 'item',
+        url: '/harga-beli',
+        icon: getMenuIcon('UsdCoin'),
+        breadcrumbs: true
+      });
+    }
+
     const operationalMenu = dashboardChildren.find((item) => {
       const title = (item?.title || '').toString().toLowerCase();
       const id = (item?.id || '').toString().toLowerCase();

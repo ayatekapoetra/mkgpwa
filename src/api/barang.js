@@ -12,43 +12,56 @@ export const endpoints = {
 };
 
 export const useGetBarang = (params) => {
-  const url = params ? `${endpoints.key}/list?${new URLSearchParams(params)}` : `${endpoints.key}/list`;
+  const query = params
+    ? new URLSearchParams(Object.entries(params).filter(([, value]) => value !== '' && value !== null && value !== undefined))
+    : null;
+  const queryString = query?.toString();
+  const url = queryString ? `${endpoints.key}/list?${queryString}` : `${endpoints.key}/list`;
 
   const { data, error, isLoading } = useSWR(url, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    onSuccess: (data) => {
-      console.log('Barang API Success:', data);
-    },
-    onError: (error) => {
-      console.log('Barang API Error:', error);
-    }
+    keepPreviousData: true
   });
 
   useOfflineStorage('barang', 'barang', data);
 
   const memoizedValue = useMemo(
     () => ({
-      data: data?.rows?.data || data?.rows,
-      dataLoading: isLoading,
+      data: data?.rows || [],
+      dataLoading: isLoading && !data,
       dataError: error,
-      dataEmpty: !isLoading && !data?.rows?.data?.length && !data?.rows?.length,
+      dataEmpty: !isLoading && !data?.rows?.length,
       pagination: {
-        page: data?.rows?.page || 1,
-        perPage: data?.rows?.perPage || 25,
-        lastPage: data?.rows?.lastPage || 1,
-        total: data?.rows?.total || 0
+        page: Number(data?.page) || 1,
+        perPage: Number(data?.perPage) || Number(params?.perPages) || 30,
+        lastPage: Number(data?.lastPage) || 1,
+        total: Number(data?.total) || 0
       }
     }),
-    [data, error, isLoading]
+    [data, error, isLoading, params?.perPages]
   );
 
   return memoizedValue;
 };
 
+export const useBarangFilterOptions = (enabled = true) => {
+  const { data, error, isLoading } = useSWR(enabled ? `${endpoints.key}/options` : null, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true
+  });
+
+  return {
+    options: data?.rows || {},
+    optionsLoading: isLoading,
+    optionsError: error
+  };
+};
+
 export const useShowBarang = (id) => {
-  const { data, isLoading, error, isValidating } = useSWR(`${endpoints.key}/${id}/show`, fetcher, {
+  const { data, isLoading, error, isValidating } = useSWR(id ? `${endpoints.key}/${id}` : null, fetcher, {
     revalidateIfStale: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: false

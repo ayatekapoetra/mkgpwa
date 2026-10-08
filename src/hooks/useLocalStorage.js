@@ -3,14 +3,18 @@ import { useCallback, useEffect, useState } from 'react';
 // ===========================|| HOOKS - LOCAL STORE ||=========================== //
 
 export default function useLocalStorage(key, defaultValue) {
-  const [value, setValue] = useState(() => {
-    const storedValue = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-    return storedValue === null ? defaultValue : JSON.parse(storedValue);
-  });
+  const [value, setValue] = useState(defaultValue);
 
   useEffect(() => {
+    try {
+      const storedValue = localStorage.getItem(key);
+      if (storedValue !== null) setValue(JSON.parse(storedValue));
+    } catch {
+      // ignore parse errors
+    }
+
     const listener = (e) => {
-      if (typeof window !== 'undefined' && e.storageArea === localStorage && e.key === key) {
+      if (e.storageArea === localStorage && e.key === key) {
         setValue(e.newValue ? JSON.parse(e.newValue) : e.newValue);
       }
     };
@@ -19,7 +23,7 @@ export default function useLocalStorage(key, defaultValue) {
     return () => {
       window.removeEventListener('storage', listener);
     };
-  }, [key, defaultValue]);
+  }, [key]);
 
   const setValueInLocalStorage = useCallback((newValue) => {
     setValue((currentValue) => {

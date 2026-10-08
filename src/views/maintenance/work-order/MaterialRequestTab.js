@@ -39,6 +39,7 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import {
   Add,
   Trash,
@@ -97,6 +98,7 @@ function StokBadge({ stok, qty }) {
 
 export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
   const router = useRouter();
+  const theme = useTheme();
   const { data: mrList, dataLoading, dataError, mutate } = useMaterialRequestList(woId);
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
 
@@ -118,6 +120,12 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
   const [giConfirm, setGiConfirm] = useState(null); // { mroIds: [], items: [{mro_id, kdwo, barang, qty_requested, qty_available, qty_to_issue}], skipped: [] }
 
   const woClosed = String(woStatus || '').toUpperCase() === 'CLOSE';
+  const isDark = theme.palette.mode === 'dark';
+  const tableHeaderBg = alpha(theme.palette.text.primary, isDark ? 0.1 : 0.045);
+  const subtleBg = alpha(theme.palette.text.primary, isDark ? 0.055 : 0.025);
+  const primaryBg = alpha(theme.palette.primary.main, isDark ? 0.16 : 0.07);
+  const primaryBgHover = alpha(theme.palette.primary.main, isDark ? 0.24 : 0.12);
+  const warningBg = alpha(theme.palette.warning.main, isDark ? 0.15 : 0.07);
   const debouncedKeyword = useDebounce(keyword, 450);
 
   const optionUrl = selectedGudang?.id
@@ -442,7 +450,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
+              <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: tableHeaderBg } }}>
                 <TableCell sx={{ fontWeight: 700, width: 40 }}>No</TableCell>
                 <TableCell sx={{ fontWeight: 700, width: 180 }}>Kode</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Nama Barang & Gudang</TableCell>
@@ -469,7 +477,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       <Typography variant="body2" fontWeight={500}>{m.barang?.nama || m.narasi || '-'}</Typography>
                       {m.gudang?.nama && (
                         <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
-                          <BoxIcon size={11} color="text.secondary" />
+                          <BoxIcon size={11} color={theme.palette.text.secondary} />
                           <Typography variant="caption" color="text.secondary">{m.gudang.nama}</Typography>
                         </Stack>
                       )}
@@ -519,8 +527,8 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
         </TableContainer>
       ) : (
         !showForm && (
-          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2, bgcolor: 'grey.50' }}>
-            <BoxIcon size={48} color="text.disabled" />
+          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2, bgcolor: subtleBg }}>
+            <BoxIcon size={48} color={theme.palette.text.disabled} />
             <Typography variant="body1" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
               Belum ada material request untuk WO ini
             </Typography>
@@ -537,10 +545,10 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
       {showForm && !woClosed && (
         <Paper variant="outlined" sx={{ mt: 2.5, borderRadius: 2, overflow: 'hidden' }}>
           {/* Stepper Header */}
-          <Box sx={{ bgcolor: 'primary.main', color: 'white', px: 2.5, py: 1.5 }}>
+          <Box sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', px: 2.5, py: 1.5 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="h5" fontWeight={700}>Buat Material Request</Typography>
-              <IconButton size="small" sx={{ color: 'white' }} onClick={resetForm}>
+              <IconButton size="small" sx={{ color: 'primary.contrastText' }} onClick={resetForm}>
                 <CloseCircle size={20} />
               </IconButton>
             </Stack>
@@ -548,10 +556,10 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
               {['Pilih Gudang', 'Cari & Pilih Barang', 'Review & Submit'].map((label, idx) => (
                 <Stack key={idx} direction="row" spacing={0.5} alignItems="center" sx={{ flex: 1 }}>
                   <Box
-                    sx={{
-                      width: 24, height: 24, borderRadius: '50%', display: 'grid', placeItems: 'center',
-                      bgcolor: formStep >= idx ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
-                      fontSize: 12, fontWeight: 700, border: '1px solid rgba(255,255,255,0.3)'
+                      sx={{
+                       width: 24, height: 24, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                       bgcolor: alpha(theme.palette.primary.contrastText, formStep >= idx ? 0.3 : 0.1),
+                       fontSize: 12, fontWeight: 700, border: `1px solid ${alpha(theme.palette.primary.contrastText, 0.3)}`
                     }}
                   >
                     {formStep > idx ? <TickSquare size={12} /> : idx + 1}
@@ -559,7 +567,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                   <Typography variant="caption" sx={{ opacity: formStep >= idx ? 1 : 0.5, fontWeight: formStep === idx ? 700 : 400 }}>
                     {label}
                   </Typography>
-                  {idx < 2 && <Box sx={{ flex: 1, height: 1, bgcolor: 'rgba(255,255,255,0.2)', ml: 0.5 }} />}
+                  {idx < 2 && <Box sx={{ flex: 1, height: 1, bgcolor: alpha(theme.palette.primary.contrastText, 0.2), ml: 0.5 }} />}
                 </Stack>
               ))}
             </Stack>
@@ -583,7 +591,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                   renderOption={(props, opt) => (
                     <Box component="li" {...props} key={opt.id}>
                       <ListItemAvatar sx={{ minWidth: 40 }}>
-                        <Avatar sx={{ bgcolor: 'primary.lighter', color: 'primary.main', width: 32, height: 32, fontSize: 14 }}>
+                        <Avatar sx={{ bgcolor: primaryBg, color: 'primary.main', width: 32, height: 32, fontSize: 14 }}>
                           <BoxIcon size={18} />
                         </Avatar>
                       </ListItemAvatar>
@@ -606,7 +614,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                         ...params.InputProps,
                         startAdornment: (
                           <InputAdornment position="start">
-                            <BoxIcon size={18} color="text.secondary" />
+                            <BoxIcon size={18} color={theme.palette.text.secondary} />
                           </InputAdornment>
                         )
                       }}
@@ -653,7 +661,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <SearchNormal1 size={20} color="text.secondary" />
+                            <SearchNormal1 size={20} color={theme.palette.text.secondary} />
                           </InputAdornment>
                         ),
                         endAdornment: keyword && (
@@ -670,7 +678,10 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
 
                 {/* MODE: Sparepart Manual */}
                 {itemMode === 'manual' && (
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'warning.lighter' }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{ p: 2, borderRadius: 1.5, bgcolor: warningBg, borderColor: alpha(theme.palette.warning.main, isDark ? 0.32 : 0.18), '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
+                  >
                     <Stack spacing={1.5}>
                       <Alert severity="info" icon={<Warning2 size={18} />}>
                         Gunakan ini jika barang/sparepart <strong>tidak ditemukan</strong> di master.
@@ -752,7 +763,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                         <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400, borderRadius: 1 }}>
                           <Table size="small" stickyHeader>
                             <TableHead>
-                              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                              <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: tableHeaderBg } }}>
                                 <TableCell sx={{ fontWeight: 700, width: 100 }}>Kode</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Nama Barang</TableCell>
                                 <TableCell sx={{ fontWeight: 700, align: 'center', width: 80 }} align="center">Stok</TableCell>
@@ -768,7 +779,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                                   <TableRow
                                     key={b.id}
                                     hover
-                                    sx={{ cursor: 'pointer', '&:hover': { bgcolor: inCart ? 'primary.lighter' : 'grey.50' }, bgcolor: inCart ? 'primary.lighter' : 'inherit' }}
+                                    sx={{ cursor: 'pointer', bgcolor: inCart ? primaryBg : 'transparent', '&:hover': { bgcolor: inCart ? primaryBgHover : 'action.hover' } }}
                                     onClick={() => handleAddToCart(b)}
                                   >
                                     <TableCell>
@@ -810,7 +821,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
 
                     {!barangLoading && !barangError && barangList.length === 0 && debouncedKeyword && (
                       <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
-                        <SearchNormal1 size={32} color="text.disabled" />
+                        <SearchNormal1 size={32} color={theme.palette.text.disabled} />
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           Barang tidak ditemukan untuk "{debouncedKeyword}"
                         </Typography>
@@ -821,8 +832,8 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                     )}
 
                     {!barangLoading && !barangError && barangList.length === 0 && !debouncedKeyword && (
-                      <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', borderRadius: 2, bgcolor: 'grey.50' }}>
-                        <SearchNormal1 size={32} color="text.disabled" />
+                      <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', borderRadius: 2, bgcolor: subtleBg }}>
+                        <SearchNormal1 size={32} color={theme.palette.text.disabled} />
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           Ketik kata kunci untuk mencari barang
                         </Typography>
@@ -838,9 +849,9 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                   <Box sx={{ flex: 1, minWidth: 280 }}>
                     <Paper variant="outlined" sx={{ borderRadius: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
                       {/* Header keranjang */}
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 1.5, py: 1, bgcolor: cart.length > 0 ? 'primary.lighter' : 'grey.100', borderBottom: '1px solid', borderColor: 'divider', borderRadius: '4px 4px 0 0' }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 1.5, py: 1, bgcolor: cart.length > 0 ? primaryBg : tableHeaderBg, borderBottom: '1px solid', borderColor: 'divider', borderRadius: '4px 4px 0 0' }}>
                         <Stack direction="row" spacing={0.5} alignItems="center">
-                          <ShoppingBag size={16} color={cart.length > 0 ? 'primary.main' : 'text.disabled'} />
+                          <ShoppingBag size={16} color={cart.length > 0 ? theme.palette.primary.main : theme.palette.text.disabled} />
                           <Typography variant="subtitle2" fontWeight={700} color={cart.length > 0 ? 'primary.main' : 'text.secondary'}>
                             Keranjang ({cart.length})
                           </Typography>
@@ -856,7 +867,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       <Box sx={{ flex: 1, maxHeight: 350, overflowY: 'auto', p: cart.length > 0 ? 1 : 0 }}>
                         {cart.length === 0 ? (
                           <Stack alignItems="center" justifyContent="center" sx={{ py: 4, px: 2, textAlign: 'center' }}>
-                            <ShoppingBag size={36} color="text.disabled" />
+                            <ShoppingBag size={36} color={theme.palette.text.disabled} />
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                               Keranjang kosong
                             </Typography>
@@ -873,7 +884,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                               return (
                                 <Paper key={c.uid} variant="outlined" sx={{ p: 1, borderRadius: 1, borderLeft: '3px solid', borderLeftColor: kurang ? 'warning.main' : 'primary.main' }}>
                                   <Stack direction="row" spacing={1} alignItems="flex-start">
-                                    <Avatar sx={{ width: 28, height: 28, fontSize: 11, fontWeight: 700, bgcolor: 'primary.lighter', color: 'primary.main', flexShrink: 0 }}>
+                                    <Avatar sx={{ width: 28, height: 28, fontSize: 11, fontWeight: 700, bgcolor: primaryBg, color: 'primary.main', flexShrink: 0 }}>
                                       {idx + 1}
                                     </Avatar>
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -961,8 +972,8 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
             {formStep === 2 && (
               <Stack spacing={2}>
                 {/* Info gudang */}
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                  <Avatar sx={{ bgcolor: 'primary.lighter', color: 'primary.main', width: 36, height: 36 }}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, bgcolor: subtleBg, borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
+                  <Avatar sx={{ bgcolor: primaryBg, color: 'primary.main', width: 36, height: 36 }}>
                     <BoxIcon size={20} />
                   </Avatar>
                   <Box>
@@ -976,7 +987,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                   <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1 }}>
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ bgcolor: 'grey.100' }}>
+                        <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: tableHeaderBg } }}>
                           <TableCell sx={{ fontWeight: 700 }}>Barang</TableCell>
                           <TableCell sx={{ fontWeight: 700, width: 90 }} align="center">Stok</TableCell>
                           <TableCell sx={{ fontWeight: 700, width: 90 }} align="center">Qty</TableCell>
@@ -1031,7 +1042,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                 )}
 
                 {cart.length > 0 && (
-                  <Stack direction="row" spacing={2} sx={{ p: 1.5, bgcolor: 'primary.lighter', borderRadius: 1 }}>
+                  <Stack direction="row" spacing={2} sx={{ p: 1.5, bgcolor: primaryBg, borderRadius: 1.5 }}>
                     <Box>
                       <Typography variant="caption" color="text.secondary">Total Item</Typography>
                       <Typography variant="h5" fontWeight={700} color="primary.main">{cart.length}</Typography>
@@ -1048,7 +1059,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
           </Box>
 
           {/* Footer Navigation */}
-          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
+          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: subtleBg }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Button
                 variant="outlined"
@@ -1062,7 +1073,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
               {/* Step indicator dots */}
               <Stack direction="row" spacing={0.5}>
                 {[0, 1, 2].map((i) => (
-                  <Box key={i} sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: formStep === i ? 'primary.main' : formStep > i ? 'success.main' : 'grey.300', transition: 'all 0.2s' }} />
+                  <Box key={i} sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: formStep === i ? 'primary.main' : formStep > i ? 'success.main' : alpha(theme.palette.text.primary, isDark ? 0.32 : 0.22), transition: 'all 0.2s' }} />
                 ))}
               </Stack>
 
@@ -1116,7 +1127,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
         {giConfirm && (
           <>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Warning2 size={20} color="#f59e0b" /> Ringkasan Pengeluaran Barang
+              <Warning2 size={20} color={theme.palette.warning.main} /> Ringkasan Pengeluaran Barang
             </DialogTitle>
             <DialogContent>
               <Stack spacing={1.5} sx={{ mt: 0.5 }}>
@@ -1127,7 +1138,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                 <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1, maxHeight: 300 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: 'grey.100' }}>
+                      <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: tableHeaderBg } }}>
                         <TableCell sx={{ fontWeight: 700 }}>Barang</TableCell>
                         <TableCell sx={{ fontWeight: 700, align: 'center' }}>Diminta</TableCell>
                         <TableCell sx={{ fontWeight: 700, align: 'center' }}>Stok</TableCell>

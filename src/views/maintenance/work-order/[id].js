@@ -33,6 +33,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { Add, Clock, Trash, Camera, Edit2, CloseSquare, Lock, Unlock } from "iconsax-react";
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -357,8 +358,17 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
               <Chip label={statusInfo.label} sx={{ bgcolor: statusInfo.bg, color: statusInfo.text, fontWeight: 600 }} />
             </Stack>
 
-            <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'divider', mb: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            <Box
+              sx={(theme) => ({
+                p: 2,
+                bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.12 : 0.045),
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.3 : 0.16),
+                mb: 2
+              })}
+            >
+              <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', mb: 0.75, letterSpacing: 0.4 }}>
                 Problem Issue
               </Typography>
               <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
@@ -443,10 +453,38 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
             )}
 
             {showAddAction && (
-              <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1.5, bgcolor: 'grey.50' }}>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>Tambah Aksi Baru</Typography>
+              <Box
+                sx={(theme) => ({
+                  mt: 2,
+                  p: { xs: 1.5, sm: 2 },
+                  border: '1px solid',
+                  borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.35 : 0.18),
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.035),
+                  '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' }
+                })}
+              >
+                <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2 }}>
+                  <Box
+                    sx={(theme) => ({
+                      width: 34,
+                      height: 34,
+                      borderRadius: 1.5,
+                      display: 'grid',
+                      placeItems: 'center',
+                      bgcolor: alpha(theme.palette.primary.main, 0.14),
+                      color: 'primary.main'
+                    })}
+                  >
+                    <Add size={18} />
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700}>Tambah Aksi Baru</Typography>
+                    <Typography variant="caption" color="text.secondary">Catat waktu, teknisi, dan tindakan perbaikan.</Typography>
+                  </Box>
+                </Stack>
                 <Stack spacing={1.5}>
-                  <Stack direction="row" spacing={1.5}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                     <TextField
                       label="Mulai"
                       type="datetime-local"
