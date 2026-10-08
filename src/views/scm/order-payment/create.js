@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import NextLink from "next/link";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Card,
@@ -18,6 +19,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
   Stack,
   TextField,
@@ -25,7 +27,7 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Bank, CardReceive, Eye, Gallery, Receipt2, Trash } from "iconsax-react";
+import { Bank, Building, CardReceive, Eye, Gallery, Receipt2, Trash } from "iconsax-react";
 
 import { createOrderPayment, fetchWallets } from "api/order-payments";
 import { usePurchaseOrderBisnis } from "api/purchase-orders";
@@ -34,7 +36,6 @@ import Breadcrumbs from "components/@extended/Breadcrumbs";
 import MainCard from "components/MainCard";
 import BtnBack from "components/BtnBack";
 import { APP_DEFAULT_PATH } from "config";
-import { getSelectedOption } from "views/scm/purchasing-orders/utils";
 import OutstandingModal from "./outstanding-modal";
 
 const money = (v) =>
@@ -89,6 +90,120 @@ const isImageAttachment = (attachment) => {
   return type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|heic)(\?|$)/i.test(url);
 };
 
+function ProofDropzone({ proof, onSelect, onRemove }) {
+  const [dragging, setDragging] = useState(false);
+
+  // Cegah browser membuka/menavigasi ke file ketika di-drop (perilaku default browser).
+  useEffect(() => {
+    const preventWindowDrop = (event) => event.preventDefault();
+    window.addEventListener("dragover", preventWindowDrop);
+    window.addEventListener("drop", preventWindowDrop);
+    return () => {
+      window.removeEventListener("dragover", preventWindowDrop);
+      window.removeEventListener("drop", preventWindowDrop);
+    };
+  }, []);
+
+  const handleFiles = (files) => {
+    const file = files?.[0];
+    if (file) onSelect?.(file);
+    setDragging(false);
+  };
+
+  return (
+    <Box
+      component="label"
+      onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={(event) => { event.preventDefault(); setDragging(false); }}
+      onDrop={(event) => { event.preventDefault(); handleFiles(event.dataTransfer.files); }}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        p: 1.5,
+        borderRadius: 2,
+        border: "1px dashed",
+        borderColor: proof ? "success.main" : dragging ? "primary.main" : "divider",
+        bgcolor: proof ? "success.lighter" : dragging ? "primary.lighter" : "secondary.lighter",
+        cursor: "pointer",
+        transition: "all .2s ease",
+        "&:hover": { borderColor: "primary.main", bgcolor: "primary.lighter" },
+      }}
+    >
+      <input
+        hidden
+        type="file"
+        accept="image/*"
+        onChange={(event) => { handleFiles(event.target.files); event.target.value = ""; }}
+      />
+
+      {proof?.dataUrl ? (
+        <Box
+          component="img"
+          src={proof.dataUrl}
+          alt={proof.name || "Bukti pembayaran"}
+          sx={{ width: 92, height: 64, objectFit: "cover", borderRadius: 1.5, border: "1px solid", borderColor: "divider", flexShrink: 0 }}
+        />
+      ) : (
+        <Box
+          sx={{
+            width: 92,
+            height: 64,
+            borderRadius: 1.5,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: "background.default",
+            border: "1px solid",
+            borderColor: "divider",
+            flexShrink: 0,
+          }}
+        >
+          <Gallery size={24} color={dragging ? "#4680FF" : "#64748b"} />
+        </Box>
+      )}
+
+      <Stack spacing={0.25} minWidth={0} flex={1}>
+        <Typography variant="body2" fontWeight={700}>
+          Bukti pembayaran{" "}
+          <Typography component="span" variant="caption" color="text.secondary">
+            (opsional)
+          </Typography>
+        </Typography>
+        <Typography variant="caption" color="text.secondary" noWrap>
+          {proof?.name || "Tarik gambar ke sini atau klik untuk memilih · maks. 5 MB"}
+        </Typography>
+      </Stack>
+
+      <Stack direction="row" spacing={1} alignItems="center" flexShrink={0}>
+        <Button
+          component="span"
+          size="small"
+          variant={proof ? "outlined" : "contained"}
+          startIcon={<Gallery size={15} />}
+        >
+          {proof ? "Ganti bukti" : "Upload bukti"}
+        </Button>
+        {proof && (
+          <Tooltip title="Hapus bukti">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onRemove?.();
+              }}
+            >
+              <Trash size={16} />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
+    </Box>
+  );
+}
+
 /**
  * Add Pembayaran — multi-faktur, multi-pemasok, satu bisnis_id.
  *
@@ -98,7 +213,7 @@ const isImageAttachment = (attachment) => {
  */
 export default function OrderPaymentCreatePage() {
   const router = useRouter();
-  const { rows: bisnis = [] } = usePurchaseOrderBisnis({}, true);
+  const { rows: bisnis = [], loading: loadingBisnis } = usePurchaseOrderBisnis({}, true);
 
   const [bisnisId, setBisnisId] = useState("");
   const [trxDate, setTrxDate] = useState(today());
@@ -114,9 +229,7 @@ export default function OrderPaymentCreatePage() {
   const [detailRow, setDetailRow] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const handleProofSelect = (id, event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
+  const handleProofFile = (id, file) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       openNotification({
@@ -355,24 +468,8 @@ export default function OrderPaymentCreatePage() {
           Pilih bisnis → muat outstanding → centang faktur → alokasi nominal →
           posting dari satu kas/bank.
         </Typography>
-
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
-            <Autocomplete
-              options={bisnis}
-              value={getSelectedOption(bisnis, bisnisId)}
-              getOptionLabel={(o) => o.name || o.kode || ""}
-              isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)}
-              onChange={(_, o) => {
-                setBisnisId(o?.id || "");
-                setAllocations([]);
-              }}
-              renderInput={(p) => (
-                <TextField {...p} label="Bisnis Unit *" required />
-              )}
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               type="date"
@@ -382,7 +479,47 @@ export default function OrderPaymentCreatePage() {
               onChange={(e) => setTrxDate(e.target.value)}
             />
           </Grid>
+        </Grid>
+        <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
+            <TextField
+              select
+              fullWidth
+              required
+              label="Bisnis Unit *"
+              value={bisnisId}
+              disabled={loadingBisnis}
+              onChange={(e) => {
+                setBisnisId(e.target.value);
+                setAllocations([]);
+              }}
+              helperText={loadingBisnis ? "Memuat bisnis unit..." : ""}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Building size={18} color="#9ca3af" />
+                  </InputAdornment>
+                )
+              }}
+            >
+              <MenuItem value="" disabled>
+                {loadingBisnis ? "Memuat bisnis unit..." : "Pilih bisnis unit"}
+              </MenuItem>
+              {bisnis.map((option) => (
+                <MenuItem key={option.id} value={String(option.id)}>
+                  <Stack>
+                    <Typography variant="body2" fontWeight={700}>
+                      {option.initial || option.kode || `Bisnis #${option.id}`}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.name}
+                    </Typography>
+                  </Stack>
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={3}>
             <TextField
               select
               fullWidth
@@ -394,35 +531,42 @@ export default function OrderPaymentCreatePage() {
               <MenuItem value="kas">Kas</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Autocomplete
-              loading={loadingWallet}
-              options={wallets}
-              value={
-                wallets.find((w) => String(w.id) === String(walletId)) || null
+          <Grid item xs={12} md={5}>
+            <TextField
+              select
+              fullWidth
+              required
+              label={walletType === "bank" ? "Rekening bank *" : "Kas *"}
+              value={walletId}
+              disabled={!bisnisId || loadingWallet}
+              onChange={(e) => setWalletId(e.target.value)}
+              helperText={
+                loadingWallet
+                  ? "Memuat rekening/kas..."
+                  : selectedWallet
+                    ? selectedWallet.coa_id
+                      ? `COA: ${selectedWallet.coa_kode || ""} — ${selectedWallet.coa_name || ""}`
+                      : "Wallet belum punya COA"
+                    : bisnisId
+                      ? "Pilih rekening/kas"
+                      : "Pilih bisnis dulu"
               }
-              getOptionLabel={(o) => o.label || o.name || ""}
-              isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)}
-              onChange={(_, o) => setWalletId(o?.id || "")}
-              renderInput={(p) => (
-                <TextField
-                  {...p}
-                  label={walletType === "bank" ? "Rekening bank *" : "Kas *"}
-                  required
-                  helperText={
-                    selectedWallet
-                      ? selectedWallet.coa_id
-                        ? `COA: ${selectedWallet.coa_kode || ""} — ${selectedWallet.coa_name || ""}`
-                        : "Wallet belum punya COA"
-                      : bisnisId
-                        ? "Pilih rekening/kas"
-                        : "Pilih bisnis dulu"
-                  }
-                />
-              )}
-            />
+            >
+              <MenuItem value="" disabled>
+                {loadingWallet
+                  ? "Memuat rekening/kas..."
+                  : bisnisId
+                    ? "Pilih rekening/kas"
+                    : "Pilih bisnis dulu"}
+              </MenuItem>
+              {wallets.map((wallet) => (
+                <MenuItem key={wallet.id} value={String(wallet.id)}>
+                  {wallet.label || wallet.name || `Wallet #${wallet.id}`}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <TextField
               fullWidth
               multiline
@@ -545,10 +689,20 @@ export default function OrderPaymentCreatePage() {
                       <Grid item xs={12} md={7}>
                         <Grid container spacing={1.25}>
                           <Grid item xs={12} sm={6}>
-                            <InfoField label="Purchase Order" value={row.no_po || "—"} bold />
+                            <InfoField
+                              label="Purchase Order"
+                              value={row.no_po || "—"}
+                              bold
+                              href={row.reff ? `/purchasing-orders/${row.reff}` : undefined}
+                            />
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                            <InfoField label="Pengajuan Dana" value={row.no_pd || "—"} bold />
+                            <InfoField
+                              label="Pengajuan Dana"
+                              value={row.no_pd || "—"}
+                              bold
+                              href={row.reff_pd ? `/pengajuan-dana/${row.reff_pd}` : undefined}
+                            />
                           </Grid>
                           <Grid item xs={12} sm={6}>
                             <InfoField label="Cabang" value={row.cabang_nama || "—"} />
@@ -577,7 +731,7 @@ export default function OrderPaymentCreatePage() {
                             height: "100%",
                             p: 1.5,
                             borderRadius: 2,
-                            bgcolor: "grey.50",
+                            bgcolor: "secondary.lighter",
                             border: "1px solid",
                             borderColor: "divider",
                           }}
@@ -606,48 +760,11 @@ export default function OrderPaymentCreatePage() {
                       </Grid>
 
                       <Grid item xs={12}>
-                        <Box
-                          sx={{
-                            p: 1.25,
-                            borderRadius: 2,
-                            border: "1px dashed",
-                            borderColor: proof ? "success.main" : "divider",
-                            bgcolor: proof ? "success.lighter" : "background.default",
-                          }}
-                        >
-                          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1.25}>
-                            <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
-                              <Gallery size={19} color={proof ? "#2e7d32" : "#64748b"} />
-                              <Box minWidth={0}>
-                                <Typography variant="body2" fontWeight={700}>
-                                  Bukti pembayaran <Typography component="span" variant="caption" color="text.secondary">(opsional)</Typography>
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap display="block">
-                                  {proof?.name || "Upload foto / screenshot bukti transfer"}
-                                </Typography>
-                              </Box>
-                            </Stack>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Button component="label" size="small" variant={proof ? "outlined" : "contained"} startIcon={<Gallery size={15} />}>
-                                {proof ? "Ganti bukti" : "Upload bukti"}
-                                <input hidden type="file" accept="image/*" onChange={(e) => handleProofSelect(row.id, e)} />
-                              </Button>
-                              {proof && (
-                                <Button size="small" color="error" onClick={() => removeProof(row.id)}>
-                                  Hapus
-                                </Button>
-                              )}
-                            </Stack>
-                          </Stack>
-                          {proof?.dataUrl && (
-                            <Box
-                              component="img"
-                              src={proof.dataUrl}
-                              alt={`Bukti pembayaran ${invoiceCode}`}
-                              sx={{ mt: 1.25, width: 92, height: 64, objectFit: "cover", borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}
-                            />
-                          )}
-                        </Box>
+                        <ProofDropzone
+                          proof={proof}
+                          onSelect={(file) => handleProofFile(row.id, file)}
+                          onRemove={() => removeProof(row.id)}
+                        />
                       </Grid>
                     </Grid>
                   </CardContent>
@@ -974,20 +1091,43 @@ function SectionCard({ icon, title, accent, children }) {
   );
 }
 
-function InfoField({ label, value, bold = false, accent = "text.primary" }) {
+function InfoField({ label, value, bold = false, accent = "text.primary", href }) {
   return (
     <Box>
       <Typography variant="caption" color="text.secondary" display="block">
         {label}
       </Typography>
-      <Typography
-        variant="body2"
-        fontWeight={bold ? 700 : 500}
-        color={accent}
-        sx={{ wordBreak: "break-word" }}
-      >
-        {value}
-      </Typography>
+      {href ? (
+        <Typography
+          component={NextLink}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="body2"
+          fontWeight={bold ? 700 : 500}
+          color="primary"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+            textDecoration: "none",
+            wordBreak: "break-word",
+            "&:hover": { textDecoration: "underline" },
+          }}
+        >
+          {value}
+          <OpenInNewOutlinedIcon sx={{ fontSize: 14, color: "text.secondary" }} />
+        </Typography>
+      ) : (
+        <Typography
+          variant="body2"
+          fontWeight={bold ? 700 : 500}
+          color={accent}
+          sx={{ wordBreak: "break-word" }}
+        >
+          {value}
+        </Typography>
+      )}
     </Box>
   );
 }

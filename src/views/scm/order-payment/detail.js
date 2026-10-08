@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -32,7 +33,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Gallery, Receipt2 } from "iconsax-react";
+import { Gallery, Receipt2, Trash } from "iconsax-react";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
@@ -90,14 +91,14 @@ const isImageAttachment = (attachment) => {
 
 const paymentProofStorageKey = (id) => `order-payment-proofs:${id}`;
 
-function Field({ label, value, inverse = false }) {
+function Field({ label, value, inverse = false, children }) {
   return (
     <Box
       sx={{
         minHeight: 64,
         p: 1.25,
         borderRadius: 1.75,
-        bgcolor: inverse ? "rgba(255,255,255,.09)" : "grey.50",
+        bgcolor: inverse ? "rgba(255,255,255,.09)" : "secondary.lighter",
         border: "1px solid",
         borderColor: inverse ? "rgba(255,255,255,.12)" : "divider",
       }}
@@ -118,14 +119,16 @@ function Field({ label, value, inverse = false }) {
       >
         {label}
       </Typography>
-      <Typography
-        variant="body2"
-        fontWeight={700}
-        color={inverse ? "inherit" : "text.primary"}
-        sx={{ lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}
-      >
-        {value ?? "—"}
-      </Typography>
+      {children || (
+        <Typography
+          variant="body2"
+          fontWeight={700}
+          color={inverse ? "inherit" : "text.primary"}
+          sx={{ lineHeight: 1.45, overflowWrap: "anywhere", wordBreak: "break-word" }}
+        >
+          {value ?? "—"}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -203,18 +206,41 @@ function AttachmentGallery({ attachments = [], empty = "Belum ada dokumen", acce
   );
 }
 
-function LocalProofGallery({ proofs = [] }) {
+function LocalProofGallery({ proofs = [], onRemove }) {
   if (!proofs.length) {
     return <Typography variant="caption" color="text.secondary">Belum ada upload baru</Typography>;
   }
   return (
     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
       {proofs.map((proof, index) => (
-        <Tooltip key={`${proof.dataUrl}-${index}`} title={`${proof.name || "Bukti pembayaran"} · Buka gambar`}>
-          <Box component="a" href={proof.dataUrl} target="_blank" rel="noopener noreferrer" sx={{ display: "block", width: 86, height: 64, borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "primary.main" }}>
-            <Box component="img" src={proof.dataUrl} alt={proof.name || "Bukti pembayaran"} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </Box>
-        </Tooltip>
+        <Box key={`${proof.dataUrl}-${index}`} sx={{ position: "relative", width: 86, height: 64 }}>
+          <Tooltip title={`${proof.name || "Bukti pembayaran"} · Buka gambar`}>
+            <Box component="a" href={proof.dataUrl} target="_blank" rel="noopener noreferrer" sx={{ display: "block", width: "100%", height: "100%", borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "primary.main" }}>
+              <Box component="img" src={proof.dataUrl} alt={proof.name || "Bukti pembayaran"} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </Box>
+          </Tooltip>
+          {onRemove && (
+            <Tooltip title="Hapus gambar">
+              <IconButton
+                size="small"
+                aria-label="Hapus gambar"
+                onClick={() => onRemove(proof)}
+                sx={{
+                  position: "absolute",
+                  top: 2,
+                  right: 2,
+                  p: 0.25,
+                  color: "#fff",
+                  bgcolor: "rgba(211, 47, 47, 0.85)",
+                  borderRadius: 1,
+                  "&:hover": { bgcolor: "error.main" },
+                }}
+              >
+                <Trash size={14} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       ))}
     </Stack>
   );
@@ -222,6 +248,19 @@ function LocalProofGallery({ proofs = [] }) {
 
 function DocumentDropzone({ onFiles, disabled = false }) {
   const [dragging, setDragging] = useState(false);
+
+  // Cegah browser membuka/menavigasi ke file ketika file di-drop di area mana pun
+  // di halaman (perilaku default browser). Tanpa ini, drag & drop dapat membuka
+  // page baru dan file tidak masuk ke dropzone.
+  useEffect(() => {
+    const preventWindowDrop = (event) => event.preventDefault();
+    window.addEventListener("dragover", preventWindowDrop);
+    window.addEventListener("drop", preventWindowDrop);
+    return () => {
+      window.removeEventListener("dragover", preventWindowDrop);
+      window.removeEventListener("drop", preventWindowDrop);
+    };
+  }, []);
 
   const acceptFiles = (files) => {
     if (!disabled && files?.length) onFiles(files);
@@ -239,7 +278,7 @@ function DocumentDropzone({ onFiles, disabled = false }) {
         display: "flex",
         alignItems: "center",
         gap: 1.25,
-        minHeight: 88,
+        minHeight: 60,
         px: 1.5,
         border: "1px dashed",
         borderColor: dragging ? "primary.main" : "primary.light",
@@ -254,10 +293,10 @@ function DocumentDropzone({ onFiles, disabled = false }) {
       <CloudUploadOutlinedIcon sx={{ fontSize: 30 }} />
       <Box>
         <Typography variant="body2" fontWeight={800}>
-          {dragging ? "Lepaskan file di sini" : "Tambah bukti pembayaran"}
+          {dragging && "Lepaskan file di sini"}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Tarik file ke sini atau klik untuk memilih · gambar · maks. 5 MB/file
+          Tarik file ke sini atau klik untuk upload · maks. 5 MB/file
         </Typography>
       </Box>
       <input hidden type="file" accept="image/*" multiple disabled={disabled} onChange={(event) => { acceptFiles(event.target.files); event.target.value = ""; }} />
@@ -383,6 +422,24 @@ export default function OrderPaymentDetailPage() {
         }
       }
     });
+  };
+
+  const handleProofRemove = (proof) => {
+    if (!proof?.dataUrl) return;
+    const nextProofs = {
+      ...localProofs,
+      __header: (Array.isArray(localProofs.__header) ? localProofs.__header : []).filter(
+        (item) => item?.dataUrl !== proof.dataUrl,
+      ),
+    };
+    setLocalProofs(nextProofs);
+    if (id && typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(paymentProofStorageKey(id), JSON.stringify(nextProofs));
+      } catch (_) {
+        // Ignore storage errors; the in-memory state is already updated.
+      }
+    }
   };
 
   const uploadedProofs = useMemo(() => [
@@ -579,11 +636,11 @@ export default function OrderPaymentDetailPage() {
             </Box>
           </Stack>
           <Grid container spacing={2} sx={{ mt: 1.5 }}>
-            <Grid item xs={12} sm={6} md={3}><Field inverse label={sourceLabel} value={sourceValue} /></Grid>
-            <Grid item xs={12} sm={6} md={3}><Field inverse label="Faktur" value={row.faktur_kode || "—"} /></Grid>
+            <Grid item xs={6} sm={6} md={3}><Field inverse label={sourceLabel} value={sourceValue} /></Grid>
+            <Grid item xs={6} sm={6} md={3}><Field inverse label="Faktur" value={row.faktur_kode || "—"} /></Grid>
             <Grid item xs={12} sm={6} md={3}><Field inverse label="Tanggal transaksi" value={dateId(row.trx_date)} /></Grid>
-            <Grid item xs={12} sm={6} md={3}><Field inverse label="Cabang" value={`${row.cabang_kode || ""}${row.cabang_kode && row.cabang_nama ? " · " : ""}${row.cabang_nama || "—"}`} /></Grid>
-            <Grid item xs={12} sm={6} md={4}><Field inverse label="Unit Bisnis" value={`${row.bisnis_nama || "—"}`} /></Grid>
+            <Grid item xs={6} sm={6} md={3}><Field inverse label="Cabang" value={`${row.cabang_kode || ""}${row.cabang_kode && row.cabang_nama ? " · " : ""}${row.cabang_nama || "—"}`} /></Grid>
+            <Grid item xs={6} sm={6} md={4}><Field inverse label="Unit Bisnis" value={`${row.bisnis_nama || "—"}`} /></Grid>
             <Grid item xs={12} sm={6} md={4}><Field inverse label="Rekening tujuan" value={row.nm_bank ? `${row.nm_bank} · ${row.no_rekening || ""} · ${row.an_rekening || row.penerima || ""}` : row.penerima || "—"} /></Grid>
             <Grid item xs={12} sm={6} md={4}><Field inverse label="Akun kas / bank" value={row.coa_kode ? `${row.coa_kode} — ${row.coa_name || ""}` : "Belum dipilih"} /></Grid>
           </Grid>
@@ -600,18 +657,18 @@ export default function OrderPaymentDetailPage() {
             </Stack>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={6} md={4}>
                 <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Berkas dari proses sebelumnya</Typography>
                 <AttachmentGallery attachments={previousAttachments} empty="Tidak ada berkas sebelumnya" />
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={6} md={4}>
                 <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Bukti pembayaran dari sistem</Typography>
                 <AttachmentGallery attachments={paymentAttachments} empty="Belum ada bukti dari sistem" accent="success.main" />
               </Grid>
               <Grid item xs={12} md={4}>
                 <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Upload file baru</Typography>
                 <DocumentDropzone onFiles={handleProofUpload} disabled={!pending} />
-                <Box sx={{ mt: 1 }}><LocalProofGallery proofs={uploadedProofs} /></Box>
+                <Box sx={{ mt: 1 }}><LocalProofGallery proofs={uploadedProofs} onRemove={handleProofRemove} /></Box>
               </Grid>
             </Grid>
           </CardContent>
@@ -643,9 +700,24 @@ export default function OrderPaymentDetailPage() {
                   </Box>
                   <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
                     <Grid container spacing={1.5}>
-                      <Grid item xs={12} sm={6} md={3}><Field label="Barang / deskripsi" value={it.barang_nama || it.description || it.barang_kode || "—"} /></Grid>
-                      <Grid item xs={12} sm={6} md={3}><Field label="Akun debit" value={it.debit_kode ? `${it.debit_kode} — ${it.debit_name || ""}` : "—"} /></Grid>
-                      <Grid item xs={6} sm={3} md={2}><Field label="Qty" value={it.qty} /></Grid>
+                      <Grid item xs={12} sm={6} md={4}><Field label="Barang / deskripsi" value={it.barang_nama || it.description || it.barang_kode || "—"} /></Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Field label="Akun debit">
+                          {it.debit_kode ? (
+                            <Stack spacing={0}>
+                              <Typography variant="caption" color="error.main" fontWeight={700} sx={{ lineHeight: 1.2, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                                {it.debit_kode}
+                              </Typography>
+                              <Typography variant="body2" fontWeight={800} color="text.primary" sx={{ lineHeight: 1, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                                {it.debit_name || ""}
+                              </Typography>
+                            </Stack>
+                          ) : (
+                            <Typography variant="body2" fontWeight={700} color="text.primary">—</Typography>
+                          )}
+                        </Field>
+                      </Grid>
+                      <Grid item xs={6} sm={3} md={1}><Field label="Qty" value={it.qty} /></Grid>
                       <Grid item xs={6} sm={3} md={2}><Field label="Harga satuan" value={`Rp ${money(it.harga_stn)}`} /></Grid>
                       <Grid item xs={12} md={2}><Field label="Subtotal" value={`Rp ${money(it.subtotal)}`} /></Grid>
                     </Grid>
@@ -657,7 +729,7 @@ export default function OrderPaymentDetailPage() {
           </CardContent>
         </Card>
 
-        <Card variant="outlined" sx={{ mt: 2, borderRadius: 2.5, bgcolor: "grey.50" }}>
+        <Card variant="outlined" sx={{ mt: 2, borderRadius: 2.5, bgcolor: "secondary.lighter" }}>
           <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
               <Box>
@@ -667,13 +739,13 @@ export default function OrderPaymentDetailPage() {
               <Chip size="small" color="primary" variant="outlined" label={`${itemSummary.invoices} alokasi`} />
             </Stack>
             <Grid container spacing={1.5}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid item xs={6} sm={6} md={3}>
                 <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
                   <Typography variant="caption" color="text.secondary">Total potongan</Typography>
                   <Typography variant="h5" fontWeight={800}>Rp {money(itemSummary.discount)}</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid item xs={6} sm={6} md={3}>
                 <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
                   <Typography variant="caption" color="text.secondary">Total PPN</Typography>
                   <Typography variant="h5" fontWeight={800}>Rp {money(itemSummary.ppn)}</Typography>

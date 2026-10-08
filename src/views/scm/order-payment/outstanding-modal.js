@@ -225,7 +225,7 @@ export default function OutstandingModal({
 
       <DialogContent dividers>
         <Grid container spacing={1.5} mb={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={4} md={3}>
             <TextField
               size="small"
               fullWidth
@@ -234,7 +234,7 @@ export default function OutstandingModal({
               onChange={setFilter("kdfb")}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={4} md={3}>
             <TextField
               size="small"
               fullWidth
@@ -243,7 +243,7 @@ export default function OutstandingModal({
               onChange={setFilter("kdbayar")}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={4} md={3}>
             <TextField
               size="small"
               fullWidth
@@ -252,7 +252,7 @@ export default function OutstandingModal({
               onChange={setFilter("no_po")}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={4} md={3}>
             <TextField
               size="small"
               fullWidth
@@ -261,7 +261,7 @@ export default function OutstandingModal({
               onChange={setFilter("no_pd")}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={4} md={3}>
             <Autocomplete
               size="small"
               options={pemasok}
@@ -290,7 +290,7 @@ export default function OutstandingModal({
               disabled={Boolean(filters.pemasok_id)}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={6} md={2}>
             <TextField
               size="small"
               select
@@ -304,7 +304,7 @@ export default function OutstandingModal({
               <MenuItem value="kredit">Kredit</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={6} md={2}>
             <Autocomplete
               size="small"
               options={cabangOptions}

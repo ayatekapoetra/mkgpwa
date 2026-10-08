@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  IconButton,
   CircularProgress,
   Stack,
   Typography,
@@ -250,22 +251,21 @@ export default function OrderPaymentPage() {
                   Add Pembayaran
                 </Button>
               ) : null}
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
+              <IconButton
+                color="secondary"
                 onClick={() => {
                   refresh();
                   refreshSummary();
                 }}
-              >
-                Refresh
-              </Button>
+                sx={{ border: '1px solid', borderColor: 'divider' }}>
+                <RefreshIcon size={20} />
+              </IconButton>
               <Button
                 variant={activeFilters ? "contained" : "outlined"}
                 startIcon={<FilterIcon />}
                 onClick={() => setFilterOpen(true)}
               >
-                Filter{activeFilters ? ` (${activeFilters})` : ""}
+                {activeFilters ? ` (${activeFilters})` : ""}
               </Button>
             </Stack>
           ) : null
