@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 
 import axiosServices, { fetcher } from 'utils/axios';
+import { dailyActivityFilters } from './daily-activity-filters';
 
 export const dailyActivityEndpoints = {
   list: '/operation/daily-activity/items',
@@ -47,7 +48,7 @@ export function useDailyActivityAccess() {
 }
 
 export function useDailyActivities(params = {}, enabled = true) {
-  const query = new URLSearchParams(compactParams(params)).toString();
+  const query = new URLSearchParams(compactParams(dailyActivityFilters(params))).toString();
   const url = enabled ? `${dailyActivityEndpoints.list}${query ? `?${query}` : ''}` : null;
   const { data, error, isLoading, isValidating, mutate } = useSWR(url ? [url, onlineConfig] : null, fetcher, {
     revalidateOnFocus: true,
@@ -122,7 +123,7 @@ export async function downloadDailyActivities(params = {}, format = 'pdf') {
   try {
     const response = await axiosServices.get(dailyActivityEndpoints.download(format), {
       ...onlineConfig,
-      params: compactParams(params),
+      params: compactParams(dailyActivityFilters(params)),
       responseType: 'blob',
       timeout: 300000
     });

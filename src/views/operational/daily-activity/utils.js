@@ -4,6 +4,11 @@ export const STATUSES = [
   { id: 'breakdown', label: 'Breakdown', color: 'error' }
 ];
 
+export const PLAN_STATUS_LABELS = {
+  PLANNING: 'Planning',
+  REALIZED: 'Terealisasi'
+};
+
 export const REQUIRED_EQUIPMENT_ACTIVITY_IDS = new Set([
   '77', '40', '41', '42', '43', '47', '66', '78', '79', '80', '81', '45', '68', '46', '65', '74', '1', '48', '67'
 ]);
@@ -71,6 +76,7 @@ export function nextBatch(source, status = source.status, preserveTimes = false)
 
   return {
     ...source,
+    item_ids: {},
     client_id: `${status}-${Date.now()}-${Math.random()}`,
     status,
     start_time: preserveTimes
@@ -151,6 +157,7 @@ export function groupItemsIntoBatches(items = []) {
         issue_breakdown: item.issue_breakdown || '',
         note: item.note || '',
         equipment_ids: [],
+        item_ids: {},
         equipment_assignments: {}
       });
     }
@@ -158,6 +165,7 @@ export function groupItemsIntoBatches(items = []) {
       const group = groups.get(key);
       const equipmentId = String(item.equipment_id);
       if (!group.equipment_ids.includes(equipmentId)) group.equipment_ids.push(equipmentId);
+      group.item_ids[equipmentId] = item.item_id || item.id;
       group.equipment_assignments[equipmentId] = {
         karyawan_id: String(item.karyawan_id || ''),
         karyawan_name: item.karyawan_name || '',
@@ -183,6 +191,7 @@ export function serializeBatch(batch) {
     issue_breakdown: batch.issue_breakdown,
     note: batch.note,
     equipment_ids: batch.equipment_ids,
+    item_ids: batch.item_ids || {},
     equipment_assignments: batch.equipment_assignments
   };
 }

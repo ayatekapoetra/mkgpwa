@@ -55,6 +55,7 @@ import {
   optionLabel,
   serializeBatch,
 } from "./utils";
+import { convertDailyActivityPlan, getLastDailyActivityPlan, saveDailyActivityPlan } from "api/daily-activity-plan";
 
 const categories = [
   { id: "mining", nama: "MINING" },
@@ -90,6 +91,46 @@ const DRAFT_KEY = "daily-activity:create-draft:v1";
 
 function selectValue(options, id) {
   return options.find((option) => String(option.id) === String(id)) || null;
+}
+
+function renderOperatorOption(props, option) {
+  const { key, ...optionProps } = props;
+  const nama = option?.nama || option?.name || option?.kode || "";
+  return (
+    <Box component="li" key={key} {...optionProps} sx={{ px: 2, py: 1 }}>
+      {/* MUI options are flex rows. Keep both lines in one full-width child. */}
+      <Box sx={{ width: "100%", minWidth: 0 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={1}
+          sx={{ width: "100%", minWidth: 0 }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 700, minWidth: 0, overflowWrap: "anywhere" }}
+          >
+            {nama}
+          </Typography>
+          <Chip
+            size="small"
+            label={option?.section || "-"}
+            variant="outlined"
+            sx={{ flexShrink: 0 }}
+          />
+        </Stack>
+        <Typography
+          component="div"
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mt: 0.5, overflowWrap: "anywhere" }}
+        >
+          {option?.phone || "Nomor telepon belum tersedia"}
+        </Typography>
+      </Box>
+    </Box>
+  );
 }
 
 function MasterSelect({
@@ -136,6 +177,7 @@ function BatchCard({
   index,
   masters,
   availableEquipments = [],
+  mixedUnits = false,
   equipmentLoading = false,
   header,
   errors,
@@ -144,15 +186,14 @@ function BatchCard({
   onRemove,
 }) {
   const [expanded, setExpanded] = useState(true);
-  const [bulkOperatorId, setBulkOperatorId] = useState("");
   const allowedCategories =
-    header.ctgunit.toUpperCase() === "DRILL"
+    String(header.ctgunit || "").toUpperCase() === "DRILL"
       ? ["AD", "MD"]
-      : [header.ctgunit.toUpperCase()];
+      : [String(header.ctgunit || "").toUpperCase()];
   const equipmentOptions = availableEquipments
     .filter(
       (item) =>
-        !header.ctgunit ||
+        mixedUnits || !header.ctgunit ||
         allowedCategories.includes(String(item.kategori || "").toUpperCase()),
     )
     .filter(
@@ -166,6 +207,7 @@ function BatchCard({
     return subcategory !== "breakdown" && subcategory !== "standby";
   });
   const activityOptions = activities.length ? activities : masters.activities;
+  const unavailableEquipmentIds = batch.equipment_ids.filter(id => !equipmentOptions.some(item => String(item.id) === String(id)));
 
   useEffect(() => {
     if (Object.keys(errors).length) setExpanded(true);
@@ -204,23 +246,6 @@ function BatchCard({
     onChange({
       start_time: `${startDate}T${startClock}`,
       finish_time: `${localFinishDate}T${finishClock}`,
-    });
-  };
-
-  const applyBulkOperator = () => {
-    const operator = selectValue(masters.operators, bulkOperatorId);
-    if (!operator) return;
-    onChange({
-      equipment_assignments: Object.fromEntries(
-        batch.equipment_ids.map((id) => [
-          id,
-          {
-            ...(batch.equipment_assignments[id] || {}),
-            karyawan_id: String(operator.id),
-            karyawan_name: optionLabel(operator),
-          },
-        ]),
-      ),
     });
   };
 
@@ -288,6 +313,7 @@ function BatchCard({
         </Stack>
         {expanded && (
           <>
+            {!equipmentLoading && unavailableEquipmentIds.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>Unit tidak tersedia pada penempatan/kategori terpilih: {unavailableEquipmentIds.join(", ")}. Pilih ulang sebelum menyimpan.</Alert>}
             <Grid container spacing={2}>
               <Grid item xs={12} sm={2}>
                 <TextField
@@ -451,32 +477,7 @@ function BatchCard({
             </Grid>
             {batch.equipment_ids.length > 0 && <Divider sx={{ my: 2 }} />}
             <Stack spacing={1.5}>
-              {batch.equipment_ids.length > 1 && (
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
-                  alignItems={{ sm: "flex-start" }}
-                >
-                  <Box sx={{ flex: 1, width: "100%" }}>
-                    <MasterSelect
-                      label="Operator untuk semua unit"
-                      options={masters.operators}
-                      value={bulkOperatorId}
-                      onChange={(item) =>
-                        setBulkOperatorId(String(item?.id || ""))
-                      }
-                    />
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    disabled={!bulkOperatorId}
-                    onClick={applyBulkOperator}
-                    sx={{ minHeight: 40, whiteSpace: "nowrap" }}
-                  >
-                    Terapkan ke semua
-                  </Button>
-                </Stack>
-              )}
+
               {batch.equipment_ids.map((equipmentId) => {
                 const equipment =
                   selectValue(masters.equipments, equipmentId) || {};
@@ -518,6 +519,7 @@ function BatchCard({
                           operators.length ? operators : masters.operators
                         }
                         value={assignment.karyawan_id}
+                        renderOption={renderOperatorOption}
                         onChange={(item) =>
                           patchAssignment(equipmentId, {
                             karyawan_id: String(item?.id || ""),
@@ -551,8 +553,12 @@ function BatchCard({
   );
 }
 
-export default function DailyActivityForm({ headerId = null }) {
+export default function DailyActivityForm({ headerId = null, mode = "actual" }) {
   const edit = !!headerId;
+  const planMode = mode === "plan";
+  const realize = mode === "realize";
+  const basePath = planMode || realize ? "/daily-activity-plan" : "/daily-activity";
+  const draftKey = planMode ? "daily-activity-plan:create-draft:v1" : DRAFT_KEY;
   const router = useRouter();
   const { data: session } = useSession();
   const { permissions, accessLoading, accessError } = useDailyActivityAccess();
@@ -562,6 +568,8 @@ export default function DailyActivityForm({ headerId = null }) {
     dataError,
   } = useDailyActivity(headerId, edit && permissions.read);
   const [header, setHeader] = useState(emptyHeader);
+  const mixedUnits = planMode || realize || header.plan_status === "REALIZED";
+  const requiredHeaderFields = REQUIRED_HEADER_FIELDS.filter(key => (!mixedUnits || key !== "ctgunit") && (!planMode || key !== "cuaca"));
   const [batches, setBatches] = useState([]);
   const [activeStatus, setActiveStatus] = useState("beroperasi");
   const [masters, setMasters] = useState(EMPTY_MASTERS);
@@ -675,7 +683,7 @@ export default function DailyActivityForm({ headerId = null }) {
     if (edit || restoredDraft.current) return;
     restoredDraft.current = true;
     try {
-      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      const draft = JSON.parse(localStorage.getItem(draftKey) || "null");
       if (draft?.header && Array.isArray(draft.batches)) {
         setHeader({ ...emptyHeader(), ...draft.header });
         setBatches(draft.batches);
@@ -687,11 +695,11 @@ export default function DailyActivityForm({ headerId = null }) {
         });
       }
     } catch {
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(draftKey);
     } finally {
       setDraftReady(true);
     }
-  }, [edit]);
+  }, [edit, draftKey]);
 
   useEffect(() => {
     if (edit || !draftReady || !dirty) return undefined;
@@ -699,7 +707,7 @@ export default function DailyActivityForm({ headerId = null }) {
       const savedAt = new Date().toISOString();
       try {
         localStorage.setItem(
-          DRAFT_KEY,
+          draftKey,
           JSON.stringify({ header, batches, savedAt }),
         );
         setDraftSavedAt(savedAt);
@@ -711,7 +719,7 @@ export default function DailyActivityForm({ headerId = null }) {
       }
     }, 600);
     return () => clearTimeout(timeout);
-  }, [batches, dirty, draftReady, edit, header]);
+  }, [batches, dirty, draftReady, edit, header, draftKey]);
 
   useEffect(() => {
     const warnUnsavedChanges = (event) => {
@@ -726,7 +734,7 @@ export default function DailyActivityForm({ headerId = null }) {
   const statusBatches = batches.filter(
     (batch) => batch.status === activeStatus,
   );
-  const headerComplete = REQUIRED_HEADER_FIELDS.every((key) => header[key]);
+  const headerComplete = requiredHeaderFields.every((key) => header[key]);
   const errorCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -889,7 +897,7 @@ export default function DailyActivityForm({ headerId = null }) {
     const availableEquipmentIds = new Set(
       placementOptions.equipments.map((item) => String(item.id)),
     );
-    REQUIRED_HEADER_FIELDS.forEach((key) => {
+    requiredHeaderFields.forEach((key) => {
       if (!header[key]) headerErrors[key] = "Wajib diisi";
     });
     const batchErrors = {};
@@ -974,7 +982,11 @@ export default function DailyActivityForm({ headerId = null }) {
       cabang_id: header.cabang_id ? Number(header.cabang_id) : null,
     };
     try {
-      if (edit) {
+      if (realize) {
+        await convertDailyActivityPlan(headerId, { ...headerPayload, plan_version: header.plan_version, items: normalizedBatches.map(serializeBatch) });
+      } else if (planMode && edit) {
+        await saveDailyActivityPlan(headerId, { ...headerPayload, plan_version: header.plan_version, items: normalizedBatches.map(serializeBatch) });
+      } else if (edit) {
         for (const status of STATUSES) {
           const items = normalizedBatches
             .filter((batch) => batch.status === status.id)
@@ -989,18 +1001,19 @@ export default function DailyActivityForm({ headerId = null }) {
       } else {
         await createDailyActivity({
           ...headerPayload,
+          is_plan: planMode,
           items: normalizedBatches.map(serializeBatch),
         });
       }
       openNotification({
-        message: edit
+        message: realize ? "Rencana berhasil direalisasikan" : planMode ? "Rencana berhasil disimpan" : edit
           ? "Daily activity berhasil diperbarui"
           : "Daily activity berhasil disimpan",
         type: "success",
       });
-      if (!edit) localStorage.removeItem(DRAFT_KEY);
+      if (!edit) localStorage.removeItem(draftKey);
       setDirty(false);
-      router.push("/daily-activity");
+      router.push(realize ? `/daily-activity/${headerId}` : basePath);
       router.refresh();
     } catch (error) {
       openNotification({
@@ -1013,6 +1026,25 @@ export default function DailyActivityForm({ headerId = null }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const loadLastPlan = async () => {
+    if (batches.length && !window.confirm("Ganti batch saat ini dengan rencana terakhir?")) return;
+    setSaving(true);
+    try {
+      const result = normalizeDetail(await getLastDailyActivityPlan({
+        area: header.area, cabang_id: header.cabang_id, lokasi_site_id: header.lokasi_site_id,
+        lokasi_pit_id: header.lokasi_pit_id, shift_id: header.shift_id, date_ops: header.date_ops
+      }));
+      setBatches(groupItemsIntoBatches(result.items).map(batch => ({
+        ...moveBatchToSchedule(batch, header.date_ops, result.header.shift_id, header.shift_id), item_ids: {}
+      })));
+      setHeader(current => ({ ...current, kontraktor: current.kontraktor || result.header.kontraktor, category_id: current.category_id || result.header.category_id, cuaca: current.cuaca || result.header.cuaca || "" }));
+      setDirty(true);
+      openNotification({ message: "Rencana terakhir dimuat. Periksa jadwal dan penempatan equipment sebelum menyimpan.", type: "info" });
+    } catch (error) {
+      openNotification({ message: error?.message || "Gagal memuat rencana terakhir", type: "error" });
+    } finally { setSaving(false); }
   };
 
   if (accessLoading || masterLoading || (edit && detailLoading))
@@ -1038,17 +1070,24 @@ export default function DailyActivityForm({ headerId = null }) {
       </Alert>
     );
 
+  if (edit && ((planMode && (!header.is_plan || header.plan_status !== "PLANNING")) ||
+    (realize && (!header.is_plan || header.plan_status !== "PLANNING" || !permissions.insert)) ||
+    (!planMode && !realize && header.is_plan))) {
+    return <Alert severity="warning">Record ini tidak dapat diedit pada mode ini. Buka detail Daily Activity Plan untuk melanjutkan workflow.</Alert>;
+  }
+
   return (
     <Box component="form" noValidate onSubmit={save} aria-busy={saving}>
       <Breadcrumbs
         custom
-        heading={edit ? "Edit Daily Activity" : "Buat Daily Activity"}
+        heading={realize ? "Realisasi Daily Activity Plan" : planMode ? (edit ? "Edit Rencana" : "Buat Daily Activity Plan") : edit ? "Edit Daily Activity" : "Buat Daily Activity"}
         links={[
           { title: "Home", to: APP_DEFAULT_PATH },
-          { title: "Daily Activity", to: "/daily-activity" },
+          { title: planMode || realize ? "Daily Activity Plan" : "Daily Activity", to: basePath },
           { title: edit ? "Edit" : "Buat" },
         ]}
       />
+      {(planMode || realize) && <Alert severity="info" sx={{ mb: 2 }}>{realize ? "Sesuaikan data aktual sebelum realisasi. Submit mengubah rencana yang sama menjadi aktual, tanpa membuat header baru." : "Rencana tidak mempengaruhi laporan aktual sampai direalisasikan. Equipment dapat dipilih lintas kategori."}</Alert>}
       {!edit && draftSavedAt && (
         <Alert severity="info" sx={{ mb: 2 }}>
           Draft tersimpan otomatis pukul{" "}
@@ -1073,6 +1112,7 @@ export default function DailyActivityForm({ headerId = null }) {
       <MainCard
         id="daily-activity-header"
         title="Informasi Umum"
+        secondary={planMode && !edit ? <Button variant="outlined" disabled={saving || !header.area || !header.lokasi_site_id || !header.lokasi_pit_id} onClick={loadLastPlan}>Load Data Terakhir</Button> : null}
         sx={{ scrollMarginTop: 96 }}
       >
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -1177,7 +1217,7 @@ export default function DailyActivityForm({ headerId = null }) {
             />
           </Grid>
           <Grid item xs={12} md={3}>
-            <FormControl required fullWidth error={!!errors.header.cuaca}>
+            <FormControl required={!planMode} fullWidth error={!!errors.header.cuaca}>
               <InputLabel>Cuaca</InputLabel>
               <Select
                 label="Cuaca"
@@ -1203,7 +1243,7 @@ export default function DailyActivityForm({ headerId = null }) {
               onChange={(item) => updateHeader({ category_id: item?.id || "" })}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          {!mixedUnits && <Grid item xs={12} md={3}>
             <FormControl required fullWidth error={!!errors.header.ctgunit}>
               <InputLabel>Kategori Unit</InputLabel>
               <Select
@@ -1219,7 +1259,7 @@ export default function DailyActivityForm({ headerId = null }) {
               </Select>
               <FormHelperText>{errors.header.ctgunit}</FormHelperText>
             </FormControl>
-          </Grid>
+          </Grid>}
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -1279,6 +1319,7 @@ export default function DailyActivityForm({ headerId = null }) {
               index={index}
               masters={masters}
               availableEquipments={placementOptions.equipments}
+              mixedUnits={mixedUnits}
               equipmentLoading={placementLoading}
               header={header}
               errors={errors.batches[batch.client_id] || {}}
@@ -1330,7 +1371,7 @@ export default function DailyActivityForm({ headerId = null }) {
                 !dirty ||
                 window.confirm("Perubahan belum disimpan. Tetap keluar?")
               )
-                router.push("/daily-activity");
+                router.push(basePath);
             }}
           >
             Batal
@@ -1341,7 +1382,7 @@ export default function DailyActivityForm({ headerId = null }) {
             loading={saving}
             disabled={placementLoading || Boolean(placementError)}
           >
-            {edit ? "Simpan Perubahan" : "Simpan Daily Activity"}
+            {realize ? "Simpan dan Realisasi" : planMode ? "Simpan Rencana" : edit ? "Simpan Perubahan" : "Simpan Daily Activity"}
           </LoadingButton>
         </Stack>
       </Stack>

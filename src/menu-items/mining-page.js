@@ -25,11 +25,11 @@ const MiningPage = {
   icon: icons.page,
   children: [
     {
-      id: 'daily-equipment-activity',
-      title: <FormattedMessage id="Equipment Activity" />,
+      id: 'daily-activity-plan',
+      title: <FormattedMessage id="Daily Activity Plan" />,
       type: 'item',
-      url: '/daily-equipment-activity',
-      icon: icons.do,
+      url: '/daily-activity-plan',
+      icon: icons.plan,
       breadcrumbs: false
       // target: true
     },
