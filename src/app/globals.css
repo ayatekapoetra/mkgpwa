@@ -53,9 +53,7 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+  /* Body colors are supplied by the active MUI CssBaseline theme. */
 }
 
 /* scroll bar */

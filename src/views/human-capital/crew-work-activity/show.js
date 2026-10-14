@@ -203,7 +203,7 @@ function SummaryCard({ icon: Icon, label, value, color = 'primary' }) {
 function SectionCard({ icon: Icon, title, subtitle, children }) {
   return (
     <Card variant="outlined" sx={{ height: '100%', borderRadius: 2.5, overflow: 'hidden' }}>
-      <Stack direction="row" spacing={1.25} alignItems="center" sx={{ px: 2, py: 1.75, bgcolor: 'grey.50', borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Stack direction="row" spacing={1.25} alignItems="center" sx={{ px: 2, py: 1.75, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ width: 38, height: 38, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'primary.lighter', color: 'primary.dark', flexShrink: 0 }}>
           <Icon size={22} />
         </Box>

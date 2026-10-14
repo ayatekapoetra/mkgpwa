@@ -602,7 +602,7 @@ const ShowHETimesheetScreen = () => {
                               height: 'auto', // biar responsive sesuai ratio
                               objectFit: 'contain', // full gambar, tidak terpotong
                               objectPosition: 'center',
-                              backgroundColor: '#f5f5f5' // opsional biar rapi
+                              backgroundColor: 'background.default'
                             }}
                           />
                         </Card>

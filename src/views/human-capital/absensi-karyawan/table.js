@@ -15,8 +15,8 @@ export default function AbsensiTable({ rows = [], loading, error }) {
         stickyHeader
         sx={{
           '& td, & th': { border: '1px solid', borderColor: 'divider' },
-          '& thead': { position: 'sticky', top: 0, zIndex: 3, backgroundColor: 'grey.100' },
-          '& thead th': { backgroundColor: 'grey.400', fontWeight: 700, color: 'text.primary' }
+          '& thead': { position: 'sticky', top: 0, zIndex: 3, backgroundColor: 'background.paper' },
+          '& thead th': { backgroundColor: 'background.default', fontWeight: 700, color: 'text.primary' }
         }}
       >
         <TableHead>

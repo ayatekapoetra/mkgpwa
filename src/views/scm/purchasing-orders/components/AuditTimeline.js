@@ -67,7 +67,7 @@ function ChangeSummary({ before, after }) {
   if (!keys.length) return null;
 
   return (
-    <Box sx={{ mt: 1, p: 1.25, bgcolor: "grey.50", borderRadius: 1.5 }}>
+    <Box sx={{ mt: 1, p: 1.25, bgcolor: "action.hover", borderRadius: 1.5 }}>
       <Typography variant="caption" color="text.secondary" fontWeight={700}>
         Perubahan
       </Typography>

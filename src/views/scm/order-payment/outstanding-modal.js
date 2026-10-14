@@ -371,7 +371,7 @@ export default function OutstandingModal({
                   fontSize: 13,
                   "& th": {
                     ...cellSx,
-                    backgroundColor: "grey.50",
+                    backgroundColor: "background.default",
                     fontWeight: 700,
                     textAlign: "left",
                   },

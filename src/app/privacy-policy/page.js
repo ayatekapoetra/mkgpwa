@@ -1,3 +1,5 @@
+import { legalPageStyles as colors } from 'themes/legalPageStyles';
+
 export const metadata = {
   title: 'Privacy Policy - MKG Mobile Apps',
   description: 'Privacy Policy for APPEMPLOYEE and APP-DRIVER Mobile Applications'
@@ -7,9 +9,9 @@ export default function PrivacyPolicyPage() {
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px', lineHeight: '1.6' }}>
       <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '10px' }}>Privacy Policy</h1>
-      <p style={{ color: '#666', marginBottom: '30px', fontSize: '14px' }}>Last Updated: December 11, 2025</p>
+      <p style={{ color: colors.secondary, marginBottom: '30px', fontSize: '14px' }}>Last Updated: December 11, 2025</p>
 
-      <div style={{ backgroundColor: '#f0f9ff', padding: '20px', borderRadius: '8px', marginBottom: '30px', borderLeft: '4px solid #3b82f6' }}>
+      <div style={{ backgroundColor: colors.info, padding: '20px', borderRadius: '8px', marginBottom: '30px', borderLeft: '4px solid hsl(var(--primary))' }}>
         <p style={{ margin: 0, fontWeight: '500' }}>
           This Privacy Policy applies to both <strong>APPEMPLOYEE</strong> (Employee Management App) and <strong>APP-DRIVER</strong> (Operator & Driver App), 
           collectively referred to as "our applications" or "the apps".
@@ -17,7 +19,7 @@ export default function PrivacyPolicyPage() {
       </div>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>1. Introduction</h2>
+        <h2 style={colors.heading}>1. Introduction</h2>
         <p style={{ marginBottom: '15px' }}>
           Welcome to MKG Mobile Applications operated by CV. MAKKURAGA TAMA ("we," "our," or "us"). 
           These applications are designed for mining operations management, employee attendance tracking, equipment management, 
@@ -30,9 +32,9 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>2. Applications Covered</h2>
+        <h2 style={colors.heading}>2. Applications Covered</h2>
         
-        <div style={{ backgroundColor: '#fef3c7', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
+        <div style={{ backgroundColor: colors.warning, padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>📱 APPEMPLOYEE</h3>
           <p style={{ margin: 0 }}>
             For general employees, supervisors, managers, and HRD staff. Features include attendance check-in/check-out, 
@@ -40,7 +42,7 @@ export default function PrivacyPolicyPage() {
           </p>
         </div>
 
-        <div style={{ backgroundColor: '#dbeafe', padding: '15px', borderRadius: '8px' }}>
+        <div style={{ backgroundColor: colors.info, padding: '15px', borderRadius: '8px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>🚛 APP-DRIVER</h3>
           <p style={{ margin: 0 }}>
             For heavy equipment operators and dump truck drivers. Features include attendance tracking, timesheet creation and management, 
@@ -50,7 +52,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>3. Information We Collect</h2>
+        <h2 style={colors.heading}>3. Information We Collect</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>3.1 Personal Information</h3>
         <p style={{ marginBottom: '10px' }}>We collect the following personal information:</p>
@@ -70,7 +72,7 @@ export default function PrivacyPolicyPage() {
           <li><strong>Equipment Location:</strong> Tracking equipment operation locations for operational reporting</li>
           <li><strong>Nearest Location Detection:</strong> Finding the closest check-in location automatically</li>
         </ul>
-        <p style={{ backgroundColor: '#fef2f2', padding: '12px', borderRadius: '6px', fontSize: '14px' }}>
+        <p style={{ backgroundColor: colors.error, padding: '12px', borderRadius: '6px', fontSize: '14px' }}>
           ⚠️ <strong>Note:</strong> Location data is collected only when you actively use attendance or timesheet features. 
           Background location tracking is NOT performed.
         </p>
@@ -112,10 +114,10 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>4. How We Use Your Information</h2>
+        <h2 style={colors.heading}>4. How We Use Your Information</h2>
         <p style={{ marginBottom: '15px' }}>We use collected information for the following purposes:</p>
         
-        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
           <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>🎯 Core Operations</h4>
           <ul style={{ marginLeft: '20px', marginBottom: 0 }}>
             <li>Employee attendance tracking and verification</li>
@@ -127,7 +129,7 @@ export default function PrivacyPolicyPage() {
           </ul>
         </div>
 
-        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
           <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>🔐 Security & Authentication</h4>
           <ul style={{ marginLeft: '20px', marginBottom: 0 }}>
             <li>User authentication and account security</li>
@@ -137,7 +139,7 @@ export default function PrivacyPolicyPage() {
           </ul>
         </div>
 
-        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
           <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>📊 Analytics & Reporting</h4>
           <ul style={{ marginLeft: '20px', marginBottom: 0 }}>
             <li>Generate operational reports (daily, weekly, monthly)</li>
@@ -148,7 +150,7 @@ export default function PrivacyPolicyPage() {
           </ul>
         </div>
 
-        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '15px', borderRadius: '8px', marginBottom: '12px' }}>
           <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>📱 Service Improvement</h4>
           <ul style={{ marginLeft: '20px', marginBottom: 0 }}>
             <li>App performance optimization</li>
@@ -158,7 +160,7 @@ export default function PrivacyPolicyPage() {
           </ul>
         </div>
 
-        <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '15px', borderRadius: '8px' }}>
           <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>💬 Communication</h4>
           <ul style={{ marginLeft: '20px', marginBottom: 0 }}>
             <li>Send operational notifications and alerts</li>
@@ -170,7 +172,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>5. Data Sharing and Disclosure</h2>
+        <h2 style={colors.heading}>5. Data Sharing and Disclosure</h2>
         <p style={{ marginBottom: '15px' }}>
           We do NOT sell, trade, or rent your personal information to third parties for marketing purposes. 
           We may share your information only in the following specific circumstances:
@@ -208,13 +210,13 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>6. Data Security</h2>
+        <h2 style={colors.heading}>6. Data Security</h2>
         <p style={{ marginBottom: '15px' }}>
           We implement comprehensive security measures to protect your personal information:
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-          <div style={{ backgroundColor: '#ecfdf5', padding: '15px', borderRadius: '8px', border: '1px solid #10b981' }}>
+          <div style={{ backgroundColor: colors.success, padding: '15px', borderRadius: '8px', border: '1px solid hsl(var(--success))' }}>
             <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>🔒 Encryption</h4>
             <ul style={{ marginLeft: '20px', fontSize: '14px', marginBottom: 0 }}>
               <li>HTTPS/TLS encryption for all data transmission</li>
@@ -224,7 +226,7 @@ export default function PrivacyPolicyPage() {
             </ul>
           </div>
 
-          <div style={{ backgroundColor: '#f0f9ff', padding: '15px', borderRadius: '8px', border: '1px solid #3b82f6' }}>
+          <div style={{ backgroundColor: colors.info, padding: '15px', borderRadius: '8px', border: '1px solid hsl(var(--primary))' }}>
             <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>🛡️ Access Controls</h4>
             <ul style={{ marginLeft: '20px', fontSize: '14px', marginBottom: 0 }}>
               <li>Role-based access control (RBAC)</li>
@@ -234,7 +236,7 @@ export default function PrivacyPolicyPage() {
             </ul>
           </div>
 
-          <div style={{ backgroundColor: '#fef3c7', padding: '15px', borderRadius: '8px', border: '1px solid #f59e0b' }}>
+          <div style={{ backgroundColor: colors.warning, padding: '15px', borderRadius: '8px', border: '1px solid hsl(var(--warning))' }}>
             <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>📱 Device Security</h4>
             <ul style={{ marginLeft: '20px', fontSize: '14px', marginBottom: 0 }}>
               <li>Device ID verification</li>
@@ -244,7 +246,7 @@ export default function PrivacyPolicyPage() {
             </ul>
           </div>
 
-          <div style={{ backgroundColor: '#fce7f3', padding: '15px', borderRadius: '8px', border: '1px solid #ec4899' }}>
+          <div style={{ backgroundColor: colors.error, padding: '15px', borderRadius: '8px', border: '1px solid hsl(var(--destructive))' }}>
             <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>🔍 Monitoring</h4>
             <ul style={{ marginLeft: '20px', fontSize: '14px', marginBottom: 0 }}>
               <li>Activity logging and audit trails</li>
@@ -255,14 +257,14 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
 
-        <p style={{ backgroundColor: '#fef2f2', padding: '15px', borderRadius: '8px', fontSize: '14px' }}>
+        <p style={{ backgroundColor: colors.error, padding: '15px', borderRadius: '8px', fontSize: '14px' }}>
           ⚠️ <strong>Important:</strong> While we implement industry-standard security measures, no method of transmission over the internet 
           or electronic storage is 100% secure. We cannot guarantee absolute security but continuously work to enhance our protection systems.
         </p>
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>7. Location Services</h2>
+        <h2 style={colors.heading}>7. Location Services</h2>
         <p style={{ marginBottom: '15px' }}>
           Our applications use location services extensively for operational purposes:
         </p>
@@ -283,7 +285,7 @@ export default function PrivacyPolicyPage() {
           <li>You can deny location permission, but this will limit attendance and timesheet features</li>
         </ul>
 
-        <div style={{ backgroundColor: '#dbeafe', padding: '15px', borderRadius: '8px' }}>
+        <div style={{ backgroundColor: colors.info, padding: '15px', borderRadius: '8px' }}>
           <p style={{ margin: 0, fontSize: '14px' }}>
             <strong>💡 Why Location is Required:</strong> Mining operations require accurate tracking of where equipment operates 
             and where employees are working for safety, compliance, and operational efficiency. Location data helps verify that 
@@ -293,7 +295,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>8. Offline Data Storage (APP-DRIVER)</h2>
+        <h2 style={colors.heading}>8. Offline Data Storage (APP-DRIVER)</h2>
         <p style={{ marginBottom: '15px' }}>
           APP-DRIVER includes offline functionality using local SQLite database storage:
         </p>
@@ -308,7 +310,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>9. Data Retention</h2>
+        <h2 style={colors.heading}>9. Data Retention</h2>
         <p style={{ marginBottom: '15px' }}>We retain your data for the following periods:</p>
         <ul style={{ marginLeft: '25px', marginBottom: '15px' }}>
           <li><strong>Active Employment:</strong> All data retained while you are an active employee</li>
@@ -324,26 +326,26 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>10. Your Rights</h2>
+        <h2 style={colors.heading}>10. Your Rights</h2>
         <p style={{ marginBottom: '15px' }}>You have the following rights regarding your personal data:</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+          <div style={{ backgroundColor: colors.neutral, padding: '12px', borderRadius: '6px', border: colors.border }}>
             <strong>👁️ Right to Access:</strong> View all personal data we hold about you
           </div>
-          <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+          <div style={{ backgroundColor: colors.neutral, padding: '12px', borderRadius: '6px', border: colors.border }}>
             <strong>✏️ Right to Rectification:</strong> Correct inaccurate or incomplete data
           </div>
-          <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+          <div style={{ backgroundColor: colors.neutral, padding: '12px', borderRadius: '6px', border: colors.border }}>
             <strong>🗑️ Right to Deletion:</strong> Request deletion of your data (subject to legal requirements)
           </div>
-          <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+          <div style={{ backgroundColor: colors.neutral, padding: '12px', borderRadius: '6px', border: colors.border }}>
             <strong>⛔ Right to Object:</strong> Object to processing of your data
           </div>
-          <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+          <div style={{ backgroundColor: colors.neutral, padding: '12px', borderRadius: '6px', border: colors.border }}>
             <strong>📤 Right to Data Portability:</strong> Receive your data in machine-readable format
           </div>
-          <div style={{ backgroundColor: '#f9fafb', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+          <div style={{ backgroundColor: colors.neutral, padding: '12px', borderRadius: '6px', border: colors.border }}>
             <strong>🚫 Right to Withdraw Consent:</strong> Withdraw consent at any time
           </div>
         </div>
@@ -355,21 +357,21 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>11. Artificial Intelligence & Automation</h2>
+        <h2 style={colors.heading}>11. Artificial Intelligence & Automation</h2>
         <p style={{ marginBottom: '15px' }}>Our applications use AI and automation technologies:</p>
         <ul style={{ marginLeft: '25px', marginBottom: '15px' }}>
           <li><strong>Google Gemini AI (APP-DRIVER):</strong> Chat assistant for helping operators fill timesheet forms with natural language input</li>
           <li><strong>AWS Textract OCR:</strong> Automatic extraction of data from scanned documents and photos of paper forms</li>
           <li><strong>Automated Validation:</strong> Rule-based validation of data entries (e.g., fuel consumption limits, SMU ranges)</li>
         </ul>
-        <p style={{ fontSize: '14px', backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '6px' }}>
+        <p style={{ fontSize: '14px', backgroundColor: colors.info, padding: '12px', borderRadius: '6px' }}>
           🤖 AI features are optional and designed to assist, not replace, human decision-making. All AI-generated suggestions 
           require user confirmation before submission.
         </p>
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>12. Children's Privacy</h2>
+        <h2 style={colors.heading}>12. Children's Privacy</h2>
         <p>
           Our applications are designed for workplace use and are NOT intended for children under 18 years of age. 
           We do not knowingly collect personal information from children. If we become aware that we have collected 
@@ -378,7 +380,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>13. International Data Transfers</h2>
+        <h2 style={colors.heading}>13. International Data Transfers</h2>
         <p style={{ marginBottom: '10px' }}>
           Our primary servers are located in Indonesia. However, some service providers (AWS, Google) may process data 
           in other countries. When data is transferred internationally, we ensure:
@@ -391,7 +393,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>14. Changes to This Privacy Policy</h2>
+        <h2 style={colors.heading}>14. Changes to This Privacy Policy</h2>
         <p style={{ marginBottom: '15px' }}>
           We may update this privacy policy from time to time to reflect changes in our practices, technology, legal requirements, 
           or other factors. Changes will be communicated through:
@@ -408,20 +410,20 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>15. Contact Us</h2>
+        <h2 style={colors.heading}>15. Contact Us</h2>
         <p style={{ marginBottom: '15px' }}>
           If you have questions, concerns, or requests regarding this privacy policy or your personal data, please contact us:
         </p>
-        <div style={{ backgroundColor: '#f3f4f6', padding: '20px', borderRadius: '10px', border: '2px solid #d1d5db' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '20px', borderRadius: '10px', border: '2px solid hsl(var(--border))' }}>
           <p style={{ margin: '8px 0', fontSize: '16px' }}><strong>CV. MAKKURAGA TAMA</strong></p>
-          <p style={{ margin: '8px 0' }}>📧 Email: <a href="mailto:ayat.ekapoetra@gmail.com" style={{ color: '#3b82f6' }}>ayat.ekapoetra@gmail.com</a></p>
-          <p style={{ margin: '8px 0' }}>🌐 Website: <a href="https://pwa.makkuragatama.id" style={{ color: '#3b82f6' }}>https://pwa.makkuragatama.id</a></p>
+          <p style={{ margin: '8px 0' }}>📧 Email: <a href="mailto:ayat.ekapoetra@gmail.com" style={{ color: colors.link }}>ayat.ekapoetra@gmail.com</a></p>
+          <p style={{ margin: '8px 0' }}>🌐 Website: <a href="https://pwa.makkuragatama.id" style={{ color: colors.link }}>https://pwa.makkuragatama.id</a></p>
           <p style={{ margin: '8px 0' }}>📱 Apps: APPEMPLOYEE (iOS/Android), APP-DRIVER (iOS/Android)</p>
         </div>
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>16. Governing Law</h2>
+        <h2 style={colors.heading}>16. Governing Law</h2>
         <p>
           This Privacy Policy is governed by and construed in accordance with the laws of the Republic of Indonesia, 
           including but not limited to Law No. 27 of 2022 on Personal Data Protection (UU PDP). 
@@ -429,11 +431,11 @@ export default function PrivacyPolicyPage() {
         </p>
       </section>
 
-      <footer style={{ marginTop: '60px', paddingTop: '30px', borderTop: '2px solid #e5e7eb', textAlign: 'center' }}>
-        <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '10px' }}>
+      <footer style={{ marginTop: '60px', paddingTop: '30px', borderTop: '2px solid hsl(var(--border))', textAlign: 'center' }}>
+        <p style={{ color: colors.secondary, fontSize: '14px', marginBottom: '10px' }}>
           © 2025 CV. MAKKURAGA TAMA. All rights reserved.
         </p>
-        <p style={{ color: '#9ca3af', fontSize: '12px' }}>
+        <p style={{ color: colors.secondary, fontSize: '12px' }}>
           Mining Operations Management System | Employee & Driver Applications
         </p>
       </footer>

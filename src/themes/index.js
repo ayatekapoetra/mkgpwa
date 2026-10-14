@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 // MATERIAL - UI
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { prefixer } from 'stylis';
 import rtlPlugin from 'stylis-plugin-rtl';
 
@@ -13,10 +14,10 @@ import Typography from './typography';
 import CustomShadows from './shadows';
 import componentsOverride from './overrides';
 import { NextAppDirEmotionCacheProvider } from './emotionCache';
+import ThemeCssBridge from './ThemeCssBridge';
 
 import { HEADER_HEIGHT } from 'config';
 import { useLayoutConfig, useThemeConfig } from 'hooks/useConfig';
-import getWindowScheme from 'utils/getWindowScheme';
 import { ThemeDirection, ThemeMode } from 'config';
 
 // ==============================|| DEFAULT THEME - MAIN  ||============================== //
@@ -24,15 +25,8 @@ import { ThemeDirection, ThemeMode } from 'config';
 export default function ThemeCustomization({ children }) {
   const { themeDirection } = useLayoutConfig();
   const { mode, presetColor, fontFamily, themeContrast } = useThemeConfig();
-  let themeMode = mode;
-  if (themeMode === ThemeMode.AUTO) {
-    const autoMode = getWindowScheme();
-    if (autoMode) {
-      themeMode = ThemeMode.DARK;
-    } else {
-      themeMode = ThemeMode.LIGHT;
-    }
-  }
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)');
+  const themeMode = mode === ThemeMode.AUTO ? (prefersDark ? ThemeMode.DARK : ThemeMode.LIGHT) : mode;
 
   const theme = useMemo(() => Palette(themeMode, presetColor, themeContrast), [themeMode, presetColor, themeContrast]);
 
@@ -88,6 +82,7 @@ export default function ThemeCustomization({ children }) {
     >
       <ThemeProvider theme={themes}>
         <CssBaseline enableColorScheme />
+        <ThemeCssBridge />
         {children}
       </ThemeProvider>
     </NextAppDirEmotionCacheProvider>

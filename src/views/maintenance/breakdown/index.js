@@ -263,7 +263,7 @@ export default function BreakdownList() {
                       </Stack>
                       <Typography variant="body2">{formatBreakdownAt(row.breakdown_at)}</Typography>
                     </Stack>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, px: 1, py: 0.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, px: 1, py: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
                       <Typography variant="caption">Problems: {row.items?.length || 0} issue</Typography>
                       <Typography variant="caption">Durasi: {calculateDuration(row.breakdown_at, row.ready_at).text}</Typography>
                     </Stack>

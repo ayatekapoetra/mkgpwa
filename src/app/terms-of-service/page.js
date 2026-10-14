@@ -1,3 +1,5 @@
+import { legalPageStyles as colors } from 'themes/legalPageStyles';
+
 export const metadata = {
   title: 'Terms of Service - MKG Mobile Apps',
   description: 'Terms of Service for APPEMPLOYEE and APP-DRIVER Mobile Applications'
@@ -7,9 +9,9 @@ export default function TermsOfServicePage() {
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px', lineHeight: '1.6' }}>
       <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '10px' }}>Terms of Service</h1>
-      <p style={{ color: '#666', marginBottom: '30px', fontSize: '14px' }}>Last Updated: December 11, 2025</p>
+      <p style={{ color: colors.secondary, marginBottom: '30px', fontSize: '14px' }}>Last Updated: December 11, 2025</p>
 
-      <div style={{ backgroundColor: '#f0f9ff', padding: '20px', borderRadius: '8px', marginBottom: '30px', borderLeft: '4px solid #3b82f6' }}>
+      <div style={{ backgroundColor: colors.info, padding: '20px', borderRadius: '8px', marginBottom: '30px', borderLeft: '4px solid hsl(var(--primary))' }}>
         <p style={{ margin: 0, fontWeight: '500' }}>
           These Terms of Service apply to both <strong>APPEMPLOYEE</strong> (Employee Management App) and <strong>APP-DRIVER</strong> (Operator & Driver App), 
           collectively referred to as "our applications" or "the apps".
@@ -17,7 +19,7 @@ export default function TermsOfServicePage() {
       </div>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>1. Acceptance of Terms</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>1. Acceptance of Terms</h2>
         <p style={{ marginBottom: '15px' }}>
           By accessing and using MKG Mobile Applications operated by CV. MAKKURAGA TAMA ("we," "our," or "us"), 
           you accept and agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, 
@@ -30,9 +32,9 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>2. Applications and Services</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>2. Applications and Services</h2>
         
-        <div style={{ backgroundColor: '#fef3c7', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
+        <div style={{ backgroundColor: colors.warning, padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>📱 APPEMPLOYEE</h3>
           <p style={{ margin: 0, marginBottom: '10px' }}>
             Employee management application for general staff, supervisors, managers, and HRD personnel.
@@ -46,7 +48,7 @@ export default function TermsOfServicePage() {
           </ul>
         </div>
 
-        <div style={{ backgroundColor: '#dbeafe', padding: '15px', borderRadius: '8px' }}>
+        <div style={{ backgroundColor: colors.info, padding: '15px', borderRadius: '8px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>🚛 APP-DRIVER</h3>
           <p style={{ margin: 0, marginBottom: '10px' }}>
             Operator and driver application for heavy equipment operators and dump truck drivers.
@@ -62,7 +64,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>3. User Accounts and Authentication</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>3. User Accounts and Authentication</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>3.1 Account Creation</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -98,7 +100,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>4. Acceptable Use</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>4. Acceptable Use</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>4.1 Permitted Use</h3>
         <p style={{ marginBottom: '15px' }}>You may use applications for:</p>
@@ -127,7 +129,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>5. Location Services and Geofencing</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>5. Location Services and Geofencing</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>5.1 Location Requirements</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -164,7 +166,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>6. Data Accuracy and Integrity</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>6. Data Accuracy and Integrity</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>6.1 Data Entry Responsibilities</h3>
         <p style={{ marginBottom: '15px' }}>You are responsible for:</p>
@@ -199,7 +201,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>7. Offline Functionality (APP-DRIVER)</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>7. Offline Functionality (APP-DRIVER)</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>7.1 Offline Storage</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -223,7 +225,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>8. Approval Workflows</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>8. Approval Workflows</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>8.1 Approval Authority</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -249,7 +251,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>9. Intellectual Property Rights</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>9. Intellectual Property Rights</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>9.1 Application Ownership</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -284,7 +286,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>10. Privacy and Data Protection</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>10. Privacy and Data Protection</h2>
         <p style={{ marginBottom: '15px' }}>
           Your use of applications is also governed by our Privacy Policy, which explains:
         </p>
@@ -295,13 +297,13 @@ export default function TermsOfServicePage() {
           <li>Your rights regarding your data</li>
           <li>How to contact us about privacy concerns</li>
         </ul>
-        <p style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '6px' }}>
+        <p style={{ backgroundColor: colors.info, padding: '12px', borderRadius: '6px' }}>
           By using our applications, you consent to the collection and use of information as described in our Privacy Policy.
         </p>
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>11. Service Availability and Performance</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>11. Service Availability and Performance</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>11.1 Service Availability</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -327,7 +329,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>12. Disclaimers and Limitations</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>12. Disclaimers and Limitations</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>12.1 Service Disclaimer</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -365,7 +367,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>13. Termination</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>13. Termination</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>13.1 User Termination</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -402,7 +404,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>14. Artificial Intelligence and Automation</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>14. Artificial Intelligence and Automation</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>14.1 AI Features</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -426,7 +428,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>15. Compliance and Legal Requirements</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>15. Compliance and Legal Requirements</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>15.1 Mining Regulations</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -451,7 +453,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>16. Changes to Terms</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>16. Changes to Terms</h2>
         <p style={{ marginBottom: '15px' }}>
           We reserve the right to modify these Terms at any time. Changes will be communicated through:
         </p>
@@ -461,14 +463,14 @@ export default function TermsOfServicePage() {
           <li>Email announcements to registered users</li>
           <li>Company communications and postings</li>
         </ul>
-        <p style={{ backgroundColor: '#fef3c7', padding: '12px', borderRadius: '6px' }}>
+        <p style={{ backgroundColor: colors.warning, padding: '12px', borderRadius: '6px' }}>
           Continued use of applications after changes constitutes acceptance of the modified Terms. 
           If you do not agree to changes, you must stop using the applications.
         </p>
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>17. Governing Law and Dispute Resolution</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>17. Governing Law and Dispute Resolution</h2>
         <p style={{ marginBottom: '15px' }}>
           These Terms shall be governed by and construed in accordance with the laws of the Republic of Indonesia, 
           without regard to its conflict of law provisions.
@@ -480,21 +482,21 @@ export default function TermsOfServicePage() {
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>18. Contact Information</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>18. Contact Information</h2>
         <p style={{ marginBottom: '15px' }}>
           For questions about these Terms of Service, please contact us:
         </p>
-        <div style={{ backgroundColor: '#f3f4f6', padding: '20px', borderRadius: '10px', border: '2px solid #d1d5db' }}>
+        <div style={{ backgroundColor: colors.neutral, padding: '20px', borderRadius: '10px', border: '2px solid hsl(var(--border))' }}>
           <p style={{ margin: '8px 0', fontSize: '16px' }}><strong>CV. MAKKURAGA TAMA</strong></p>
-          <p style={{ margin: '8px 0' }}>📧 Email: <a href="mailto:ayat.ekapoetra@gmail.com" style={{ color: '#3b82f6' }}>ayat.ekapoetra@gmail.com</a></p>
-          <p style={{ margin: '8px 0' }}>🌐 Website: <a href="https://pwa.makkuragatama.id" style={{ color: '#3b82f6' }}>https://pwa.makkuragatama.id</a></p>
+          <p style={{ margin: '8px 0' }}>📧 Email: <a href="mailto:ayat.ekapoetra@gmail.com" style={{ color: colors.link }}>ayat.ekapoetra@gmail.com</a></p>
+          <p style={{ margin: '8px 0' }}>🌐 Website: <a href="https://pwa.makkuragatama.id" style={{ color: colors.link }}>https://pwa.makkuragatama.id</a></p>
           <p style={{ margin: '8px 0' }}>📱 Applications: APPEMPLOYEE & APP-DRIVER</p>
           <p style={{ margin: '8px 0' }}>🏢 Industry: Mining Operations Management</p>
         </div>
       </section>
 
       <section style={{ marginBottom: '35px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>19. General Provisions</h2>
+        <h2 style={{ fontWeight: '600', marginBottom: '15px' }}>19. General Provisions</h2>
         
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', marginTop: '20px' }}>19.1 Entire Agreement</h3>
         <p style={{ marginBottom: '15px' }}>
@@ -519,14 +521,14 @@ export default function TermsOfServicePage() {
         </p>
       </section>
 
-      <footer style={{ marginTop: '60px', paddingTop: '30px', borderTop: '2px solid #e5e7eb', textAlign: 'center' }}>
-        <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '10px' }}>
+      <footer style={{ marginTop: '60px', paddingTop: '30px', borderTop: '2px solid hsl(var(--border))', textAlign: 'center' }}>
+        <p style={{ color: colors.secondary, fontSize: '14px', marginBottom: '10px' }}>
           © 2025 CV. MAKKURAGA TAMA. All rights reserved.
         </p>
-        <p style={{ color: '#9ca3af', fontSize: '12px' }}>
+        <p style={{ color: colors.secondary, fontSize: '12px' }}>
           Mining Operations Management System | Employee & Driver Applications
         </p>
-        <p style={{ color: '#9ca3af', fontSize: '12px', marginTop: '5px' }}>
+        <p style={{ color: colors.secondary, fontSize: '12px', marginTop: '5px' }}>
           Last Updated: December 11, 2025
         </p>
       </footer>

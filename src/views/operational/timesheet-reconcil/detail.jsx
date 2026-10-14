@@ -47,8 +47,9 @@ const formatTime = (value) => (value ? moment(value).format('HH:mm') : '-');
 const cardStyle = {
   p: 2,
   borderRadius: 2,
-  bgcolor: '#f8fbff',
-  border: '1px solid #e6eef8',
+  bgcolor: 'background.default',
+  border: '1px solid',
+  borderColor: 'divider',
 };
 
 const TimesheetReconcilShow = ({ params }) => {
@@ -133,7 +134,7 @@ const TimesheetReconcilShow = ({ params }) => {
       secondary={<Breadcrumbs custom heading={'Detail Reconcil Timesheet'} links={breadcrumbLinks} />}
     >
     <Stack spacing={3}>
-      <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e6eef8', borderRadius: 3 }}>
+      <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <Stack spacing={0.5}>
@@ -213,7 +214,7 @@ const TimesheetReconcilShow = ({ params }) => {
         </Grid>
       </Paper> */}
 
-      <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e6eef8', borderRadius: 3 }}>
+      <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="subtitle1" fontWeight={800}>Rincian Item</Typography>
         </Stack>

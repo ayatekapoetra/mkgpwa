@@ -187,15 +187,15 @@ export default function WorkOrderList() {
             <Table size="small" stickyHeader sx={{ minWidth: 1180, tableLayout: 'fixed' }}>
               <TableHead>
                 <TableRow>
-                  <TableCell align="center" sx={{ width: 54, bgcolor: 'grey.100', fontWeight: 700 }}>No</TableCell>
-                  <TableCell sx={{ width: 150, bgcolor: 'grey.100', fontWeight: 700 }}>Work Order</TableCell>
-                  <TableCell sx={{ width: 170, bgcolor: 'grey.100', fontWeight: 700 }}>Equipment</TableCell>
-                  <TableCell sx={{ width: 150, bgcolor: 'grey.100', fontWeight: 700 }}>Breakdown</TableCell>
-                  <TableCell sx={{ width: 220, bgcolor: 'grey.100', fontWeight: 700 }}>Problem Issue</TableCell>
-                  <TableCell sx={{ width: 210, bgcolor: 'grey.100', fontWeight: 700 }}>Aksi Terakhir</TableCell>
-                  <TableCell sx={{ width: 170, bgcolor: 'grey.100', fontWeight: 700 }}>Waktu Perbaikan</TableCell>
-                  <TableCell align="center" sx={{ width: 120, bgcolor: 'grey.100', fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="center" sx={{ width: 90, bgcolor: 'grey.100', fontWeight: 700 }}>Aksi</TableCell>
+                  <TableCell align="center" sx={{ width: 54, bgcolor: 'background.default', fontWeight: 700 }}>No</TableCell>
+                  <TableCell sx={{ width: 150, bgcolor: 'background.default', fontWeight: 700 }}>Work Order</TableCell>
+                  <TableCell sx={{ width: 170, bgcolor: 'background.default', fontWeight: 700 }}>Equipment</TableCell>
+                  <TableCell sx={{ width: 150, bgcolor: 'background.default', fontWeight: 700 }}>Breakdown</TableCell>
+                  <TableCell sx={{ width: 220, bgcolor: 'background.default', fontWeight: 700 }}>Problem Issue</TableCell>
+                  <TableCell sx={{ width: 210, bgcolor: 'background.default', fontWeight: 700 }}>Aksi Terakhir</TableCell>
+                  <TableCell sx={{ width: 170, bgcolor: 'background.default', fontWeight: 700 }}>Waktu Perbaikan</TableCell>
+                  <TableCell align="center" sx={{ width: 120, bgcolor: 'background.default', fontWeight: 700 }}>Status</TableCell>
+                  <TableCell align="center" sx={{ width: 90, bgcolor: 'background.default', fontWeight: 700 }}>Aksi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

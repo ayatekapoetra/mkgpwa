@@ -553,7 +553,7 @@ function ContractFields({
     <Stack spacing={3}>
       <MainCard
         sx={{
-          background: "linear-gradient(135deg, #eef4ff 0%, #f8fbff 100%)",
+          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.lighter} 0%, ${theme.palette.background.paper} 100%)`,
           borderColor: "primary.100",
         }}
       >

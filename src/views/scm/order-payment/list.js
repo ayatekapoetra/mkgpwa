@@ -71,7 +71,7 @@ export default function OrderPaymentList({ rows = [] }) {
           tableLayout: "auto",
           "& th": {
             ...cellSx,
-            backgroundColor: "grey.50",
+            backgroundColor: "background.default",
             fontWeight: 700,
             textAlign: "left",
             position: "sticky",

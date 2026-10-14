@@ -152,8 +152,8 @@ export default function ListDom({ data = { data: [] }, setParams }) {
               sx={{ 
                 fontWeight: 600, 
                 fontSize: '0.7rem',
-                backgroundColor: 'grey.200',
-                color: 'grey.800'
+                backgroundColor: 'action.hover',
+                color: 'text.primary'
               }}
             />
           );
@@ -197,7 +197,7 @@ export default function ListDom({ data = { data: [] }, setParams }) {
                 sx={{
                   width: '100%',
                   height: 4,
-                  backgroundColor: 'grey.200',
+                  backgroundColor: 'action.hover',
                   borderRadius: 2,
                   overflow: 'hidden'
                 }}

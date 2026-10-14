@@ -138,10 +138,10 @@ const PhotoDropZoneFormik = ({
         <PhotoContainer>
           <Avatar src={URL.createObjectURL(field.value)} variant="rounded" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <ActionButtons direction="row" spacing={0.5}>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleChangePhoto}>
+            <IconButton size="small" sx={{ bgcolor: 'background.paper' }} onClick={handleChangePhoto}>
               <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleViewPhoto}>
+            <IconButton size="small" sx={{ bgcolor: 'background.paper' }} onClick={handleViewPhoto}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </ActionButtons>
@@ -159,10 +159,10 @@ const PhotoDropZoneFormik = ({
             sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
           <ActionButtons direction="row" spacing={0.5}>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleChangePhoto}>
+            <IconButton size="small" sx={{ bgcolor: 'background.paper' }} onClick={handleChangePhoto}>
               <EditIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ bgcolor: 'rgba(255,255,255,0.95)' }} onClick={handleViewPhoto}>
+            <IconButton size="small" sx={{ bgcolor: 'background.paper' }} onClick={handleViewPhoto}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </ActionButtons>

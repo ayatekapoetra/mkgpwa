@@ -30,6 +30,7 @@ import SpeedIcon from "@mui/icons-material/Speed";
 import AddIcon from "@mui/icons-material/Add";
 
 import MainCard from "components/MainCard";
+import { alpha, useTheme } from "@mui/material/styles";
 import {
   fleetErrorMessage,
   useFleetAssignmentAccess,
@@ -48,18 +49,21 @@ import FleetAssignmentFilter from "./filter";
 import EquipmentDetailDrawer from "./EquipmentDetailDrawer";
 
 function SummaryCard({ summary, loading }) {
+  const theme = useTheme();
   const total = Number(summary.total) || 0;
   const cards = [
-    { key: "beroperasi", label: "Beroperasi", caption: "Unit produktif", value: summary.beroperasi, icon: <CheckCircleIcon />, accent: "#16844a", soft: "#eaf8f0" },
-    { key: "standby", label: "Standby", caption: "Menunggu aktivitas", value: summary.standby, icon: <WarningAmberIcon />, accent: "#c66b08", soft: "#fff5e5" },
-    { key: "breakdown", label: "Breakdown", caption: "Perlu penanganan", value: summary.breakdown, icon: <ErrorOutlineIcon />, accent: "#c53c3c", soft: "#fff0ef" },
-    { key: "nostatus", label: "Tanpa Status", caption: "Belum dilaporkan", value: summary.nostatus, icon: <HelpOutlineIcon />, accent: "#68737d", soft: "#f0f3f5" },
-    { key: "total", label: "Total Armada", caption: "Unit terpantau", value: summary.total, icon: <SpeedIcon />, accent: "#2767a8", soft: "#edf5ff" },
+    { key: "beroperasi", label: "Beroperasi", caption: "Unit produktif", value: summary.beroperasi, icon: <CheckCircleIcon />, tone: "success" },
+    { key: "standby", label: "Standby", caption: "Menunggu aktivitas", value: summary.standby, icon: <WarningAmberIcon />, tone: "warning" },
+    { key: "breakdown", label: "Breakdown", caption: "Perlu penanganan", value: summary.breakdown, icon: <ErrorOutlineIcon />, tone: "error" },
+    { key: "nostatus", label: "Tanpa Status", caption: "Belum dilaporkan", value: summary.nostatus, icon: <HelpOutlineIcon />, tone: "secondary" },
+    { key: "total", label: "Total Armada", caption: "Unit terpantau", value: summary.total, icon: <SpeedIcon />, tone: "primary" },
   ];
 
   return (
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))", lg: "repeat(5, minmax(0, 1fr))" }, gap: 0.75 }}>
       {cards.map((card) => {
+        const accent = theme.palette[card.tone].main;
+        const soft = alpha(accent, theme.palette.mode === "dark" ? 0.18 : 0.08);
         const percentage = card.key === "total" ? (total > 0 ? 100 : 0) : total > 0 ? Math.round((Number(card.value) || 0) / total * 100) : 0;
         const isTotal = card.key === "total";
         return (
@@ -67,41 +71,42 @@ function SummaryCard({ summary, loading }) {
             key={card.key}
             elevation={0}
             sx={{
-              background: `linear-gradient(145deg, #ffffff 0%, ${card.soft} 145%)`,
-              color: "#17212b",
+              background: `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${soft} 145%)`,
+              color: "text.primary",
               borderRadius: 1.5,
               position: "relative",
               overflow: "hidden",
-              border: "1px solid rgba(28,43,56,0.09)",
-              boxShadow: isTotal ? "0 4px 12px rgba(39,103,168,0.12)" : "0 3px 10px rgba(24,39,52,0.06)",
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: theme.shadows[isTotal ? 2 : 1],
               gridColumn: { xs: isTotal ? "span 2" : "auto", sm: "auto" },
               transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
-              "&::before": { content: '""', position: "absolute", inset: "0 auto 0 0", width: 4, bgcolor: card.accent },
-              "&::after": { content: '""', position: "absolute", width: 48, height: 48, borderRadius: "50%", right: -19, top: -24, bgcolor: card.soft, opacity: 0.9 },
-              "&:hover": { transform: "translateY(-2px)", borderColor: card.accent, boxShadow: "0 7px 18px rgba(24,39,52,0.1)" },
+              "&::before": { content: '""', position: "absolute", inset: "0 auto 0 0", width: 4, bgcolor: accent },
+              "&::after": { content: '""', position: "absolute", width: 48, height: 48, borderRadius: "50%", right: -19, top: -24, bgcolor: soft, opacity: 0.9 },
+              "&:hover": { transform: "translateY(-2px)", borderColor: accent, boxShadow: theme.shadows[3] },
             }}
           >
             <CardContent sx={{ p: 1, pl: 1.35, position: "relative", zIndex: 1, "&:last-child": { pb: 1 } }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={0.75}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ color: "#65717c", fontSize: "0.58rem", fontWeight: 800, letterSpacing: 0.55, textTransform: "uppercase" }} noWrap>
+                  <Typography sx={{ color: "text.secondary", fontSize: "0.58rem", fontWeight: 800, letterSpacing: 0.55, textTransform: "uppercase" }} noWrap>
                     {card.label}
                   </Typography>
-                  <Typography sx={{ color: "#17212b", fontSize: "1.35rem", fontWeight: 900, lineHeight: 1.05, mt: 0.25, letterSpacing: -0.5 }}>
-                    {loading ? <CircularProgress size={16} sx={{ color: card.accent }} /> : card.value}
+                  <Typography sx={{ color: "text.primary", fontSize: "1.35rem", fontWeight: 900, lineHeight: 1.05, mt: 0.25, letterSpacing: -0.5 }}>
+                    {loading ? <CircularProgress size={16} sx={{ color: accent }} /> : card.value}
                   </Typography>
                 </Box>
-                <Box sx={{ width: 28, height: 28, borderRadius: 1.15, display: "grid", placeItems: "center", bgcolor: card.soft, color: card.accent, flexShrink: 0, "& svg": { fontSize: 16 } }}>
+                <Box sx={{ width: 28, height: 28, borderRadius: 1.15, display: "grid", placeItems: "center", bgcolor: soft, color: accent, flexShrink: 0, "& svg": { fontSize: 16 } }}>
                   {card.icon}
                 </Box>
               </Stack>
 
-              <Box sx={{ mt: 0.7, height: 2, borderRadius: 3, bgcolor: "rgba(31,46,59,0.08)", overflow: "hidden" }}>
-                <Box sx={{ width: `${percentage}%`, height: "100%", borderRadius: 3, bgcolor: card.accent, transition: "width 0.35s ease" }} />
+              <Box sx={{ mt: 0.7, height: 2, borderRadius: 3, bgcolor: "action.hover", overflow: "hidden" }}>
+                <Box sx={{ width: `${percentage}%`, height: "100%", borderRadius: 3, bgcolor: accent, transition: "width 0.35s ease" }} />
               </Box>
               <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.35 }}>
-                <Typography sx={{ color: "#929aa1", fontSize: "0.52rem" }} noWrap>{card.caption}</Typography>
-                <Typography sx={{ color: card.accent, fontSize: "0.55rem", fontWeight: 900 }}>{percentage}%</Typography>
+                <Typography sx={{ color: "text.secondary", fontSize: "0.52rem" }} noWrap>{card.caption}</Typography>
+                <Typography sx={{ color: accent, fontSize: "0.55rem", fontWeight: 900 }}>{percentage}%</Typography>
               </Stack>
             </CardContent>
           </Card>

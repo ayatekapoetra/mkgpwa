@@ -5,6 +5,9 @@ import { mutate } from 'swr';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import { useTheme } from '@mui/material/styles';
 import moment from 'moment';
 import { PresentionChart } from 'iconsax-react';
 
@@ -127,6 +130,7 @@ const insightGudangNullKdunit = (rows) => {
 };
 
 export default function SparepartUsedScreen() {
+  const { palette } = useTheme();
   const [clock, setClock] = useState(moment().format('HH:mm:ss'));
   const [tanggal, setTanggal] = useState(moment().format('dddd, DD MMMM YYYY'));
   const [isSlideshow, setIsSlideshow] = useState(false);
@@ -304,23 +308,24 @@ export default function SparepartUsedScreen() {
         </Stack>
 
         <Stack direction="row" spacing={1} alignItems="center">
-          <input type="date" value={dateRange.start} onChange={(e) => handleDateChange('start', e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
+          <TextField size="small" type="date" label="Dari" InputLabelProps={{ shrink: true }} value={dateRange.start} onChange={(e) => handleDateChange('start', e.target.value)} />
           <span>to</span>
-          <input type="date" value={dateRange.end} onChange={(e) => handleDateChange('end', e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
-          <button onClick={handleApplyFilter} style={{ padding: '8px 16px', borderRadius: '4px', border: 'none', background: '#1976d2', color: 'white', cursor: 'pointer' }}>
+          <TextField size="small" type="date" label="Sampai" InputLabelProps={{ shrink: true }} value={dateRange.end} onChange={(e) => handleDateChange('end', e.target.value)} />
+          <Button variant="contained" onClick={handleApplyFilter}>
             Apply
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outlined"
+            color={isSlideshow ? 'error' : 'primary'}
+            startIcon={<PresentionChart size={18} variant="Bold" />}
             onClick={() => {
               setIsSlideshow((prev) => !prev);
               setCurrentSlideIndex(0);
               setRemainingSeconds(30);
             }}
-            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: isSlideshow ? '#ef4444' : 'white', color: isSlideshow ? 'white' : '#1D2630', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <PresentionChart size={18} variant="Bold" />
             {isSlideshow ? 'Stop' : 'Start'}
-          </button>
+          </Button>
         </Stack>
       </Stack>
 
@@ -335,28 +340,28 @@ export default function SparepartUsedScreen() {
             <Grid item xs={12}>
               <Paper sx={{ p: 2, height: '340px' }}>
                 <h3>Tren Harian Pemakaian</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perubahan intensitas pemakaian part dari hari ke hari dan titik lonjakan utama.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perubahan intensitas pemakaian part dari hari ke hari dan titik lonjakan utama.</p>
                 <div style={{ height: '250px' }}><DailyTrendChart data={dailyTrendData} average={dailyTrendAverage} loading={dailyTrendLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightDailyTrend(dailyTrendData)}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightDailyTrend(dailyTrendData)}</p>
               </Paper>
             </Grid>
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
                 <h3 style={{ marginTop: 0 }}>Top 20 Frekuensi Pemakaian (HE / DT)</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: part yang paling sering digunakan untuk melihat kebutuhan replenishment rutin.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: part yang paling sering digunakan untuk melihat kebutuhan replenishment rutin.</p>
                 <Grid container spacing={2}>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>HE</h4>
                       <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyHeData} average={topFrequencyHeAverage} loading={topFrequencyHeLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopFrequency(topFrequencyHeData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopFrequency(topFrequencyHeData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>DT</h4>
                       <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyDtData} average={topFrequencyDtAverage} loading={topFrequencyDtLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopFrequency(topFrequencyDtData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopFrequency(topFrequencyDtData)}</p>
                     </Paper>
                   </Grid>
                 </Grid>
@@ -365,20 +370,20 @@ export default function SparepartUsedScreen() {
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
                 <h3 style={{ marginTop: 0 }}>Top 20 Nilai Rupiah Pemakaian (HE / DT)</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: part dengan dampak biaya terbesar untuk prioritas kontrol cost.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: part dengan dampak biaya terbesar untuk prioritas kontrol cost.</p>
                 <Grid container spacing={2}>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>HE</h4>
                       <div style={{ height: '430px' }}><TopValueChart data={topValueHeData} average={topValueHeAverage} loading={topValueHeLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopValue(topValueHeData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopValue(topValueHeData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>DT</h4>
                       <div style={{ height: '430px' }}><TopValueChart data={topValueDtData} average={topValueDtAverage} loading={topValueDtLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopValue(topValueDtData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopValue(topValueDtData)}</p>
                     </Paper>
                   </Grid>
                 </Grid>
@@ -387,78 +392,78 @@ export default function SparepartUsedScreen() {
             <Grid item md={6} xs={12}>
               <Paper sx={{ p: 2, height: '360px' }}>
                 <h3>Pemakaian per Unit Kategori DT</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: unit DT dengan konsumsi part tertinggi untuk deteksi beban maintenance armada DT.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: unit DT dengan konsumsi part tertinggi untuk deteksi beban maintenance armada DT.</p>
                 <div style={{ height: '270px' }}><ByUnitChart data={byUnitDtData} average={byUnitDtAverage} loading={byUnitDtLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByUnit(byUnitDtData)}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByUnit(byUnitDtData)}</p>
               </Paper>
             </Grid>
             <Grid item md={6} xs={12}>
               <Paper sx={{ p: 2, height: '360px' }}>
                 <h3>Pemakaian per Unit Kategori HE</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: unit HE dengan konsumsi part tertinggi untuk deteksi beban maintenance alat berat.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: unit HE dengan konsumsi part tertinggi untuk deteksi beban maintenance alat berat.</p>
                 <div style={{ height: '270px' }}><ByUnitChart data={byUnitHeData} average={byUnitHeAverage} loading={byUnitHeLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByUnit(byUnitHeData)}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByUnit(byUnitHeData)}</p>
               </Paper>
             </Grid>
             <Grid item md={6} xs={12}>
               <Paper sx={{ p: 2, height: '420px' }}>
                 <h3>Pemakaian per Kategori Barang DT</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori DT.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori DT.</p>
                 <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryDtData} average={byCategoryDtAverage} loading={byCategoryDtLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByCategory(byCategoryDtData)}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByCategory(byCategoryDtData)}</p>
               </Paper>
             </Grid>
             <Grid item md={6} xs={12}>
               <Paper sx={{ p: 2, height: '420px' }}>
                 <h3>Pemakaian per Kategori Barang HE</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori HE.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori HE.</p>
                 <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryHeData} average={byCategoryHeAverage} loading={byCategoryHeLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightByCategory(byCategoryHeData)}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByCategory(byCategoryHeData)}</p>
               </Paper>
             </Grid>
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
                 <h3 style={{ marginTop: 0 }}>Analisis Pemakaian per Gudang</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perbandingan aktivitas, biaya, dan pola konsumsi part antar gudang.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perbandingan aktivitas, biaya, dan pola konsumsi part antar gudang.</p>
                 <Grid container spacing={2}>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Top Gudang by Nilai</h4>
-                      <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: gudang dengan kontribusi biaya pemakaian terbesar.</p>
+                      <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: gudang dengan kontribusi biaya pemakaian terbesar.</p>
                       <div style={{ height: '280px' }}><GudangTopValueChart data={gudangTopValueData} average={gudangTopValueAverage} loading={gudangTopValueLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangTopValue(gudangTopValueData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightGudangTopValue(gudangTopValueData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Top Gudang by Frekuensi</h4>
-                      <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: gudang paling aktif berdasarkan jumlah transaksi pemakaian part.</p>
+                      <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: gudang paling aktif berdasarkan jumlah transaksi pemakaian part.</p>
                       <div style={{ height: '280px' }}><GudangTopFrequencyChart data={gudangTopFrequencyData} average={gudangTopFrequencyAverage} loading={gudangTopFrequencyLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangTopFrequency(gudangTopFrequencyData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightGudangTopFrequency(gudangTopFrequencyData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={12} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '480px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Tren Harian per Gudang</h4>
-                      <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: dinamika nilai pemakaian per gudang untuk melihat pola beban harian.</p>
+                      <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: dinamika nilai pemakaian per gudang untuk melihat pola beban harian.</p>
                       <div style={{ height: '360px' }}><GudangDailyTrendChart data={gudangDailyTrendData} average={gudangDailyTrendAverage} loading={gudangDailyTrendLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangDaily(gudangDailyTrendData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightGudangDaily(gudangDailyTrendData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Heatmap Gudang vs Kategori</h4>
-                      <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: kategori part dominan pada masing-masing gudang.</p>
+                      <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: kategori part dominan pada masing-masing gudang.</p>
                       <div style={{ height: '300px' }}><GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} average={gudangHeatmapCategoryAverage} loading={gudangHeatmapCategoryLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightHeatmap(gudangHeatmapCategoryData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightHeatmap(gudangHeatmapCategoryData)}</p>
                     </Paper>
                   </Grid>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '400px' }}>
                       <h4 style={{ marginTop: 0, marginBottom: 8 }}>Top Sparepart per Gudang</h4>
-                      <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perbedaan pola part cepat habis antar gudang.</p>
+                      <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perbedaan pola part cepat habis antar gudang.</p>
                       <div style={{ height: '300px' }}><GudangTopSparepartChart data={gudangTopSparepartData} average={gudangTopSparepartAverage} loading={gudangTopSparepartLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightTopSparepartGudang(gudangTopSparepartData)}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopSparepartGudang(gudangTopSparepartData)}</p>
                     </Paper>
                   </Grid>
                 </Grid>
@@ -467,38 +472,38 @@ export default function SparepartUsedScreen() {
             <Grid item md={6} xs={12}>
               <Paper sx={{ p: 2, height: '560px' }}>
                 <h3 style={{ marginTop: 0 }}>Analisis Pemakaian per Cabang</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perbandingan beban pemakaian part antar cabang untuk seluruh unit dan kategori unit spesifik.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perbandingan beban pemakaian part antar cabang untuk seluruh unit dan kategori unit spesifik.</p>
                 <Paper variant="outlined" sx={{ p: 1.5, height: '480px' }}>
-                  <p style={{ margin: '8px 0 8px', fontSize: 12, color: '#64748b' }}>Insight: line menampilkan nilai pemakaian per unitcabang, dengan line frekuensi pada sumbu Y2.</p>
+                  <p style={{ margin: '8px 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: line menampilkan nilai pemakaian per unitcabang, dengan line frekuensi pada sumbu Y2.</p>
                   <div style={{ height: '390px' }}><CabangBubbleAllChart data={cabangBubbleAllData} average={cabangBubbleAllAverage} loading={cabangBubbleAllLoading} /></div>
-                  <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightCabangBubble(cabangBubbleAllData)}</p>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightCabangBubble(cabangBubbleAllData)}</p>
                 </Paper>
               </Paper>
             </Grid>
             <Grid item md={6} xs={12}>
               <Paper sx={{ p: 2, height: '560px' }}>
                 <h3 style={{ marginTop: 0 }}>Pemakaian kdunit null per Gudang</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: distribusi nilai pemakaian barang yang tidak memiliki kdunit pada setiap gudang.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: distribusi nilai pemakaian barang yang tidak memiliki kdunit pada setiap gudang.</p>
                 <div style={{ height: '470px' }}>
                   <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} average={gudangRadarNullKdunitAverage} loading={gudangRadarNullKdunitLoading} />
                 </div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightGudangNullKdunit(gudangRadarNullKdunitData)}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightGudangNullKdunit(gudangRadarNullKdunitData)}</p>
               </Paper>
             </Grid>
             <Grid item md={6} xs={12}>
               <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
                 <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori DT per Cabang</h4>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori DT.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori DT.</p>
                 <div style={{ height: '290px' }}><CabangDtBarChart data={cabangDtBarData} average={cabangDtBarAverage} loading={cabangDtBarLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightCabangBar(cabangDtBarData, 'DT')}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightCabangBar(cabangDtBarData, 'DT')}</p>
               </Paper>
             </Grid>
             <Grid item md={6} xs={12}>
               <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
                 <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori HE per Cabang</h4>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori HE.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori HE.</p>
                 <div style={{ height: '290px' }}><CabangHeBarChart data={cabangHeBarData} average={cabangHeBarAverage} loading={cabangHeBarLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569' }}>{insightCabangBar(cabangHeBarData, 'HE')}</p>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightCabangBar(cabangHeBarData, 'HE')}</p>
               </Paper>
             </Grid>
             <Grid item xs={12}>
@@ -506,12 +511,13 @@ export default function SparepartUsedScreen() {
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                   <h3 style={{ margin: 0 }}>Nilai Pemakaian Equipment per Unit Cabang</h3>
                   <div>
-                    <input
-                      list="unitcabang-options"
+                    <TextField
+                      size="small"
+                      inputProps={{ list: 'unitcabang-options' }}
                       value={selectedUnitCabang}
                       onChange={(e) => setSelectedUnitCabang(e.target.value)}
                       placeholder="Cari / pilih unitcabang"
-                      style={{ padding: '6px 8px', borderRadius: 4, border: '1px solid #ccc', background: 'white', minWidth: 240 }}
+                      sx={{ minWidth: 240 }}
                     />
                     <datalist id="unitcabang-options">
                       {unitCabangOptions.map((opt) => (
@@ -520,7 +526,7 @@ export default function SparepartUsedScreen() {
                     </datalist>
                   </div>
                 </Stack>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#64748b' }}>Insight: perbandingan nilai pemakaian barang per equipment (kdunit) pada unit cabang terpilih, dipisah kategori DT dan HE.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perbandingan nilai pemakaian barang per equipment (kdunit) pada unit cabang terpilih, dipisah kategori DT dan HE.</p>
                 <Grid container spacing={2}>
                   <Grid item md={6} xs={12}>
                     <Paper variant="outlined" sx={{ p: 1.5, height: '430px' }}>

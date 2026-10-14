@@ -982,7 +982,7 @@ export default function OrderPaymentCreatePage() {
                               overflow: "hidden",
                               border: "1px solid",
                               borderColor: "divider",
-                              bgcolor: "grey.100",
+                              bgcolor: "background.default",
                               "&:hover img": { transform: "scale(1.05)" },
                             }}
                           >

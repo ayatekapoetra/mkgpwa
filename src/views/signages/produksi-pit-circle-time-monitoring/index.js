@@ -8,6 +8,8 @@ import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Grid';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import moment from 'moment';
 import 'moment/locale/id';
 import { PresentionChart, TruckFast, Timer1, Calendar1, HierarchySquare3, Box1, Warning2 } from 'iconsax-react';
@@ -38,7 +40,7 @@ const PresentationMetric = ({ icon, title, value, accent = '#2563eb' }) => (
       p: { xs: 1.5, md: 2 },
       borderRadius: 3,
       height: '100%',
-      bgcolor: 'rgba(255,255,255,0.92)',
+      bgcolor: 'background.paper',
       borderColor: `${accent}44`
     }}
   >
@@ -164,7 +166,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
   };
 
   const renderFleetCard = (fleet) => (
-    <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'white' }}>
+    <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'background.paper' }}>
       <Stack spacing={1}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.25 }}>
           <Typography variant="h4" fontWeight={800}>{moment(fleet.date_ops).format('dddd, DD MMMM YYYY')}</Typography>
@@ -272,14 +274,14 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
             <CompactKpi label="Avg CT" value={`${fleet.avg_circle_time_minutes}m`} danger />
             {/* <CompactKpi label="Slide" value={`${currentSlideIndex + 1}/${sortedFleets.length}`} />
             <CompactKpi label="Next" value={formatCountdown(remainingSeconds)} /> */}
-            <Button size="small" variant="contained" color="inherit" onClick={handleToggleSlideshow} sx={{ color: '#111827', fontWeight: 900, borderRadius: 2, minWidth: { xs: 64, md: 72 }, height: 38, px: 1.25, flexShrink: 0 }}>
+            <Button size="small" variant="outlined" onClick={handleToggleSlideshow} sx={{ color: 'common.white', borderColor: 'common.white', fontWeight: 900, borderRadius: 2, minWidth: { xs: 64, md: 72 }, height: 38, px: 1.25, flexShrink: 0 }}>
               Stop
             </Button>
           </Stack>
         </Stack>
       </Paper>
 
-      <Paper sx={{ p: { xs: 1, md: 1.5 }, borderRadius: 3, flex: 1, minHeight: 0, bgcolor: 'white', boxShadow: 3, overflow: 'hidden' }}>
+      <Paper sx={{ p: { xs: 1, md: 1.5 }, borderRadius: 3, flex: 1, minHeight: 0, bgcolor: 'background.paper', boxShadow: 3, overflow: 'hidden' }}>
         <Stack spacing={0.75} sx={{ height: '100%', minHeight: 0 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
             <Typography fontSize={{ xs: 16, md: 20 }} fontWeight={900}>Performa Dumptruck per Fleet</Typography>
@@ -311,7 +313,7 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
   }
 
   return (
-    <Stack sx={{ minHeight: '100vh', overflow: 'hidden', bgcolor: isSlideshow ? '#e5e7eb' : 'transparent' }}>
+    <Stack sx={{ minHeight: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
       {!isSlideshow ? (
         <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
           <Stack>
@@ -324,33 +326,36 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
           </Stack>
 
           <Stack direction="row" spacing={1} alignItems="center">
-            <select
+            <TextField
+              select
+              size="small"
+              label="Area"
               value={selectedArea}
               onChange={(e) => setSelectedArea(e.target.value)}
-              style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600, minWidth: 140 }}
+              sx={{ minWidth: 140 }}
             >
-              <option value="">Semua Area</option>
+              <MenuItem value="">Semua Area</MenuItem>
               {uniqueAreas.map((a) => (
-                <option key={a.area} value={a.area}>{a.area}</option>
+                <MenuItem key={a.area} value={a.area}>{a.area}</MenuItem>
               ))}
-            </select>
+            </TextField>
 
-            <input type="date" value={dateRange.start} onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))} style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600 }} />
+            <TextField size="small" type="date" label="Dari" InputLabelProps={{ shrink: true }} value={dateRange.start} onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))} />
             <span>to</span>
-            <input type="date" value={dateRange.end} onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))} style={{ padding: '10px 12px', borderRadius: '12px', border: '1px solid #d4d4d8', background: '#f5f5f5', fontWeight: 600 }} />
-            <button onClick={handleApplyFilter} style={{ padding: '10px 18px', minWidth: 120, borderRadius: '12px', border: 'none', background: '#3862f0', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Apply</button>
-            <button
+            <TextField size="small" type="date" label="Sampai" InputLabelProps={{ shrink: true }} value={dateRange.end} onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))} />
+            <Button variant="contained" onClick={handleApplyFilter}>Apply</Button>
+            <Button
+              variant="outlined"
+              startIcon={<PresentionChart size={18} variant="Bold" />}
               onClick={handleToggleSlideshow}
-              style={{ padding: '10px 18px', minWidth: 100, borderRadius: '12px', border: '1px solid #111827', background: 'white', color: '#111827', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              <PresentionChart size={18} variant="Bold" />
               Start
-            </button>
+            </Button>
           </Stack>
         </Stack>
       ) : null}
 
-      <Paper sx={{ flex: 1, p: isSlideshow ? { xs: 1, md: 1.5 } : 2, overflow: isSlideshow ? 'hidden' : 'auto', backgroundColor: isSlideshow ? '#e5e7eb' : '#f5f5f5', borderRadius: 0 }}>
+      <Paper sx={{ flex: 1, p: isSlideshow ? { xs: 1, md: 1.5 } : 2, overflow: isSlideshow ? 'hidden' : 'auto', backgroundColor: 'background.default', borderRadius: 0 }}>
         {error ? (
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="h3" sx={{ mt: 0 }}>Gagal memuat monitoring produksi pit</Typography>
@@ -381,16 +386,16 @@ export default function ProduksiPitCircleTimeMonitoringScreen() {
             {sortedFleets[currentSlideIndex] ? renderFleetSlide(sortedFleets[currentSlideIndex]) : null}
             <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ py: 0.25, flexShrink: 0 }}>
               {sortedFleets.map((fleet, idx) => (
-                <button
+                <Box component="button"
                   key={fleet.fleet_key}
                   onClick={() => { setCurrentSlideIndex(idx); setRemainingSeconds(10); }}
-                  style={{
+                  sx={{
                     width: idx === currentSlideIndex ? 24 : 10,
                     height: 10,
-                    borderRadius: 999,
+                    borderRadius: '999px',
                     border: 'none',
-                    margin: 4,
-                    background: idx === currentSlideIndex ? '#2563eb' : '#cbd5e1',
+                    margin: '4px',
+                    bgcolor: idx === currentSlideIndex ? 'primary.main' : 'action.disabledBackground',
                     cursor: 'pointer',
                     transition: '0.2s ease'
                   }}
