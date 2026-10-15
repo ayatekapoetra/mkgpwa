@@ -48,6 +48,7 @@ import {
   alignBatchToOperation,
   emptyBatch,
   emptyHeader,
+  fuelEstimateError,
   groupItemsIntoBatches,
   moveBatchToSchedule,
   nextBatch,
@@ -178,6 +179,7 @@ function BatchCard({
   masters,
   availableEquipments = [],
   mixedUnits = false,
+  showFuelEstimate = false,
   equipmentLoading = false,
   header,
   errors,
@@ -511,7 +513,7 @@ function BatchCard({
                     <Grid
                       item
                       xs={12}
-                      md={batch.status === "breakdown" ? 6 : 9}
+                      md={batch.status === "breakdown" ? (showFuelEstimate ? 3 : 6) : (showFuelEstimate ? 6 : 9)}
                     >
                       <MasterSelect
                         label="Operator / Driver"
@@ -528,6 +530,21 @@ function BatchCard({
                         }
                       />
                     </Grid>
+                    {showFuelEstimate && (
+                      <Grid item xs={12} md={3}>
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Estimasi Fuel (L)"
+                          placeholder="0.00"
+                          value={assignment.fuel_est ?? ""}
+                          inputProps={{ min: 0, max: 99999999.99, step: "0.01", inputMode: "decimal" }}
+                          error={!!errors[`fuel_est_${equipmentId}`]}
+                          helperText={errors[`fuel_est_${equipmentId}`]}
+                          onChange={event => patchAssignment(equipmentId, { fuel_est: event.target.value })}
+                        />
+                      </Grid>
+                    )}
                     {batch.status === "breakdown" && (
                       <Grid item xs={12} md={3}>
                         <TextField
@@ -838,6 +855,11 @@ export default function DailyActivityForm({ headerId = null, mode = "actual" }) 
     setErrors((current) => {
       const batchErrors = { ...(current.batches[id] || {}) };
       Object.keys(patch).forEach((key) => delete batchErrors[key]);
+      if (patch.equipment_assignments) {
+        Object.entries(patch.equipment_assignments).forEach(([equipmentId, assignment]) => {
+          if (!fuelEstimateError(assignment.fuel_est)) delete batchErrors[`fuel_est_${equipmentId}`];
+        });
+      }
       return { ...current, batches: { ...current.batches, [id]: batchErrors } };
     });
   };
@@ -923,6 +945,10 @@ export default function DailyActivityForm({ headerId = null, mode = "actual" }) 
           "Terdapat unit yang tidak sesuai dengan mobilisasi terakhir Cabang dan Site";
       if (batch.status === "breakdown" && !batch.issue_breakdown.trim())
         value.issue_breakdown = "Issue breakdown wajib diisi";
+      batch.equipment_ids.forEach(equipmentId => {
+        const fuelError = fuelEstimateError(batch.equipment_assignments[equipmentId]?.fuel_est);
+        if (fuelError) value[`fuel_est_${equipmentId}`] = fuelError;
+      });
       batchErrors[batch.client_id] = value;
     });
     batchValues.forEach((batch, index) => {
@@ -1320,6 +1346,7 @@ export default function DailyActivityForm({ headerId = null, mode = "actual" }) 
               masters={masters}
               availableEquipments={placementOptions.equipments}
               mixedUnits={mixedUnits}
+              showFuelEstimate
               equipmentLoading={placementLoading}
               header={header}
               errors={errors.batches[batch.client_id] || {}}

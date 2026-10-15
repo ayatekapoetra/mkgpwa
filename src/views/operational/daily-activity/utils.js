@@ -131,6 +131,19 @@ export function moveBatchToSchedule(batch, date, previousShift, nextShift) {
 
 export const optionLabel = (option) => option?.nama || option?.name || option?.kode || option?.teks || '';
 
+export function fuelEstimateError(value) {
+  if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) return '';
+  const text = String(value).trim();
+  if (!['string', 'number'].includes(typeof value) || !/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/.test(text) || !Number.isFinite(Number(text)) || Number(text) > 99999999.99) {
+    return 'Isi angka 0–99999999.99, maksimal 2 angka desimal';
+  }
+  return '';
+}
+
+export const formatFuelEstimate = value => value === null || value === undefined || !Number.isFinite(Number(value))
+  ? '-'
+  : Number(value).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export const getHeaderId = (row) => row?.first_header_id || row?.header_id || row?.header?.id || row?.id;
 
 export function normalizeDetail(payload) {
@@ -169,6 +182,7 @@ export function groupItemsIntoBatches(items = []) {
       group.equipment_assignments[equipmentId] = {
         karyawan_id: String(item.karyawan_id || ''),
         karyawan_name: item.karyawan_name || '',
+        fuel_est: item.fuel_est === undefined ? '0.00' : item.fuel_est,
         hm_km_bd: item.hm_km_bd || item.hm_km_before_breakdown || ''
       };
     }
