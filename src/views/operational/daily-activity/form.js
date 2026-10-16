@@ -49,12 +49,14 @@ import {
   emptyBatch,
   emptyHeader,
   fuelEstimateError,
+  formatFuelEstimate,
   groupItemsIntoBatches,
   moveBatchToSchedule,
   nextBatch,
   normalizeDetail,
   optionLabel,
   serializeBatch,
+  sumFuelEstimates,
 } from "./utils";
 import { convertDailyActivityPlan, getLastDailyActivityPlan, saveDailyActivityPlan } from "api/daily-activity-plan";
 
@@ -773,6 +775,9 @@ export default function DailyActivityForm({ headerId = null, mode = "actual" }) 
     (total, batch) => total + batch.equipment_ids.length,
     0,
   );
+  const totalFuelCents = useMemo(() => sumFuelEstimates(batches), [batches]);
+  const budgetFuelCents = Math.round(Number(header.budget_fuel || 0) * 100);
+  const diffFuel = (budgetFuelCents - totalFuelCents) / 100;
   const totalErrors =
     Object.keys(errors.header).length +
     Object.values(errors.batches).reduce(
@@ -922,6 +927,8 @@ export default function DailyActivityForm({ headerId = null, mode = "actual" }) 
     requiredHeaderFields.forEach((key) => {
       if (!header[key]) headerErrors[key] = "Wajib diisi";
     });
+    const budgetError = fuelEstimateError(header.budget_fuel);
+    if (budgetError) headerErrors.budget_fuel = budgetError;
     const batchErrors = {};
     if (!batchValues.length)
       headerErrors.batches = "Minimal satu batch wajib ditambahkan";
@@ -1144,7 +1151,15 @@ export default function DailyActivityForm({ headerId = null, mode = "actual" }) 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Lengkapi seluruh field bertanda * untuk mulai menambahkan batch.
         </Typography>
-        <Grid container spacing={2}>
+          <Grid container spacing={2}>
+          {(planMode || realize) && <>
+            <Grid item xs={12} md={3}>
+              <TextField fullWidth type="number" label="Budget Fuel (L)" value={header.budget_fuel ?? "0.00"} onChange={(e) => updateHeader({ budget_fuel: e.target.value })} error={!!errors.header.budget_fuel} helperText={errors.header.budget_fuel} inputProps={{ min: 0, step: "0.01" }} disabled={realize} />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField fullWidth label="Sisa Fuel (L)" value={formatFuelEstimate(diffFuel)} InputProps={{ readOnly: true }} color={diffFuel < 0 ? "error" : "success"} />
+            </Grid>
+          </>}
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth

@@ -42,7 +42,8 @@ export const emptyHeader = () => ({
   cuaca: '',
   category_id: '',
   ctgunit: '',
-  notes: ''
+  notes: '',
+  budget_fuel: '0.00'
 });
 
 export const emptyBatch = (status, date = getLocalDate(), shift = '1') => ({
@@ -143,6 +144,8 @@ export function fuelEstimateError(value) {
 export const formatFuelEstimate = value => value === null || value === undefined || !Number.isFinite(Number(value))
   ? '-'
   : Number(value).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+export const sumFuelEstimates = batches => batches.reduce((total, batch) => total + batch.equipment_ids.reduce((sum, id) => sum + Math.round(Number(batch.equipment_assignments[id]?.fuel_est || 0) * 100), 0), 0);
 
 export const getHeaderId = (row) => row?.first_header_id || row?.header_id || row?.header?.id || row?.id;
 
