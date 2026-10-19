@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NextLink from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
@@ -32,7 +32,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Gallery, Receipt2, AddCircle, Trash } from "iconsax-react";
+import { Gallery, Receipt2, AddCircle, Trash, Printer } from "iconsax-react";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
@@ -42,6 +42,7 @@ import {
   postOrderPayment,
   removeOrderPayment,
   deleteOrderPaymentItem,
+  fetchPrintDefinition,
   useOrderPaymentAccess,
   useOrderPaymentDetail,
 } from "api/order-payments";
@@ -59,6 +60,22 @@ const money = (v) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(Number(v) || 0);
+
+const HURUF = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+function pembilang(n) {
+  n = Math.abs(Math.round(n));
+  if (n < 12) return ` ${HURUF[n]}`;
+  if (n < 20) return `${pembilang(n - 10)} Belas`;
+  if (n < 100) return `${pembilang(Math.floor(n / 10))} Puluh${pembilang(n % 10)}`;
+  if (n < 200) return ` Seratus${pembilang(n - 100)}`;
+  if (n < 1000) return `${pembilang(Math.floor(n / 100))} Ratus${pembilang(n % 100)}`;
+  if (n < 2000) return ` Seribu${pembilang(n - 1000)}`;
+  if (n < 1000000) return `${pembilang(Math.floor(n / 1000))} Ribu${pembilang(n % 1000)}`;
+  if (n < 1000000000) return `${pembilang(Math.floor(n / 1000000))} Juta${pembilang(n % 1000000)}`;
+  if (n < 1000000000000) return `${pembilang(Math.floor(n / 1000000000))} Miliar${pembilang(n % 1000000000)}`;
+  return '';
+}
+function terbilangText(n) { return `${pembilang(n).trim()} Rupiah`; }
 
 const dateId = (v) => {
   if (!v) return "—";
@@ -232,6 +249,9 @@ export default function OrderPaymentDetailPage() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [removeItemTarget, setRemoveItemTarget] = useState(null);
   const [removingItem, setRemovingItem] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [automaticPrint, setAutomaticPrint] = useState(false);
+  const automaticPrintId = useRef(null);
   const mutationLock = useRef(false);
   const busy = posting || removing || attachmentBusy;
 
@@ -351,6 +371,207 @@ export default function OrderPaymentDetailPage() {
     }
   };
 
+  const handlePrint = useCallback(async ({ replaceCurrentWindow = false } = {}) => {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+
+      // Fetch logo + all attachments as base64 from backend
+      const printData = await fetchPrintDefinition(id);
+
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const W = 210, H = 297, M = 15;
+      let y = M;
+
+      // === 1. Title ===
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pembayaran', M, y);
+      y += 12;
+
+      // === 2. Header — 3 columns: left info, middle business, right logo ===
+      const leftX = M;
+      const midX = M + 70;
+      const logoX = W - M - 25;
+      const logoW = 25;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Tanggal Bayar', leftX, y);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(dateId(row.trx_date), leftX, y + 5);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Kode Pembayaran', leftX, y + 12);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(row.kdbayar || '-', leftX, y + 17);
+      doc.setFont('helvetica', 'bold');
+      doc.text(row.no_po ? `PO : ${row.no_po}` : `Pengajuan : ${row.no_pd || '-'}`, leftX, y + 22);
+
+      // Middle: match the legacy business identity block (name, address, city, NPWP).
+      const business = printData?.bisnis || { name: row.bisnis_nama };
+      const businessWidth = logoX - midX - 5;
+      let businessY = y;
+      const writeBusinessLine = (value, fontSize, fontStyle) => {
+        if (!value || !String(value).trim()) return;
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', fontStyle);
+        const lines = doc.splitTextToSize(String(value).trim(), businessWidth);
+        doc.text(lines, midX, businessY, { lineHeightFactor: 1.2 });
+        businessY += lines.length * (fontSize / doc.internal.scaleFactor) * 1.2 + 1;
+      };
+      writeBusinessLine(business.name || row.bisnis_nama || '-', 11, 'bold');
+      writeBusinessLine(business.alamat, 9, 'normal');
+      writeBusinessLine(business.kota, 9, 'normal');
+      writeBusinessLine(business.npwp, 9, 'normal');
+
+      // Right: logo
+      if (printData?.logo) {
+        try {
+          doc.addImage(printData.logo, 'JPEG', logoX, y - 5, logoW, logoW);
+        } catch (_) { /* skip logo */ }
+      }
+
+      // Divider line
+      y = Math.max(y + 28, businessY + 3);
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.line(M, y, W - M, y);
+      y += 5;
+
+      // === 3. Items table ===
+      const items = row.items || [];
+      const grandTotal = items.reduce((s, it) => s + (Number(it.subtotal) || 0), 0);
+
+      const body = items.map((it, i) => [
+        String(i + 1),
+        `${it.debit_kode || '-'}\n${it.debit_name || '-'}`,
+        `${it.faktur_kode || it.description || '-'}\n${it.barang_nama || it.description || '-'}`,
+        `${row.pemasok_kode || '-'}\n${row.pemasok_nama || '-'}`,
+        String(it.qty),
+        money(it.harga_stn),
+        money(it.subtotal),
+      ]);
+      body.push([
+        { content: 'Grand Total', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold', fillColor: [221, 221, 221], fontSize: 9 } },
+        { content: money(grandTotal), colSpan: 2, styles: { halign: 'right', fontStyle: 'bold', fillColor: [221, 221, 221], fontSize: 9 } },
+      ]);
+
+      autoTable(doc, {
+        startY: y,
+        head: [['No', 'Account Code', 'Descriptions', 'Pemasok', 'Qty', 'Harga', 'Total']],
+        body,
+        theme: 'grid',
+        headStyles: { fillColor: [238, 238, 255], textColor: 0, fontSize: 8, fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { fontSize: 7, lineColor: [200, 200, 200], lineWidth: 0.1 },
+        alternateRowStyles: { fillColor: [234, 244, 244] },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 'auto' },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 12, halign: 'right' },
+          5: { cellWidth: 20, halign: 'right' },
+          6: { cellWidth: 20, halign: 'right' },
+        },
+        margin: { left: M, right: M },
+      });
+      y = doc.lastAutoTable.finalY + 10;
+
+      // === 4. Terbilang (left) + Signatures (right) ===
+      const terbilangW = 80;
+      const sigX = M + terbilangW + 10;
+      const sigW = W - M - sigX;
+
+      // Terbilang
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Terbilang :', M, y);
+      doc.setFont('helvetica', 'italic');
+      const terbilangLines = doc.splitTextToSize(terbilangText(grandTotal), terbilangW);
+      doc.text(terbilangLines, M, y + 5);
+
+      // Signature table — compact autotable matching legacy layout
+      const sig = printData?.signatures || {};
+      const sigRows = [
+        { label: 'Diajukan Oleh :\nPart Manager', ...sig.diajukan },
+        { label: 'Diketahui Oleh :\nKeuangan', ...sig.diketahui },
+        { label: 'Disetujui Oleh :\nOperational Manager', ...sig.disetujui },
+        { label: 'Dibayar oleh :\nFinance/Kasir', ...sig.dibayar },
+      ];
+
+      autoTable(doc, {
+        startY: y,
+        body: sigRows.map((s) => [
+          { content: s.label, styles: { fontSize: 8 } },
+          { content: `${s.name || '-'}\n${s.date || ''}${s.time ? `\n${s.time}` : ''}`, styles: { fontSize: 7.5, fontStyle: 'bold', lineHeight: 1.15 } },
+        ]),
+        theme: 'grid',
+        styles: { cellPadding: 2, minCellHeight: 12, valign: 'top', overflow: 'linebreak', lineColor: [180, 180, 180], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 38, textColor: [60, 60, 60] },
+          1: { cellWidth: 'auto', textColor: [20, 20, 20] },
+        },
+        margin: { left: sigX, right: M },
+      });
+
+      // === 5. Attachment pages ===
+      const allAttachments = [
+        ...(printData?.paymentAttachments || []),
+        ...(printData?.poAttachments || []),
+        ...(printData?.pdAttachments || []),
+      ];
+
+      if (allAttachments.length) {
+        doc.addPage();
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Lampiran Pembayaran ${row.kdbayar || ''}`, M, M);
+        let imgY = M + 10;
+        for (const att of allAttachments) {
+          if (!att.base64) continue;
+          try {
+            const format = (att.datatype || 'jpeg').toUpperCase().replace('JPG', 'JPEG').replace('PNG', 'PNG').replace('GIF', 'GIF');
+            const imgW = W - M * 2;
+            doc.addImage(att.base64, format, M, imgY, imgW, 120);
+            imgY += 130;
+            if (imgY > H - 30) { doc.addPage(); imgY = M; }
+          } catch (_) { /* skip failed image */ }
+        }
+      }
+
+      // === 6. Footer page numbers ===
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Page ${i} of ${pageCount}`, W - 30, H - 8, { align: 'right' });
+      }
+
+      doc.autoPrint();
+      const pdfUrl = doc.output('bloburl');
+      if (replaceCurrentWindow) window.location.replace(pdfUrl);
+      else window.open(pdfUrl, '_blank');
+    } catch (err) {
+      openNotification({ open: true, title: "Gagal Print", message: err?.message || "Gagal mencetak dokumen pembayaran", alert: { color: "error" } });
+    } finally {
+      setPrinting(false);
+    }
+  }, [printing, row, id]);
+
+  useEffect(() => {
+    if (loading || error || !row || row.status !== 'paid' || automaticPrintId.current === id) return;
+    if (new URLSearchParams(window.location.search).get('print') !== '1') return;
+    automaticPrintId.current = id;
+    setAutomaticPrint(true);
+    void handlePrint({ replaceCurrentWindow: true });
+  }, [loading, error, row, id, handlePrint]);
+
   const handlePost = async () => {
     if (mutationLock.current) return;
     if (!walletId) {
@@ -435,10 +656,13 @@ export default function OrderPaymentDetailPage() {
     }
   };
 
-  if (loading) {
+  if (loading || (automaticPrint && printing)) {
     return (
       <Box py={8} display="flex" justifyContent="center">
-        <CircularProgress />
+        <Stack spacing={2} alignItems="center">
+          <CircularProgress />
+          {automaticPrint ? <Typography color="text.secondary">Menyiapkan dokumen pembayaran…</Typography> : null}
+        </Stack>
       </Box>
     );
   }
@@ -481,10 +705,21 @@ export default function OrderPaymentDetailPage() {
       <MainCard
         title={<BtnBack href="/orders-payments" />}
         secondary={
-          <Chip
-            label={row.status_label || row.status}
-            color={row.status === "paid" ? "success" : "warning"}
-          />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={printing ? <CircularProgress size={16} /> : <Printer size={18} />}
+              onClick={handlePrint}
+              disabled={printing || busy}
+            >
+              {printing ? "Menyiapkan..." : "Print"}
+            </Button>
+            <Chip
+              label={row.status_label || row.status}
+              color={row.status === "paid" ? "success" : "warning"}
+            />
+          </Stack>
         }
         content
       >

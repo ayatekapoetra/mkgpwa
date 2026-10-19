@@ -6,9 +6,12 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import { Printer } from "iconsax-react";
 import moment from "moment";
 import "moment/locale/id";
 
@@ -97,7 +100,24 @@ export default function OrderPaymentList({ rows = [] }) {
             return (
               <tr key={row.id}>
                 <td>
-                  <Stack direction="row" spacing={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {isPaid ? (
+                      <Tooltip title="Cetak pembayaran">
+                        <IconButton
+                          component={Link}
+                          href={`/orders-payments/${row.id}?print=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          prefetch={false}
+                          size="small"
+                          color="primary"
+                          aria-label={`Cetak pembayaran ${row.kdbayar || `#${row.id}`}`}
+                          sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, width: 32, height: 32 }}
+                        >
+                          <Printer size={18} />
+                        </IconButton>
+                      </Tooltip>
+                    ) : null}
                     <Button
                       size="small"
                       variant={isPaid ? "outlined" : "contained"}

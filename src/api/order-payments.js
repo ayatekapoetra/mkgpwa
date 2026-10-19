@@ -16,6 +16,7 @@ export const endpoints = {
   debitCoas: (id) => `/scm/order-payments/${id}/debit-coas`,
   items: (id) => `/scm/order-payments/${id}/items`,
   item: (id, itemId) => `/scm/order-payments/${id}/items/${itemId}`,
+  print: (id) => `/scm/order-payments/${id}/print`,
   attachments: (id) => `/scm/order-payments/${id}/attachments`,
   attachment: (id, fileId) => `/scm/order-payments/${id}/attachments/${fileId}`,
 };
@@ -290,6 +291,13 @@ export async function addOrderPaymentItem(id, body) {
 
 export async function deleteOrderPaymentItem(id, itemId) {
   const res = await axiosServices.delete(endpoints.item(id, itemId), { skipOfflineQueue: true, skipRetry: true });
+  const payload = res?.data;
+  if (payload?.diagnostic?.error) throw new Error(payload.diagnostic.error);
+  return payload?.rows;
+}
+
+export async function fetchPrintDefinition(id) {
+  const res = await axiosServices.get(endpoints.print(id), { skipOfflineQueue: true, skipRetry: true, timeout: 30000 });
   const payload = res?.data;
   if (payload?.diagnostic?.error) throw new Error(payload.diagnostic.error);
   return payload?.rows;
