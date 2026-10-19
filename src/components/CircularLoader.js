@@ -1,3 +1,5 @@
+'use client';
+
 // MATERIAL UI
 import Stack from '@mui/material/Stack';
 
