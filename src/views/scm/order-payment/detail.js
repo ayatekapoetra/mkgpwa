@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -31,7 +32,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Gallery, Receipt2 } from "iconsax-react";
+import { Gallery, Receipt2, AddCircle, Trash } from "iconsax-react";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
@@ -40,6 +41,7 @@ import {
   fetchWallets,
   postOrderPayment,
   removeOrderPayment,
+  deleteOrderPaymentItem,
   useOrderPaymentAccess,
   useOrderPaymentDetail,
 } from "api/order-payments";
@@ -49,6 +51,7 @@ import MainCard from "components/MainCard";
 import BtnBack from "components/BtnBack";
 import { APP_DEFAULT_PATH } from "config";
 import PaymentProofManager from './PaymentProofManager';
+import AddItemDialog from './AddItemDialog';
 import { paymentProofStorageKey, applyPaymentAttachmentChange } from './payment-proofs';
 
 const money = (v) =>
@@ -226,6 +229,9 @@ export default function OrderPaymentDetailPage() {
   const [removing, setRemoving] = useState(false);
   const [rollbackOpen, setRollbackOpen] = useState(false);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [removeItemTarget, setRemoveItemTarget] = useState(null);
+  const [removingItem, setRemovingItem] = useState(false);
   const mutationLock = useRef(false);
   const busy = posting || removing || attachmentBusy;
 
@@ -272,6 +278,19 @@ export default function OrderPaymentDetailPage() {
     { revalidate: false },
   );
 
+  const existingInvoices = useMemo(() => {
+    const seen = new Set();
+    return (row?.items || [])
+      .filter((it) => it.trx_beli)
+      .filter((it) => {
+        const key = String(it.trx_beli);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((it) => ({ trx_beli: it.trx_beli, faktur_kode: it.faktur_kode }));
+  }, [row?.items]);
+
   const previousAttachments = useMemo(() => {
     const seen = new Set();
     return (row?.items || []).flatMap((item) => item.attachments || []).filter((attachment) => {
@@ -314,6 +333,23 @@ export default function OrderPaymentDetailPage() {
     () => wallets.find((w) => String(w.id) === String(walletId)),
     [wallets, walletId],
   );
+
+  const handleRemoveItem = async () => {
+    if (mutationLock.current || !removeItemTarget) return;
+    mutationLock.current = true;
+    setRemovingItem(true);
+    try {
+      await deleteOrderPaymentItem(id, removeItemTarget.id);
+      setRemoveItemTarget(null);
+      openNotification({ open: true, title: "Berhasil", message: "Item pembayaran berhasil dihapus", alert: { color: "success" } });
+      await refresh();
+    } catch (err) {
+      openNotification({ open: true, title: "Gagal", message: err?.message || "Gagal menghapus item pembayaran", alert: { color: "error" } });
+    } finally {
+      mutationLock.current = false;
+      setRemovingItem(false);
+    }
+  };
 
   const handlePost = async () => {
     if (mutationLock.current) return;
@@ -426,6 +462,8 @@ export default function OrderPaymentDetailPage() {
       : row.no_pd || "—";
   const canPost = permissions.can_post && pending;
   const canRemove = permissions.can_delete && pending;
+  const canAddItem = (permissions.can_update || permissions.can_create) && pending;
+  const canRemoveItem = (permissions.can_update || permissions.can_delete) && pending;
 
   return (
     <>
@@ -515,7 +553,14 @@ export default function OrderPaymentDetailPage() {
                 <Typography variant="subtitle1" fontWeight={800}>Alokasi Faktur</Typography>
                 <Typography variant="caption" color="text.secondary">Rincian nilai yang dialokasikan ke setiap faktur</Typography>
               </Box>
-              <Chip size="small" label={`${(row.items || []).length} Items`} variant="outlined" />
+              <Stack direction="row" spacing={1} alignItems="center">
+                {canAddItem ? (
+                  <Button size="small" variant="contained" startIcon={<AddCircle size={18} />} onClick={() => setAddItemOpen(true)} disabled={busy}>
+                    Add Items
+                  </Button>
+                ) : null}
+                <Chip size="small" label={`${(row.items || []).length} Items`} variant="outlined" />
+              </Stack>
             </Stack>
             <Stack spacing={1.5}>
               {(row.items || []).map((it) => (
@@ -529,7 +574,14 @@ export default function OrderPaymentDetailPage() {
                           <Typography variant="caption" color="text.secondary" noWrap display="block">{it.barang_nama || it.description || it.barang_kode || "Alokasi pembayaran"}</Typography>
                         </Box>
                       </Stack>
-                      <Typography variant="subtitle1" fontWeight={800} color="primary.main">Rp {money(it.subtotal)}</Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                        <Typography variant="subtitle1" fontWeight={800} color="primary.main">Rp {money(it.subtotal)}</Typography>
+                        {canRemoveItem ? (
+                          <IconButton size="small" color="error" disabled={busy} aria-label="Hapus item" onClick={() => setRemoveItemTarget(it)}>
+                            <Trash size={16} />
+                          </IconButton>
+                        ) : null}
+                      </Stack>
                     </Stack>
                   </Box>
                   <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
@@ -784,7 +836,54 @@ export default function OrderPaymentDetailPage() {
                {removing ? "Memproses..." : "Ya, Rollback Pembayaran"}
              </Button>
            </DialogActions>
-         </Dialog>
+          </Dialog>
+
+          <AddItemDialog
+            open={addItemOpen}
+            onClose={() => setAddItemOpen(false)}
+            paymentId={id}
+            existingInvoices={existingInvoices}
+            onAdded={() => refresh()}
+          />
+
+          <Dialog
+            open={Boolean(removeItemTarget)}
+            onClose={() => removingItem ? null : setRemoveItemTarget(null)}
+            fullWidth
+            maxWidth="xs"
+            PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
+          >
+            <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25, pb: 1 }}>
+              <Box sx={{ width: 40, height: 40, borderRadius: "50%", display: "grid", placeItems: "center", bgcolor: "error.lighter", color: "error.main" }}>
+                <WarningAmberRoundedIcon />
+              </Box>
+              <Typography variant="h6">Hapus item pembayaran?</Typography>
+            </DialogTitle>
+            <DialogContent>
+              <Alert severity="warning" sx={{ mb: 1.5, borderRadius: 2 }}>
+                Total pembayaran akan dihitung ulang setelah item dihapus.
+              </Alert>
+              {removeItemTarget ? (
+                <Stack spacing={0.5} sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 2 }}>
+                  <Typography variant="body2" fontWeight={600}>{removeItemTarget.faktur_kode || `Faktur #${removeItemTarget.trx_beli}` || "Item tambahan"}</Typography>
+                  <Typography variant="caption" color="text.secondary">{removeItemTarget.barang_nama || removeItemTarget.description || removeItemTarget.barang_kode || "Alokasi pembayaran"}</Typography>
+                  <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ mt: 0.5 }}>Rp {money(removeItemTarget.subtotal)}</Typography>
+                </Stack>
+              ) : null}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+              <Button variant="text" onClick={() => setRemoveItemTarget(null)} disabled={removingItem}>Batal</Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleRemoveItem}
+                disabled={removingItem}
+                startIcon={removingItem ? <CircularProgress size={16} color="inherit" /> : <Trash size={18} />}
+              >
+                {removingItem ? "Menghapus..." : "Ya, Hapus Item"}
+              </Button>
+            </DialogActions>
+          </Dialog>
 
       </MainCard>
     </>
