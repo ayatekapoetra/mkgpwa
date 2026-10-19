@@ -6,6 +6,7 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Button from '@mui/material/Button';
+import Skeleton from '@mui/material/Skeleton';
 import Link from 'next/link';
 import { alpha, useTheme } from '@mui/material/styles';
 
@@ -14,6 +15,7 @@ export default function SectionCard({
   subtitle,
   icon,
   loading = false,
+  error = null,
   actionHref,
   actionLabel = 'Detail',
   children,
@@ -83,7 +85,18 @@ export default function SectionCard({
           ) : null}
         </Stack>
       </Box>
-      <Box sx={{ p: { xs: 1.75, md: 2.25 } }}>{children}</Box>
+      <Box sx={{ p: { xs: 1.75, md: 2.25 } }}>
+        {loading ? (
+          <Stack spacing={2} aria-label={`Memuat ${title}`}>
+            <Skeleton width="40%" height={32} />
+            <Skeleton variant="rounded" height={210} />
+          </Stack>
+        ) : error ? (
+          <Typography role="alert" color="text.secondary" sx={{ py: 7, textAlign: 'center' }}>
+            Data {title} tidak tersedia. Periksa akses atau coba Refresh.
+          </Typography>
+        ) : children}
+      </Box>
     </Paper>
   );
 }

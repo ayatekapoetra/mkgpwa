@@ -13,23 +13,17 @@ import { PresentionChart } from 'iconsax-react';
 
 import {
   endpoints,
-  useGetPartUsedTopFrequencyHe,
-  useGetPartUsedTopFrequencyDt,
-  useGetPartUsedTopValueHe,
-  useGetPartUsedTopValueDt,
+  useGetPartUsedEquipmentCategory,
   useGetPartUsedDailyTrend,
-  useGetPartUsedByUnit,
-  useGetPartUsedByCategory,
   useGetPartUsedGudangTopValue,
   useGetPartUsedGudangTopFrequency,
   useGetPartUsedGudangDailyTrend,
   useGetPartUsedGudangHeatmapCategory,
   useGetPartUsedGudangTopSparepart,
   useGetPartUsedCabangBubbleAll,
-  useGetPartUsedCabangDtBar,
-  useGetPartUsedCabangHeBar,
   useGetPartUsedGudangRadarNullKdunit
 } from 'api/part-used-charts';
+import { EQUIPMENT_CATEGORIES, buildPartUsedChartUrl, getCategorySlideDefinitions } from 'api/part-used-chart-config';
 
 import TopFrequencyChart from './TopFrequencyChart';
 import TopValueChart from './TopValueChart';
@@ -42,8 +36,7 @@ import GudangDailyTrendChart from './GudangDailyTrendChart';
 import GudangHeatmapCategoryChart from './GudangHeatmapCategoryChart';
 import GudangTopSparepartChart from './GudangTopSparepartChart';
 import CabangBubbleAllChart from './CabangBubbleAllChart';
-import CabangDtBarChart from './CabangDtBarChart';
-import CabangHeBarChart from './CabangHeBarChart';
+import CabangBarChart from './CabangBarChart';
 import GudangRadarNullKdunitChart from './GudangRadarNullKdunitChart';
 import EquipmentValueByCabangChart from './EquipmentValueByCabangChart';
 
@@ -129,6 +122,14 @@ const insightGudangNullKdunit = (rows) => {
   return `Gudang tertinggi untuk kdunit null: ${top.kdgudang} (Rp ${toNum(top.total_value).toLocaleString('id-ID')}).`;
 };
 
+const categoryChartComponents = {
+  topFrequency: TopFrequencyChart,
+  topValue: TopValueChart,
+  byUnit: ByUnitChart,
+  byCategory: ByCategoryChart,
+  cabang: CabangBarChart
+};
+
 export default function SparepartUsedScreen() {
   const { palette } = useTheme();
   const [clock, setClock] = useState(moment().format('HH:mm:ss'));
@@ -148,34 +149,26 @@ export default function SparepartUsedScreen() {
     [dateRange.end, dateRange.start]
   );
 
-  const paramsDt = useMemo(() => ({ ...params, ctgunit: 'DT' }), [params]);
-  const paramsHe = useMemo(() => ({ ...params, ctgunit: 'HE' }), [params]);
-  const paramsCabang = useMemo(() => (selectedUnitCabang ? { ...params, unitcabang: selectedUnitCabang } : params), [params, selectedUnitCabang]);
-  const paramsDtCabang = useMemo(() => ({ ...paramsCabang, ctgunit: 'DT' }), [paramsCabang]);
-  const paramsHeCabang = useMemo(() => ({ ...paramsCabang, ctgunit: 'HE' }), [paramsCabang]);
+  const heCharts = useGetPartUsedEquipmentCategory('HE', params, selectedUnitCabang);
+  const dtCharts = useGetPartUsedEquipmentCategory('DT', params, selectedUnitCabang);
+  const mdCharts = useGetPartUsedEquipmentCategory('MD', params, selectedUnitCabang);
+  const adCharts = useGetPartUsedEquipmentCategory('AD', params, selectedUnitCabang);
+  const categoryCharts = useMemo(() => [heCharts, dtCharts, mdCharts, adCharts].map((charts) => ({
+    ...charts,
+    color: EQUIPMENT_CATEGORIES.find((category) => category.code === charts.code).color
+  })), [heCharts, dtCharts, mdCharts, adCharts]);
 
-  const { data: topFrequencyHeData, average: topFrequencyHeAverage, loading: topFrequencyHeLoading, error: topFrequencyHeError } = useGetPartUsedTopFrequencyHe(params);
-  const { data: topFrequencyDtData, average: topFrequencyDtAverage, loading: topFrequencyDtLoading, error: topFrequencyDtError } = useGetPartUsedTopFrequencyDt(params);
-  const { data: topValueHeData, average: topValueHeAverage, loading: topValueHeLoading, error: topValueHeError } = useGetPartUsedTopValueHe(params);
-  const { data: topValueDtData, average: topValueDtAverage, loading: topValueDtLoading, error: topValueDtError } = useGetPartUsedTopValueDt(params);
   const { data: dailyTrendData, average: dailyTrendAverage, loading: dailyTrendLoading, error: dailyTrendError } = useGetPartUsedDailyTrend(params);
-  const { data: byUnitDtData, average: byUnitDtAverage, loading: byUnitDtLoading, error: byUnitDtError } = useGetPartUsedByUnit(paramsDt);
-  const { data: byUnitHeData, average: byUnitHeAverage, loading: byUnitHeLoading, error: byUnitHeError } = useGetPartUsedByUnit(paramsHe);
-  const { data: byCategoryDtData, average: byCategoryDtAverage, loading: byCategoryDtLoading, error: byCategoryDtError } = useGetPartUsedByCategory(paramsDt);
-  const { data: byCategoryHeData, average: byCategoryHeAverage, loading: byCategoryHeLoading, error: byCategoryHeError } = useGetPartUsedByCategory(paramsHe);
-  const { data: byUnitDtCabangData, loading: byUnitDtCabangLoading, error: byUnitDtCabangError } = useGetPartUsedByUnit(paramsDtCabang);
-  const { data: byUnitHeCabangData, loading: byUnitHeCabangLoading, error: byUnitHeCabangError } = useGetPartUsedByUnit(paramsHeCabang);
   const { data: gudangTopValueData, average: gudangTopValueAverage, loading: gudangTopValueLoading, error: gudangTopValueError } = useGetPartUsedGudangTopValue(params);
   const { data: gudangTopFrequencyData, average: gudangTopFrequencyAverage, loading: gudangTopFrequencyLoading, error: gudangTopFrequencyError } = useGetPartUsedGudangTopFrequency(params);
   const { data: gudangDailyTrendData, average: gudangDailyTrendAverage, loading: gudangDailyTrendLoading, error: gudangDailyTrendError } = useGetPartUsedGudangDailyTrend(params);
   const { data: gudangHeatmapCategoryData, average: gudangHeatmapCategoryAverage, loading: gudangHeatmapCategoryLoading, error: gudangHeatmapCategoryError } = useGetPartUsedGudangHeatmapCategory(params);
   const { data: gudangTopSparepartData, average: gudangTopSparepartAverage, loading: gudangTopSparepartLoading, error: gudangTopSparepartError } = useGetPartUsedGudangTopSparepart(params);
   const { data: cabangBubbleAllData, average: cabangBubbleAllAverage, loading: cabangBubbleAllLoading, error: cabangBubbleAllError } = useGetPartUsedCabangBubbleAll(params);
-  const { data: cabangDtBarData, average: cabangDtBarAverage, loading: cabangDtBarLoading, error: cabangDtBarError } = useGetPartUsedCabangDtBar(params);
-  const { data: cabangHeBarData, average: cabangHeBarAverage, loading: cabangHeBarLoading, error: cabangHeBarError } = useGetPartUsedCabangHeBar(params);
   const { data: gudangRadarNullKdunitData, average: gudangRadarNullKdunitAverage, loading: gudangRadarNullKdunitLoading, error: gudangRadarNullKdunitError } = useGetPartUsedGudangRadarNullKdunit(params);
 
-  const hasApiError = Boolean(topFrequencyHeError || topFrequencyDtError || topValueHeError || topValueDtError || dailyTrendError || byUnitDtError || byUnitHeError || byCategoryDtError || byCategoryHeError || byUnitDtCabangError || byUnitHeCabangError || gudangTopValueError || gudangTopFrequencyError || gudangDailyTrendError || gudangHeatmapCategoryError || gudangTopSparepartError || cabangBubbleAllError || cabangDtBarError || cabangHeBarError || gudangRadarNullKdunitError);
+  const hasCategoryError = categoryCharts.some((charts) => ['topFrequency', 'topValue', 'byUnit', 'byCategory', 'cabang', 'equipmentByCabang'].some((field) => charts[field].error));
+  const hasApiError = Boolean(hasCategoryError || dailyTrendError || gudangTopValueError || gudangTopFrequencyError || gudangDailyTrendError || gudangHeatmapCategoryError || gudangTopSparepartError || cabangBubbleAllError || gudangRadarNullKdunitError);
 
   const unitCabangOptions = useMemo(() => {
     const set = new Set((cabangBubbleAllData || []).map((r) => r.unitcabang).filter(Boolean));
@@ -190,110 +183,48 @@ export default function SparepartUsedScreen() {
     return () => clearTimeout(timeout);
   }, [clock]);
 
-  const slides = useMemo(
-    () => [
-      { key: 'daily-trend', title: 'Tren Harian Pemakaian', content: <DailyTrendChart data={dailyTrendData} average={dailyTrendAverage} loading={dailyTrendLoading} /> },
-      { key: 'top-frequency-he', title: 'Top 20 Frekuensi (HE)', content: <TopFrequencyChart data={topFrequencyHeData} average={topFrequencyHeAverage} loading={topFrequencyHeLoading} /> },
-      { key: 'top-frequency-dt', title: 'Top 20 Frekuensi (DT)', content: <TopFrequencyChart data={topFrequencyDtData} average={topFrequencyDtAverage} loading={topFrequencyDtLoading} /> },
-      { key: 'top-value-he', title: 'Top 20 Nilai Pemakaian (HE)', content: <TopValueChart data={topValueHeData} average={topValueHeAverage} loading={topValueHeLoading} /> },
-      { key: 'top-value-dt', title: 'Top 20 Nilai Pemakaian (DT)', content: <TopValueChart data={topValueDtData} average={topValueDtAverage} loading={topValueDtLoading} /> },
-      { key: 'by-unit-dt', title: 'Pemakaian per Unit Kategori DT', content: <ByUnitChart data={byUnitDtData} average={byUnitDtAverage} loading={byUnitDtLoading} /> },
-      { key: 'by-unit-he', title: 'Pemakaian per Unit Kategori HE', content: <ByUnitChart data={byUnitHeData} average={byUnitHeAverage} loading={byUnitHeLoading} /> },
-      { key: 'by-category-dt', title: 'Pemakaian per Kategori Barang DT', content: <ByCategoryChart data={byCategoryDtData} average={byCategoryDtAverage} loading={byCategoryDtLoading} /> },
-      { key: 'by-category-he', title: 'Pemakaian per Kategori Barang HE', content: <ByCategoryChart data={byCategoryHeData} average={byCategoryHeAverage} loading={byCategoryHeLoading} /> },
-      { key: 'gudang-top-value', title: 'Top Gudang by Nilai', content: <GudangTopValueChart data={gudangTopValueData} average={gudangTopValueAverage} loading={gudangTopValueLoading} /> },
-      { key: 'gudang-top-frequency', title: 'Top Gudang by Frekuensi', content: <GudangTopFrequencyChart data={gudangTopFrequencyData} average={gudangTopFrequencyAverage} loading={gudangTopFrequencyLoading} /> },
-      { key: 'gudang-daily-trend', title: 'Tren Harian per Gudang', content: <GudangDailyTrendChart data={gudangDailyTrendData} average={gudangDailyTrendAverage} loading={gudangDailyTrendLoading} /> },
-      { key: 'gudang-heatmap-category', title: 'Heatmap Gudang vs Kategori', content: <GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} average={gudangHeatmapCategoryAverage} loading={gudangHeatmapCategoryLoading} /> },
-      { key: 'gudang-top-sparepart', title: 'Top Sparepart per Gudang', content: <GudangTopSparepartChart data={gudangTopSparepartData} average={gudangTopSparepartAverage} loading={gudangTopSparepartLoading} /> },
-      { key: 'cabang-bubble-all', title: 'Pemakaian Semua Unit per Cabang', content: <CabangBubbleAllChart data={cabangBubbleAllData} average={cabangBubbleAllAverage} loading={cabangBubbleAllLoading} /> },
-      { key: 'cabang-dt-bar', title: 'Pemakaian Unit DT per Cabang', content: <CabangDtBarChart data={cabangDtBarData} average={cabangDtBarAverage} loading={cabangDtBarLoading} /> },
-      { key: 'cabang-he-bar', title: 'Pemakaian Unit HE per Cabang', content: <CabangHeBarChart data={cabangHeBarData} average={cabangHeBarAverage} loading={cabangHeBarLoading} /> },
-      { key: 'gudang-radar-null-kdunit', title: 'Radar kdunit null per Gudang', content: <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} average={gudangRadarNullKdunitAverage} loading={gudangRadarNullKdunitLoading} /> }
-    ],
-    [
-      byCategoryDtData,
-      byCategoryDtLoading,
-      byCategoryHeData,
-      byCategoryHeLoading,
-      byUnitDtData,
-      byUnitDtLoading,
-      byUnitHeData,
-      byUnitHeLoading,
-      dailyTrendData,
-      dailyTrendLoading,
-      topFrequencyDtData,
-      topFrequencyDtLoading,
-      topFrequencyHeData,
-      topFrequencyHeLoading,
-      topValueDtData,
-      topValueDtLoading,
-      topValueHeData,
-      topValueHeLoading,
-      gudangTopValueData,
-      gudangTopValueLoading,
-      gudangTopFrequencyData,
-      gudangTopFrequencyLoading,
-      gudangDailyTrendData,
-      gudangDailyTrendLoading,
-      gudangHeatmapCategoryData,
-      gudangHeatmapCategoryLoading,
-      gudangTopSparepartData,
-      gudangTopSparepartLoading,
-      cabangBubbleAllData,
-      cabangBubbleAllLoading,
-      cabangDtBarData,
-      cabangDtBarLoading,
-      cabangHeBarData,
-      cabangHeBarLoading,
-      gudangRadarNullKdunitData,
-      gudangRadarNullKdunitLoading
-    ]
-  );
+  const categorySlides = (field) => categoryCharts.flatMap((charts) => getCategorySlideDefinitions(charts)
+    .filter((slide) => slide.field === field)
+    .map((slide) => {
+      const Chart = categoryChartComponents[field];
+      return { ...slide, content: <Chart {...charts[field]} category={charts.code} color={charts.color} /> };
+    }));
+  const slides = [
+    { key: 'daily-trend', title: 'Tren Harian Pemakaian', url: buildPartUsedChartUrl(endpoints.dailyTrend, params), content: <DailyTrendChart data={dailyTrendData} average={dailyTrendAverage} loading={dailyTrendLoading} /> },
+    ...categorySlides('topFrequency'),
+    ...categorySlides('topValue'),
+    ...categorySlides('byUnit'),
+    ...categorySlides('byCategory'),
+    { key: 'gudang-top-value', title: 'Top Gudang by Nilai', url: buildPartUsedChartUrl(endpoints.gudangTopValue, params), content: <GudangTopValueChart data={gudangTopValueData} average={gudangTopValueAverage} loading={gudangTopValueLoading} /> },
+    { key: 'gudang-top-frequency', title: 'Top Gudang by Frekuensi', url: buildPartUsedChartUrl(endpoints.gudangTopFrequency, params), content: <GudangTopFrequencyChart data={gudangTopFrequencyData} average={gudangTopFrequencyAverage} loading={gudangTopFrequencyLoading} /> },
+    { key: 'gudang-daily-trend', title: 'Tren Harian per Gudang', url: buildPartUsedChartUrl(endpoints.gudangDailyTrend, params), content: <GudangDailyTrendChart data={gudangDailyTrendData} average={gudangDailyTrendAverage} loading={gudangDailyTrendLoading} /> },
+    { key: 'gudang-heatmap-category', title: 'Heatmap Gudang vs Kategori', url: buildPartUsedChartUrl(endpoints.gudangHeatmapCategory, params), content: <GudangHeatmapCategoryChart data={gudangHeatmapCategoryData} average={gudangHeatmapCategoryAverage} loading={gudangHeatmapCategoryLoading} /> },
+    { key: 'gudang-top-sparepart', title: 'Top Sparepart per Gudang', url: buildPartUsedChartUrl(endpoints.gudangTopSparepart, params), content: <GudangTopSparepartChart data={gudangTopSparepartData} average={gudangTopSparepartAverage} loading={gudangTopSparepartLoading} /> },
+    { key: 'cabang-bubble-all', title: 'Pemakaian Semua Unit per Cabang', url: buildPartUsedChartUrl(endpoints.cabangBubbleAll, params), content: <CabangBubbleAllChart data={cabangBubbleAllData} average={cabangBubbleAllAverage} loading={cabangBubbleAllLoading} /> },
+    ...categorySlides('cabang'),
+    { key: 'gudang-radar-null-kdunit', title: 'Radar kdunit null per Gudang', url: buildPartUsedChartUrl(endpoints.gudangRadarNullKdunit, params), content: <GudangRadarNullKdunitChart data={gudangRadarNullKdunitData} average={gudangRadarNullKdunitAverage} loading={gudangRadarNullKdunitLoading} /> }
+  ];
+  const activeSlideUrl = slides[currentSlideIndex]?.url;
 
   useEffect(() => {
     if (!isSlideshow) return undefined;
-    setRemainingSeconds(30);
-    const interval = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          const nextIndex = (currentSlideIndex + 1) % slides.length;
-          refreshSlideData(slides[nextIndex]?.key);
-          setCurrentSlideIndex(nextIndex);
-          return 30;
-        }
-        return prev - 1;
-      });
+    const timeout = setTimeout(() => {
+      if (remainingSeconds <= 1) {
+        setCurrentSlideIndex((index) => (index + 1) % slides.length);
+        setRemainingSeconds(30);
+      } else {
+        setRemainingSeconds(remainingSeconds - 1);
+      }
     }, 1000);
-    return () => clearInterval(interval);
-  }, [currentSlideIndex, isSlideshow, slides]);
+    return () => clearTimeout(timeout);
+  }, [isSlideshow, remainingSeconds, slides.length]);
+
+  useEffect(() => {
+    if (isSlideshow && activeSlideUrl) mutate(activeSlideUrl);
+  }, [isSlideshow, activeSlideUrl]);
 
   const handleDateChange = (field, value) => setDateRange((prev) => ({ ...prev, [field]: value }));
   const handleApplyFilter = () => {};
-
-  const buildUrl = (endpoint, p) => `${endpoint}?${new URLSearchParams(p).toString()}`;
-
-  const refreshSlideData = (slideKey) => {
-    const baseParams = { start_date: dateRange.start, end_date: dateRange.end, limit: 20, mode: 'raw' };
-    if (slideKey === 'daily-trend') mutate(buildUrl(endpoints.dailyTrend, baseParams));
-    if (slideKey === 'top-frequency-he') mutate(buildUrl(endpoints.topFrequencyHe, baseParams));
-    if (slideKey === 'top-frequency-dt') mutate(buildUrl(endpoints.topFrequencyDt, baseParams));
-    if (slideKey === 'top-value-he') mutate(buildUrl(endpoints.topValueHe, baseParams));
-    if (slideKey === 'top-value-dt') mutate(buildUrl(endpoints.topValueDt, baseParams));
-    if (slideKey === 'by-unit-dt') mutate(buildUrl(endpoints.byUnit, { ...baseParams, ctgunit: 'DT' }));
-    if (slideKey === 'by-unit-he') mutate(buildUrl(endpoints.byUnit, { ...baseParams, ctgunit: 'HE' }));
-    if (slideKey === 'by-category-dt') mutate(buildUrl(endpoints.byCategory, { ...baseParams, ctgunit: 'DT' }));
-    if (slideKey === 'by-category-he') mutate(buildUrl(endpoints.byCategory, { ...baseParams, ctgunit: 'HE' }));
-    if (slideKey === 'gudang-top-value') mutate(buildUrl(endpoints.gudangTopValue, baseParams));
-    if (slideKey === 'gudang-top-frequency') mutate(buildUrl(endpoints.gudangTopFrequency, baseParams));
-    if (slideKey === 'gudang-daily-trend') mutate(buildUrl(endpoints.gudangDailyTrend, baseParams));
-    if (slideKey === 'gudang-heatmap-category') mutate(buildUrl(endpoints.gudangHeatmapCategory, baseParams));
-    if (slideKey === 'gudang-top-sparepart') mutate(buildUrl(endpoints.gudangTopSparepart, baseParams));
-    if (slideKey === 'cabang-bubble-all') mutate(buildUrl(endpoints.cabangBubbleAll, baseParams));
-    if (slideKey === 'cabang-dt-bar') mutate(buildUrl(endpoints.cabangDtBar, baseParams));
-    if (slideKey === 'cabang-he-bar') mutate(buildUrl(endpoints.cabangHeBar, baseParams));
-    if (slideKey === 'gudang-radar-null-kdunit') mutate(buildUrl(endpoints.gudangRadarNullKdunit, baseParams));
-  };
 
   return (
     <Stack sx={{ height: '100vh', overflow: 'hidden' }}>
@@ -347,80 +278,58 @@ export default function SparepartUsedScreen() {
             </Grid>
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
-                <h3 style={{ marginTop: 0 }}>Top 20 Frekuensi Pemakaian (HE / DT)</h3>
+                <h3 style={{ marginTop: 0 }}>Top 20 Frekuensi Pemakaian (HE / DT / MD / AD)</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: part yang paling sering digunakan untuk melihat kebutuhan replenishment rutin.</p>
                 <Grid container spacing={2}>
-                  <Grid item md={6} xs={12}>
-                    <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
-                      <h4 style={{ marginTop: 0, marginBottom: 8 }}>HE</h4>
-                      <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyHeData} average={topFrequencyHeAverage} loading={topFrequencyHeLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopFrequency(topFrequencyHeData)}</p>
-                    </Paper>
-                  </Grid>
-                  <Grid item md={6} xs={12}>
-                    <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
-                      <h4 style={{ marginTop: 0, marginBottom: 8 }}>DT</h4>
-                      <div style={{ height: '430px' }}><TopFrequencyChart data={topFrequencyDtData} average={topFrequencyDtAverage} loading={topFrequencyDtLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopFrequency(topFrequencyDtData)}</p>
-                    </Paper>
-                  </Grid>
+                  {categoryCharts.map((charts) => (
+                    <Grid item md={6} xs={12} key={charts.code}>
+                      <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
+                        <h4 style={{ marginTop: 0, marginBottom: 8 }}>{charts.code}</h4>
+                        <div style={{ height: '430px' }}><TopFrequencyChart {...charts.topFrequency} /></div>
+                        <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopFrequency(charts.topFrequency.data)}</p>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
               </Paper>
             </Grid>
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
-                <h3 style={{ marginTop: 0 }}>Top 20 Nilai Rupiah Pemakaian (HE / DT)</h3>
+                <h3 style={{ marginTop: 0 }}>Top 20 Nilai Rupiah Pemakaian (HE / DT / MD / AD)</h3>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: part dengan dampak biaya terbesar untuk prioritas kontrol cost.</p>
                 <Grid container spacing={2}>
-                  <Grid item md={6} xs={12}>
-                    <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
-                      <h4 style={{ marginTop: 0, marginBottom: 8 }}>HE</h4>
-                      <div style={{ height: '430px' }}><TopValueChart data={topValueHeData} average={topValueHeAverage} loading={topValueHeLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopValue(topValueHeData)}</p>
-                    </Paper>
-                  </Grid>
-                  <Grid item md={6} xs={12}>
-                    <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
-                      <h4 style={{ marginTop: 0, marginBottom: 8 }}>DT</h4>
-                      <div style={{ height: '430px' }}><TopValueChart data={topValueDtData} average={topValueDtAverage} loading={topValueDtLoading} /></div>
-                      <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopValue(topValueDtData)}</p>
-                    </Paper>
-                  </Grid>
+                  {categoryCharts.map((charts) => (
+                    <Grid item md={6} xs={12} key={charts.code}>
+                      <Paper variant="outlined" sx={{ p: 1.5, height: '520px' }}>
+                        <h4 style={{ marginTop: 0, marginBottom: 8 }}>{charts.code}</h4>
+                        <div style={{ height: '430px' }}><TopValueChart {...charts.topValue} /></div>
+                        <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightTopValue(charts.topValue.data)}</p>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
               </Paper>
             </Grid>
-            <Grid item md={6} xs={12}>
-              <Paper sx={{ p: 2, height: '360px' }}>
-                <h3>Pemakaian per Unit Kategori DT</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: unit DT dengan konsumsi part tertinggi untuk deteksi beban maintenance armada DT.</p>
-                <div style={{ height: '270px' }}><ByUnitChart data={byUnitDtData} average={byUnitDtAverage} loading={byUnitDtLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByUnit(byUnitDtData)}</p>
-              </Paper>
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <Paper sx={{ p: 2, height: '360px' }}>
-                <h3>Pemakaian per Unit Kategori HE</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: unit HE dengan konsumsi part tertinggi untuk deteksi beban maintenance alat berat.</p>
-                <div style={{ height: '270px' }}><ByUnitChart data={byUnitHeData} average={byUnitHeAverage} loading={byUnitHeLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByUnit(byUnitHeData)}</p>
-              </Paper>
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <Paper sx={{ p: 2, height: '420px' }}>
-                <h3>Pemakaian per Kategori Barang DT</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori DT.</p>
-                <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryDtData} average={byCategoryDtAverage} loading={byCategoryDtLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByCategory(byCategoryDtData)}</p>
-              </Paper>
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <Paper sx={{ p: 2, height: '420px' }}>
-                <h3>Pemakaian per Kategori Barang HE</h3>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori HE.</p>
-                <div style={{ height: '330px' }}><ByCategoryChart data={byCategoryHeData} average={byCategoryHeAverage} loading={byCategoryHeLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByCategory(byCategoryHeData)}</p>
-              </Paper>
-            </Grid>
+            {categoryCharts.map((charts) => (
+              <Grid item md={6} xs={12} key={`by-unit-${charts.code}`}>
+                <Paper sx={{ p: 2, height: '360px' }}>
+                  <h3>Pemakaian per Unit Kategori {charts.code}</h3>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: unit {charts.code} dengan konsumsi part tertinggi untuk deteksi beban maintenance.</p>
+                  <div style={{ height: '270px' }}><ByUnitChart {...charts.byUnit} /></div>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByUnit(charts.byUnit.data)}</p>
+                </Paper>
+              </Grid>
+            ))}
+            {categoryCharts.map((charts) => (
+              <Grid item md={6} xs={12} key={`by-category-${charts.code}`}>
+                <Paper sx={{ p: 2, height: '420px' }}>
+                  <h3>Pemakaian per Kategori Barang {charts.code}</h3>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: kategori part dominan yang menyerap volume dan biaya pada unit kategori {charts.code}.</p>
+                  <div style={{ height: '330px' }}><ByCategoryChart {...charts.byCategory} /></div>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightByCategory(charts.byCategory.data)}</p>
+                </Paper>
+              </Grid>
+            ))}
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
                 <h3 style={{ marginTop: 0 }}>Analisis Pemakaian per Gudang</h3>
@@ -490,22 +399,16 @@ export default function SparepartUsedScreen() {
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightGudangNullKdunit(gudangRadarNullKdunitData)}</p>
               </Paper>
             </Grid>
-            <Grid item md={6} xs={12}>
-              <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
-                <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori DT per Cabang</h4>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori DT.</p>
-                <div style={{ height: '290px' }}><CabangDtBarChart data={cabangDtBarData} average={cabangDtBarAverage} loading={cabangDtBarLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightCabangBar(cabangDtBarData, 'DT')}</p>
-              </Paper>
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
-                <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori HE per Cabang</h4>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori HE.</p>
-                <div style={{ height: '290px' }}><CabangHeBarChart data={cabangHeBarData} average={cabangHeBarAverage} loading={cabangHeBarLoading} /></div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightCabangBar(cabangHeBarData, 'HE')}</p>
-              </Paper>
-            </Grid>
+            {categoryCharts.map((charts) => (
+              <Grid item md={6} xs={12} key={`cabang-${charts.code}`}>
+                <Paper variant="outlined" sx={{ p: 1.5, height: '380px' }}>
+                  <h4 style={{ marginTop: 0, marginBottom: 8 }}>Pemakaian Unit Kategori {charts.code} per Cabang</h4>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: peringkat cabang dengan biaya pemakaian tertinggi khusus unit kategori {charts.code}.</p>
+                  <div style={{ height: '290px' }}><CabangBarChart {...charts.cabang} category={charts.code} color={charts.color} /></div>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: palette.text.secondary }}>{insightCabangBar(charts.cabang.data, charts.code)}</p>
+                </Paper>
+              </Grid>
+            ))}
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
@@ -526,20 +429,16 @@ export default function SparepartUsedScreen() {
                     </datalist>
                   </div>
                 </Stack>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perbandingan nilai pemakaian barang per equipment (kdunit) pada unit cabang terpilih, dipisah kategori DT dan HE.</p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: palette.text.secondary }}>Insight: perbandingan nilai pemakaian barang per equipment (kdunit) pada unit cabang terpilih, dipisah kategori HE, DT, MD, dan AD.</p>
                 <Grid container spacing={2}>
-                  <Grid item md={6} xs={12}>
-                    <Paper variant="outlined" sx={{ p: 1.5, height: '430px' }}>
-                      <h4 style={{ marginTop: 0, marginBottom: 8 }}>Kategori DT (X: kdunit, Y: Nilai Juta)</h4>
-                      <div style={{ height: '350px' }}><EquipmentValueByCabangChart data={byUnitDtCabangData} loading={byUnitDtCabangLoading} color="rgba(37,99,235,0.85)" /></div>
-                    </Paper>
-                  </Grid>
-                  <Grid item md={6} xs={12}>
-                    <Paper variant="outlined" sx={{ p: 1.5, height: '430px' }}>
-                      <h4 style={{ marginTop: 0, marginBottom: 8 }}>Kategori HE (X: kdunit, Y: Nilai Juta)</h4>
-                      <div style={{ height: '350px' }}><EquipmentValueByCabangChart data={byUnitHeCabangData} loading={byUnitHeCabangLoading} color="rgba(5,150,105,0.85)" /></div>
-                    </Paper>
-                  </Grid>
+                  {categoryCharts.map((charts) => (
+                    <Grid item md={6} xs={12} key={charts.code}>
+                      <Paper variant="outlined" sx={{ p: 1.5, height: '430px' }}>
+                        <h4 style={{ marginTop: 0, marginBottom: 8 }}>Kategori {charts.code} (X: kdunit, Y: Nilai Juta)</h4>
+                        <div style={{ height: '350px' }}><EquipmentValueByCabangChart data={charts.equipmentByCabang.data} loading={charts.equipmentByCabang.loading} color={charts.color} /></div>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
               </Paper>
             </Grid>

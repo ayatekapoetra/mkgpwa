@@ -62,7 +62,7 @@ export const normalizePolarBreakdown = (polarData) => {
         ? polarData.rows
         : [];
 
-  const statusKeys = ['WT', 'WP', 'WS', 'WV', 'WTT', 'IP'];
+  const statusKeys = ['WT', 'WP', 'WS', 'WV', 'WTT', 'IP', 'DONE'];
   let total = 0;
   const byCategory = list.map((item) => {
     const t = toNumber(item.total);
@@ -70,6 +70,7 @@ export const normalizePolarBreakdown = (polarData) => {
     return {
       name: item.ctgequipment || item.category || item.name || 'N/A',
       total: t,
+      active: Math.max(t - toNumber(item.status_count?.DONE), 0),
       status_count: item.status_count || {}
     };
   });
@@ -79,12 +80,40 @@ export const normalizePolarBreakdown = (polarData) => {
     return acc;
   }, {});
 
-  // open-ish statuses: not closed. Use WS as closed-ish if present, rest open
-  const closed = toNumber(statusTotals.WS);
+  // WS = Wait Service; only DONE represents a completed breakdown.
+  const closed = toNumber(statusTotals.DONE);
   const open = Math.max(total - closed, 0);
 
   return { list: byCategory, total, statusTotals, open, closed };
 };
+
+export function normalizeHighCostParts(sparepart = {}) {
+  return [['HE', sparepart.partTopHe], ['DT', sparepart.partTopDt], ['MD', sparepart.partTopMd], ['AD', sparepart.partTopAd]]
+    .flatMap(([category, resource]) => pickArray(resource?.data).map((row) => ({
+      id: `${category}-${row.idbarang ?? row.kdbarang ?? row.nmbarang}`,
+      name: row.nmbarang || row.kdbarang || '-',
+      category,
+      value: toNumber(row.total_value),
+      qty: toNumber(row.total_qtyused)
+    })))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+}
+
+export function normalizePrAging(data) {
+  const labels = { '< 3 hari': '0–2 hari', '1 minggu': '3–7 hari', '2 minggu': '8–14 hari', '3 minggu': '≥ 15 hari' };
+  return pickArray(data).map((row) => ({ label: labels[row.label] || row.label || '-', count: toNumber(row.count) }));
+}
+
+export function normalizeMonthlyBreakdown(payload) {
+  const data = payload?.rows || payload || {};
+  return {
+    categories: pickArray(data.categories),
+    series: pickArray(data.series)
+      .filter((series) => ['Total Breakdown', 'Done'].includes(series.name))
+      .map((series) => ({ name: series.name, data: pickArray(series.data).map(toNumber) }))
+  };
+}
 
 export const normalizeApprovalRate = (data) => {
   const rows = pickArray(data);

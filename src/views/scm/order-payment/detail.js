@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import NextLink from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
-import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import {
   Alert,
@@ -21,7 +20,6 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
-  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -33,7 +31,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Gallery, Receipt2, Trash } from "iconsax-react";
+import { Gallery, Receipt2 } from "iconsax-react";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
@@ -50,6 +48,8 @@ import Breadcrumbs from "components/@extended/Breadcrumbs";
 import MainCard from "components/MainCard";
 import BtnBack from "components/BtnBack";
 import { APP_DEFAULT_PATH } from "config";
+import PaymentProofManager from './PaymentProofManager';
+import { paymentProofStorageKey, applyPaymentAttachmentChange } from './payment-proofs';
 
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
@@ -88,8 +88,6 @@ const isImageAttachment = (attachment) => {
   const url = attachmentUrl(attachment).toLowerCase();
   return type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|heic)(\?|$)/i.test(url);
 };
-
-const paymentProofStorageKey = (id) => `order-payment-proofs:${id}`;
 
 function Field({ label, value, inverse = false, children }) {
   return (
@@ -206,104 +204,6 @@ function AttachmentGallery({ attachments = [], empty = "Belum ada dokumen", acce
   );
 }
 
-function LocalProofGallery({ proofs = [], onRemove }) {
-  if (!proofs.length) {
-    return <Typography variant="caption" color="text.secondary">Belum ada upload baru</Typography>;
-  }
-  return (
-    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-      {proofs.map((proof, index) => (
-        <Box key={`${proof.dataUrl}-${index}`} sx={{ position: "relative", width: 86, height: 64 }}>
-          <Tooltip title={`${proof.name || "Bukti pembayaran"} · Buka gambar`}>
-            <Box component="a" href={proof.dataUrl} target="_blank" rel="noopener noreferrer" sx={{ display: "block", width: "100%", height: "100%", borderRadius: 1.5, overflow: "hidden", border: "1px solid", borderColor: "primary.main" }}>
-              <Box component="img" src={proof.dataUrl} alt={proof.name || "Bukti pembayaran"} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </Box>
-          </Tooltip>
-          {onRemove && (
-            <Tooltip title="Hapus gambar">
-              <IconButton
-                size="small"
-                aria-label="Hapus gambar"
-                onClick={() => onRemove(proof)}
-                sx={{
-                  position: "absolute",
-                  top: 2,
-                  right: 2,
-                  p: 0.25,
-                  color: "#fff",
-                  bgcolor: "rgba(211, 47, 47, 0.85)",
-                  borderRadius: 1,
-                  "&:hover": { bgcolor: "error.main" },
-                }}
-              >
-                <Trash size={14} />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      ))}
-    </Stack>
-  );
-}
-
-function DocumentDropzone({ onFiles, disabled = false }) {
-  const [dragging, setDragging] = useState(false);
-
-  // Cegah browser membuka/menavigasi ke file ketika file di-drop di area mana pun
-  // di halaman (perilaku default browser). Tanpa ini, drag & drop dapat membuka
-  // page baru dan file tidak masuk ke dropzone.
-  useEffect(() => {
-    const preventWindowDrop = (event) => event.preventDefault();
-    window.addEventListener("dragover", preventWindowDrop);
-    window.addEventListener("drop", preventWindowDrop);
-    return () => {
-      window.removeEventListener("dragover", preventWindowDrop);
-      window.removeEventListener("drop", preventWindowDrop);
-    };
-  }, []);
-
-  const acceptFiles = (files) => {
-    if (!disabled && files?.length) onFiles(files);
-    setDragging(false);
-  };
-
-  return (
-    <Box
-      component="label"
-      onDragEnter={(event) => { event.preventDefault(); if (!disabled) setDragging(true); }}
-      onDragOver={(event) => event.preventDefault()}
-      onDragLeave={(event) => { event.preventDefault(); setDragging(false); }}
-      onDrop={(event) => { event.preventDefault(); acceptFiles(event.dataTransfer.files); }}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1.25,
-        minHeight: 60,
-        px: 1.5,
-        border: "1px dashed",
-        borderColor: dragging ? "primary.main" : "primary.light",
-        borderRadius: 2,
-        color: disabled ? "text.disabled" : "primary.main",
-        bgcolor: dragging ? "primary.100" : "primary.lighter",
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "all .2s ease",
-        "&:hover": disabled ? {} : { bgcolor: "primary.100", borderColor: "primary.main" },
-      }}
-    >
-      <CloudUploadOutlinedIcon sx={{ fontSize: 30 }} />
-      <Box>
-        <Typography variant="body2" fontWeight={800}>
-          {dragging && "Lepaskan file di sini"}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Tarik file ke sini atau klik untuk upload · maks. 5 MB/file
-        </Typography>
-      </Box>
-      <input hidden type="file" accept="image/*" multiple disabled={disabled} onChange={(event) => { acceptFiles(event.target.files); event.target.value = ""; }} />
-    </Box>
-  );
-}
-
 export default function OrderPaymentDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -325,7 +225,9 @@ export default function OrderPaymentDetailPage() {
   const [posting, setPosting] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [rollbackOpen, setRollbackOpen] = useState(false);
-  const [localProofs, setLocalProofs] = useState({});
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const mutationLock = useRef(false);
+  const busy = posting || removing || attachmentBusy;
 
   const pending = row?.status === "pending";
 
@@ -358,96 +260,17 @@ export default function OrderPaymentDetailPage() {
   }, [row?.bisnis_id, walletType]);
 
   useEffect(() => {
-    if (!row) return;
-    setNarasi(row.narasi || "");
-    if (row.trx_date) {
+    setNarasi(row?.narasi || "");
+    if (row?.trx_date) {
       const d = new Date(row.trx_date);
       if (!Number.isNaN(d.getTime())) setTrxDate(d.toISOString().slice(0, 10));
     }
-  }, [row]);
+  }, [id, row?.narasi, row?.trx_date]);
 
-  useEffect(() => {
-    if (!id || typeof window === "undefined") return;
-    try {
-      const stored = window.localStorage.getItem(paymentProofStorageKey(id));
-      setLocalProofs(stored ? JSON.parse(stored) : {});
-    } catch (_) {
-      setLocalProofs({});
-    }
-  }, [id]);
-
-  const handleProofUpload = (files) => {
-    const selectedFiles = Array.from(files || []);
-    const validFiles = selectedFiles.filter((file) => {
-      if (!file.type.startsWith("image/")) {
-        openNotification({
-          open: true,
-          title: "Format tidak didukung",
-          message: `${file.name} bukan file gambar.`,
-          alert: { color: "warning" },
-        });
-        return false;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        openNotification({
-          open: true,
-          title: "Ukuran file terlalu besar",
-          message: `${file.name} melebihi batas 5 MB.`,
-          alert: { color: "warning" },
-        });
-        return false;
-      }
-      return true;
-    });
-    if (!validFiles.length) return;
-
-    Promise.all(validFiles.map((file) => new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(file);
-    }))).then((results) => {
-      const uploaded = results.filter(Boolean);
-      if (!uploaded.length) return;
-      const nextProofs = {
-        ...localProofs,
-        __header: [...(Array.isArray(localProofs.__header) ? localProofs.__header : []), ...uploaded],
-      };
-      setLocalProofs(nextProofs);
-      if (id && typeof window !== "undefined") {
-        try {
-          window.localStorage.setItem(paymentProofStorageKey(id), JSON.stringify(nextProofs));
-        } catch (_) {
-          // The preview remains available even if browser storage is full.
-        }
-      }
-    });
-  };
-
-  const handleProofRemove = (proof) => {
-    if (!proof?.dataUrl) return;
-    const nextProofs = {
-      ...localProofs,
-      __header: (Array.isArray(localProofs.__header) ? localProofs.__header : []).filter(
-        (item) => item?.dataUrl !== proof.dataUrl,
-      ),
-    };
-    setLocalProofs(nextProofs);
-    if (id && typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(paymentProofStorageKey(id), JSON.stringify(nextProofs));
-      } catch (_) {
-        // Ignore storage errors; the in-memory state is already updated.
-      }
-    }
-  };
-
-  const uploadedProofs = useMemo(() => [
-    ...(Array.isArray(localProofs.__header) ? localProofs.__header : []),
-    ...Object.entries(localProofs)
-      .filter(([key, value]) => key !== "__header" && value?.dataUrl)
-      .map(([, value]) => value),
-  ], [localProofs]);
+  const updatePaymentAttachments = (change) => refresh(
+    (current) => applyPaymentAttachmentChange(current, row, change),
+    { revalidate: false },
+  );
 
   const previousAttachments = useMemo(() => {
     const seen = new Set();
@@ -493,6 +316,7 @@ export default function OrderPaymentDetailPage() {
   );
 
   const handlePost = async () => {
+    if (mutationLock.current) return;
     if (!walletId) {
       openNotification({
         open: true,
@@ -518,6 +342,7 @@ export default function OrderPaymentDetailPage() {
     ) {
       return;
     }
+    mutationLock.current = true;
     setPosting(true);
     try {
       const body = { trx_date: trxDate, narasi };
@@ -539,11 +364,14 @@ export default function OrderPaymentDetailPage() {
         alert: { color: "error" },
       });
     } finally {
+      mutationLock.current = false;
       setPosting(false);
     }
   };
 
   const handleRollback = async () => {
+    if (mutationLock.current) return;
+    mutationLock.current = true;
     setRemoving(true);
     try {
       await removeOrderPayment(id);
@@ -566,6 +394,7 @@ export default function OrderPaymentDetailPage() {
         alert: { color: "error" },
       });
     } finally {
+      mutationLock.current = false;
       setRemoving(false);
     }
   };
@@ -586,9 +415,6 @@ export default function OrderPaymentDetailPage() {
     );
   }
 
-  const paymentAttachments = Array.isArray(row.payment_attachments)
-    ? row.payment_attachments
-    : [];
   const sourceIsPo = Boolean(row.no_po || row.reff);
   const sourceLabel = sourceIsPo ? "Purchase Order" : "Pengajuan Dana";
   const sourceValue = sourceIsPo
@@ -672,19 +498,12 @@ export default function OrderPaymentDetailPage() {
             </Stack>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
-              <Grid item xs={6} md={4}>
+              <Grid item xs={12} sm={6} md={4}>
                 <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Berkas dari proses sebelumnya</Typography>
                 <AttachmentGallery attachments={previousAttachments} empty="Tidak ada berkas sebelumnya" />
               </Grid>
-              <Grid item xs={6} md={4}>
-                <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Bukti pembayaran dari sistem</Typography>
-                <AttachmentGallery attachments={paymentAttachments} empty="Belum ada bukti dari sistem" accent="success.main" />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Upload file baru</Typography>
-                <DocumentDropzone onFiles={handleProofUpload} disabled={!pending} />
-                <Box sx={{ mt: 1 }}><LocalProofGallery proofs={uploadedProofs} onRemove={handleProofRemove} /></Box>
-              </Grid>
+              <PaymentProofManager key={id} paymentId={id} attachments={row.payment_attachments || []} permissions={permissions}
+                busy={busy} mutationLock={mutationLock} onBusyChange={setAttachmentBusy} onChanged={updatePaymentAttachments} />
             </Grid>
           </CardContent>
         </Card>
@@ -863,7 +682,7 @@ export default function OrderPaymentDetailPage() {
              {canPost ? (
                <Button
                  variant="contained"
-                 disabled={posting || !walletId || !selectedWallet?.coa_id}
+                  disabled={busy || !walletId || !selectedWallet?.coa_id}
                  onClick={handlePost}
                >
                  {posting ? "Memposting…" : "Posting Bayar"}
@@ -881,7 +700,7 @@ export default function OrderPaymentDetailPage() {
                <Button
                variant="outlined"
                color="error"
-               disabled={removing}
+                disabled={busy}
                 onClick={() => setRollbackOpen(true)}
                >
                  {removing ? "Rollback..." : "Rollback Pembayaran"}
@@ -951,7 +770,7 @@ export default function OrderPaymentDetailPage() {
              <Button
                variant="text"
                onClick={() => setRollbackOpen(false)}
-               disabled={removing}
+                disabled={busy}
              >
                Batal
              </Button>
@@ -959,7 +778,7 @@ export default function OrderPaymentDetailPage() {
                variant="contained"
                color="error"
                onClick={handleRollback}
-               disabled={removing}
+                disabled={busy}
                startIcon={removing ? <CircularProgress size={16} color="inherit" /> : <RestoreOutlinedIcon />}
              >
                {removing ? "Memproses..." : "Ya, Rollback Pembayaran"}

@@ -13,7 +13,7 @@ import { Hierarchy3, Refresh, Calendar, Building } from 'iconsax-react';
 import moment from 'moment';
 import { useCabang } from 'api/cabang';
 
-export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh }) {
+export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh, refreshing = false }) {
   const theme = useTheme();
   const { data: cabangList = [], dataLoading } = useCabang();
 
@@ -25,8 +25,8 @@ export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh
       sx={{
         p: { xs: 2, md: 2.75 },
         borderRadius: 2.5,
-        borderColor: alpha(theme.palette.primary.main, 0.2),
-        background: `linear-gradient(125deg, ${alpha(theme.palette.primary.main, 0.16)} 0%, ${alpha(theme.palette.info.main, 0.08)} 40%, ${theme.palette.background.paper} 78%)`
+        borderColor: theme.palette.divider,
+        bgcolor: 'background.paper'
       }}
     >
       <Stack
@@ -50,11 +50,11 @@ export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh
             <Hierarchy3 size={28} variant="Bold" />
           </Box>
           <Box>
-            <Typography variant="h3" fontWeight={800}>
+            <Typography variant="h3" fontWeight={700} sx={{ fontSize: { xs: 22, md: 26 } }}>
               Operations Command Center
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Ringkasan real-time produksi, maintenance, SDM, purchasing & finance
+              Ringkasan produksi, maintenance, purchasing & pembayaran
             </Typography>
             <Stack direction="row" spacing={0.75} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
               <Chip size="small" color="success" variant="light" label="Live data" />
@@ -83,12 +83,7 @@ export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh
             value={filters.date_ops}
             onChange={(e) => {
               const date_ops = e.target.value;
-              setFilters((prev) => ({
-                ...prev,
-                date_ops,
-                end_date: date_ops,
-                endmonth: moment(date_ops).format('YYYY-MM')
-              }));
+              if (date_ops) setFilters((prev) => ({ ...prev, date_ops }));
             }}
             InputLabelProps={{ shrink: true }}
             InputProps={{
@@ -106,7 +101,7 @@ export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh
             options={cabangList}
             loading={dataLoading}
             value={selectedCabang}
-            onChange={(_, val) => setFilters((prev) => ({ ...prev, cabang_id: val?.id || '' }))}
+            onChange={(_, val) => setFilters((prev) => ({ ...prev, cabang_id: val?.id || '', unitcabang: val?.nama || '' }))}
             getOptionLabel={(o) => o?.nama || ''}
             isOptionEqualToValue={(a, b) => a?.id === b?.id}
             sx={{ minWidth: 220, flex: 1 }}
@@ -134,9 +129,10 @@ export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh
             variant="contained"
             startIcon={<Refresh size={16} />}
             onClick={onRefresh}
+            disabled={refreshing}
             sx={{ whiteSpace: 'nowrap', borderRadius: 1.5 }}
           >
-            Refresh
+            {refreshing ? 'Memuat...' : 'Refresh'}
           </Button>
         </Stack>
       </Stack>

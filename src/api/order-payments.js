@@ -13,6 +13,8 @@ export const endpoints = {
   detail: (id) => `/scm/order-payments/${id}`,
   post: (id) => `/scm/order-payments/${id}/post`,
   remove: (id) => `/scm/order-payments/${id}`,
+  attachments: (id) => `/scm/order-payments/${id}/attachments`,
+  attachment: (id, fileId) => `/scm/order-payments/${id}/attachments/${fileId}`,
 };
 
 const permissionDefaults = {
@@ -22,6 +24,9 @@ const permissionDefaults = {
   can_delete: false,
   can_post: false,
   can_export: false,
+  can_upload_attachment: false,
+  can_replace_attachment: false,
+  can_remove_attachment: false,
 };
 
 const isOn = (v) =>
@@ -226,4 +231,42 @@ export async function removeOrderPayment(id) {
     );
   }
   return res?.data?.rows ?? res?.data?.data ?? res?.data;
+}
+
+const attachmentError = (error) => new Error(
+  error?.diagnostic?.error || error?.response?.data?.diagnostic?.error || error?.message || 'Gagal menyimpan bukti pembayaran',
+);
+
+async function savePaymentAttachments(method, url, files, onUploadProgress) {
+  const data = new FormData();
+  Array.from(files || []).forEach((file) => data.append('attachments', file));
+  try {
+    const response = await axiosServices[method](url, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      skipOfflineQueue: true,
+      skipRetry: true,
+      timeout: 120000,
+      onUploadProgress,
+    });
+    if (response.data?.diagnostic?.error) throw response.data;
+    return response.data.rows;
+  } catch (error) {
+    throw attachmentError(error);
+  }
+}
+
+export const uploadOrderPaymentAttachments = (id, files, onUploadProgress) =>
+  savePaymentAttachments('post', endpoints.attachments(id), files, onUploadProgress);
+
+export const replaceOrderPaymentAttachment = (id, fileId, file, onUploadProgress) =>
+  savePaymentAttachments('put', endpoints.attachment(id, fileId), [file], onUploadProgress);
+
+export async function deleteOrderPaymentAttachment(id, fileId) {
+  try {
+    const response = await axiosServices.delete(endpoints.attachment(id, fileId), { skipOfflineQueue: true, skipRetry: true });
+    if (response.data?.diagnostic?.error) throw response.data;
+    return response.data.rows;
+  } catch (error) {
+    throw attachmentError(error);
+  }
 }

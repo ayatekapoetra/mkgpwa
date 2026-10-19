@@ -16,6 +16,7 @@ export default function KpiCard({
   helper,
   color = 'primary',
   loading = false,
+  error = null,
   trend,
   href
 }) {
@@ -23,11 +24,11 @@ export default function KpiCard({
   const palette = theme.palette[color] || theme.palette.primary;
 
   const paperSx = {
-    p: 2,
+    p: 2.5,
     height: '100%',
     borderRadius: 2.5,
-    borderColor: alpha(palette.main, 0.2),
-    background: `linear-gradient(145deg, ${alpha(palette.main, 0.12)} 0%, ${theme.palette.background.paper} 62%)`,
+    borderColor: theme.palette.divider,
+    bgcolor: 'background.paper',
     transition: 'transform .2s ease, box-shadow .2s ease',
     cursor: href ? 'pointer' : 'default',
     textDecoration: 'none',
@@ -42,36 +43,36 @@ export default function KpiCard({
   };
 
   const body = (
-    <Stack direction="row" spacing={1.5} alignItems="flex-start">
-      <Box
-        sx={{
-          width: 44,
-          height: 44,
-          borderRadius: 1.75,
-          display: 'grid',
-          placeItems: 'center',
-          bgcolor: alpha(palette.main, 0.16),
-          color: palette.main,
-          flexShrink: 0
-        }}
-      >
-        {icon}
-      </Box>
+    <Stack spacing={2}>
+      <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+        <Typography variant="body2" color="text.secondary" fontWeight={500}>{label}</Typography>
+        <Box
+          sx={{
+            width: 38,
+            height: 38,
+            borderRadius: 1.75,
+            display: 'grid',
+            placeItems: 'center',
+            bgcolor: alpha(palette.main, 0.08),
+            color: palette.main,
+            flexShrink: 0
+          }}
+        >
+          {icon}
+        </Box>
+      </Stack>
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography variant="caption" color="text.secondary" noWrap display="block">
-          {label}
-        </Typography>
         {loading ? (
           <Skeleton width={72} height={34} />
         ) : (
-          <Typography variant="h3" fontWeight={800} lineHeight={1.15} sx={{ mt: 0.25 }}>
-            {value}
+          <Typography variant="h3" fontWeight={700} lineHeight={1.15} sx={{ fontSize: { xs: 28, xl: 32 }, letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>
+            {error ? '—' : value}
           </Typography>
         )}
         <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.75 }} flexWrap="wrap" useFlexGap>
-          {helper ? (
-            <Typography variant="caption" color="text.secondary">
-              {helper}
+          {helper || error ? (
+            <Typography variant="caption" color={error ? 'error.main' : 'text.secondary'} role={error ? 'alert' : undefined}>
+              {error ? 'Data tidak tersedia' : helper}
             </Typography>
           ) : null}
           {trend ? (

@@ -1,30 +1,12 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
 import { fetcher } from 'utils/axios';
+import { endpoints, buildPartUsedChartUrl, buildCategoryRequests } from './part-used-chart-config';
 
-export const endpoints = {
-  topFrequencyHe: '/maintenance/signages/part-used/top-frequency-he',
-  topFrequencyDt: '/maintenance/signages/part-used/top-frequency-dt',
-  topValueHe: '/maintenance/signages/part-used/top-value-he',
-  topValueDt: '/maintenance/signages/part-used/top-value-dt',
-  dailyTrend: '/maintenance/signages/part-used/daily-trend',
-  byUnit: '/maintenance/signages/part-used/by-unit',
-  byCategory: '/maintenance/signages/part-used/by-category',
-  gudangTopValue: '/maintenance/signages/part-used/gudang-top-value',
-  gudangTopFrequency: '/maintenance/signages/part-used/gudang-top-frequency',
-  gudangDailyTrend: '/maintenance/signages/part-used/gudang-daily-trend',
-  gudangHeatmapCategory: '/maintenance/signages/part-used/gudang-heatmap-category',
-  gudangTopSparepart: '/maintenance/signages/part-used/gudang-top-sparepart',
-  cabangBubbleAll: '/maintenance/signages/part-used/cabang-bubble-all',
-  cabangBubbleByUnit: '/maintenance/signages/part-used/cabang-bubble-by-unit',
-  cabangBubbleByCtgUnit: '/maintenance/signages/part-used/cabang-bubble-by-ctgunit',
-  cabangDtBar: '/maintenance/signages/part-used/cabang-dt-bar',
-  cabangHeBar: '/maintenance/signages/part-used/cabang-he-bar',
-  gudangRadarNullKdunit: '/maintenance/signages/part-used/gudang-radar-null-kdunit'
-};
+export { endpoints } from './part-used-chart-config';
 
 const usePartUsedChart = (endpoint, params, refreshInterval = 180000) => {
-  const url = params ? `${endpoint}?${new URLSearchParams(params)}` : endpoint;
+  const url = buildPartUsedChartUrl(endpoint, params);
   const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
     refreshInterval,
     revalidateIfStale: false,
@@ -44,6 +26,18 @@ const usePartUsedChart = (endpoint, params, refreshInterval = 180000) => {
     [data, isLoading, error, isValidating]
   );
 };
+
+export function useGetPartUsedEquipmentCategory(code, params, unitcabang) {
+  const requests = useMemo(() => buildCategoryRequests(code, params, unitcabang), [code, params, unitcabang]);
+  const topFrequency = usePartUsedChart(requests.topFrequency.endpoint, requests.topFrequency.params);
+  const topValue = usePartUsedChart(requests.topValue.endpoint, requests.topValue.params);
+  const byUnit = usePartUsedChart(requests.byUnit.endpoint, requests.byUnit.params);
+  const byCategory = usePartUsedChart(requests.byCategory.endpoint, requests.byCategory.params);
+  const cabang = usePartUsedChart(requests.cabang.endpoint, requests.cabang.params);
+  const equipmentByCabang = usePartUsedChart(requests.equipmentByCabang.endpoint, requests.equipmentByCabang.params);
+  return useMemo(() => ({ code, requests, topFrequency, topValue, byUnit, byCategory, cabang, equipmentByCabang }),
+    [code, requests, topFrequency, topValue, byUnit, byCategory, cabang, equipmentByCabang]);
+}
 
 export const useGetPartUsedTopFrequencyHe = (params) => usePartUsedChart(endpoints.topFrequencyHe, params);
 export const useGetPartUsedTopFrequencyDt = (params) => usePartUsedChart(endpoints.topFrequencyDt, params);
