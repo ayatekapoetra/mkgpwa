@@ -71,8 +71,15 @@ const initialValues = {
   photo: ''
 };
 
-const validationSchema = Yup.object({
-  kode: Yup.string().trim().required('Kode barang wajib diisi').max(50, 'Maksimal 50 karakter'),
+const classificationId = (label, edit) => edit ? Yup.mixed().nullable() : Yup.number()
+  .typeError(`${label} wajib dipilih`).integer().positive().required(`${label} wajib dipilih`);
+
+const validationSchema = (edit) => Yup.object({
+  kode: edit ? Yup.string().trim().required('Kode barang wajib diisi').max(50, 'Maksimal 50 karakter') : Yup.string(),
+  kategori_id: classificationId('Kategori', edit),
+  application_id: classificationId('Application', edit),
+  manufacture_id: classificationId('Manufaktur', edit),
+  brand_id: classificationId('Brand', edit),
   nama: Yup.string().trim().required('Nama barang wajib diisi').max(250, 'Maksimal 250 karakter'),
   num_part: Yup.string().trim().max(100, 'Maksimal 100 karakter'),
   serial: Yup.string().trim().max(100, 'Maksimal 100 karakter'),
@@ -129,7 +136,7 @@ function SectionCard({ title, subtitle, icon, children }) {
   );
 }
 
-function RelationField({ label, name, options, value, loading, setFieldValue, setFieldTouched, error, touched }) {
+function RelationField({ label, name, options, value, loading, setFieldValue, setFieldTouched, error, touched, required = false }) {
   const selected = options.find((option) => String(option.id) === String(value)) || null;
 
   return (
@@ -145,8 +152,9 @@ function RelationField({ label, name, options, value, loading, setFieldValue, se
         <TextField
           {...params}
           label={label}
+          required={required}
           error={touched && Boolean(error)}
-          helperText={(touched && error) || 'Opsional'}
+          helperText={(touched && error) || (required ? 'Digunakan untuk membentuk kode barang otomatis' : 'Opsional')}
           InputProps={{
             ...params.InputProps,
             endAdornment: (
@@ -190,7 +198,7 @@ export default function AddBarangScreen({ edit = false }) {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     const payload = {
-      kode: values.kode.trim(),
+      ...(edit ? { kode: values.kode.trim() } : {}),
       nama: values.nama.trim(),
       num_part: nullableText(values.num_part),
       serial: nullableText(values.serial),
@@ -334,9 +342,9 @@ export default function AddBarangScreen({ edit = false }) {
             </Stack>
           </Paper>
 
-          {optionsError ? <Alert severity="warning">Opsi klasifikasi gagal dimuat. Form tetap dapat diisi dan dicoba kembali.</Alert> : null}
+          {optionsError ? <Alert severity="warning">Opsi klasifikasi gagal dimuat. {edit ? 'Form tetap dapat diisi dan dicoba kembali.' : 'Muat ulang halaman untuk memilih klasifikasi pembentuk kode barang.'}</Alert> : null}
 
-          <Formik initialValues={formValues} enableReinitialize validationSchema={validationSchema} onSubmit={handleSubmit}>
+          <Formik initialValues={formValues} enableReinitialize validationSchema={validationSchema(edit)} onSubmit={handleSubmit}>
             {({ errors, handleBlur, handleChange, handleSubmit: submitForm, isSubmitting, setFieldTouched, setFieldValue, touched, values }) => (
               <Form noValidate onSubmit={submitForm}>
                 <Stack spacing={3}>
@@ -345,16 +353,16 @@ export default function AddBarangScreen({ edit = false }) {
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
-                          autoFocus
-                          required
+                          required={edit}
                           name="kode"
                           label="Kode Barang"
                           value={values.kode}
                           onChange={handleChange}
                           onBlur={handleBlur}
                           error={touched.kode && Boolean(errors.kode)}
-                          helperText={(touched.kode && errors.kode) || 'Kode unik internal, maksimal 50 karakter'}
-                          InputProps={{ startAdornment: <InputAdornment position="start">#</InputAdornment> }}
+                          placeholder={edit ? undefined : 'Otomatis saat disimpan'}
+                          helperText={edit ? ((touched.kode && errors.kode) || 'Kode unik internal, maksimal 50 karakter') : 'Kategori + Application + Manufaktur + Brand, diikuti nomor urut 5 digit'}
+                          InputProps={{ readOnly: !edit, startAdornment: <InputAdornment position="start">#</InputAdornment> }}
                         />
                       </Grid>
                       <Grid item xs={12} md={8}>
@@ -362,6 +370,7 @@ export default function AddBarangScreen({ edit = false }) {
                           fullWidth
                           required
                           name="nama"
+                          autoFocus={!edit}
                           label="Nama Barang"
                           value={values.nama}
                           onChange={handleChange}
@@ -400,16 +409,16 @@ export default function AddBarangScreen({ edit = false }) {
                   <SectionCard title="Klasifikasi" subtitle="Kelompokkan barang agar mudah difilter dan digunakan pada proses operasional." icon={<Category2 size={22} />}>
                     <Grid container spacing={2.5}>
                       <Grid item xs={12} md={6}>
-                        <RelationField label="Kategori" name="kategori_id" options={options.categories || []} value={values.kategori_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.kategori_id} touched={touched.kategori_id} />
+                        <RelationField required={!edit} label="Kategori" name="kategori_id" options={options.categories || []} value={values.kategori_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.kategori_id} touched={touched.kategori_id} />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <RelationField label="Application" name="application_id" options={options.applications || []} value={values.application_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.application_id} touched={touched.application_id} />
+                        <RelationField required={!edit} label="Application" name="application_id" options={options.applications || []} value={values.application_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.application_id} touched={touched.application_id} />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <RelationField label="Manufaktur" name="manufacture_id" options={options.manufactures || []} value={values.manufacture_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.manufacture_id} touched={touched.manufacture_id} />
+                        <RelationField required={!edit} label="Manufaktur" name="manufacture_id" options={options.manufactures || []} value={values.manufacture_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.manufacture_id} touched={touched.manufacture_id} />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <RelationField label="Brand" name="brand_id" options={options.brands || []} value={values.brand_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.brand_id} touched={touched.brand_id} />
+                        <RelationField required={!edit} label="Brand" name="brand_id" options={options.brands || []} value={values.brand_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.brand_id} touched={touched.brand_id} />
                       </Grid>
                     </Grid>
                   </SectionCard>
