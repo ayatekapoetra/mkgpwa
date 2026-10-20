@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Grid, IconButton, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
-import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { Gallery, Trash } from 'iconsax-react';
 import { uploadOrderPaymentAttachments, replaceOrderPaymentAttachment, deleteOrderPaymentAttachment } from 'api/order-payments';
@@ -14,7 +13,6 @@ export default function PaymentProofManager({ paymentId, attachments = [], permi
   const lock = mutationLock || ownLock;
   const [action, setAction] = useState('');
   const [progress, setProgress] = useState(0);
-  const [dragging, setDragging] = useState(false);
   const [drafts, setDrafts] = useState([]);
   const [draftWarning, setDraftWarning] = useState('');
   const disabled = busy || !!action;
@@ -148,15 +146,19 @@ export default function PaymentProofManager({ paymentId, attachments = [], permi
       <Grid item xs={12} sm={6} md={4}>
         <Typography variant="caption" color="text.secondary" fontWeight={800} display="block" mb={1}>Upload bukti pembayaran</Typography>
         {permissions.can_upload_attachment ? (
-          <Box component="label"
-            onDragOver={(event) => { event.preventDefault(); if (!disabled) setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => { event.preventDefault(); setDragging(false); upload(event.dataTransfer.files); }}
-            sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 80, px: 1.5, border: '1px dashed', borderColor: dragging ? 'primary.main' : 'divider', borderRadius: 2, bgcolor: dragging ? 'primary.lighter' : 'background.default', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
-            <CloudUploadOutlinedIcon color="primary" />
-            <Typography variant="caption">Tarik gambar atau klik untuk upload · maks. 5 MB/file</Typography>
-            <input hidden type="file" multiple accept={PROOF_ACCEPT} disabled={disabled} aria-label="Upload bukti pembayaran"
-              onChange={(event) => { upload(event.target.files); event.target.value = ''; }} />
+          <Box
+            onDragOver={(event) => { event.preventDefault(); }}
+            onDrop={(event) => { event.preventDefault(); upload(event.dataTransfer.files); }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <input
+              type="file"
+              multiple
+              accept={PROOF_ACCEPT}
+              disabled={disabled}
+              aria-label="Upload bukti pembayaran"
+              onChange={(event) => { upload(event.target.files); event.target.value = ''; }}
+            />
+            <Typography variant="caption" color="text.secondary">maks. 5 MB/file · jpg, jpeg, png, pdf</Typography>
           </Box>
         ) : <Typography variant="caption" color="text.secondary">Anda tidak memiliki izin upload bukti.</Typography>}
         {action ? <Stack spacing={1} sx={{ mt: 1 }} aria-live="polite"><Stack direction="row" spacing={1} alignItems="center"><CircularProgress size={14} /><Typography variant="caption">{action}…</Typography></Stack><LinearProgress variant={progress ? 'determinate' : 'indeterminate'} value={progress} /></Stack> : null}
