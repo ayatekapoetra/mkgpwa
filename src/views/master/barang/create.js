@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Barcode, Box1, Category2, Gallery, Send2, Setting2, Trash } from 'iconsax-react';
-import { Form, Formik } from 'formik';
+import { Form, Formik, useFormikContext } from 'formik';
 import * as Yup from 'yup';
 
 import MainCard from 'components/MainCard';
@@ -35,7 +35,7 @@ import BtnBack from 'components/BtnBack';
 import { APP_DEFAULT_PATH } from 'config';
 import axiosServices from 'utils/axios';
 import { openNotification } from 'api/notification';
-import { useBarangFilterOptions, useShowBarang } from 'api/barang';
+import { previewKodeBarang, useBarangFilterOptions, useShowBarang } from 'api/barang';
 import { saveRequest } from 'lib/offlineFetch';
 
 const msgSuccess = {
@@ -71,15 +71,8 @@ const initialValues = {
   photo: ''
 };
 
-const classificationId = (label, edit) => edit ? Yup.mixed().nullable() : Yup.number()
-  .typeError(`${label} wajib dipilih`).integer().positive().required(`${label} wajib dipilih`);
-
-const validationSchema = (edit) => Yup.object({
-  kode: edit ? Yup.string().trim().required('Kode barang wajib diisi').max(50, 'Maksimal 50 karakter') : Yup.string(),
-  kategori_id: classificationId('Kategori', edit),
-  application_id: classificationId('Application', edit),
-  manufacture_id: classificationId('Manufaktur', edit),
-  brand_id: classificationId('Brand', edit),
+const validationSchema = Yup.object({
+  kode: Yup.string().trim().max(50, 'Maksimal 50 karakter'),
   nama: Yup.string().trim().required('Nama barang wajib diisi').max(250, 'Maksimal 250 karakter'),
   num_part: Yup.string().trim().max(100, 'Maksimal 100 karakter'),
   serial: Yup.string().trim().max(100, 'Maksimal 100 karakter'),
@@ -136,7 +129,7 @@ function SectionCard({ title, subtitle, icon, children }) {
   );
 }
 
-function RelationField({ label, name, options, value, loading, setFieldValue, setFieldTouched, error, touched, required = false }) {
+function RelationField({ label, name, options, value, loading, setFieldValue, setFieldTouched, error, touched }) {
   const selected = options.find((option) => String(option.id) === String(value)) || null;
 
   return (
@@ -152,9 +145,8 @@ function RelationField({ label, name, options, value, loading, setFieldValue, se
         <TextField
           {...params}
           label={label}
-          required={required}
           error={touched && Boolean(error)}
-          helperText={(touched && error) || (required ? 'Digunakan untuk membentuk kode barang otomatis' : 'Opsional')}
+          helperText={(touched && error) || 'Opsional'}
           InputProps={{
             ...params.InputProps,
             endAdornment: (
@@ -188,6 +180,84 @@ function UnitField({ label, name, options, value, setFieldValue, setFieldTouched
   );
 }
 
+function AutoKodePreview({ edit, setFieldValue }) {
+  const { values } = useFormikContext();
+  const [previewKode, setPreviewKode] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchPreview = async () => {
+      setLoading(true);
+      try {
+        const kode = await previewKodeBarang({
+          kategori_id: values.kategori_id || '',
+          application_id: values.application_id || '',
+          manufacture_id: values.manufacture_id || '',
+          brand_id: values.brand_id || ''
+        });
+        if (active && kode) {
+          setPreviewKode(kode);
+        }
+      } catch (err) {
+        console.error('Failed to preview kode', err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    fetchPreview();
+    return () => {
+      active = false;
+    };
+  }, [values.kategori_id, values.application_id, values.manufacture_id, values.brand_id]);
+
+  return (
+    <Grid item xs={12}>
+      <Box
+        sx={{
+          p: 2,
+          borderRadius: 1.5,
+          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+          border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.5
+        }}
+      >
+        <Stack spacing={0.5}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600}>
+            PREVIEW POLA KODE OTOMATIS
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: 0.5, fontFamily: 'monospace' }}>
+              {previewKode || (loading ? 'Memuat pola...' : 'Pilih kategori/aplikasi/manufaktur/brand')}
+            </Typography>
+            {loading ? <CircularProgress size={14} /> : null}
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
+            Format kode terbuat dari kombinasi kode Kategori + Aplikasi + Manufaktur + Brand + nomor urut.
+          </Typography>
+        </Stack>
+        {!edit && (
+          <Button
+            size="small"
+            variant="outlined"
+            color="primary"
+            disabled={!previewKode || values.kode === previewKode || loading}
+            onClick={() => setFieldValue('kode', previewKode)}
+            sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+          >
+            Gunakan Kode Ini
+          </Button>
+        )}
+      </Box>
+    </Grid>
+  );
+}
+
 export default function AddBarangScreen({ edit = false }) {
   const route = useRouter();
   const { id } = useParams();
@@ -195,10 +265,30 @@ export default function AddBarangScreen({ edit = false }) {
   const { options, optionsLoading, optionsError } = useBarangFilterOptions();
   const { data: barang, dataLoading, dataError } = useShowBarang(edit ? id : null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [generatingKode, setGeneratingKode] = useState(false);
+
+  const handlePreviewKode = async (values, setFieldValue) => {
+    try {
+      setGeneratingKode(true);
+      const generated = await previewKodeBarang({
+        kategori_id: values.kategori_id,
+        application_id: values.application_id,
+        manufacture_id: values.manufacture_id,
+        brand_id: values.brand_id
+      });
+      if (generated) {
+        setFieldValue('kode', generated);
+      }
+    } catch (err) {
+      console.error('Failed to preview kode barang', err);
+    } finally {
+      setGeneratingKode(false);
+    }
+  };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     const payload = {
-      ...(edit ? { kode: values.kode.trim() } : {}),
+      kode: values.kode ? values.kode.trim() : '',
       nama: values.nama.trim(),
       num_part: nullableText(values.num_part),
       serial: nullableText(values.serial),
@@ -342,15 +432,15 @@ export default function AddBarangScreen({ edit = false }) {
             </Stack>
           </Paper>
 
-          {optionsError ? <Alert severity="warning">Opsi klasifikasi gagal dimuat. {edit ? 'Form tetap dapat diisi dan dicoba kembali.' : 'Muat ulang halaman untuk memilih klasifikasi pembentuk kode barang.'}</Alert> : null}
+          {optionsError ? <Alert severity="warning">Opsi klasifikasi gagal dimuat. Form tetap dapat diisi dan dicoba kembali.</Alert> : null}
 
-          <Formik initialValues={formValues} enableReinitialize validationSchema={validationSchema(edit)} onSubmit={handleSubmit}>
+          <Formik initialValues={formValues} enableReinitialize validationSchema={validationSchema} onSubmit={handleSubmit}>
             {({ errors, handleBlur, handleChange, handleSubmit: submitForm, isSubmitting, setFieldTouched, setFieldValue, touched, values }) => (
               <Form noValidate onSubmit={submitForm}>
                 <Stack spacing={3}>
                   <SectionCard title="Identitas Barang" subtitle="Informasi utama untuk pencarian dan pengenalan barang." icon={<Barcode size={22} />}>
                     <Grid container spacing={2.5}>
-                      <Grid item xs={12} md={4}>
+                      <Grid item xs={12} md={5}>
                         <TextField
                           fullWidth
                           required={edit}
@@ -360,17 +450,38 @@ export default function AddBarangScreen({ edit = false }) {
                           onChange={handleChange}
                           onBlur={handleBlur}
                           error={touched.kode && Boolean(errors.kode)}
-                          placeholder={edit ? undefined : 'Otomatis saat disimpan'}
-                          helperText={edit ? ((touched.kode && errors.kode) || 'Kode unik internal, maksimal 50 karakter') : 'Kategori + Application + Manufaktur + Brand, diikuti nomor urut 5 digit'}
-                          InputProps={{ readOnly: !edit, startAdornment: <InputAdornment position="start">#</InputAdornment> }}
+                          helperText={
+                            (touched.kode && errors.kode) ||
+                            (edit
+                              ? 'Kode unik internal, maksimal 50 karakter'
+                              : 'Gunakan tombol Buat Kode atau pilih dari preview pola kode')
+                          }
+                          inputProps={{ readOnly: true }}
+                          InputProps={{
+                            readOnly: true,
+                            startAdornment: <InputAdornment position="start">#</InputAdornment>,
+                            endAdornment: !edit ? (
+                              <InputAdornment position="end">
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={generatingKode}
+                                  onClick={() => handlePreviewKode(values, setFieldValue)}
+                                  sx={{ textTransform: 'none', py: 0.25, px: 1, minWidth: 'auto', fontSize: '0.75rem' }}
+                                >
+                                  {generatingKode ? <CircularProgress size={14} /> : 'Buat Kode'}
+                                </Button>
+                              </InputAdornment>
+                            ) : null
+                          }}
                         />
                       </Grid>
-                      <Grid item xs={12} md={8}>
+                      <Grid item xs={12} md={7}>
                         <TextField
                           fullWidth
+                          autoFocus
                           required
                           name="nama"
-                          autoFocus={!edit}
                           label="Nama Barang"
                           value={values.nama}
                           onChange={handleChange}
@@ -409,17 +520,18 @@ export default function AddBarangScreen({ edit = false }) {
                   <SectionCard title="Klasifikasi" subtitle="Kelompokkan barang agar mudah difilter dan digunakan pada proses operasional." icon={<Category2 size={22} />}>
                     <Grid container spacing={2.5}>
                       <Grid item xs={12} md={6}>
-                        <RelationField required={!edit} label="Kategori" name="kategori_id" options={options.categories || []} value={values.kategori_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.kategori_id} touched={touched.kategori_id} />
+                        <RelationField label="Kategori" name="kategori_id" options={options.categories || []} value={values.kategori_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.kategori_id} touched={touched.kategori_id} />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <RelationField required={!edit} label="Application" name="application_id" options={options.applications || []} value={values.application_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.application_id} touched={touched.application_id} />
+                        <RelationField label="Application" name="application_id" options={options.applications || []} value={values.application_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.application_id} touched={touched.application_id} />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <RelationField required={!edit} label="Manufaktur" name="manufacture_id" options={options.manufactures || []} value={values.manufacture_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.manufacture_id} touched={touched.manufacture_id} />
+                        <RelationField label="Manufaktur" name="manufacture_id" options={options.manufactures || []} value={values.manufacture_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.manufacture_id} touched={touched.manufacture_id} />
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <RelationField required={!edit} label="Brand" name="brand_id" options={options.brands || []} value={values.brand_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.brand_id} touched={touched.brand_id} />
+                        <RelationField label="Brand" name="brand_id" options={options.brands || []} value={values.brand_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.brand_id} touched={touched.brand_id} />
                       </Grid>
+                      <AutoKodePreview edit={edit} setFieldValue={setFieldValue} />
                     </Grid>
                   </SectionCard>
 

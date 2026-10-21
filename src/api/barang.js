@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import { useMemo } from 'react';
 
 // UTIL
-import { fetcher } from 'utils/axios';
+import axiosServices, { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
 
 export const endpoints = {
@@ -113,4 +113,12 @@ export const useGetBarangTest = (params) => {
   );
 
   return memoizedValue;
+};
+
+export const previewKodeBarang = async (params) => {
+  const query = new URLSearchParams(
+    Object.entries(params || {}).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+  );
+  const response = await axiosServices.get(`/api/master/barang/preview-kode?${query.toString()}`);
+  return response.data?.rows?.kode || '';
 };
