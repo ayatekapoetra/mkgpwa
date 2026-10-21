@@ -88,7 +88,7 @@ export default function OrderPaymentList({ rows = [] }) {
           <tr>
             <th>Aksi</th>
             <th>No. Bayar</th>
-            <th>Pemasok</th>
+            <th>Pemasok / Penerima</th>
             <th>PO / PD</th>
             <th>Faktur</th>
             <th style={{ textAlign: "right" }}>Total</th>
@@ -144,9 +144,9 @@ export default function OrderPaymentList({ rows = [] }) {
                     color="text.secondary"
                     noWrap
                     display="block"
-                    title={row.pemasok_alamat || row.pemasok_kode || ""}
+                    title={row.narasi || row.pemasok_kode || ""}
                   >
-                    {truncate(row.pemasok_alamat, 50) || row.pemasok_kode || "—"}
+                    {truncate(row.narasi, 50) || row.pemasok_kode || "—"}
                   </Typography>
                 </td>
                 <td>

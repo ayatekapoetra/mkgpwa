@@ -298,7 +298,7 @@ export default function AddEquipmentScreen() {
                   )}
                   <Grid item xs={12}>
                     <CardActions>
-                      <Button component={Link} href="/dom" variant="outlined" color="secondary">
+                      <Button component={Link} href="/equipment" variant="outlined" color="secondary">
                         Batal
                       </Button>
                       <Button type="submit" variant="contained" startIcon={<Send2 />}>

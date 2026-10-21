@@ -343,7 +343,13 @@ function WorkOrderFilter({ open, filters, masters, onClose, onApply, onReset }) 
             />
             <Autocomplete
               options={masters.equipments || []}
-              getOptionLabel={(option) => option?.kode ? `${option.kode} - ${option.nama || ''}` : option?.nama || ''}
+              getOptionLabel={(option) => {
+                if (!option) return '';
+                const main = option.kode
+                  ? (option.model ? `${option.kode} - ${option.model}` : option.nama ? `${option.kode} - ${option.nama}` : option.kode)
+                  : (option.nama || option.model || '');
+                return option.kategori ? `${main} (${option.kategori})` : main;
+              }}
               isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
               value={(masters.equipments || []).find((item) => String(item.id) === String(local.equipment_id)) || null}
               onChange={(_event, value) => setLocal((current) => ({ ...current, equipment_id: value?.id || '' }))}

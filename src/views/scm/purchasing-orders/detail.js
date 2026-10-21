@@ -310,7 +310,14 @@ export default function PurchaseOrderDetail() {
           }}
         >
           <Stack spacing={3}>
-            <DocumentHeader row={row} />
+            <DocumentHeader
+              row={row}
+              canEdit={
+                (row.status === "open" || row.status === "verify") &&
+                (permissions.can_prepare || permissions.can_update || permissions.can_verify || access?.can_update || access?.can_insert)
+              }
+              onUpdated={mutate}
+            />
             <Stack spacing={1.5}>
               <Typography variant="h5">Item ({items.length})</Typography>
               {mode === "prepare" && (

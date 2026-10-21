@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
   Box,
+  Button,
+  Chip,
   Divider,
   Grid,
   Link as MuiLink,
@@ -11,9 +15,12 @@ import {
   Typography,
 } from "@mui/material";
 import { formatCurrency, getRelationName, getStatusMeta } from "../utils";
+import EditHeaderDialog from "./EditHeaderDialog";
 
 /** Displays the purchase order header summary (kode, org, supplier, totals). */
-export default function DocumentHeader({ row }) {
+export default function DocumentHeader({ row, canEdit = false, onUpdated }) {
+  const [openEdit, setOpenEdit] = useState(false);
+  const [initialMode, setInitialMode] = useState("all");
   const meta = getStatusMeta(row?.status);
   const rekening = row?.rekpemasok || {};
   return (
@@ -31,9 +38,14 @@ export default function DocumentHeader({ row }) {
         spacing={2}
       >
         <Box>
-          <Typography variant="overline" color="text.secondary">
-            Purchase Order
-          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="overline" color="text.secondary">
+              Purchase Order
+            </Typography>
+            {row?.prioritas === "urgent" && (
+              <Chip size="small" color="error" label="URGENT" sx={{ height: 20 }} />
+            )}
+          </Stack>
           <Typography variant="h5" fontWeight={700}>
             {row?.kdpo || "-"}
           </Typography>
@@ -52,7 +64,15 @@ export default function DocumentHeader({ row }) {
               </MuiLink>
             ) : (
               row?.kode_pr || "-"
-            )}{" "}
+            )}
+            {row?.purchaseRequest?.creator?.nama_lengkap || row?.author_pr ? (
+              <Typography component="span" variant="body2" color="text.secondary">
+                {" "}· Pembuat PR:{" "}
+                <strong>
+                  {row?.purchaseRequest?.creator?.nama_lengkap || row?.author_pr}
+                </strong>
+              </Typography>
+            ) : null}{" "}
             · {meta.label}
           </Typography>
         </Box>
@@ -86,14 +106,39 @@ export default function DocumentHeader({ row }) {
         </Grid>
         <Grid item xs={12} md={6}>
           <Stack spacing={0.5}>
-            <Typography variant="caption" color="text.secondary">
-              Pemasok & Rekening
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary">
+                Pemasok & Rekening
+              </Typography>
+              {canEdit && (
+                <Button
+                  size="small"
+                  variant={rekening.no_rekening ? "outlined" : "contained"}
+                  color={rekening.no_rekening ? "primary" : "warning"}
+                  startIcon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => {
+                    setInitialMode(rekening.no_rekening ? "rekening" : "new_rekening");
+                    setOpenEdit(true);
+                  }}
+                  sx={{ textTransform: "none", py: 0.2, px: 1, fontSize: "0.75rem" }}
+                >
+                  {rekening.no_rekening ? "Ganti Rekening" : "+ Tambah Rekening"}
+                </Button>
+              )}
+            </Stack>
+            <Typography variant="body2" fontWeight={600}>
+              {getRelationName(row?.pemasok)}
             </Typography>
-            <Typography variant="body2">{getRelationName(row?.pemasok)}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {rekening.nm_bank || "-"} {rekening.no_rekening || ""}
-              {rekening.an ? ` (${rekening.an})` : ""}
-            </Typography>
+            {rekening.no_rekening ? (
+              <Typography variant="body2" color="text.secondary">
+                {rekening.nm_bank || "-"} {rekening.no_rekening}
+                {rekening.an ? ` (${rekening.an})` : ""}
+              </Typography>
+            ) : (
+              <Typography variant="caption" color="warning.main" fontWeight={600}>
+                Belum ada rekening terdaftar untuk PO ini
+              </Typography>
+            )}
           </Stack>
         </Grid>
         <Grid item xs={12} md={6}>
@@ -111,13 +156,39 @@ export default function DocumentHeader({ row }) {
         </Grid>
         <Grid item xs={12} md={6}>
           <Stack spacing={0.5}>
-            <Typography variant="caption" color="text.secondary">
-              Narasi
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary">
+                Narasi / Keterangan Dokumen
+              </Typography>
+              {canEdit && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => {
+                    setInitialMode("narasi");
+                    setOpenEdit(true);
+                  }}
+                  sx={{ textTransform: "none", py: 0.2, px: 1, fontSize: "0.75rem" }}
+                >
+                  Edit Narasi
+                </Button>
+              )}
+            </Stack>
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+              {row?.narasi || "-"}
             </Typography>
-            <Typography variant="body2">{row?.narasi || "-"}</Typography>
           </Stack>
         </Grid>
       </Grid>
+
+      <EditHeaderDialog
+        open={openEdit}
+        row={row}
+        initialMode={initialMode}
+        onClose={() => setOpenEdit(false)}
+        onUpdated={onUpdated}
+      />
     </Box>
   );
 }

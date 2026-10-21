@@ -58,7 +58,7 @@ function DesktopList({ rows }) {
             <th>Kode</th>
             <th>ReqCode</th>
             <th>Organisasi</th>
-            <th>Pemasok</th>
+            <th>Pemasok & Narasi</th>
             <th>Prioritas</th>
             <th>Status</th>
             <th style={{ textAlign: "right" }}>Grand Total</th>
@@ -103,7 +103,7 @@ function DesktopList({ rows }) {
                   </Typography>
                 )}
                 <Typography variant="caption" color="text.secondary" display="block">
-                  {row.author_pr || "-"}
+                  {row.author_pr || row.purchaseRequest?.creator?.nama_lengkap || "-"}
                 </Typography>
               </td>
               <td>
@@ -117,7 +117,7 @@ function DesktopList({ rows }) {
               <td>
                 <Typography variant="body2">{row.pemasok?.nama || "-"}</Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  {row.pemasok?.alamat || "-"}
+                  {row.narasi || "-"}
                 </Typography>
               </td>
               <td>{row.prioritas || "-"}</td>
@@ -160,13 +160,13 @@ function MobileList({ rows }) {
               <StatusChip status={row.status} />
             </Stack>
             <Typography variant="caption" color="text.secondary" display="block">
-              {row.kode_pr || "-"} · {row.author_pr || "-"}
+              {row.kode_pr || "-"} · {row.author_pr || row.purchaseRequest?.creator?.nama_lengkap || "-"}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
               {row.pemasok?.nama || "-"} · {row.cabang?.nama || "-"}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
-              {row.pemasok?.alamat || "-"}
+              {row.narasi || "-"}
             </Typography>
             <Typography variant="body2" fontWeight={700}>
               {formatCurrency(row.grandtotal)}
