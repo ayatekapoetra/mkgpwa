@@ -55,7 +55,17 @@ export async function middleware(request) {
   response.headers.set("X-Content-Type-Options", "nosniff");
 
   // Get the token from the request
-  const token = await getToken({ req: request });
+  const customSessionCookie = process.env.NEXTAUTH_SESSION_NAME || "mrtapp.session-token";
+  const token =
+    (await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+      cookieName: customSessionCookie,
+    })) ||
+    (await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    }));
 
   // If user is trying to access root page, redirect based on session
   if (pathname === "/") {
