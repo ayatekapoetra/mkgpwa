@@ -2,7 +2,7 @@
 import axios from 'utils/axios';
 
 const axiosServices = axios.create({
-  baseURL: process.env.NEXT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || '',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_APP_API_URL || '',
   withCredentials: false,
   timeout: 60000,
   headers: {

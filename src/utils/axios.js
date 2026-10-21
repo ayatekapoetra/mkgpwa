@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT = 60000; // 60 detik — beberapa endpoint master/list lam
 
 const axiosServices = axios.create({
   baseURL:
-    process.env.NEXT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || "",
+    process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_APP_API_URL || "",
   withCredentials: false,
   timeout: DEFAULT_TIMEOUT,
   headers: {
