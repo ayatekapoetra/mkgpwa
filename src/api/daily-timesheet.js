@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
+import useDebouncedValue from 'hooks/useDebouncedValue';
 
 // UTIL
 import { fetcher } from 'utils/axios';
@@ -112,9 +113,11 @@ export const useTimesheetAccess = (userId, usertype) => {
  * **/
 
 export const useGetDailyTimesheet = (params) => {
-  const url = params ? endpoints.key + endpoints.list + `?${new URLSearchParams(params)}` : endpoints.key + endpoints.list;
+  const debouncedId = useDebouncedValue(params?.id || '');
+  const url = params ? endpoints.key + endpoints.list + `?${new URLSearchParams({ ...params, id: debouncedId })}` : endpoints.key + endpoints.list;
 
   const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
+    keepPreviousData: true,
     revalidateIfStale: false,
     revalidateOnFocus: true,
     revalidateOnReconnect: true
@@ -123,7 +126,7 @@ export const useGetDailyTimesheet = (params) => {
   const memoizedValue = useMemo(
     () => ({
       data: data?.data?.rows || data?.rows || data,
-      dataLoading: isLoading,
+      dataLoading: isLoading && !data,
       dataError: error,
       dataValidating: isValidating,
       dataEmpty: !isLoading && !(data?.data?.rows || data?.rows || data)?.length

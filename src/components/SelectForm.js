@@ -59,7 +59,7 @@ SelectForm.propTypes = {
   array: PropTypes.arrayOf(
     PropTypes.shape({
       key: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      teks: PropTypes.string.isRequired
+      teks: PropTypes.node.isRequired
     })
   ),
   label: PropTypes.string,

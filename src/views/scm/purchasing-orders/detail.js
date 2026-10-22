@@ -49,6 +49,7 @@ import { calculateHeaderTotals } from "./utils";
 export default function PurchaseOrderDetail() {
   const params = useParams();
   const router = useRouter();
+  const [dialog, setDialog] = useState(null);
   const {
     permissions: access,
     loading: accessLoading,
@@ -63,10 +64,11 @@ export default function PurchaseOrderDetail() {
     permissions,
     loading: permissionsLoading,
     error: permissionsError,
-  } = usePurchaseOrderPermissions(row, canRead);
+    mutate: refreshPermissions,
+  } = usePurchaseOrderPermissions(params.id, canRead);
   const rollbackPreview = usePurchaseOrderRollbackPreview(
     params.id,
-    Boolean(row && permissions.can_rollback),
+    Boolean(row && permissions.can_rollback && dialog === 'rollback'),
   );
   const reconciliation = usePurchaseOrderReconciliation(
     params.id,
@@ -76,7 +78,6 @@ export default function PurchaseOrderDetail() {
 
   const [mode, setMode] = useState("view");
   const [drafts, setDrafts] = useState({});
-  const [dialog, setDialog] = useState(null);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -121,7 +122,7 @@ export default function PurchaseOrderDetail() {
     setLoading(true);
     try {
       await callback();
-      await mutate();
+      await Promise.all([mutate(), refreshPermissions()]);
       notify("success", successMessage);
       setMode("view");
       setDialog(null);
@@ -191,7 +192,6 @@ export default function PurchaseOrderDetail() {
 
   // rollback: open → PR (soft delete) or verify → open
   const handleShowRollback = () => {
-    rollbackPreview.mutate();
     setDialog("rollback");
   };
 
@@ -255,11 +255,7 @@ export default function PurchaseOrderDetail() {
     }
   };
 
-  if (
-    accessLoading ||
-    (canRead && rowLoading) ||
-    (Boolean(row) && permissionsLoading)
-  ) {
+  if (accessLoading || (canRead && rowLoading)) {
     return (
       <Stack alignItems="center" sx={{ py: 10 }}>
         <CircularProgress />
@@ -267,10 +263,10 @@ export default function PurchaseOrderDetail() {
     );
   }
 
-  if (accessError || rowError || permissionsError) {
+  if (accessError || rowError) {
     return (
       <Alert severity="error">
-        Gagal memuat Purchase Order. {(accessError || rowError || permissionsError)?.message}
+        Gagal memuat Purchase Order. {(accessError || rowError)?.message}
       </Alert>
     );
   }
@@ -313,6 +309,8 @@ export default function PurchaseOrderDetail() {
             <DocumentHeader
               row={row}
               canEdit={
+                !permissionsLoading &&
+                !permissionsError &&
                 (row.status === "open" || row.status === "verify") &&
                 (permissions.can_prepare || permissions.can_update || permissions.can_verify || access?.can_update || access?.can_insert)
               }
@@ -417,17 +415,23 @@ export default function PurchaseOrderDetail() {
                 </Typography>
               </Box>
             )}
-            <DocumentActions
-              permissions={permissions}
-              loading={loading}
-              onPrepare={mode === "prepare" ? handleSavePreparation : () => setMode("prepare")}
-              onSubmitVerification={handleSubmitVerification}
-              onVerify={handleVerify}
-              onReturn={() => setDialog("return")}
-              onShowRollback={handleShowRollback}
-              onCancel={() => setDialog("cancel")}
-              onPrint={handlePrint}
-            />
+            {permissionsLoading ? (
+              <CircularProgress size={22} />
+            ) : permissionsError ? (
+              <Alert severity="error">Gagal memuat izin aksi. {permissionsError.message}</Alert>
+            ) : (
+              <DocumentActions
+                permissions={permissions}
+                loading={loading}
+                onPrepare={mode === "prepare" ? handleSavePreparation : () => setMode("prepare")}
+                onSubmitVerification={handleSubmitVerification}
+                onVerify={handleVerify}
+                onReturn={() => setDialog("return")}
+                onShowRollback={handleShowRollback}
+                onCancel={() => setDialog("cancel")}
+                onPrint={handlePrint}
+              />
+            )}
           </Stack>
         </Box>
       </MainCard>
@@ -461,7 +465,7 @@ export default function PurchaseOrderDetail() {
 
       <RollbackDialog
         open={dialog === "rollback"}
-        loading={rollbackPreview.validating}
+        loading={loading || rollbackPreview.validating || rollbackPreview.loading}
         preview={rollbackPreview.data}
         onRollback={handleRollback}
         onClose={() => setDialog(null)}

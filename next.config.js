@@ -61,10 +61,7 @@ const nextConfig = {
     // Use static build ID to prevent chunk mismatch
     return 'production-build';
   },
-  webpack: (config, { isServer }) => {
-    // Disable cache for consistent builds
-    config.cache = false;
-    
+  webpack: (config) => {
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,

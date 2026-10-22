@@ -1,23 +1,18 @@
 import { useEffect } from 'react';
-import localforage from 'localforage';
+import { createLocalStore, getCachedData, setCachedData } from 'utils/localStorage';
 
 export const useOfflineStorage = (storeName, key, data) => {
-  const store = localforage.createInstance({
-    name: 'master-data',
-    storeName
-  });
-
   useEffect(() => {
-    if (data) {
-      store.setItem(key, data);
+    if (data != null) {
+      const store = createLocalStore(storeName);
+      void setCachedData(store, key, data);
     }
-  }, [data, store, key]);
+  }, [data, storeName, key]);
 };
 
 export const getOfflineData = async (storeName, key) => {
-  const store = localforage.createInstance({
-    name: 'master-data',
-    storeName
-  });
-  return await store.getItem(key);
+  if (typeof window === 'undefined') return null;
+
+  const store = createLocalStore(storeName);
+  return getCachedData(store, key);
 };

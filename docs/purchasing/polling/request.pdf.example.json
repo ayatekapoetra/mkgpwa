@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "event": "purchase_order_poll.requested",
+  "request_id": "68bc0cbd-82ab-44da-8914-cf97c7b71fbe",
+  "created_at": "2026-10-22T10:00:00.000Z",
+  "sender_phone": null,
+  "recipient_phone": "+6289876543210",
+  "delivery": {
+    "mode": "pdf",
+    "pdf_documents": [
+      { "po_id": "101", "file_name": "purchase-order-101.pdf", "mime_type": "application/pdf", "source": { "method": "GET", "path": "/scm/purchase-orders/101/print" } }
+    ],
+    "text": null
+  },
+  "poll": null,
+  "items": [{
+    "po_id": "101", "po_number": "PO-2026-00101", "pr_number": "PR-2026-00081", "request_date": "2026-10-22",
+    "status": "verify", "priority": "P1", "business_unit": { "initial": "MKG", "name": "PT. Contoh Perusahaan" },
+    "branch_name": "Site A", "supplier_name": "PT. Contoh Pemasok", "description": "Pengadaan sparepart equipment",
+    "currency": "IDR", "grand_total": "2500000.00",
+    "line_items": [{ "item_id": "501", "item_code": "BRG-001", "item_name": "Filter Oli", "quantity": "10", "unit": "PCS" }]
+  }],
+  "summary": { "purchase_order_count": 1, "totals_by_currency": [{ "currency": "IDR", "amount": "2500000.00" }] },
+  "result_handling": { "send_result_to": null, "include_recommendation": false, "update_purchase_orders": false }
+}

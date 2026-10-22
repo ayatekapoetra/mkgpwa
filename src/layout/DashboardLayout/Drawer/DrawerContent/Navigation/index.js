@@ -1,6 +1,7 @@
 'use client';
 
-import { useLayoutEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 // MATERIAL - UI
 import { useTheme } from '@mui/material/styles';
@@ -15,27 +16,18 @@ import { MenuFromAPI } from 'menu-items/dashboard';
 // PROJECT IMPORTS
 import NavItem from './NavItem';
 import NavGroup from './NavGroup';
-import menuItem from 'menu-items';
 
 import { useLayoutConfig } from 'hooks/useConfig';
 import { HORIZONTAL_MAX_ITEM } from 'config';
 import { useGetMenu, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation } from 'config';
 
-function isFound(arr, str) {
-  return arr.items.some((element) => {
-    if (element.id === str) {
-      return true;
-    }
-    return false;
-  });
-}
-
 // ==============================|| DRAWER CONTENT - NAVIGATION ||============================== //
 
 const Navigation = () => {
   const theme = useTheme();
   const { menu, menuLoading } = useGetMenu();
+  const { messages } = useIntl();
 
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
 
@@ -45,40 +37,10 @@ const Navigation = () => {
 
   const [selectedItems, setSelectedItems] = useState('');
   const [selectedLevel, setSelectedLevel] = useState(0);
-  const [menuItems, setMenuItems] = useState({ items: [] });
-
-  let dashboardMenu = MenuFromAPI();
-
-  // useLayoutEffect(() => {
-  //   setMenuItems(menuItem);
-  //   // eslint-disable-next-line
-  // }, [menuItem]);
-
-  // useLayoutEffect(() => {
-  //   if (menuLoading && !isFound(menuItem, 'group-dashboard-loading')) {
-  //     menuItem.items.splice(0, 0, dashboardMenu);
-  //     setMenuItems({ items: [...menuItem.items] });
-  //   } else if (!menuLoading && dashboardMenu?.id !== undefined && !isFound(menuItem, 'group-dashboard')) {
-  //     menuItem.items.splice(0, 1, dashboardMenu);
-  //     setMenuItems({ items: [...menuItem.items] });
-  //   } else {
-  //     setMenuItems({ items: [...menuItem.items] });
-  //   }
-  //   // eslint-disable-next-line
-  // }, [menu, menuLoading]);
-
-  useLayoutEffect(() => {
-    if (menuLoading && !isFound(menuItems, 'group-dashboard-loading')) {
-      menuItems.items.splice(0, 0, dashboardMenu);
-      setMenuItems({ items: [...menuItems.items] });
-    } else if (!menuLoading && dashboardMenu?.id !== undefined && !isFound(menuItem, 'group-dashboard')) {
-      menuItems.items.splice(0, 1, dashboardMenu);
-      setMenuItems({ items: [...menuItems.items] });
-    } else {
-      setMenuItems({ items: [...menuItems.items] });
-    }
-    // eslint-disable-next-line
-  }, [menu, menuLoading]);
+  const menuItems = useMemo(() => {
+    const dashboardMenu = MenuFromAPI({ menu, menuLoading, messages });
+    return { items: dashboardMenu?.id ? [dashboardMenu] : [] };
+  }, [menu, menuLoading, messages]);
 
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 

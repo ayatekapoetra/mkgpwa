@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment, CircularProgress } from '@mui/material';
 import { usePublicEquipment } from 'api/equipment';
+
+const filterOptions = createFilterOptions({ limit: 100, stringify: (option) => [option.kode, option.model, option.manufaktur].filter(Boolean).join(' ') });
 
 const FilterEquipment = ({ value = '', label = 'Equipment', name = 'equipment_id', startAdornment = null, setData }) => {
   const { data: array, dataLoading } = usePublicEquipment(null);
@@ -15,6 +18,7 @@ const FilterEquipment = ({ value = '', label = 'Equipment', name = 'equipment_id
         <Autocomplete
           fullWidth
           options={options}
+          filterOptions={filterOptions}
           loading={dataLoading}
           value={selectedValue}
           onChange={(e, newValue) => {

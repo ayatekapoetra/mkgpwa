@@ -38,7 +38,7 @@ export default function NotificationPage() {
   const [open, setOpen] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const { unreadCount } = useNotificationUnreadCount();
-  const { rows, dataLoading, dataError, mutate } = useNotificationInbox({ page: 1, perPage: 5, app: 'web' });
+  const { rows, dataLoading, dataError, mutate } = useNotificationInbox({ page: 1, perPage: 5, app: 'web' }, open);
 
   const handleClose = (event) => {
     if (anchorRef.current && anchorRef.current.contains(event.target)) return;

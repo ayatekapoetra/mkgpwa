@@ -351,7 +351,7 @@ export const usePurchaseOrderRollbackPreview = (id, enabled = true) => {
     id && enabled ? endpoints.rollbackPreview(id) : null,
     fetcher,
     {
-      revalidateIfStale: false,
+      revalidateIfStale: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     },
@@ -418,6 +418,22 @@ export const usePurchaseOrderAuditTrail = (id, enabled = true) => {
       mutate,
     };
   }, [data, error, id, isLoading, isValidating, mutate]);
+};
+
+/** Fetch fresh PO detail for a polling export; never enqueue an offline read. */
+export const getPurchaseOrderForPoll = async (id, { signal } = {}) => {
+  if (!/^[1-9]\d*$/.test(String(id ?? ''))) throw new Error('ID PO tidak valid.');
+  const response = await axiosServices.get(endpoints.detail(id), {
+    signal,
+    skipOfflineQueue: true,
+    retryCount: 0,
+  });
+  if (response.status === 0 || response.data?.diagnostic?.error) {
+    throw new Error(getPurchaseOrderError(response.data, 'Gagal memuat detail PO.').message);
+  }
+  const row = normalizeDetail(response.data);
+  if (!row || String(row.id) !== String(id)) throw new Error('Detail PO tidak ditemukan atau identitasnya tidak sesuai.');
+  return row;
 };
 
 export const savePreparation = async (id, payload) => {

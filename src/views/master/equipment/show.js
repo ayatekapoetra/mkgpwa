@@ -378,15 +378,15 @@ export default function ShowEquipmentScreen() {
 
 const HelperComponent = ({ values, setFieldValue }) => {
   useEffect(() => {
-    if (values.kategori != 'DT') {
-      setFieldValue('grptire', 'X');
+    if (values.kategori !== 'DT' && values.grptire !== 'X') {
+      setFieldValue('grptire', 'X', false);
     }
-  }, [values, setFieldValue]);
+  }, [values.kategori, values.grptire, setFieldValue]);
 
   useEffect(() => {
     if (values.abbr) {
       const teksAbbr = values.abbr.replace(/[^A-Z0-9]/g, '');
-      setFieldValue('abbr', teksAbbr);
+      if (values.abbr !== teksAbbr) setFieldValue('abbr', teksAbbr, false);
     }
   }, [values.abbr, setFieldValue]);
   return null;

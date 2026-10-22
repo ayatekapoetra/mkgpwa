@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
 // NEXT
 import { usePathname, useRouter } from 'next/navigation';
@@ -105,7 +105,7 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
     setAnchorEl(null);
   };
 
-  useMemo(() => {
+  useEffect(() => {
     if (selected === selectedItems) {
       if (level === 1) {
         setOpen(true);

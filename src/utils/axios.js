@@ -1,9 +1,10 @@
 // utils/axios.js
 import axios from "axios";
-import { getSession } from "next-auth/react";
+import { getCachedSession, updateCachedSession } from './session-cache';
 import { saveRequest } from "lib/offlineFetch";
 
-const DEFAULT_TIMEOUT = 60000; // 60 detik — beberapa endpoint master/list lambat di backend
+const DEFAULT_TIMEOUT = 30000;
+const READ_METHODS = ['get', 'head', 'options'];
 
 const axiosServices = axios.create({
   baseURL:
@@ -31,7 +32,7 @@ function normalizeJsonPayload(data) {
 
 axiosServices.interceptors.request.use(
   async (config) => {
-    const session = await getSession();
+    const session = await getCachedSession();
     const token = session?.token?.accessToken;
 
     if (token) {
@@ -55,6 +56,9 @@ axiosServices.interceptors.request.use(
     }
 
     // Export/download endpoints can legitimately take much longer than normal API calls.
+    if (!READ_METHODS.includes((config.method || 'get').toLowerCase()) && config.timeout === DEFAULT_TIMEOUT) {
+      config.timeout = 60000;
+    }
     if (
       typeof config.url === 'string' &&
       (config.url.includes('/export-excel') || config.url.includes('/download'))
@@ -71,10 +75,13 @@ function shouldRetry(error) {
   const config = error.config || {};
 
   // Jangan retry jika sudah diminta eksplisit atau sudah melewati batas percobaan
-  if (config.skipRetry) return false;
+  if (config.skipRetry || axios.isCancel(error) || config.signal?.aborted) return false;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return false;
+  if (!READ_METHODS.includes((config.method || 'get').toLowerCase())) return false;
 
   const status = error.response?.status;
   const isTimeout = error.code === "ECONNABORTED" || error.code === "ETIMEDOUT";
+  if (isTimeout && config.retryCount == null) return false;
 
   // Hanya retry untuk timeout / error jaringan (bukan error HTTP 4xx/5xx dari server)
   return isTimeout || !status || status >= 500;
@@ -86,6 +93,7 @@ axiosServices.interceptors.response.use(
   },
   async (error) => {
     const config = error.config || {};
+    if (axios.isCancel(error) || config.signal?.aborted) return Promise.reject(error);
 
     // Retry otomatis untuk timeout / gangguan jaringan sementara
     if (shouldRetry(error)) {
@@ -98,6 +106,7 @@ axiosServices.interceptors.response.use(
         // Beri jeda singkat agar server sempat pulih (backoff sederhana)
         const delay = config.retryDelay ?? 1000 * config.__retryCount;
         await new Promise((resolve) => setTimeout(resolve, delay));
+        if (config.signal?.aborted) return Promise.reject(new axios.CanceledError());
 
         return axiosServices(config);
       }
@@ -132,6 +141,7 @@ axiosServices.interceptors.response.use(
       !window.location.href.includes("/login") &&
       !window.location.href.includes("/login-customers")
     ) {
+      updateCachedSession(null);
       const isCustomersPath = window.location.pathname.startsWith("/customers");
       window.location.pathname = isCustomersPath ? "/login-customers" : "/login";
     }

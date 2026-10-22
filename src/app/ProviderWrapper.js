@@ -19,6 +19,7 @@ import Notistack from 'components/third-party/Notistack';
 import Snackbar from 'components/@extended/Snackbar';
 import Customization from 'components/customization/index';
 import AlertNotification from 'components/@extended/AlertNotification';
+import SessionCacheSync from 'components/SessionCacheSync';
 
 // Buat client React Query
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const ProviderWrapper = ({ children }) => {
             <ScrollTop>
               <QueryClientProvider client={queryClient}>
                 <SessionProvider refetchInterval={0}>
+                  <SessionCacheSync />
                   <Notistack>
                     <Snackbar />
                     <AlertNotification />

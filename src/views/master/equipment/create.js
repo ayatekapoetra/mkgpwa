@@ -316,15 +316,15 @@ export default function AddEquipmentScreen() {
 
 const HelperComponent = ({ values, setFieldValue }) => {
   useEffect(() => {
-    if (values.kategori != 'DT') {
-      setFieldValue('grptire', 'X');
+    if (values.kategori !== 'DT' && values.grptire !== 'X') {
+      setFieldValue('grptire', 'X', false);
     }
-  }, [values, setFieldValue]);
+  }, [values.kategori, values.grptire, setFieldValue]);
 
   useEffect(() => {
     if (values.kode) {
       let teksKode = values.kode?.toUpperCase();
-      setFieldValue('kode', teksKode);
+      if (values.kode !== teksKode) setFieldValue('kode', teksKode, false);
     }
   }, [values.kode, setFieldValue]);
 
@@ -332,7 +332,7 @@ const HelperComponent = ({ values, setFieldValue }) => {
     if (values.abbr) {
       let teksAbbr = values.abbr?.toUpperCase();
       teksAbbr = teksAbbr.replace(/[^A-Z0-9]/g, '');
-      setFieldValue('abbr', teksAbbr);
+      if (values.abbr !== teksAbbr) setFieldValue('abbr', teksAbbr, false);
     }
   }, [values.abbr, setFieldValue]);
   return null;

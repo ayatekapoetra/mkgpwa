@@ -24,7 +24,11 @@ export default function Layout({ children }) {
       if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         console.log('✅ Back online → replay queue...');
       }
-      await replayRequests();
+      try {
+        await replayRequests();
+      } catch (error) {
+        console.warn('Gagal membaca antrean offline:', error);
+      }
     };
 
     // cek langsung kalau sudah online saat load

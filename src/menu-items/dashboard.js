@@ -1,7 +1,7 @@
 'use client';
 
 // third-party
-import { FormattedMessage, useIntl } from 'react-intl';
+import { FormattedMessage } from 'react-intl';
 
 // assets
 import {
@@ -50,7 +50,6 @@ import {
   Health,
 } from 'iconsax-react';
 
-import { useGetMenu } from 'api/menu';
 import { getMenuIcon } from 'utils/getMenuIcon';
 // import { useSession } from 'next-auth/react';
 
@@ -134,10 +133,7 @@ const loadingMenu = {
 
 // ==============================|| MENU ITEMS - API ||============================== //
 
-export const MenuFromAPI = () => {
-  const { messages } = useIntl();
-  // const { data: session, status } = useSession();
-  const { menu, menuLoading } = useGetMenu();
+export const MenuFromAPI = ({ menu, menuLoading, messages }) => {
   if (menuLoading) return loadingMenu;
 
   const subChildrenList = (children) => {

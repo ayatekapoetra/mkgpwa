@@ -26,11 +26,12 @@ import { useGetPrepareDo } from 'api/delivery-order';
 import InputDateTime from 'components/InputDateTime';
 import InputAreaForm from 'components/InputAreaForm';
 import OptionPemasokDelor from 'components/OptionPemasokDelor';
+import BisnisUnitSelect from '../bisnis-unit-select';
 import WaitOption from '../waitoption';
 import TableItems from './table';
 
 export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBlur, handleChange, values, touched, errors, onDelete, isDeleting }) {
-  const { bisnisOptions, jenisItemOptions, typeKirimOptions, viaKirimOptions } = useDropdownOptions();
+  const { jenisItemOptions, typeKirimOptions, viaKirimOptions } = useDropdownOptions();
   // console.log('errors.', errors);
   console.log('values.', values);
 
@@ -46,17 +47,13 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
       <FormHelpers setFieldValue={setFieldValue} values={values} />
       <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
         <Grid item xs={12} sm={6} lg={6}>
-          <SelectForm
-            label="Bisnis Unit"
-            labelId="bisnis-unit"
-            name="bisnis_id"
+          <BisnisUnitSelect
             value={values?.bisnis_id || ''}
             placeholder=""
             touched={touched}
             errors={errors}
             onBlur={handleBlur}
             onChange={handleChange}
-            array={bisnisOptions}
           />
         </Grid>
         <Grid item xs={12} sm={3} lg={3}>
@@ -251,9 +248,11 @@ export default function FormikFormCreate({ setFieldValue, handleSubmit, handleBl
 const FormHelpers = ({ setFieldValue, values }) => {
   useEffect(() => {
     if (values?.pemasok_id) {
-      setFieldValue('phone_pemasok', values?.pemasok?.phone);
-      setFieldValue('alamat_pemasok', values?.pemasok?.alamat);
+      const phone = values?.pemasok?.phone || '';
+      const alamat = values?.pemasok?.alamat || '';
+      if (values?.phone_pemasok !== phone) setFieldValue('phone_pemasok', phone, false);
+      if (values?.alamat_pemasok !== alamat) setFieldValue('alamat_pemasok', alamat, false);
     }
-  }, [values, setFieldValue]);
+  }, [values?.pemasok_id, values?.pemasok?.phone, values?.pemasok?.alamat, values?.phone_pemasok, values?.alamat_pemasok, setFieldValue]);
   return null;
 };

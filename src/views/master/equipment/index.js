@@ -13,11 +13,6 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import { GridOn, PictureAsPdf } from '@mui/icons-material';
 
-// EXPORT
-import { utils as xlsxUtils, writeFile as writeXlsxFile } from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
 // COMPONENTS
 import MainCard from 'components/MainCard';
 import CardListEquipment from './listcard';
@@ -118,6 +113,7 @@ const EquipmentScreen = () => {
     try {
       const list = await fetchAllEquipment(params);
       if (!list.length) return;
+      const { utils: xlsxUtils, writeFile: writeXlsxFile } = await import('xlsx');
       const rows = mapEquipmentRows(list);
       const ws = xlsxUtils.json_to_sheet(rows, { header: EXPORT_HEADERS });
       const wb = xlsxUtils.book_new();
@@ -134,6 +130,7 @@ const EquipmentScreen = () => {
     try {
       const list = await fetchAllEquipment(params);
       if (!list.length) return;
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
       const rows = mapEquipmentRows(list);
       const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
       const tableOpts = {

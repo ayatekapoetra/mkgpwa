@@ -21,6 +21,7 @@ import { FieldArray } from 'formik';
 
 import axiosServices from 'utils/axios';
 import { useWorkOrderList } from 'api/work-order';
+import useItemDependencies from './use-item-dependencies';
 
 export function createEmptyItem() {
   return {
@@ -119,14 +120,12 @@ export default function GoodsIssueForm({
 }) {
   const theme = useTheme();
   const [barangOptions, setBarangOptions] = useState({});
-  const [priceOptions, setPriceOptions] = useState({});
-  const [rackOptions, setRackOptions] = useState({});
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [loadingBarang, setLoadingBarang] = useState({});
-  const [loadingDeps, setLoadingDeps] = useState({});
   const [loadingEquipment, setLoadingEquipment] = useState(false);
   const barangSearchTimers = useRef({});
   const barangFetchSeq = useRef({});
+  const barangControllers = useRef({});
   const barangCacheRef = useRef({});
 
   // Autocomplete Kode Work Order
@@ -153,7 +152,10 @@ export default function GoodsIssueForm({
   }, [isFromMro, giPrepareData, values.kdwo, activeWoOptions]);
 
   const gudangId = values.gudang_id;
+  const currentGudangRef = useRef(gudangId);
+  currentGudangRef.current = gudangId;
   const bisnisId = values.bisnis_id;
+  const { priceOptions, rackOptions, loadingDeps } = useItemDependencies(gudangId, values.items, setFieldValue);
 
   const filteredGudangOptions = useMemo(
     () => (gudangOptions || []).filter((item) => !bisnisId || String(item.bisnis_id) === String(bisnisId)),
@@ -170,51 +172,60 @@ export default function GoodsIssueForm({
     [bisnisOptions, values.bisnis_id]
   );
 
-  const fetchEquipment = useCallback(async () => {
+  const fetchEquipment = useCallback(async (signal) => {
     if (!bisnisId) {
       setEquipmentOptions([]);
+      setLoadingEquipment(false);
       return;
     }
     setLoadingEquipment(true);
     try {
       const params = new URLSearchParams({ bisnis_id: bisnisId });
-      const response = await axiosServices.get(`/warehouse/goods-issues/options/equipment?${params.toString()}`);
+      const response = await axiosServices.get(`/warehouse/goods-issues/options/equipment?${params.toString()}`, { signal });
+      if (signal.aborted) return;
       setEquipmentOptions(response.data?.data || []);
     } catch {
-      setEquipmentOptions([]);
+      if (!signal.aborted) setEquipmentOptions([]);
     } finally {
-      setLoadingEquipment(false);
+      if (!signal.aborted) setLoadingEquipment(false);
     }
   }, [bisnisId]);
 
   useEffect(() => {
-    fetchEquipment();
+    const controller = new AbortController();
+    fetchEquipment(controller.signal);
+    return () => controller.abort();
   }, [fetchEquipment]);
 
   const fetchBarang = useCallback(
     async (index, keyword = '', { force = false } = {}) => {
       if (!gudangId) return;
+      const seq = (barangFetchSeq.current[index] || 0) + 1;
+      barangFetchSeq.current[index] = seq;
+      barangControllers.current[index]?.abort();
+      const isCurrent = () => barangFetchSeq.current[index] === seq && String(currentGudangRef.current) === String(gudangId);
       const normalizedKeyword = String(keyword || '').trim();
       const cacheKey = `${gudangId}::${normalizedKeyword.toLowerCase()}`;
       if (!force && barangCacheRef.current[cacheKey]) {
         setBarangOptions((prev) => ({ ...prev, [index]: barangCacheRef.current[cacheKey] }));
+        setLoadingBarang((prev) => ({ ...prev, [index]: false }));
         return;
       }
-      const seq = (barangFetchSeq.current[index] || 0) + 1;
-      barangFetchSeq.current[index] = seq;
+      const controller = new AbortController();
+      barangControllers.current[index] = controller;
       setLoadingBarang((prev) => ({ ...prev, [index]: true }));
       try {
         const params = new URLSearchParams({ gudang_id: gudangId, page: 1, limit: 20, keyword: normalizedKeyword });
-        const response = await axiosServices.get(`/warehouse/goods-issues/options/items?${params.toString()}`);
-        if (barangFetchSeq.current[index] !== seq) return;
+        const response = await axiosServices.get(`/warehouse/goods-issues/options/items?${params.toString()}`, { signal: controller.signal });
+        if (!isCurrent() || controller.signal.aborted) return;
         const items = response.data?.data?.items || response.data?.data || [];
         barangCacheRef.current[cacheKey] = items;
         setBarangOptions((prev) => ({ ...prev, [index]: items }));
       } catch {
-        if (barangFetchSeq.current[index] !== seq) return;
+        if (!isCurrent() || controller.signal.aborted) return;
         setBarangOptions((prev) => ({ ...prev, [index]: [] }));
       } finally {
-        if (barangFetchSeq.current[index] === seq) {
+        if (isCurrent() && !controller.signal.aborted) {
           setLoadingBarang((prev) => ({ ...prev, [index]: false }));
         }
       }
@@ -231,53 +242,21 @@ export default function GoodsIssueForm({
   );
 
   useEffect(() => {
+    const timers = barangSearchTimers.current;
+    const controllers = barangControllers.current;
     return () => {
-      Object.values(barangSearchTimers.current).forEach((timer) => clearTimeout(timer));
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+      Object.values(controllers).forEach((controller) => controller.abort());
     };
-  }, []);
-
-  const fetchDependencies = useCallback(
-    async (index, barangId) => {
-      if (!gudangId || !barangId) return;
-      setLoadingDeps((prev) => ({ ...prev, [index]: true }));
-      try {
-        const [pricesResp, racksResp] = await Promise.all([
-          axiosServices.get(`/warehouse/goods-issues/options/prices?${new URLSearchParams({ gudang_id: gudangId, barang_id: barangId }).toString()}`),
-          axiosServices.get(`/warehouse/goods-issues/options/source-racks?${new URLSearchParams({ gudang_id: gudangId, barang_id: barangId }).toString()}`)
-        ]);
-        const prices = pricesResp.data?.data || [];
-        const racks = racksResp.data?.data || [];
-        setPriceOptions((prev) => ({ ...prev, [index]: prices }));
-        setRackOptions((prev) => ({ ...prev, [index]: racks }));
-        if (prices.length === 1) setFieldValue(`items.${index}.hargabeli_id`, String(prices[0].id));
-        if (racks.length === 1) setFieldValue(`items.${index}.rack_id`, String(racks[0].id));
-      } catch {
-        setPriceOptions((prev) => ({ ...prev, [index]: [] }));
-        setRackOptions((prev) => ({ ...prev, [index]: [] }));
-      } finally {
-        setLoadingDeps((prev) => ({ ...prev, [index]: false }));
-      }
-    },
-    [gudangId, setFieldValue]
-  );
+  }, [gudangId]);
 
   useEffect(() => {
     values.items.forEach((item, index) => {
-      if (item.barang_id && !priceOptions[index] && !rackOptions[index]) {
-        fetchDependencies(index, item.barang_id);
-      }
       if (item.barang_option && !barangOptions[index]) {
         setBarangOptions((prev) => ({ ...prev, [index]: [item.barang_option] }));
       }
     });
-  }, [barangOptions, fetchDependencies, priceOptions, rackOptions, values.items]);
-
-  useEffect(() => {
-    if (!gudangId) return;
-    values.items.forEach((item, index) => {
-      if (item.barang_id) fetchDependencies(index, item.barang_id);
-    });
-  }, [fetchDependencies, gudangId, values.items]);
+  }, [barangOptions, values.items]);
 
   return (
     <form onSubmit={handleSubmit} noValidate>
@@ -312,8 +291,6 @@ export default function GoodsIssueForm({
               setFieldValue('gudang_id', '');
               setFieldValue('items', values.items.map(() => createEmptyItem()));
               setBarangOptions({});
-              setPriceOptions({});
-              setRackOptions({});
               barangCacheRef.current = {};
             }}
             renderInput={(params) => (
@@ -341,8 +318,6 @@ export default function GoodsIssueForm({
               setFieldValue('gudang_id', nextValue);
               setFieldValue('items', values.items.map(() => createEmptyItem()));
               setBarangOptions({});
-              setPriceOptions({});
-              setRackOptions({});
               barangCacheRef.current = {};
             }}
             renderInput={(params) => (
@@ -517,7 +492,6 @@ export default function GoodsIssueForm({
                               setFieldValue(`items.${index}.stok_pakai`, option?.stok_pakai || 0);
                               setFieldValue(`items.${index}.hargabeli_id`, '');
                               setFieldValue(`items.${index}.rack_id`, '');
-                              if (option?.id) fetchDependencies(index, option.id);
                             }}
                             renderOption={(props, option) => (
                               <Box component="li" {...props} key={option.id} sx={{ alignItems: 'flex-start !important', py: 1.25 }}>

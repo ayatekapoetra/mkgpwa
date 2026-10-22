@@ -1,0 +1,140 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
+
+import { usePurchaseOrderAccess } from 'api/purchase-orders';
+import Breadcrumbs from 'components/@extended/Breadcrumbs';
+import { APP_DEFAULT_PATH } from 'config';
+import usePollSelection from './use-poll-selection';
+import usePollDetails from './use-poll-details';
+import { buildPollBody, DELIVERY_MODES, deliveryHasPoll, normalizeWhatsAppPhone, preparePollPayload, selectionSignature, summarizePollItems, toPollItem } from './polling';
+import PollPreviewView from './poll-preview-view';
+
+function phoneError(value) {
+  try { normalizeWhatsAppPhone(value); return ''; } catch (error) { return error.message; }
+}
+
+function downloadPayload(payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `purchase-order-${payload.delivery.mode}-${payload.request_id}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export default function PurchaseOrderPollPreview() {
+  const router = useRouter();
+  const selection = usePollSelection();
+  const { permissions, loading: accessLoading, error: accessError } = usePurchaseOrderAccess();
+  const canRead = !accessLoading && !accessError && permissions.can_read;
+  const details = usePollDetails(selection, canRead && !selection.error);
+  const [contacts, setContacts] = useState({ key: null, sender_phone: '', recipient_phone: '' });
+  const [touched, setTouched] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState('pdf_poll');
+  const [artifact, setArtifact] = useState(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const submitting = useRef(false);
+  const lifetime = useRef(0);
+  const latest = useRef(null);
+  const ids = selectionSignature(selection.data.items);
+  const phones = useMemo(() => contacts.key === selection.key ? contacts : { sender_phone: '', recipient_phone: '' }, [contacts, selection.key]);
+  latest.current = { key: selection.key, ids, phones, rows: details.rows };
+
+  useEffect(() => {
+    if (!selection.ready) return;
+    setContacts((current) => current.key === selection.key ? current : {
+      key: selection.key,
+      sender_phone: selection.data.sender_phone,
+      recipient_phone: selection.data.recipient_phone
+    });
+  }, [selection.ready, selection.key, selection.data.sender_phone, selection.data.recipient_phone]);
+
+  useEffect(() => () => { lifetime.current += 1; }, []);
+
+  const senderError = deliveryHasPoll(deliveryMode) ? phoneError(phones.sender_phone) : '';
+  const recipientError = phoneError(phones.recipient_phone);
+  const complete = canRead && selection.ready && !selection.error && !details.loading &&
+    selection.data.items.length > 0 && details.rows.length === selection.data.items.length && Object.keys(details.errors).length === 0;
+  const preview = useMemo(() => {
+    if (!complete || senderError || recipientError) return null;
+    try { return buildPollBody(details.rows, phones, deliveryMode); } catch { return null; }
+  }, [complete, senderError, recipientError, details.rows, phones, deliveryMode]);
+  const summary = useMemo(() => complete ? summarizePollItems(details.rows.map(toPollItem)) : null, [complete, details.rows]);
+  const currentArtifact = artifact && artifact.key === selection.key && artifact.ids === ids &&
+    artifact.rows === details.rows && artifact.sender === phones.sender_phone && artifact.recipient === phones.recipient_phone && artifact.mode === deliveryMode ? artifact : null;
+
+  const editPhone = (name, value) => {
+    setContacts((current) => ({ ...current, key: selection.key, [name]: value }));
+    setError('');
+    setMessage('');
+  };
+  const savePhones = () => {
+    if (contacts.key === selection.key) selection.savePhones({ sender_phone: phones.sender_phone, recipient_phone: phones.recipient_phone });
+  };
+
+  const handlePrepare = async (mode) => {
+    if (!DELIVERY_MODES.some((option) => option.id === mode)) return;
+    if (!complete || submitting.current) return;
+    setDeliveryMode(mode);
+    setTouched(true);
+    setError('');
+    setMessage('');
+    const needsSender = deliveryHasPoll(mode) && phoneError(phones.sender_phone);
+    if (needsSender || recipientError) {
+      document.getElementById?.(recipientError ? 'po-poll-recipient' : 'po-poll-sender')?.focus();
+      return;
+    }
+    submitting.current = true;
+    setPreparing(true);
+    const started = { ...latest.current, lifetime: lifetime.current };
+    try {
+      const { payload, prepared } = await preparePollPayload(details.rows, phones, selection.data.prepared, {
+        request_id: uuidv4(), created_at: new Date().toISOString()
+      }, mode);
+      const current = latest.current;
+      if (lifetime.current !== started.lifetime) return;
+      if (current.key !== started.key || current.ids !== started.ids || current.rows !== started.rows ||
+        current.phones.sender_phone !== phones.sender_phone || current.phones.recipient_phone !== phones.recipient_phone) {
+        throw new Error('Pilihan atau nomor berubah. Periksa preview lalu coba lagi.');
+      }
+      if (!selection.savePrepared(prepared, { sender_phone: phones.sender_phone, recipient_phone: phones.recipient_phone }, ids)) return;
+      setArtifact({ key: selection.key, ids, rows: details.rows, sender: phones.sender_phone, recipient: phones.recipient_phone, mode, payload });
+      downloadPayload(payload);
+      setMessage(`${DELIVERY_MODES.find((option) => option.id === mode).label}: JSON Hermes berhasil disiapkan dan diunduh. Pesan WhatsApp belum dikirim karena hook Hermes belum terhubung.`);
+    } catch (failure) {
+      if (lifetime.current === started.lifetime) setError(failure?.message || 'Gagal menyiapkan JSON Hermes.');
+    } finally {
+      submitting.current = false;
+      if (lifetime.current === started.lifetime) setPreparing(false);
+    }
+  };
+
+  const handleReset = () => {
+    if (selection.reset()) router.push('/purchasing-orders');
+  };
+
+  return (
+    <>
+      <Breadcrumbs custom heading="Preview Pengiriman Purchase Order" links={[
+        { title: 'Home', to: APP_DEFAULT_PATH },
+        { title: 'Purchase Order', to: '/purchasing-orders' },
+        { title: 'Preview Pengiriman' }
+      ]} />
+      <PollPreviewView
+        selection={selection} details={details} canRead={canRead} accessLoading={accessLoading} accessError={accessError}
+        phones={phones} touched={touched} senderError={senderError} recipientError={recipientError} complete={complete}
+        summary={summary} preview={preview} currentArtifact={currentArtifact} preparing={preparing} error={error} message={message}
+        deliveryMode={deliveryMode}
+        onEditPhone={editPhone} onSavePhones={savePhones} onPrepare={handlePrepare} onReset={handleReset}
+      />
+    </>
+  );
+}

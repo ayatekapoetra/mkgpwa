@@ -25,10 +25,9 @@ export async function middleware(request) {
     });
   }
 
-  // Aggressive headers to prevent any PWA/service worker interference
+  // Keep documents private without deleting the browser's asset/offline caches.
   const response = NextResponse.next();
 
-  // Nuclear cache control - prevent any caching
   response.headers.set(
     "Cache-Control",
     "no-cache, no-store, must-revalidate, max-age=0, private",
@@ -39,12 +38,6 @@ export async function middleware(request) {
   // Block service worker completely
   response.headers.set("Service-Worker-Allowed", "/");
   response.headers.set("Service-Worker", "none");
-
-  // Clear all possible cached data
-  response.headers.set(
-    "Clear-Site-Data",
-    '"cache", "storage", "executionContexts"',
-  );
 
   // Prevent any PWA manifest loading
   response.headers.set("X-PWA-Disabled", "true");

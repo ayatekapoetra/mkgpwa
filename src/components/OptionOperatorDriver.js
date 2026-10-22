@@ -1,5 +1,8 @@
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment, Chip, Divider } from '@mui/material';
 import { useGetOprDrv } from 'api/karyawan';
+
+const filterOptions = createFilterOptions({ limit: 100, stringify: (option) => [option.nama, option.section, option.phone].filter(Boolean).join(' ') });
 
 const OptionOperatorDriver = ({
   value = '',
@@ -25,6 +28,7 @@ const OptionOperatorDriver = ({
         <Autocomplete
           fullWidth
           options={options}
+          filterOptions={filterOptions}
           groupBy={(option) => option.section || 'Lainnya'}
           renderGroup={(params) => (
             <li key={params.key}>
@@ -39,7 +43,7 @@ const OptionOperatorDriver = ({
           value={options?.find((option) => option?.id == value) || null}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
-            setFieldValue(objValue, options?.find((option) => option?.id == newValue?.id) || null);
+            setFieldValue(objValue, newValue || null, false);
           }}
           isOptionEqualToValue={(option, value) => option.id === value?.id}
           getOptionLabel={(option) => option.nama || ''}
@@ -70,7 +74,7 @@ const OptionOperatorDriver = ({
                 {...params}
                 label={label}
                 error={touched && Boolean(error)}
-                helperText={touched && error}
+                helperText={(touched && error) || (options.length > 100 ? 'Maksimal 100 pilihan ditampilkan. Ketik nama untuk mencari.' : '')}
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: startAdornment && (

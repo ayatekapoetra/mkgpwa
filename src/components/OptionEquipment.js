@@ -1,5 +1,9 @@
+import { useMemo } from 'react';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { Box, Stack, Typography, FormControl, TextField, Autocomplete, InputAdornment, Chip, Divider } from '@mui/material';
 import { usePublicEquipment } from 'api/equipment';
+
+const filterOptions = createFilterOptions({ limit: 100, stringify: (option) => [option.kode, option.model, option.manufaktur].filter(Boolean).join(' ') });
 
 const OptionEquipment = ({
   value = '',
@@ -14,8 +18,8 @@ const OptionEquipment = ({
 }) => {
   const { data: array, dataLoading } = usePublicEquipment(filterParams);
 
-  const options = Array.isArray(array) ? array : [];
-  const sortedOptions = [...options].sort((a, b) => (a.manufaktur || 'Lainnya').localeCompare(b.manufaktur || 'Lainnya'));
+  const sortedOptions = useMemo(() => [...(Array.isArray(array) ? array : [])].sort((a, b) => (a.manufaktur || 'Lainnya').localeCompare(b.manufaktur || 'Lainnya')), [array]);
+  const selectedOption = useMemo(() => sortedOptions.find((option) => String(option.id) === String(value)) || null, [sortedOptions, value]);
 
   
 
@@ -28,6 +32,7 @@ const OptionEquipment = ({
         <Autocomplete
           fullWidth
           options={sortedOptions}
+          filterOptions={filterOptions}
           groupBy={(option) => option.manufaktur || 'Lainnya'}
           renderGroup={(params) => (
             <li key={params.key}>
@@ -41,10 +46,10 @@ const OptionEquipment = ({
               </ul>
             </li>
           )}
-          value={sortedOptions.find((option) => option?.id == value) || null}
+          value={selectedOption}
           onChange={(e, newValue) => {
             setFieldValue(name, newValue?.id || '');
-            setFieldValue(objValue, sortedOptions.find((option) => option?.id == newValue?.id) || null);
+            setFieldValue(objValue, newValue || null, false);
           }}
           isOptionEqualToValue={(option, value) => option.id === value?.id}
           getOptionLabel={(option) => option.kode || ''}
@@ -78,7 +83,7 @@ const OptionEquipment = ({
                 {...params}
                 label={label}
                 error={touched && Boolean(error)}
-                helperText={touched && error}
+                helperText={(touched && error) || (sortedOptions.length > 100 ? 'Maksimal 100 pilihan ditampilkan. Ketik kode atau model untuk mencari.' : '')}
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: startAdornment && (

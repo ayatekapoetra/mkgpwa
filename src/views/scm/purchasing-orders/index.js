@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from 'next/link';
 import {
   Alert,
   Box,
@@ -23,6 +24,7 @@ import Paginate from "components/Paginate";
 import { APP_DEFAULT_PATH } from "config";
 import PurchaseOrderFilter from "./filter";
 import PurchaseOrderList from "./list";
+import usePollSelection from './use-poll-selection';
 
 const DEFAULT_FILTERS = {
   page: 1,
@@ -44,6 +46,10 @@ export default function PurchaseOrderPage() {
   const [params, setParams] = useState(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const selection = usePollSelection();
+  const selectedIds = useMemo(() => new Set(selection.data.items.map((item) => item.id)), [selection.data.items]);
+  const selecting = selectionMode || selectedIds.size > 0;
   const { permissions, loading: accessLoading } = usePurchaseOrderAccess();
   const { rows, page, perPage, total, lastPage, loading, error } =
     useGetPurchaseOrders(params, permissions.can_read);
@@ -91,7 +97,7 @@ export default function PurchaseOrderPage() {
         links={[
           { title: "Home", to: APP_DEFAULT_PATH },
           { title: "Purchasing" },
-          { title: "Purchase Order", to: "/purchase-orders" },
+          { title: "Purchase Order", to: "/purchasing-orders" },
         ]}
       />
       <MainCard
@@ -100,7 +106,16 @@ export default function PurchaseOrderPage() {
         }
         secondary={
           permissions.can_read ? (
-            <Stack direction="row" spacing={1.5}>
+            <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
+              {selectedIds.size > 0 ? (
+                <Button component={Link} href="/purchasing-orders/preview" variant="contained" disabled={!selection.ready}>
+                  Preview ({selectedIds.size})
+                </Button>
+              ) : (
+                <Button variant={selecting ? 'contained' : 'outlined'} onClick={() => setSelectionMode((current) => !current)} disabled={!selection.ready}>
+                  Pilih Data
+                </Button>
+              )}
               {permissions.can_export && (
                 <Button
                   variant="outlined"
@@ -124,6 +139,8 @@ export default function PurchaseOrderPage() {
         content
       >
         <Stack spacing={3}>
+          {selection.error && <Alert severity="error" action={<Button color="inherit" onClick={selection.reset}>Reset Pilihan</Button>}>{selection.error}</Alert>}
+          {selecting && <Typography variant="body2" color="text.secondary">{selectedIds.size} PO terpilih. Pilihan tetap tersimpan saat berpindah halaman atau filter.</Typography>}
           {accessLoading && (
             <Box sx={{ py: 6, textAlign: "center" }}>
               <CircularProgress size={28} />
@@ -179,7 +196,12 @@ export default function PurchaseOrderPage() {
                 </Box>
               ) : (
                 <>
-                  <PurchaseOrderList rows={rows} />
+                  <PurchaseOrderList
+                    rows={rows}
+                    selectionMode={selecting}
+                    selectedIds={selectedIds}
+                    onSelect={selection.selectRows}
+                  />
                   <Paginate
                     page={page || params.page}
                     perPage={perPage}

@@ -25,8 +25,12 @@ const ListFetchFailed = () => {
   const handleToggle = () => setOpen(!open);
 
   const loadQueue = async () => {
-    const items = await getAllRequests();
-    setQueue(items);
+    try {
+      const items = await getAllRequests();
+      setQueue(items);
+    } catch (error) {
+      console.warn('Gagal membaca antrean offline:', error);
+    }
   };
 
   useEffect(() => {

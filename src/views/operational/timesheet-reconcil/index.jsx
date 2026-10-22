@@ -20,6 +20,7 @@ import {
   TableFooter,
   TableHead,
   TableRow,
+  TablePagination,
   TextField,
   Typography,
 } from '@mui/material';
@@ -27,9 +28,6 @@ import { KeyboardArrowDown, KeyboardArrowUp, Refresh, RestartAlt, PictureAsPdf, 
 import OptionOperatorDriver from 'components/OptionOperatorDriver';
 import postTimesheetReconcil from 'api/timesheet-reconcil';
 import Link from 'next/link';
-import { utils as xlsxUtils, writeFile as writeXlsxFile } from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import useUser from 'hooks/useUser';
 
 const formatCurrency = (value) => {
@@ -60,6 +58,10 @@ const TimesheetReconcil = () => {
   const [error, setError] = useState('');
   const [applied, setApplied] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const visibleRows = useMemo(() => rows.slice(page * rowsPerPage, (page + 1) * rowsPerPage), [rows, page, rowsPerPage]);
 
   const handleField = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -69,6 +71,8 @@ const TimesheetReconcil = () => {
     setError('');
     setApplied(false);
     setRows([]);
+    setPage(0);
+    setExpanded({});
 
     if (!filters.startDate || !filters.endDate) {
       setError('Silakan isi tanggal mulai dan tanggal akhir.');
@@ -103,6 +107,8 @@ const TimesheetReconcil = () => {
   };
 
   const handleReset = () => {
+    setPage(0);
+    setExpanded({});
     setFilters({ ...defaultRange(), karyawan_id: '', karyawan: null });
     setRows([]);
     setError('');
@@ -131,8 +137,11 @@ const TimesheetReconcil = () => {
     }, { usedsmu: 0, rest: 0, work: 0, overtime: 0, trip: 0, overtimeEarn: 0, bonusTrip: 0 });
   }, [rows]);
 
-  const handleExportExcel = () => {
-    if (!rows.length) return;
+  const handleExportExcel = async () => {
+    if (!rows.length || exporting) return;
+    setExporting(true);
+    try {
+    const { utils: xlsxUtils, writeFile: writeXlsxFile } = await import('xlsx');
     const shiftLabel = (id) => (id === 1 ? 'pagi' : id === 2 ? 'siang' : id === 3 ? 'malam' : '');
 
     let totalHM = 0
@@ -184,10 +193,18 @@ const TimesheetReconcil = () => {
     const wb = xlsxUtils.book_new();
     xlsxUtils.book_append_sheet(wb, sheet, 'Reconcil');
     writeXlsxFile(wb, `timesheet-reconcil-${filters.startDate}-${filters.endDate}.xlsx`);
+    } catch (error) {
+      setError(error?.message || 'Gagal mengekspor Excel');
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const handleExportPdf = () => {
-    if (!rows.length) return;
+  const handleExportPdf = async () => {
+    if (!rows.length || exporting) return;
+    setExporting(true);
+    try {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
     doc.setFontSize(12);
     doc.text(`Timesheet Reconcil ${filters.startDate} s/d ${filters.endDate}`, 20, 24);
@@ -299,6 +316,11 @@ const TimesheetReconcil = () => {
     });
 
     doc.save(`timesheet-reconcil-${filters.startDate}-${filters.endDate}.pdf`);
+    } catch (error) {
+      setError(error?.message || 'Gagal mengekspor PDF');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const toggleExpand = (id) => {
@@ -506,10 +528,10 @@ const TimesheetReconcil = () => {
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <Chip label={`Baris: ${totals.count} rows`} color="primary" variant="outlined" />
-              <Button size="small" variant="outlined" startIcon={<GridOn />} onClick={handleExportExcel} disabled={!rows.length}>
+              <Button size="small" variant="outlined" startIcon={<GridOn />} onClick={handleExportExcel} disabled={exporting || !rows.length}>
                 Excel
               </Button>
-              <Button size="small" variant="contained" color="error" startIcon={<PictureAsPdf />} onClick={handleExportPdf} disabled={!rows.length}>
+              <Button size="small" variant="contained" color="error" startIcon={<PictureAsPdf />} onClick={handleExportPdf} disabled={exporting || !rows.length}>
                 PDF
               </Button>
             </Stack>
@@ -537,7 +559,7 @@ const TimesheetReconcil = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row) => (
+                {visibleRows.map((row) => (
                   <React.Fragment key={row.id}>
                     {renderRow(row)}
                   </React.Fragment>
@@ -564,6 +586,16 @@ const TimesheetReconcil = () => {
               </TableFooter>
             </Table>
           </TableContainer>
+          <TablePagination
+            component="div"
+            count={rows.length}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            rowsPerPageOptions={[25, 50, 100]}
+            onPageChange={(_, nextPage) => setPage(nextPage)}
+            onRowsPerPageChange={(event) => { setRowsPerPage(Number(event.target.value)); setPage(0); }}
+            labelRowsPerPage="Baris per halaman"
+          />
         </Paper>
       )}
     </Stack>

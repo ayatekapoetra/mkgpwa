@@ -116,7 +116,6 @@ async function replayPendingRequests(onProgress = null, onConflict = null) {
       await deleteRequest(req.key);
 
       synced++;
-      window.dispatchEvent(new Event('queue-updated'));
     } catch (err) {
       failed++;
       if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
@@ -125,5 +124,8 @@ async function replayPendingRequests(onProgress = null, onConflict = null) {
     }
   }
 
+  // Notify storage subscribers once per batch, not once per deleted request.
+  if (synced > 0 && typeof window !== 'undefined') window.dispatchEvent(new Event('queue-updated'));
+  if (onProgress) onProgress({ synced, failed, total: requests.length, current: '' });
   return { synced, failed, total: requests.length };
 }

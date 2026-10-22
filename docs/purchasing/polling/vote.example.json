@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "event": "purchase_order_poll.vote_updated",
+  "event_id": "c1286a8f-6859-46d0-8b4d-85a279d9a4fb",
+  "request_id": "b6ea9e86-2123-423f-9a93-9203952a390a",
+  "poll_message_id": "provider-message-id",
+  "respondent_phone": "+6289876543210",
+  "selected_option_ids": ["approve"],
+  "received_at": "2026-10-22T10:05:00.000Z"
+}
