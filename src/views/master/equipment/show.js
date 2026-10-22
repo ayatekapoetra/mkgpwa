@@ -337,7 +337,7 @@ export default function ShowEquipmentScreen() {
                   )}
                   <Grid item xs={12}>
                     <CardActions>
-                      <Button component={Link} href="/dom" variant="outlined" color="secondary">
+                      <Button component={Link} href="/equipment" variant="outlined" color="secondary">
                         Batal
                       </Button>
                       <Button onClick={() => setOpenDeleteDialog(true)} variant="outlined" color="error" startIcon={<Trash />}>

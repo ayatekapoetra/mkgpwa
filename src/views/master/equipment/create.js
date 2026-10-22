@@ -123,8 +123,6 @@ export default function AddEquipmentScreen() {
       <MainCard title={<BtnBack href={'/equipment'} />} secondary={null} content={true}>
         <Formik initialValues={initialValues} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
           {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => {
-            console.log(errors);
-            console.log('VALUES--', values);
 
             return (
               <Form noValidate onSubmit={handleSubmit}>
