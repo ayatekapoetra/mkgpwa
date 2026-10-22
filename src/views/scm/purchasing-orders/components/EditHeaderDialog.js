@@ -24,8 +24,10 @@ import {
 } from "@mui/material";
 import {
   getPurchaseOrderRekeningOptions,
+  getPurchaseOrderError,
   updatePurchaseOrderHeader,
 } from "api/purchase-orders";
+import { buildPurchaseOrderHeaderPayload, PURCHASE_ORDER_PRIORITIES } from "../headerPayload";
 
 export default function EditHeaderDialog({
   open,
@@ -37,6 +39,7 @@ export default function EditHeaderDialog({
   const [loading, setLoading] = useState(false);
   const [rekeningOptions, setRekeningOptions] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
+  const [optionsError, setOptionsError] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
   const [modeRekening, setModeRekening] = useState("existing"); // 'existing' | 'new'
@@ -44,12 +47,16 @@ export default function EditHeaderDialog({
   const [nmBank, setNmBank] = useState("");
   const [noRekening, setNoRekening] = useState("");
   const [an, setAn] = useState("");
-  const [prioritas, setPrioritas] = useState("normal");
+  const [prioritas, setPrioritas] = useState("");
   const [narasi, setNarasi] = useState("");
+  const editingBank = initialMode !== "narasi";
+  const editingHeader = initialMode === "all";
+  const editingNarration = editingHeader || initialMode === "narasi";
 
   useEffect(() => {
     if (open && row) {
-      setPrioritas(row.prioritas || "normal");
+      const controller = new AbortController();
+      setPrioritas(row.prioritas || "");
       setNarasi(row.narasi || "");
       setSelectedRekeningId(row.rekening_id ? String(row.rekening_id) : "");
       if (initialMode === "new_rekening") {
@@ -61,43 +68,42 @@ export default function EditHeaderDialog({
       setNoRekening("");
       setAn("");
       setErrorMsg("");
+      setOptionsError("");
+      setRekeningOptions([]);
+      setLoadingOptions(false);
+
+      if (initialMode === "narasi") return () => controller.abort();
 
       setLoadingOptions(true);
-      getPurchaseOrderRekeningOptions(row.id)
+      getPurchaseOrderRekeningOptions(row.pemasok_id ?? row.pemasok?.id, { signal: controller.signal })
         .then((options) => {
+          if (controller.signal.aborted) return;
           setRekeningOptions(options || []);
           if ((!options || options.length === 0) && !row.rekening_id) {
             setModeRekening("new");
           }
         })
         .catch((err) => {
-          console.error("Failed to load rekening options", err);
+          if (!controller.signal.aborted) {
+            setOptionsError(getPurchaseOrderError(err, "Gagal memuat rekening pemasok").message);
+          }
         })
         .finally(() => {
-          setLoadingOptions(false);
+          if (!controller.signal.aborted) setLoadingOptions(false);
         });
+      return () => controller.abort();
     }
   }, [open, row, initialMode]);
 
   const handleSubmit = async () => {
+    if (loading || (editingBank && modeRekening === "existing" && (loadingOptions || optionsError))) return;
     setErrorMsg("");
     setLoading(true);
     try {
-      const payload = {
-        prioritas,
-        narasi,
-      };
-
-      if (modeRekening === "new") {
-        if (!nmBank.trim() || !noRekening.trim()) {
-          throw new Error("Nama bank dan nomor rekening baru wajib diisi");
-        }
-        payload.nm_bank = nmBank.trim();
-        payload.no_rekening = noRekening.trim();
-        payload.an = an.trim() || null;
-      } else {
-        payload.rekening_id = selectedRekeningId ? Number(selectedRekeningId) : null;
-      }
+      const payload = buildPurchaseOrderHeaderPayload({
+        initialMode, modeRekening, selectedRekeningId,
+        nmBank, noRekening, an, prioritas, narasi,
+      });
 
       await updatePurchaseOrderHeader(row.id, payload);
       if (onUpdated) {
@@ -105,12 +111,7 @@ export default function EditHeaderDialog({
       }
       onClose();
     } catch (err) {
-      setErrorMsg(
-        err.response?.data?.diagnostic?.message ||
-          err.response?.data?.message ||
-          err.message ||
-          "Gagal menyimpan data header PO"
-      );
+      setErrorMsg(getPurchaseOrderError(err, "Gagal menyimpan data header PO").message);
     } finally {
       setLoading(false);
     }
@@ -130,30 +131,33 @@ export default function EditHeaderDialog({
         <Stack spacing={2.5} sx={{ mt: 1 }}>
           {errorMsg && <Alert severity="error">{errorMsg}</Alert>}
 
-          <Box>
+          {editingBank && <Box>
             <Typography variant="subtitle2" gutterBottom>
               Rekening Pemasok
             </Typography>
             <RadioGroup
               row
               value={modeRekening}
-              onChange={(e) => setModeRekening(e.target.value)}
+              onChange={(e) => { if (!loading) setModeRekening(e.target.value); }}
               sx={{ mb: 1.5 }}
             >
               <FormControlLabel
                 value="existing"
                 control={<Radio size="small" />}
                 label="Pilih Rekening Terdaftar"
+                disabled={loading}
               />
               <FormControlLabel
                 value="new"
                 control={<Radio size="small" />}
                 label="Tambah Rekening Baru"
+                disabled={loading}
               />
             </RadioGroup>
 
+            {optionsError && modeRekening === "existing" && <Alert severity="error">{optionsError}</Alert>}
             {modeRekening === "existing" ? (
-              <FormControl fullWidth size="small" disabled={loadingOptions}>
+              <FormControl fullWidth size="small" disabled={loading || loadingOptions || Boolean(optionsError)}>
                 <InputLabel id="select-rekening-label">Rekening Pemasok</InputLabel>
                 <Select
                   labelId="select-rekening-label"
@@ -181,6 +185,7 @@ export default function EditHeaderDialog({
                   value={nmBank}
                   onChange={(e) => setNmBank(e.target.value)}
                   required
+                  disabled={loading}
                 />
                 <TextField
                   fullWidth
@@ -189,6 +194,7 @@ export default function EditHeaderDialog({
                   value={noRekening}
                   onChange={(e) => setNoRekening(e.target.value)}
                   required
+                  disabled={loading}
                 />
                 <TextField
                   fullWidth
@@ -196,14 +202,16 @@ export default function EditHeaderDialog({
                   label="Atas Nama (A/N)"
                   value={an}
                   onChange={(e) => setAn(e.target.value)}
+                  disabled={loading}
                 />
               </Stack>
             )}
-          </Box>
+          </Box>}
 
-          <Divider />
+          {editingHeader && <>
+            <Divider />
 
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" disabled={loading}>
             <InputLabel id="select-prioritas-label">Prioritas</InputLabel>
             <Select
               labelId="select-prioritas-label"
@@ -211,12 +219,15 @@ export default function EditHeaderDialog({
               value={prioritas}
               onChange={(e) => setPrioritas(e.target.value)}
             >
-              <MenuItem value="normal">Normal</MenuItem>
-              <MenuItem value="urgent">Urgent</MenuItem>
+              <MenuItem value="" disabled><em>Belum ditentukan</em></MenuItem>
+              {PURCHASE_ORDER_PRIORITIES.map((option) => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
             </Select>
           </FormControl>
+          </>}
 
-          <TextField
+          {editingNarration && <TextField
             fullWidth
             multiline
             minRows={2}
@@ -226,7 +237,8 @@ export default function EditHeaderDialog({
             value={narasi}
             onChange={(e) => setNarasi(e.target.value)}
             placeholder="Catatan tambahan untuk Purchase Order ini"
-          />
+            disabled={loading}
+          />}
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -237,10 +249,10 @@ export default function EditHeaderDialog({
           onClick={handleSubmit}
           variant="contained"
           color="primary"
-          disabled={loading}
+          disabled={loading || (editingBank && modeRekening === "existing" && (loadingOptions || Boolean(optionsError)))}
           startIcon={loading ? <CircularProgress size={16} /> : null}
         >
-          Simpan Header
+          {editingHeader ? "Simpan Header" : editingNarration ? "Simpan Narasi" : "Simpan Rekening"}
         </Button>
       </DialogActions>
     </Dialog>

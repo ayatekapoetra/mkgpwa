@@ -24,6 +24,8 @@ export const endpoints = {
   pendingCount: "/scm/purchase-orders/pending-count",
   export: "/scm/purchase-orders/export",
   detail: (id) => `/scm/purchase-orders/${id}`,
+  header: (id) => `/scm/purchase-orders/${encodeURIComponent(id)}/header`,
+  supplierRekening: (pemasokId) => `/master/pemasok/${encodeURIComponent(pemasokId)}/rekening`,
   permissions: (id) => `/scm/purchase-orders/${id}/permissions`,
   preparation: (id) => `/scm/purchase-orders/${id}/preparation`,
   submitVerification: (id) => `/scm/purchase-orders/${id}/submit-verification`,
@@ -422,6 +424,33 @@ export const savePreparation = async (id, payload) => {
   const response = await axiosServices.put(endpoints.preparation(id), payload, {
     skipOfflineQueue: true,
   });
+  return response.data;
+};
+
+export const getPurchaseOrderRekeningOptions = async (pemasokId, config = {}) => {
+  if (pemasokId === undefined || pemasokId === null || String(pemasokId).trim() === "") {
+    throw new Error("Pemasok PO tidak ditemukan. Muat ulang dokumen.");
+  }
+  const response = await axiosServices.get(endpoints.supplierRekening(pemasokId), {
+    ...config,
+    skipOfflineQueue: true,
+  });
+  if (response.data?.diagnostic?.error !== false) {
+    throw new Error(getPurchaseOrderError(response.data, "Gagal memuat rekening pemasok").message);
+  }
+  return normalizeRows(response.data).filter((rekening) =>
+    rekening.aktif !== "N" &&
+    (rekening.pemasok_id == null || String(rekening.pemasok_id) === String(pemasokId)),
+  );
+};
+
+export const updatePurchaseOrderHeader = async (id, payload) => {
+  const response = await axiosServices.put(endpoints.header(id), payload, {
+    skipOfflineQueue: true,
+  });
+  if (response.data?.diagnostic?.error !== false) {
+    throw new Error(getPurchaseOrderError(response.data, "Gagal menyimpan rekening/header PO").message);
+  }
   return response.data;
 };
 
