@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
-import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
-import { Add, DocumentDownload, Filter as FilterIcon, MessageText } from 'iconsax-react';
+import { Alert, Box, Button, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { Add, CloseCircle, DocumentDownload, Filter as FilterIcon, MessageText, TickCircle } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -145,24 +145,43 @@ export default function PengajuanDanaPage() {
         secondary={
           canRead ? (
             <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-              <Button
-                component={Link}
-                href="/pengajuan-dana/preview"
-                variant="contained"
-                color="primary"
-                disabled={!selection.ready || selectedIds.size === 0}
-                startIcon={<MessageText size={18} />}
-              >
-                Preview Polling ({selectedIds.size})
-              </Button>
-              <Button
-                variant={selecting ? 'contained' : 'outlined'}
-                color={selecting ? 'secondary' : 'inherit'}
-                onClick={() => setSelectionMode((current) => !current)}
-                disabled={!selection.ready}
-              >
-                Pilih Data
-              </Button>
+              {selecting ? (
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Button
+                    component={Link}
+                    href="/pengajuan-dana/preview"
+                    variant="contained"
+                    color="primary"
+                    disabled={!selection.ready || selectedIds.size === 0}
+                    startIcon={<MessageText size={18} />}
+                  >
+                    Preview Polling ({selectedIds.size})
+                  </Button>
+                  <Tooltip title="Batal Pilih Data">
+                    <IconButton
+                      size="small"
+                      color="secondary"
+                      onClick={() => {
+                        setSelectionMode(false);
+                        selection.reset();
+                      }}
+                      sx={{ border: '1px solid', borderColor: 'divider' }}
+                    >
+                      <CloseCircle size={18} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              ) : (
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={() => setSelectionMode(true)}
+                  disabled={!selection.ready}
+                  startIcon={<TickCircle size={18} />}
+                >
+                  Pilih Data
+                </Button>
+              )}
               <Button variant="outlined" color="secondary" startIcon={<DocumentDownload />} onClick={handleExport} disabled={exporting}>
                 {exporting ? 'Exporting...' : 'Export Excel'}
               </Button>
