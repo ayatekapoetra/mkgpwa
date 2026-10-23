@@ -97,23 +97,26 @@ const OrderCard = memo(function OrderCard({ row, index }) {
     >
       <AccordionSummary expandIcon={<ArrowDown2 size={17} />} aria-controls={`po-${row.id}-details`} id={`po-${row.id}-summary`}>
         <Box sx={{ width: '100%', minWidth: 0 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-              <Typography variant="caption" color="text.disabled" sx={{ fontVariantNumeric: 'tabular-nums' }}>{String(index + 1).padStart(2, '0')}</Typography>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>{row.kdpo}</Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+              <Typography variant="caption" color="text.disabled" sx={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1.25 }}>{String(index + 1).padStart(2, '0')}</Typography>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{row.kdpo}</Typography>
             </Stack>
-            <Chip size="small" label={status.label} color={status.color} variant="outlined" sx={{ height: 23, fontSize: 11, flexShrink: 0 }} />
+            <Chip size="small" label={status.label} color={status.color} variant="outlined" sx={{ height: 22, fontSize: 11, flexShrink: 0 }} />
           </Stack>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' }, gap: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' }, gap: 0.75, columnGap: 1.25 }}>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>{getRelationName(row.pemasok) || 'Pemasok belum tersedia'}</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, overflowWrap: 'anywhere' }}>
+              <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere', lineHeight: 1.3 }}>{getRelationName(row.pemasok) || 'Pemasok belum tersedia'}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.15, overflowWrap: 'anywhere', lineHeight: 1.3 }}>
                 {[getRelationName(row.bisnis), getRelationName(row.cabang)].filter(Boolean).join(' · ') || 'Organisasi belum tersedia'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', mt: 0.25, overflowWrap: 'anywhere', lineHeight: 1.35 }}>
+                {row.narasi || 'Tidak ada keterangan tambahan.'}
               </Typography>
             </Box>
             <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>{money(row.grandtotal, currency)}</Typography>
-              <Typography variant="caption" color="text.secondary">{items.length} item · {dateLabel(row.request_date)}</Typography>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1.3 }}>{money(row.grandtotal, currency)}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{items.length} item · {dateLabel(row.request_date)}</Typography>
             </Box>
           </Box>
         </Box>
