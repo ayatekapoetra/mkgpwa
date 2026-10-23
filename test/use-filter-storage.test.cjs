@@ -399,5 +399,42 @@ test('Tahap 4: Verified onReset prop wiring in filter components', () => {
   }
 });
 
+test('Tahap 5: Verified standard key naming in 9 migrated Setting, HC, Accounting, Other & Asset pages', () => {
+  const pages = [
+    { file: '../src/views/setting/user-access/index.js', key: 'mkg_filter_setting_user_access' },
+    { file: '../src/views/setting/kegiatan-tag/index.js', key: 'mkg_filter_setting_kegiatan_tag' },
+    { file: '../src/views/setting/timesheet-tag/index.js', key: 'mkg_filter_setting_timesheet_tag' },
+    { file: '../src/views/setting/wa-config-breakdown/index.js', key: 'mkg_filter_setting_wa_config_breakdown' },
+    { file: '../src/views/integration-issues/index.js', key: 'mkg_filter_integration_issues' },
+    { file: '../src/views/human-capital/absensi-karyawan/index.js', key: 'mkg_filter_hc_absensi_karyawan' },
+    { file: '../src/views/accounting/pengajuan-dana/index.js', key: 'mkg_filter_accounting_pengajuan_dana' },
+    { file: '../src/views/other/penugasan-kerja/index.js', key: 'mkg_filter_other_penugasan_kerja' },
+    { file: '../src/views/asset-purchases/list.js', key: 'mkg_filter_asset_purchases' },
+  ];
+
+  for (const page of pages) {
+    const src = fs.readFileSync(path.resolve(__dirname, page.file), 'utf8');
+    assert.match(src, new RegExp(page.key), `Page ${page.file} should use key ${page.key}`);
+    assert.match(src, /useFilterStorage\(/, `Page ${page.file} should call useFilterStorage`);
+    assert.match(src, /reset(Filters|Filtered|Params)/, `Page ${page.file} should wire reset handler`);
+  }
+});
+
+test('Tahap 5: Verified onReset prop wiring in filter components', () => {
+  const filterFiles = [
+    '../src/views/setting/user-access/filter.js',
+    '../src/views/setting/kegiatan-tag/filter.js',
+    '../src/views/setting/timesheet-tag/filter.js',
+    '../src/views/setting/wa-config-breakdown/filter.js',
+    '../src/views/human-capital/absensi-karyawan/filter.js',
+    '../src/views/accounting/pengajuan-dana/filter.js',
+    '../src/views/other/penugasan-kerja/filter.js',
+  ];
+  for (const file of filterFiles) {
+    const src = fs.readFileSync(path.resolve(__dirname, file), 'utf8');
+    assert.match(src, /onReset/, `Filter component ${file} should support onReset`);
+  }
+});
+
 
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useState } from 'react';
+import useFilterStorage from 'hooks/useFilterStorage';
 import Link from 'next/link';
 
 // MATERIAL - UI
@@ -30,7 +31,7 @@ export default function PenugasanKerjaScreen() {
   const users = useUser();
   const isAdmin = ['developer', 'administrator'].includes(users.role);
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_other_penugasan_kerja', () => ({
     page: 1,
     perPage: 25,
     kode: '',
@@ -39,7 +40,7 @@ export default function PenugasanKerjaScreen() {
     assigned_id: isAdmin ? '' : users?.employee_id,
     startDate: '',
     endDate: ''
-  });
+  }));
   const { data, dataLoading } = useGetPenugasanKerjaItems(params);
 
   const toggleFilterHandle = () => {
@@ -62,7 +63,14 @@ export default function PenugasanKerjaScreen() {
         }
         content={false}
       >
-        <FilterPenugasanKerja data={params} setData={setParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
+        <FilterPenugasanKerja
+          data={params}
+          setData={setParams}
+          onReset={resetParams}
+          open={openFilter}
+          count={data?.total}
+          onClose={toggleFilterHandle}
+        />
         {!dataLoading && <ListPenugasanKerja data={data} setParams={setParams} />}
       </MainCard>
     </Fragment>

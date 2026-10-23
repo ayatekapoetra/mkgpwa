@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
 import { Add, DocumentDownload, Filter as FilterIcon } from 'iconsax-react';
@@ -57,7 +58,7 @@ function SummaryCard({ title, value, helper }) {
 }
 
 export default function PengajuanDanaPage() {
-  const [params, setParams] = useState(defaultParams);
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_accounting_pengajuan_dana', defaultParams);
   const [filterOpen, setFilterOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { permissions, loading: accessLoading, error: accessError } = usePengajuanDanaAccess();
@@ -90,7 +91,7 @@ export default function PengajuanDanaPage() {
   };
 
   const resetFilters = () => {
-    setParams(defaultParams);
+    resetParams();
     setFilterOpen(false);
   };
 

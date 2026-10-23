@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import useFilterStorage from 'hooks/useFilterStorage';
 import Link from 'next/link';
 import { Box, Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { Add, Filter, SearchNormal1 } from 'iconsax-react';
@@ -22,8 +23,8 @@ const columns = [
 
 export default function AssetPurchaseList() {
   const initial = { search: '', status: '', asset_type: '', financing_type: '', page: 1, per_page: 25 };
-  const [filters, setFilters] = useState(initial);
-  const [draft, setDraft] = useState(initial);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_asset_purchases', initial);
+  const [draft, setDraft] = useState(filters);
   const result = useAssetPurchases(filters);
   const canCreate = result.permissions.can_insert;
 
@@ -39,6 +40,7 @@ export default function AssetPurchaseList() {
         <TextField select size="small" label="Jenis aset" value={draft.asset_type} onChange={(e) => setDraft({ ...draft, asset_type: e.target.value })} sx={{ minWidth: 160 }}><MenuItem value="">Semua aset</MenuItem>{ASSET_TYPES.map((value) => <MenuItem key={value} value={value}>{humanize(value)}</MenuItem>)}</TextField>
         <TextField select size="small" label="Pembiayaan" value={draft.financing_type} onChange={(e) => setDraft({ ...draft, financing_type: e.target.value })} sx={{ minWidth: 180 }}><MenuItem value="">Semua skema</MenuItem>{FINANCING_TYPES.map((value) => <MenuItem key={value} value={value}>{humanize(value)}</MenuItem>)}</TextField>
         <Button variant="contained" startIcon={<Filter size={17} />} onClick={() => setFilters({ ...draft, page: 1 })}>Terapkan</Button>
+        <Button variant="outlined" color="secondary" onClick={() => { resetFilters(); setDraft(initial); }}>Reset</Button>
       </Stack>
       <StateContent loading={result.loading} error={result.error} empty={!result.rows.length} onRetry={result.mutate} emptyText="Belum ada pengajuan pada filter ini."><ResponsiveResourceRows rows={result.rows} columns={columns} href={(row) => `/asset-purchases/${row.id}`} pagination={result.pagination} setPage={(page) => setFilters({ ...filters, page })} /></StateContent>
     </MainCard>

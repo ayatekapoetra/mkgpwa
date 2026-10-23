@@ -22,16 +22,21 @@ export default function FilterEquipmentProjectWa({
   onClose,
   params,
   setParams,
+  onReset,
   anchor = "right",
 }) {
   const onResetFilterHandle = () => {
-    setParams({
-      project_id: "",
-      area: "",
-      equipment_id: "",
-      page: 1,
-      perPage: params.perPage || 25,
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setParams({
+        project_id: "",
+        area: "",
+        equipment_id: "",
+        page: 1,
+        perPage: params.perPage || 25,
+      });
+    }
   };
 
   return (

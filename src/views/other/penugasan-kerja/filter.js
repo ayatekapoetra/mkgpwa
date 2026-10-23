@@ -21,7 +21,7 @@ import InputSearch from 'components/InputSearch';
 import SelectSearch from 'components/SelectSearch';
 import { useGetAssigner, useGetKaryawan } from 'api/karyawan';
 
-export default function FilterPenugasanKerja({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterPenugasanKerja({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const { data: assigner, dataLoading: assignerLoad } = useGetAssigner();
   const { data: karyawan, dataLoading: assignedLoad } = useGetKaryawan();
 
@@ -140,7 +140,14 @@ export default function FilterPenugasanKerja({ count, open, onClose, data, setDa
             </Grid>
           </MainCard>
           <CardActions>
-            <Button variant="dashed" color="secondary" fullWidth>
+            <Button
+              variant="dashed"
+              color="secondary"
+              fullWidth
+              onClick={() => {
+                if (onReset) onReset();
+              }}
+            >
               Reset Filter
             </Button>
           </CardActions>

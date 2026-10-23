@@ -25,16 +25,21 @@ export default function FilterGroupTagKegiatan({
   onClose,
   params,
   setParams,
+  onReset,
   anchor = "right",
 }) {
   const onResetFilterHandle = () => {
-    setParams({
-      ctg: "",
-      kegiatan_id: "",
-      material_id: "",
-      page: 1,
-      perPage: params.perPage || 25,
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setParams({
+        ctg: "",
+        kegiatan_id: "",
+        material_id: "",
+        page: 1,
+        perPage: params.perPage || 25,
+      });
+    }
   };
 
   return (
