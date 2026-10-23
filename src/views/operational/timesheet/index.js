@@ -33,33 +33,12 @@ import {
 } from 'api/daily-timesheet';
 import FilterTimesheet from './filter';
 import { useSnackbar } from 'notistack';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
   { title: 'Daily Timesheet', to: '/timesheet' }
 ];
-
-const STORAGE_KEY = 'timesheet_filter_params';
-
-const getStoredParams = () => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.error('Error reading from localStorage:', error);
-    return null;
-  }
-};
-
-const saveParamsToStorage = (params) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-  }
-};
 
 const triggerBlobDownload = (blob, filename) => {
   const downloadUrl = window.URL.createObjectURL(blob);
@@ -93,10 +72,7 @@ export default function DailyTimesheetScreen() {
     type: ''
   };
 
-  const [params, setParams] = useState(() => {
-    const storedParams = getStoredParams();
-    return storedParams || defaultParams;
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_operational_timesheet', defaultParams);
 
   const [openFilter, setOpenFilter] = useState(false);
   const [queueStatus, setQueueStatus] = useState({});
@@ -107,10 +83,6 @@ export default function DailyTimesheetScreen() {
   const [anchorElDownload, setAnchorElDownload] = useState(null);
   const openDownloadMenu = Boolean(anchorElDownload);
   const { data, dataLoading } = useGetDailyTimesheet(params);
-
-  useEffect(() => {
-    saveParamsToStorage(params);
-  }, [params]);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
@@ -332,7 +304,7 @@ export default function DailyTimesheetScreen() {
         content={false}
         sx={{ mt: 1 }}
       >
-        <FilterTimesheet params={params} setParams={setParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
+        <FilterTimesheet params={params} setParams={setParams} onReset={resetParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
         {!dataLoading && <ListTimesheet data={data} queueStatus={queueStatus} setParams={setParams} />}
         <SyncProgressDialog open={syncing} progress={syncProgress} />
       </MainCard>

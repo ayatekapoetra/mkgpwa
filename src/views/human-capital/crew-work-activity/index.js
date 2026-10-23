@@ -13,6 +13,7 @@ import CrewWorkActivityTable from './table';
 import FilterCrewWorkActivity from './filter';
 import { generateCrewWorkActivityExcel } from 'utils/excelExport';
 import { useSnackbar } from 'notistack';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 const defaultParams = () => ({
   startdate: moment().startOf('month').format('YYYY-MM-DD'),
@@ -35,29 +36,6 @@ const statusSummary = [
 ];
 
 const REVIEW_STORAGE_KEY = 'crewWorkActivityValidateSelection';
-const FILTER_STORAGE_KEY = 'crew_work_activity_filter_params';
-
-const getStoredParams = () => {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const stored = localStorage.getItem(FILTER_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.error('Error reading crew work activity filter from localStorage:', error);
-    return null;
-  }
-};
-
-const saveParamsToStorage = (params) => {
-  if (typeof window === 'undefined') return;
-
-  try {
-    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(params));
-  } catch (error) {
-    console.error('Error saving crew work activity filter to localStorage:', error);
-  }
-};
 
 const CrewWorkActivityScreen = () => {
   const router = useRouter();
@@ -65,7 +43,7 @@ const CrewWorkActivityScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
   const [selectedRowsById, setSelectedRowsById] = useState({});
   const [downloadingExcel, setDownloadingExcel] = useState(false);
-  const [params, setParams] = useState(() => getStoredParams() || defaultParams());
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_human_capital_crew_work_activity', defaultParams);
   const { rows, loading, error, total, page, perPage, lastPage } = useCrewWorkActivity(params);
   const { stats, statsLoading, statsError } = useCrewWorkActivityStats(params);
 
@@ -78,10 +56,6 @@ const CrewWorkActivityScreen = () => {
     productiveHours: Number(stats.total_productive_hours || 0),
     overtimeHours: Number(stats.total_overtime || 0)
   };
-
-  useEffect(() => {
-    saveParamsToStorage(params);
-  }, [params]);
 
   const selectedRows = useMemo(() => Object.values(selectedRowsById), [selectedRowsById]);
   const selectedIds = useMemo(() => selectedRows.map((row) => row.id), [selectedRows]);
@@ -260,7 +234,7 @@ const CrewWorkActivityScreen = () => {
         </CardContent>
       </Card>
 
-      <FilterCrewWorkActivity data={params} setData={setParams} open={openFilter} count={total} onClose={toggleFilterHandle} />
+      <FilterCrewWorkActivity data={params} setData={setParams} onReset={resetParams} open={openFilter} count={total} onClose={toggleFilterHandle} />
     </MainCard>
   );
 };
