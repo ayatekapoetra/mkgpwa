@@ -133,19 +133,42 @@ function textAmount(amount, currency) {
 }
 
 export function buildPurchaseOrderText(items, summary) {
-  const documents = items.map((item, index) => [
-    `${index + 1}. ${item.po_number}`,
-    `PR: ${item.pr_number || '-'} | Tanggal: ${item.request_date || '-'}`,
-    `Status: ${item.status || '-'} | Prioritas: ${item.priority || '-'}`,
-    `Bisnis: ${item.business_unit.name || item.business_unit.initial || '-'}`,
-    `Cabang: ${item.branch_name || '-'}`,
-    `Pemasok: ${item.supplier_name || '-'}`,
-    `Keterangan: ${item.description || '-'}`,
-    ...item.line_items.map((line) => `- ${line.item_name}${line.item_code ? ` (${line.item_code})` : ''}: ${line.quantity} ${line.unit || ''}`.trim()),
-    `Grand total: ${textAmount(item.grand_total, item.currency)}`
-  ].join('\n'));
-  return ['RINGKASAN PURCHASE ORDER', ...documents, `Total ${summary.purchase_order_count} PO:`,
-    ...summary.totals_by_currency.map((total) => textAmount(total.amount, total.currency))].join('\n\n');
+  const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const header = [
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '📋 *RINGKASAN PURCHASE ORDER*',
+    `🕐 ${now} WITA`,
+    `📦 ${summary.purchase_order_count} dokumen terpilih`,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n');
+
+  const documents = items.map((item, index) => {
+    const org = [item.business_unit.name || item.business_unit.initial, item.branch_name].filter(Boolean).join(' · ');
+    const itemLines = item.line_items.length
+      ? item.line_items.slice(0, 5).map((line) => `   • ${line.item_name}${line.item_code ? ` _(${line.item_code})_` : ''} — ${line.quantity}${line.unit ? ' ' + line.unit : ''}`).join('\n')
+        + (item.line_items.length > 5 ? `\n   • _...dan ${item.line_items.length - 5} item lainnya_` : '')
+      : '   • _(tidak ada item aktif)_';
+    return [
+      `*${index + 1}. ${item.po_number}*`,
+      `🏢 ${org || '-'}`,
+      `🏭 ${item.supplier_name || '-'}`,
+      `📅 ${item.request_date || '-'}  |  🔖 ${item.priority || '-'}`,
+      item.description ? `📝 _${item.description}_` : null,
+      `📦 Rincian item:`,
+      itemLines,
+      `💰 *Grand Total: ${textAmount(item.grand_total, item.currency)}*`
+    ].filter((line) => line !== null).join('\n');
+  });
+
+  const totals = summary.totals_by_currency.map((t) => `   *${textAmount(t.amount, t.currency)}*`).join('\n');
+  const footer = [
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `💼 *Total ${summary.purchase_order_count} PO:*`,
+    totals,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n');
+
+  return [header, ...documents, footer].join('\n\n');
 }
 
 export function buildPollBody(rows, { sender_phone, recipient_phone }, mode = 'pdf_poll') {
