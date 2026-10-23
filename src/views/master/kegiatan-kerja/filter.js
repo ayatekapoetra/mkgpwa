@@ -15,14 +15,18 @@ import { Add, Activity, Category } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 import SelectSearch from 'components/SelectSearch';
 
-export default function FilterKegiatanKerja({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterKegiatanKerja({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      nama: '',
-      grpequipment: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        nama: '',
+        grpequipment: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   const grpequipmentOptions = [

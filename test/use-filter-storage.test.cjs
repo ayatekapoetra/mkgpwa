@@ -330,5 +330,74 @@ test('Tahap 3: Verified onReset prop wiring in filter components', () => {
   }
 });
 
+test('Tahap 4: Verified standard key naming in 10 migrated Laporan pages', () => {
+  const pages = [
+    { file: '../src/views/laporan/monitoring-order-part/index.js', key: 'mkg_filter_laporan_monitoring_order_part' },
+    { file: '../src/views/laporan/monitoring-sparepart-stock/index.js', key: 'mkg_filter_laporan_monitoring_sparepart_stock' },
+    { file: '../src/views/laporan/monitoring-stock-sparepart/index.js', key: 'mkg_filter_laporan_monitoring_stock_sparepart' },
+    { file: '../src/views/laporan/part-used-history/index.js', key: 'mkg_filter_laporan_part_used_history' },
+    { file: '../src/views/laporan/event-history/index.js', key: 'mkg_filter_laporan_event_history' },
+    { file: '../src/views/laporan/operating-history/index.js', key: 'mkg_filter_laporan_operating_history' },
+    { file: '../src/views/laporan/productivity/index.js', key: 'mkg_filter_laporan_productivity' },
+    { file: '../src/views/laporan/stokopname/index.js', key: 'mkg_filter_laporan_stokopname' },
+    { file: '../src/views/laporan/summary-breakdown/index.js', key: 'mkg_filter_laporan_summary_breakdown' },
+    { file: '../src/views/laporan/pemakaian-barang/index.js', key: 'mkg_filter_laporan_pemakaian_barang' },
+  ];
+
+  for (const page of pages) {
+    const src = fs.readFileSync(path.resolve(__dirname, page.file), 'utf8');
+    assert.match(src, new RegExp(page.key), `Page ${page.file} should use key ${page.key}`);
+    assert.match(src, /useFilterStorage\(/, `Page ${page.file} should call useFilterStorage`);
+    assert.match(src, /reset(Filters|Filtered|Params)/, `Page ${page.file} should wire reset handler`);
+  }
+});
+
+test('Tahap 4: Verified standard key naming in 11 migrated Master pages', () => {
+  const pages = [
+    { file: '../src/views/master/barang/index.js', key: 'mkg_filter_master_barang' },
+    { file: '../src/views/master/cabang/index.js', key: 'mkg_filter_master_cabang' },
+    { file: '../src/views/master/dom/index.js', key: 'mkg_filter_master_dom' },
+    { file: '../src/views/master/equipment/index.js', key: 'mkg_filter_master_equipment' },
+    { file: '../src/views/master/harga-beli/index.js', key: 'mkg_filter_master_harga_beli' },
+    { file: '../src/views/master/kegiatan-kerja/index.js', key: 'mkg_filter_master_kegiatan_kerja' },
+    { file: '../src/views/master/lokasi-kerja/index.js', key: 'mkg_filter_master_lokasi_kerja' },
+    { file: '../src/views/master/material/index.js', key: 'mkg_filter_master_material' },
+    { file: '../src/views/master/pemasok/index.js', key: 'mkg_filter_master_pemasok' },
+    { file: '../src/views/master/penyewa/index.js', key: 'mkg_filter_master_penyewa' },
+    { file: '../src/views/master/unit-bisnis/index.js', key: 'mkg_filter_master_unit_bisnis' },
+  ];
+
+  for (const page of pages) {
+    const src = fs.readFileSync(path.resolve(__dirname, page.file), 'utf8');
+    assert.match(src, new RegExp(page.key), `Page ${page.file} should use key ${page.key}`);
+    assert.match(src, /useFilterStorage\(/, `Page ${page.file} should call useFilterStorage`);
+    assert.match(src, /reset(Filters|Filtered|Params)/, `Page ${page.file} should wire reset handler`);
+  }
+});
+
+test('Tahap 4: Verified onReset prop wiring in filter components', () => {
+  const filterFiles = [
+    '../src/views/laporan/event-history/filter.js',
+    '../src/views/laporan/operating-history/filter.js',
+    '../src/views/laporan/summary-breakdown/filter.js',
+    '../src/views/laporan/pemakaian-barang/filter.js',
+    '../src/views/master/barang/filter.js',
+    '../src/views/master/cabang/filter.js',
+    '../src/views/master/dom/filter.js',
+    '../src/views/master/equipment/filter.js',
+    '../src/views/master/harga-beli/filter.js',
+    '../src/views/master/kegiatan-kerja/filter.js',
+    '../src/views/master/lokasi-kerja/filter.js',
+    '../src/views/master/material/filter.js',
+    '../src/views/master/pemasok/filter.js',
+    '../src/views/master/penyewa/filter.js',
+    '../src/views/master/unit-bisnis/filter.js',
+  ];
+  for (const file of filterFiles) {
+    const src = fs.readFileSync(path.resolve(__dirname, file), 'utf8');
+    assert.match(src, /onReset/, `Filter component ${file} should support onReset`);
+  }
+});
+
 
 

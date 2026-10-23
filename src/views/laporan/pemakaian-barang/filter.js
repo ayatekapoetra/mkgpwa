@@ -15,14 +15,18 @@ import MainCard from 'components/MainCard';
 import FilterEquipment from 'components/FilterEquipment';
 import FilterCabang from 'components/FilterCabang';
 
-export default function FilterPemakaianBarang({ open, count, params, setParams, onClose, anchor = 'right' }) {
+export default function FilterPemakaianBarang({ open, count, params, setParams, onReset, onClose, anchor = 'right' }) {
   const onResetFilter = () => {
-    setParams((prev) => ({
-      ...prev,
-      thnbln: '',
-      equipment_id: '',
-      cabang_id: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setParams((prev) => ({
+        ...prev,
+        thnbln: '',
+        equipment_id: '',
+        cabang_id: ''
+      }));
+    }
   };
 
   return (

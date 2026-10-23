@@ -30,7 +30,7 @@ const defaultDates = () => {
   return { startdate: firstDay, enddate: today };
 };
 
-export default function FilterSummaryBreakdown({ open, count, params, setParams, onClose, anchor = 'right' }) {
+export default function FilterSummaryBreakdown({ open, count, params, setParams, onReset, onClose, anchor = 'right' }) {
   const [problemIssueInput, setProblemIssueInput] = useState(params.problem_issue || '');
   const { data: cabangOptions = [], dataLoading: cabangLoading } = usePublicCabang();
   const { data: lokasiOptions = [], dataLoading: lokasiLoading } = useGetLokasiKerja();
@@ -120,19 +120,23 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
   }, [filteredEquipmentOptions, params.equipment_ids, setParams]);
 
   const onResetFilter = () => {
-    const dates = defaultDates();
-    setParams((prev) => ({
-      ...prev,
-      page: 1,
-      startdate: dates.startdate,
-      enddate: dates.enddate,
-      areas: [],
-      lokasi_ids: [],
-      equipment_ids: [],
-      penyewa_ids: [],
-      status: '',
-      problem_issue: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      const dates = defaultDates();
+      setParams((prev) => ({
+        ...prev,
+        page: 1,
+        startdate: dates.startdate,
+        enddate: dates.enddate,
+        areas: [],
+        lokasi_ids: [],
+        equipment_ids: [],
+        penyewa_ids: [],
+        status: '',
+        problem_issue: ''
+      }));
+    }
     setProblemIssueInput('');
   };
 

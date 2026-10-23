@@ -14,14 +14,18 @@ import MainCard from 'components/MainCard';
 import { Add, Building3, Code } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 
-export default function FilterBisnisUnit({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterBisnisUnit({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      name: '',
-      kode: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        name: '',
+        kode: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   return (

@@ -14,20 +14,23 @@ import MainCard from 'components/MainCard';
 import ListTablePenyewa from './listtable';
 import FilterPenyewa from './filter';
 
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetPenyewa } from 'api/penyewa';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
+const defaultParams = {
+  page: 1,
+  perPages: 25,
+  nama: '',
+  kode: '',
+  abbr: '',
+  bisnis_id: ''
+};
+
 const PenyewaScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 25,
-    nama: '',
-    kode: '',
-    abbr: '',
-    bisnis_id: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_penyewa', defaultParams);
   const { penyewa, penyewaLoading, penyewaError, page, perPage, total, lastPage } = useGetPenyewa(params);
 
   const toggleFilterHandle = () => {
@@ -81,6 +84,7 @@ const PenyewaScreen = () => {
       <FilterPenyewa 
         data={params} 
         setData={setParams} 
+        onReset={resetParams}
         open={openFilter} 
         count={total || 0} 
         onClose={toggleFilterHandle} 

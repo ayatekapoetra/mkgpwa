@@ -20,7 +20,7 @@ import { Add, SearchNormal1, Hashtag, Barcode } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 import { useBarangFilterOptions } from 'api/barang';
 
-export default function FilterBarang({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterBarang({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const [draft, setDraft] = useState(data);
   const { options, optionsLoading } = useBarangFilterOptions(open);
 
@@ -40,7 +40,26 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
   };
 
   const onResetFilterHandle = () => {
-    const resetData = {
+    if (onReset) {
+      onReset();
+    } else {
+      const resetData = {
+        nama: '',
+        kode: '',
+        num_part: '',
+        kategori_id: '',
+        application_id: '',
+        manufacture_id: '',
+        brand_id: '',
+        satuan: '',
+        stn_pakai: '',
+        page: 1,
+        perPages: 30
+      };
+      setData(resetData);
+    }
+
+    setDraft({
       nama: '',
       kode: '',
       num_part: '',
@@ -52,10 +71,7 @@ export default function FilterBarang({ count, open, onClose, data, setData, anch
       stn_pakai: '',
       page: 1,
       perPages: 30
-    };
-
-    setDraft(resetData);
-    setData(resetData);
+    });
   };
 
   return (

@@ -14,18 +14,21 @@ import MainCard from "components/MainCard";
 import ListTablePemasok from "./listtable";
 import FilterPemasok from "./filter";
 
+import useFilterStorage from "hooks/useFilterStorage";
 import { useGetPemasok } from "api/pemasok";
 import Paginate from "components/Paginate";
 import { Filter } from "iconsax-react";
 
+const defaultParams = {
+  page: 1,
+  perPages: 25,
+  nama_pemasok: "",
+  kode: "",
+};
+
 const PemasokScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 25,
-    nama_pemasok: "",
-    kode: "",
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_pemasok', defaultParams);
 
   const { data, dataLoading, dataError, page, perPage, total, lastPage } = useGetPemasok(params);
 
@@ -78,6 +81,7 @@ const PemasokScreen = () => {
       <FilterPemasok
         data={params}
         setData={setParams}
+        onReset={resetParams}
         open={openFilter}
         count={total || 0}
         onClose={toggleFilterHandle}

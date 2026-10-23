@@ -14,18 +14,21 @@ import MainCard from 'components/MainCard';
 import ListTableKegiatanKerja from './listtable';
 import FilterKegiatanKerja from './filter';
 
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetKegiatanKerja } from 'api/kegiatan-kerja';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
+const defaultParams = {
+  page: 1,
+  perPages: 25,
+  nama: '',
+  grpequipment: ''
+};
+
 const KegiatanKerjaScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 25,
-    nama: '',
-    grpequipment: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_kegiatan_kerja', defaultParams);
   const { kegiatanKerja, kegiatanKerjaLoading, kegiatanKerjaError, page, perPage, total, lastPage } = useGetKegiatanKerja(params);
 
   const toggleFilterHandle = () => {
@@ -73,6 +76,7 @@ const KegiatanKerjaScreen = () => {
       <FilterKegiatanKerja 
         data={params} 
         setData={setParams} 
+        onReset={resetParams}
         open={openFilter} 
         count={total || 0} 
         onClose={toggleFilterHandle} 
