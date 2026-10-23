@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 import axiosServices, { fetcher } from 'utils/axios';
 
-const endpoints = {
+export const endpoints = {
   key: '/pengajuan-dana',
   access: '/pengajuan-dana/access',
   approvalCount: '/pengajuan-dana/approval-count',
@@ -18,7 +18,10 @@ const endpoints = {
   return: (id) => `/pengajuan-dana/${id}/return`,
   verify: (id) => `/pengajuan-dana/${id}/verify`,
   destroy: (id) => `/pengajuan-dana/${id}`,
-  destroyItem: (id, itemId) => `/pengajuan-dana/${id}/items/${itemId}`
+  destroyItem: (id, itemId) => `/pengajuan-dana/${id}/items/${itemId}`,
+  hermesDelivery: '/pengajuan-dana/hermes-delivery',
+  hermesDeliveryStatus: (requestId) => `/pengajuan-dana/hermes-delivery/${encodeURIComponent(requestId)}`,
+  print: (id) => `/pengajuan-dana/${id}/print`
 };
 
 const accessPermissionDefaults = {
@@ -370,4 +373,40 @@ export const exportPengajuanDanaExcel = async (params = {}) => {
 
     throw error;
   }
+};
+
+export const submitPengajuanDanaHermes = async (payload) => {
+  const response = await axiosServices.post(endpoints.hermesDelivery, payload, {
+    headers: { 'Idempotency-Key': payload.request_id },
+    skipRetry: true,
+    skipOfflineQueue: true,
+    skipAuthRedirect: true,
+  });
+  return response.data;
+};
+
+export const getPengajuanDanaHermesStatus = async (requestId) => {
+  const response = await axiosServices.get(endpoints.hermesDeliveryStatus(requestId), {
+    skipRetry: true,
+    skipOfflineQueue: true,
+    skipAuthRedirect: true,
+  });
+  return response.data;
+};
+
+export const getPengajuanDanaForPoll = async (id, { signal } = {}) => {
+  if (!/^[1-9]\d*$/.test(String(id ?? ''))) throw new Error('ID Pengajuan Dana tidak valid.');
+  const response = await axiosServices.get(endpoints.detail(id), {
+    signal,
+    skipOfflineQueue: true,
+    retryCount: 0,
+  });
+  if (response.status === 0 || response.data?.diagnostic?.error) {
+    throw new Error(response.data?.diagnostic?.message || response.data?.message || 'Gagal memuat detail Pengajuan Dana.');
+  }
+  const row = response.data?.data || response.data;
+  if (!row || String(row.id) !== String(id)) {
+    throw new Error('Detail Pengajuan Dana tidak ditemukan atau identitasnya tidak sesuai.');
+  }
+  return row;
 };

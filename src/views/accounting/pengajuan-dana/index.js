@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
-import { Add, DocumentDownload, Filter as FilterIcon } from 'iconsax-react';
+import { Add, DocumentDownload, Filter as FilterIcon, MessageText } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -20,6 +20,7 @@ import {
 
 import PengajuanDanaList from './list';
 import PengajuanDanaFilter from './filter';
+import usePengajuanDanaPollSelection from './usePengajuanDanaPollSelection';
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -60,6 +61,15 @@ export default function PengajuanDanaPage() {
   const [params, setParams] = useState(defaultParams);
   const [filterOpen, setFilterOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+
+  const selection = usePengajuanDanaPollSelection();
+  const selectedIds = useMemo(
+    () => new Set(selection.data.items.map((item) => String(item.id))),
+    [selection.data.items]
+  );
+  const selecting = selectionMode || selectedIds.size > 0;
+
   const { permissions, loading: accessLoading, error: accessError } = usePengajuanDanaAccess();
   const canRead = !accessLoading && !accessError && permissions.can_read;
   const { rows, page, perPage, total, lastPage, summary, loading, error } = useGetPengajuanDana(params, canRead);
@@ -134,7 +144,25 @@ export default function PengajuanDanaPage() {
         }
         secondary={
           canRead ? (
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+              <Button
+                component={Link}
+                href="/pengajuan-dana/preview"
+                variant="contained"
+                color="primary"
+                disabled={!selection.ready || selectedIds.size === 0}
+                startIcon={<MessageText size={18} />}
+              >
+                Preview Polling ({selectedIds.size})
+              </Button>
+              <Button
+                variant={selecting ? 'contained' : 'outlined'}
+                color={selecting ? 'secondary' : 'inherit'}
+                onClick={() => setSelectionMode((current) => !current)}
+                disabled={!selection.ready}
+              >
+                Pilih Data
+              </Button>
               <Button variant="outlined" color="secondary" startIcon={<DocumentDownload />} onClick={handleExport} disabled={exporting}>
                 {exporting ? 'Exporting...' : 'Export Excel'}
               </Button>
@@ -161,66 +189,96 @@ export default function PengajuanDanaPage() {
 
           {canRead && (
             <>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'minmax(0, 1fr)',
-                sm: 'repeat(2, minmax(0, 1fr))',
-                md: 'repeat(4, minmax(0, 1fr))'
-              },
-              gap: 2,
-              width: '100%'
-            }}
-          >
-            {summaryCards.map((item) => (
-              <Box key={item.title} sx={{ minWidth: 0 }}>
-                <SummaryCard {...item} />
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'minmax(0, 1fr)',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    md: 'repeat(4, minmax(0, 1fr))'
+                  },
+                  gap: 2,
+                  width: '100%'
+                }}
+              >
+                {summaryCards.map((item) => (
+                  <Box key={item.title} sx={{ minWidth: 0 }}>
+                    <SummaryCard {...item} />
+                  </Box>
+                ))}
               </Box>
-            ))}
-          </Box>
 
-          {activeFilterCount > 0 && (
-            <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-              <Typography variant="body2" color="text.secondary">Filter aktif:</Typography>
-              {params.kode && <Chip size="small" label={`Kode: ${params.kode}`} />}
-              {params.narasi && <Chip size="small" label={`Narasi: ${params.narasi}`} />}
-              {params.status && <Chip size="small" label={`Status: ${params.status}`} />}
-              {params.kategori && <Chip size="small" label={`Kategori: ${params.kategori}`} />}
-              {params.bisnis_id && <Chip size="small" label={`Bisnis ID: ${params.bisnis_id}`} />}
-              {params.cabang_id && <Chip size="small" label={`Cabang ID: ${params.cabang_id}`} />}
-              {params.author_id && <Chip size="small" label={`Author ID: ${params.author_id}`} />}
-              {params.date_start && <Chip size="small" label={`Mulai: ${params.date_start}`} />}
-              {params.date_end && <Chip size="small" label={`Akhir: ${params.date_end}`} />}
-              {Number(params.limit) !== 25 && <Chip size="small" label={`${params.limit} baris/halaman`} />}
-              <Button size="small" color="error" onClick={resetFilters}>Reset</Button>
-            </Stack>
-          )}
+              {selection.error && (
+                <Alert severity="error" action={<Button color="inherit" onClick={selection.reset}>Reset Pilihan</Button>}>
+                  {selection.error}
+                </Alert>
+              )}
 
-          {error && (
-            <Alert severity="warning">
-              Gagal mengambil data pengajuan non part. {error?.message || 'Cek koneksi atau sesi login.'}
-            </Alert>
-          )}
+              {selecting && (
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                  spacing={1}
+                  sx={{ px: 2, py: 1.25, bgcolor: 'action.hover', borderRadius: 1.5 }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedIds.size} Pengajuan Dana terpilih. Pilihan tetap tersimpan saat berpindah halaman atau filter.
+                  </Typography>
+                  {selectedIds.size > 0 && (
+                    <Button size="small" color="error" onClick={selection.reset}>
+                      Kosongkan Pilihan
+                    </Button>
+                  )}
+                </Stack>
+              )}
 
-          {loading ? (
-            <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
-              <CircularProgress size={28} />
-            </Box>
-          ) : (
-            <>
-              <PengajuanDanaList rows={rows} />
-              <Stack sx={{ mt: 2 }}>
-                <Paginate
-                  page={page || params.page}
-                  total={total || 0}
-                  lastPage={lastPage || 1}
-                  perPage={perPage || params.limit}
-                  onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
-                />
-              </Stack>
-            </>
-          )}
+              {activeFilterCount > 0 && (
+                <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                  <Typography variant="body2" color="text.secondary">Filter aktif:</Typography>
+                  {params.kode && <Chip size="small" label={`Kode: ${params.kode}`} />}
+                  {params.narasi && <Chip size="small" label={`Narasi: ${params.narasi}`} />}
+                  {params.status && <Chip size="small" label={`Status: ${params.status}`} />}
+                  {params.kategori && <Chip size="small" label={`Kategori: ${params.kategori}`} />}
+                  {params.bisnis_id && <Chip size="small" label={`Bisnis ID: ${params.bisnis_id}`} />}
+                  {params.cabang_id && <Chip size="small" label={`Cabang ID: ${params.cabang_id}`} />}
+                  {params.author_id && <Chip size="small" label={`Author ID: ${params.author_id}`} />}
+                  {params.date_start && <Chip size="small" label={`Mulai: ${params.date_start}`} />}
+                  {params.date_end && <Chip size="small" label={`Akhir: ${params.date_end}`} />}
+                  {Number(params.limit) !== 25 && <Chip size="small" label={`${params.limit} baris/halaman`} />}
+                  <Button size="small" color="error" onClick={resetFilters}>Reset</Button>
+                </Stack>
+              )}
+
+              {error && (
+                <Alert severity="warning">
+                  Gagal mengambil data pengajuan non part. {error?.message || 'Cek koneksi atau sesi login.'}
+                </Alert>
+              )}
+
+              {loading ? (
+                <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
+                  <CircularProgress size={28} />
+                </Box>
+              ) : (
+                <>
+                  <PengajuanDanaList
+                    rows={rows}
+                    selectionMode={selecting}
+                    selectedIds={selectedIds}
+                    onSelect={selection.selectRows}
+                  />
+                  <Stack sx={{ mt: 2 }}>
+                    <Paginate
+                      page={page || params.page}
+                      total={total || 0}
+                      lastPage={lastPage || 1}
+                      perPage={perPage || params.limit}
+                      onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+                    />
+                  </Stack>
+                </>
+              )}
             </>
           )}
         </Stack>
