@@ -162,12 +162,12 @@ export function buildPollBody(rows, { sender_phone, recipient_phone }, mode = 'p
     recipient_phone: normalizeWhatsAppPhone(recipient_phone),
     delivery: {
       mode,
-      pdf_documents: mode === 'text' ? [] : items.map((item) => ({
-        po_id: item.po_id,
-        file_name: `purchase-order-${item.po_id}.pdf`,
+      pdf_documents: mode === 'text' ? [] : [{
+        po_id: items[0].po_id,
+        file_name: `purchase-order-${items[0].po_id}.pdf`,
         mime_type: 'application/pdf',
-         source: { method: 'GET', path: `/scm/purchase-orders/${item.po_id}/print` }
-      })),
+        source: { method: 'GET', path: `/scm/purchase-orders/${items[0].po_id}/print` }
+      }],
       text: mode === 'text' ? buildPurchaseOrderText(items, summary) : null
     },
     poll: withPoll ? {

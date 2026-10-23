@@ -6,8 +6,7 @@
   "delivery": {
     "mode": "pdf_poll",
     "pdf_documents": [
-      { "po_id": "101", "file_name": "purchase-order-101.pdf", "mime_type": "application/pdf", "source": { "method": "GET", "path": "/scm/purchase-orders/101/print" } },
-      { "po_id": "102", "file_name": "purchase-order-102.pdf", "mime_type": "application/pdf", "source": { "method": "GET", "path": "/scm/purchase-orders/102/print" } }
+      { "po_id": "101", "file_name": "purchase-order-101.pdf", "mime_type": "application/pdf", "source": { "method": "GET", "path": "/scm/purchase-orders/101/print" } }
     ],
     "text": null
   },

@@ -16,15 +16,15 @@ Versi request: **1.1**. Hook Hermes berjalan di service Hermes; aplikasi Next.js
 
 | `delivery.mode` | `pdf_documents` | `delivery.text` | `poll` | `sender_phone` |
 | --- | --- | --- | --- | --- |
-| `pdf` | Satu referensi PDF per PO | `null` | `null` | `null` |
-| `pdf_poll` | Satu referensi PDF per PO | `null` | Satu polling kolektif | E.164 wajib |
+| `pdf` | Satu PDF ringkasan gabungan seluruh PO terpilih | `null` | `null` | `null` |
+| `pdf_poll` | Satu PDF ringkasan gabungan seluruh PO terpilih | `null` | Satu polling kolektif | E.164 wajib |
 | `text` | Array kosong | Ringkasan seluruh PO | `null` | `null` |
 
 Contoh lengkap: [PDF saja](./request.pdf.example.json), [PDF dan polling](./request.example.json), [teks saja](./request.text.example.json).
 
 ### Pengambilan PDF oleh Hermes
 
-Frontend tidak merender PDF baru atau memasukkan token/base64 ke JSON. Setiap `delivery.pdf_documents[]` menunjuk endpoint cetak yang sudah digunakan aplikasi:
+Frontend tidak merender PDF baru atau memasukkan token/base64 ke JSON. Untuk mode PDF, `delivery.pdf_documents` berisi **tepat satu** referensi. Backend MKG menghasilkan PDF ringkasan gabungan seluruh PO terpilih (tanggal, kode PO, pembuat PR, bisnis/cabang, pemasok, narasi, jumlah item, prioritas, grand total). Path tetap memakai kontrak Hermes:
 
 ```json
 {
@@ -35,7 +35,9 @@ Frontend tidak merender PDF baru atau memasukkan token/base64 ke JSON. Setiap `d
 }
 ```
 
-Hermes memerlukan **PO_API_BASE_URL dan credential backend** pada konfigurasi servernya untuk mengambil file ini. Gabungkan hanya base URL yang dikonfigurasi dengan path cetak yang tervalidasi; ID pada path harus sama dengan `po_id` dan tercantum pada `items`. Jangan mengambil URL bebas dari payload atau meneruskan credential ke host lain melalui redirect. Pastikan respons berhasil dan berupa PDF sebelum diteruskan sebagai dokumen WhatsApp. Satu pilihan PO menghasilkan satu PDF; mode `pdf_poll` menambahkan tepat satu polling setelah seluruh PDF dikirim. Jika pengambilan/pengiriman PDF gagal, tandai status kegagalan dan jangan melaporkan semua dokumen sudah terkirim.
+`po_id` pada dokumen mengacu ke PO pertama dalam daftar `items` agar path tetap valid. Saat Hermes mengunduh path tersebut dengan `HERMES_PDF_TOKEN`, backend mengembalikan PDF ringkasan gabungan request terkait, bukan cetakan detail per-PO. Cetak manual browser dengan JWT tetap menghasilkan PDF detail per-PO.
+
+Hermes memerlukan **PO_API_BASE_URL dan credential backend** pada konfigurasi servernya. Mode `pdf_poll` menambahkan tepat satu polling setelah PDF ringkasan dikirim. Jika pengambilan/pengiriman PDF gagal, tandai status kegagalan.
 
 Mode `text` meneruskan `delivery.text` tanpa melampirkan PDF atau polling. Jika melewati batas panjang provider, pecah menjadi beberapa pesan dengan urutan tetap; jangan menghilangkan PO secara diam-diam.
 

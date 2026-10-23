@@ -90,7 +90,7 @@
             "type": "object", "additionalProperties": false, "required": ["method", "path"],
             "properties": {
               "method": { "const": "GET" },
-              "path": { "type": "string", "pattern": "^/scm/purchase-orders/[1-9]\\d*/print$", "description": "Relative to Hermes' configured PO API base URL. Same Contract v1.1 path; Hermes authenticates with HERMES_PDF_TOKEN while browsers keep using JWT. ID must match po_id; never accept an arbitrary URL. No credentials in payload." }
+              "path": { "type": "string", "pattern": "^/scm/purchase-orders/[1-9]\\d*/print$", "description": "Relative to Hermes' configured PO API base URL. For WhatsApp delivery there is exactly one document: a combined summary PDF for all selected POs. Hermes authenticates with HERMES_PDF_TOKEN; browsers with JWT still get the detailed per-PO print. ID must match the first items[].po_id; never accept an arbitrary URL. No credentials in payload." }
             }
           }
         }
@@ -144,7 +144,7 @@
             "then": { "properties": {
               "sender_phone": { "$ref": "#/components/schemas/Phone" },
               "poll": { "$ref": "#/components/schemas/NativePoll" },
-              "delivery": { "properties": { "pdf_documents": { "minItems": 1 }, "text": { "type": "null" } } },
+              "delivery": { "properties": { "pdf_documents": { "minItems": 1, "maxItems": 1 }, "text": { "type": "null" } } },
               "result_handling": { "properties": { "send_result_to": { "const": "sender_phone" }, "include_recommendation": { "const": true } } }
             } },
             "else": { "properties": {
@@ -155,7 +155,7 @@
           {
             "if": { "properties": { "delivery": { "properties": { "mode": { "const": "text" } } } } },
             "then": { "properties": { "delivery": { "properties": { "pdf_documents": { "maxItems": 0 }, "text": { "type": "string", "minLength": 1 } } } } },
-            "else": { "properties": { "delivery": { "properties": { "pdf_documents": { "minItems": 1 }, "text": { "type": "null" } } } } }
+            "else": { "properties": { "delivery": { "properties": { "pdf_documents": { "minItems": 1, "maxItems": 1 }, "text": { "type": "null" } } } } }
           }
         ]
       },

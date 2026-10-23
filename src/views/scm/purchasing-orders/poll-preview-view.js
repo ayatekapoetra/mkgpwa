@@ -298,7 +298,7 @@ export default function PollPreviewView({
             {withPoll ? <PollIllustration count={count} ready={Boolean(preview)} /> : (
               <MainCard sx={panelSx}>
                 <Stack spacing={1.5}>
-                  <SectionHeading icon={deliveryMode === 'pdf' ? <DocumentDownload size={21} /> : <MessageText size={21} />} title={deliveryMode === 'pdf' ? 'Dokumen PDF' : 'Pratinjau pesan teks'} description={deliveryMode === 'pdf' ? `${count} dokumen PDF dari endpoint cetak PO.` : 'Ringkasan seluruh PO untuk penerima pesan.'} />
+                  <SectionHeading icon={deliveryMode === 'pdf' ? <DocumentDownload size={21} /> : <MessageText size={21} />} title={deliveryMode === 'pdf' ? 'Dokumen PDF' : 'Pratinjau pesan teks'} description={deliveryMode === 'pdf' ? `Satu PDF ringkasan gabungan untuk ${count} PO terpilih.` : 'Ringkasan seluruh PO untuk penerima pesan.'} />
                   {deliveryMode === 'text' && <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320, overflowY: 'auto', p: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>{preview?.delivery.text || 'Lengkapi nomor penerima untuk melihat pesan.'}</Typography>}
                    <Typography variant="caption" color="text.secondary">Mode ini tidak menyertakan polling. Status pengiriman tetap dapat dipantau dari request Hermes.</Typography>
                 </Stack>
@@ -333,7 +333,7 @@ export default function PollPreviewView({
             <IconTile color={preview ? 'success' : 'primary'} small>{preview ? <TickCircle size={19} /> : <DocumentDownload size={19} />}</IconTile>
             <Box sx={{ minWidth: 0 }}>
                <Typography variant="subtitle2" fontWeight={700}>{currentArtifact ? 'Request Hermes berhasil dibuat' : preview ? 'Paket siap dikirim' : 'Periksa paket pengiriman Anda'}</Typography>
-               <Typography variant="caption" color="text.secondary">{hasSelection ? `${count} PO · ${withPoll ? 'PDF + 1 polling' : deliveryMode === 'pdf' ? 'PDF saja' : 'Teks saja'}` : 'Pilih PO untuk memulai'} · Status pengiriman dipantau</Typography>
+               <Typography variant="caption" color="text.secondary">{hasSelection ? `${count} PO · ${withPoll ? '1 PDF ringkasan + polling' : deliveryMode === 'pdf' ? '1 PDF ringkasan' : 'Teks saja'}` : 'Pilih PO untuk memulai'} · Status pengiriman dipantau</Typography>
             </Box>
           </Stack>
           <Stack direction="row" spacing={1.25} sx={{ flexShrink: 0 }}>

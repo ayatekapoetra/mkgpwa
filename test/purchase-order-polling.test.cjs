@@ -246,8 +246,9 @@ test('one poll covers all POs, filters inactive lines, and sums decimals/currenc
   assert.equal(body.result_handling.update_purchase_orders, false);
   assert.equal(body.sender_phone, '+6281234567890');
   assert.equal(body.delivery.mode, 'pdf_poll');
-  assert.equal(body.delivery.pdf_documents.length, 4);
+  assert.equal(body.delivery.pdf_documents.length, 1);
   assert.equal(body.delivery.pdf_documents[0].source.path, '/scm/purchase-orders/1/print');
+  assert.equal(body.delivery.pdf_documents[0].file_name, 'purchase-order-1.pdf');
   for (const bad of [order(1, { grandtotal: null }), order(1, { grandtotal: '1.005' }), order(1, { items: undefined }), order(1, { request_date: '2026-02-30' })]) assert.throws(() => p.buildPollBody([bad], phones));
   assert.throws(() => p.buildPollBody([order(1), order(1)], phones), /duplikat/);
 });
@@ -258,8 +259,8 @@ test('PDF and text modes require only the recipient and never include a poll or 
   const pdf = p.buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf');
   assert.equal(pdf.sender_phone, null);
   assert.equal(pdf.poll, null);
-  assert.equal(pdf.delivery.pdf_documents.length, 2);
-  assert.equal(pdf.delivery.pdf_documents[1].file_name, 'purchase-order-2.pdf');
+  assert.equal(pdf.delivery.pdf_documents.length, 1);
+  assert.equal(pdf.delivery.pdf_documents[0].source.path, '/scm/purchase-orders/1/print');
   assert.equal(pdf.delivery.text, null);
   assert.deepEqual(plain(pdf.result_handling), { send_result_to: null, include_recommendation: false, update_purchase_orders: false });
   const text = p.buildPollBody(rows, { recipient_phone: phones.recipient_phone, sender_phone: 'invalid-unused-value' }, 'text');
