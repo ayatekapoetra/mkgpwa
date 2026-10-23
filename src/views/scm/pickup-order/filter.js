@@ -14,7 +14,7 @@ import InputSearch from 'components/InputSearch';
 
 import { Add } from 'iconsax-react';
 
-export default function FilterPickupOrder({ count, open, onClose, data, setData, anchor = 'top' }) {
+export default function FilterPickupOrder({ count, open, onClose, data, setData, onReset, anchor = 'top' }) {
   return (
     <SwipeableDrawer anchor={anchor} onClose={onClose} open={open}>
       <Stack p={1}>
@@ -35,7 +35,18 @@ export default function FilterPickupOrder({ count, open, onClose, data, setData,
           </Grid>
         </MainCard>
         <CardActions>
-          <Button variant="dashed" color="secondary" fullWidth onClick={() => setData({ kode: '', pickup_by: '', keterangan: '' })}>
+          <Button
+            variant="dashed"
+            color="secondary"
+            fullWidth
+            onClick={() => {
+              if (onReset) {
+                onReset();
+              } else {
+                setData({ kode: '', pickup_by: '', keterangan: '' });
+              }
+            }}
+          >
             Reset Filter
           </Button>
         </CardActions>

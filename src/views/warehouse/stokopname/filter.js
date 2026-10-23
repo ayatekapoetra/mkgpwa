@@ -26,7 +26,7 @@ const statusOptions = [
   { value: 'close', label: 'Close' }
 ];
 
-export default function FilterStokopname({ count, data, setData, open, onClose }) {
+export default function FilterStokopname({ count, data, setData, onReset, open, onClose }) {
   const [kodeInput, setKodeInput] = useState(data.kode || '');
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
   const bisnisUnitHook = useGetBisnisUnit({ my_units: true });
@@ -132,7 +132,11 @@ export default function FilterStokopname({ count, data, setData, open, onClose }
 
   const handleReset = () => {
     setKodeInput('');
-    setData((prev) => ({ ...prev, page: 1, kode: '', status: '', bisnis_id: '', gudang_id: '', rack_id: '', user_id: '' }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({ ...prev, page: 1, kode: '', status: '', bisnis_id: '', gudang_id: '', rack_id: '', user_id: '' }));
+    }
   };
 
   return (

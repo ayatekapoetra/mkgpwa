@@ -30,7 +30,7 @@ const sourceOptions = [
   { value: 'API', label: 'API' }
 ];
 
-export default function FilterGoodsIssues({ count, data, setData, open, onClose }) {
+export default function FilterGoodsIssues({ count, data, setData, onReset, open, onClose }) {
   const [kodeInput, setKodeInput] = useState(data.kode || '');
   const [penerimaInput, setPenerimaInput] = useState(data.penerima || '');
   const [narasiInput, setNarasiInput] = useState(data.narasi || '');
@@ -89,17 +89,21 @@ export default function FilterGoodsIssues({ count, data, setData, open, onClose 
     setKodeInput('');
     setPenerimaInput('');
     setNarasiInput('');
-    setData((prev) => ({
-      ...prev,
-      page: 1,
-      kode: '',
-      penerima: '',
-      narasi: '',
-      status: '',
-      bisnis_id: '',
-      gudang_id: '',
-      source_type: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({
+        ...prev,
+        page: 1,
+        kode: '',
+        penerima: '',
+        narasi: '',
+        status: '',
+        bisnis_id: '',
+        gudang_id: '',
+        source_type: ''
+      }));
+    }
   };
 
   return (

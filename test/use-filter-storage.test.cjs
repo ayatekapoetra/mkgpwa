@@ -272,3 +272,24 @@ test('Verified standard key naming in migrated pages', () => {
   assert.match(crewWorkSrc, /useFilterStorage\(/);
 });
 
+test('Tahap 2: Verified standard key naming in 9 migrated SCM & Warehouse pages', () => {
+  const pages = [
+    { file: '../src/views/scm/purchasing-orders/index.js', key: 'mkg_filter_scm_purchasing_orders' },
+    { file: '../src/views/scm/purchasing-request/index.js', key: 'mkg_filter_scm_purchasing_request' },
+    { file: '../src/views/scm/goods-receipt/index.js', key: 'mkg_filter_scm_goods_receipt' },
+    { file: '../src/views/scm/pickup-order/index.js', key: 'mkg_filter_scm_pickup_order' },
+    { file: '../src/views/scm/delivery-order/index.js', key: 'mkg_filter_scm_delivery_order' },
+    { file: '../src/views/scm/shipping-order/index.js', key: 'mkg_filter_scm_shipping_order' },
+    { file: '../src/views/warehouse/goods-issues/index.js', key: 'mkg_filter_warehouse_goods_issues' },
+    { file: '../src/views/warehouse/stokopname/index.js', key: 'mkg_filter_warehouse_stokopname' },
+    { file: '../src/views/warehouse/transfers/index.js', key: 'mkg_filter_warehouse_transfers' },
+  ];
+
+  for (const page of pages) {
+    const src = fs.readFileSync(path.resolve(__dirname, page.file), 'utf8');
+    assert.match(src, new RegExp(page.key), `Page ${page.file} should use key ${page.key}`);
+    assert.match(src, /useFilterStorage\(/, `Page ${page.file} should call useFilterStorage`);
+    assert.match(src, /reset(Filters|Filtered|Params)/, `Page ${page.file} should wire reset handler`);
+  }
+});
+

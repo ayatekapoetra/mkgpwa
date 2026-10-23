@@ -24,7 +24,7 @@ const statusOptions = [
   { value: 'cancelled', label: 'Cancelled' }
 ];
 
-export default function FilterWarehouseTransfers({ count, data, setData, open, onClose }) {
+export default function FilterWarehouseTransfers({ count, data, setData, onReset, open, onClose }) {
   const [kodeInput, setKodeInput] = useState(data.kode || '');
   const [narasiInput, setNarasiInput] = useState(data.narasi || '');
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
@@ -71,15 +71,19 @@ export default function FilterWarehouseTransfers({ count, data, setData, open, o
   const handleReset = () => {
     setKodeInput('');
     setNarasiInput('');
-    setData((prev) => ({
-      ...prev,
-      page: 1,
-      kode: '',
-      narasi: '',
-      status: '',
-      gudang_src: '',
-      gudang_target: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({
+        ...prev,
+        page: 1,
+        kode: '',
+        narasi: '',
+        status: '',
+        gudang_src: '',
+        gudang_target: ''
+      }));
+    }
   };
 
   return (

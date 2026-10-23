@@ -25,6 +25,7 @@ import { APP_DEFAULT_PATH } from "config";
 import PurchaseOrderFilter from "./filter";
 import PurchaseOrderList from "./list";
 import usePollSelection from './use-poll-selection';
+import useFilterStorage from "hooks/useFilterStorage";
 
 const DEFAULT_FILTERS = {
   page: 1,
@@ -43,7 +44,10 @@ const DEFAULT_FILTERS = {
 
 /** Permission-aware purchase order list with filter controls. */
 export default function PurchaseOrderPage() {
-  const [params, setParams] = useState(DEFAULT_FILTERS);
+  const [params, setParams, resetParams] = useFilterStorage(
+    "mkg_filter_scm_purchasing_orders",
+    DEFAULT_FILTERS
+  );
   const [filterOpen, setFilterOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -226,7 +230,7 @@ export default function PurchaseOrderPage() {
           setFilterOpen(false);
         }}
         onReset={() => {
-          setParams(DEFAULT_FILTERS);
+          resetParams();
           setFilterOpen(false);
         }}
       />
