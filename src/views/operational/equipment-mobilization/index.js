@@ -26,6 +26,7 @@ import MainCard from 'components/MainCard';
 import Paginate from 'components/Paginate';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import {
   MOBILIZATION_STATUS_COLOR,
   MOBILIZATION_STATUS_LABEL,
@@ -45,24 +46,26 @@ const breadcrumbLinks = [
 
 const pickName = (...values) => values.find((v) => !!v) || '-';
 
+const DEFAULT_FILTERS = {
+  page: 1,
+  limit: 20,
+  search: '',
+  status: '',
+  movement_date_start: '',
+  movement_date_end: '',
+  origin_branch_id: '',
+  destination_branch_id: '',
+  origin_tenant_id: '',
+  destination_tenant_id: '',
+  equipment_id: ''
+};
+
 export default function EquipmentMobilizationScreen() {
   const { enqueueSnackbar } = useSnackbar();
   const { permissions, accessLoading } = useEquipmentMobilizationAccess();
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
-  const [filters, setFilters] = useState({
-    page: 1,
-    limit: 20,
-    search: '',
-    status: '',
-    movement_date_start: '',
-    movement_date_end: '',
-    origin_branch_id: '',
-    destination_branch_id: '',
-    origin_tenant_id: '',
-    destination_tenant_id: '',
-    equipment_id: ''
-  });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_operational_equipment_mobilization', DEFAULT_FILTERS);
 
   const { data, dataLoading, dataError } = useGetEquipmentMobilizations(filters);
   const rows = useMemo(() => data?.data || [], [data?.data]);
@@ -300,6 +303,7 @@ export default function EquipmentMobilizationScreen() {
         onClose={() => setOpenFilter(false)}
         data={filters}
         setData={setFilters}
+        onReset={resetFilters}
         count={data?.total || 0}
       />
     </Fragment>

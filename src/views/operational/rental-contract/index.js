@@ -7,6 +7,7 @@ import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Grid, Ic
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { statusColor, statusLabel, useRentalContracts, useRentalContractAccess, useRentalContractStats } from 'api/rental-contract';
 import FilterRentalContract from './filter';
 
@@ -48,7 +49,7 @@ function SummaryCard({ label, value, helper, icon: Icon, color = 'primary' }) {
 }
 
 export default function RentalContractList() {
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_operational_rental_contract', initialFilters);
   const [openFilter, setOpenFilter] = useState(false);
   const result = useRentalContracts(filters);
   const { permissions } = useRentalContractAccess();
@@ -161,6 +162,7 @@ export default function RentalContractList() {
       onClose={() => setOpenFilter(false)}
       data={filters}
       setData={setFilters}
+      onReset={resetFilters}
       count={result.total}
     />
   </>;

@@ -39,6 +39,7 @@ import { Add, Calendar, DocumentDownload, Filter, Refresh, DocumentText, Chart21
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { openNotification } from 'api/notification';
 import {
   useBreakdownList,
@@ -83,7 +84,7 @@ export default function BreakdownList() {
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [filters, setFilters] = useState(defaultFilters);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_maintenance_breakdown', defaultFilters);
   const [filterOpen, setFilterOpen] = useState(false);
   const [reportAnchor, setReportAnchor] = useState(null);
   const [downloadingReport, setDownloadingReport] = useState('');
@@ -125,7 +126,7 @@ export default function BreakdownList() {
   };
 
   const handleResetFilter = () => {
-    setFilters({ ...defaultFilters });
+    resetFilters();
     setFilterOpen(false);
   };
 

@@ -293,3 +293,42 @@ test('Tahap 2: Verified standard key naming in 9 migrated SCM & Warehouse pages'
   }
 });
 
+test('Tahap 3: Verified standard key naming in 9 migrated Operational & Maintenance pages', () => {
+  const pages = [
+    { file: '../src/views/operational/daily-activity/index.js', key: 'mkg_filter_operational_daily_activity' },
+    { file: '../src/views/operational/equipment-mobilization/index.js', key: 'mkg_filter_operational_equipment_mobilization' },
+    { file: '../src/views/operational/rental-contract/index.js', key: 'mkg_filter_operational_rental_contract' },
+    { file: '../src/views/operational/mining/daily-checker-pit/index.js', key: 'mkg_filter_operational_daily_checker_pit' },
+    { file: '../src/views/operational/mining/daily-checker-stockpile/index.js', key: 'mkg_filter_operational_daily_checker_stockpile' },
+    { file: '../src/views/operational/mining/fleet-assignment/FleetAssignmentWorkspace.js', key: 'mkg_filter_operational_fleet_assignment' },
+    { file: '../src/views/operational/mining/mining-production-plan/index.js', key: 'mkg_filter_operational_mining_production_plan' },
+    { file: '../src/views/maintenance/breakdown/index.js', key: 'mkg_filter_maintenance_breakdown' },
+    { file: '../src/views/maintenance/work-order/index.js', key: 'mkg_filter_maintenance_work_order' },
+  ];
+
+  for (const page of pages) {
+    const src = fs.readFileSync(path.resolve(__dirname, page.file), 'utf8');
+    assert.match(src, new RegExp(page.key), `Page ${page.file} should use key ${page.key}`);
+    assert.match(src, /useFilterStorage\(/, `Page ${page.file} should call useFilterStorage`);
+    assert.match(src, /reset(Filters|Filtered|Params|Scope)/, `Page ${page.file} should wire reset handler`);
+  }
+});
+
+test('Tahap 3: Verified onReset prop wiring in filter components', () => {
+  const filterFiles = [
+    '../src/views/operational/daily-activity/filter.js',
+    '../src/views/operational/equipment-mobilization/filter.js',
+    '../src/views/operational/rental-contract/filter.js',
+    '../src/views/operational/mining/daily-checker-pit/filter.js',
+    '../src/views/operational/mining/daily-checker-stockpile/filter.js',
+    '../src/views/operational/mining/fleet-assignment/filter.js',
+    '../src/views/operational/mining/mining-production-plan/filter.js',
+  ];
+  for (const file of filterFiles) {
+    const src = fs.readFileSync(path.resolve(__dirname, file), 'utf8');
+    assert.match(src, /onReset/, `Filter component ${file} should support onReset`);
+  }
+});
+
+
+

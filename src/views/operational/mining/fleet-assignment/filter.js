@@ -48,7 +48,7 @@ const EMPTY_FILTER = {
   search: ''
 };
 
-export default function FleetAssignmentFilter({ open, onClose, scope, setScope }) {
+export default function FleetAssignmentFilter({ open, onClose, scope, setScope, onReset }) {
   const [draft, setDraft] = useState(scope || EMPTY_FILTER);
 
   useEffect(() => {
@@ -63,9 +63,13 @@ export default function FleetAssignmentFilter({ open, onClose, scope, setScope }
   };
 
   const handleReset = () => {
-    const reset = { ...EMPTY_FILTER, date_ops: scope?.date_ops || '' };
-    setDraft(reset);
-    setScope((prev) => ({ ...prev, ...reset }));
+    if (onReset) {
+      onReset();
+    } else {
+      const reset = { ...EMPTY_FILTER, date_ops: scope?.date_ops || '' };
+      setDraft(reset);
+      setScope((prev) => ({ ...prev, ...reset }));
+    }
     onClose?.();
   };
 
