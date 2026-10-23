@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 // UTIL
 import axiosServices, { fetcher } from 'utils/axios';
 import { useOfflineStorage } from 'lib/useOfflineStorage';
+import useUser from 'hooks/useUser';
 
 export const endpoints = {
   key: '/master/barang',
@@ -121,4 +122,67 @@ export const previewKodeBarang = async (params) => {
   );
   const response = await axiosServices.get(`/api/master/barang/preview-kode?${query.toString()}`);
   return response.data?.rows?.kode || '';
+};
+
+const OVERRIDE_ROLES = ['administrator', 'developer', 'superadmin', 'super-admin', 'admin'];
+
+export const useBarangAccess = () => {
+  const user = useUser();
+  const { data, error, isLoading } = useSWR(`${endpoints.key}/access`, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: false
+  });
+
+  return useMemo(() => {
+    const role = String(user?.role || '').toLowerCase();
+    const isOverride = OVERRIDE_ROLES.includes(role);
+
+    const apiPermissions = data?.rows || data?.permissions || data?.data || {};
+
+    const normalizePerm = (val) => {
+      if (val === true || val === 1) return true;
+      if (val === false || val === 0) return false;
+      const s = String(val || '').trim().toUpperCase();
+      return ['Y', '1', 'TRUE'].includes(s);
+    };
+
+    const hasApiUpdate =
+      apiPermissions.can_update !== undefined
+        ? normalizePerm(apiPermissions.can_update)
+        : apiPermissions.update !== undefined
+        ? normalizePerm(apiPermissions.update)
+        : null;
+
+    const hasApiInsert =
+      apiPermissions.can_insert !== undefined
+        ? normalizePerm(apiPermissions.can_insert)
+        : apiPermissions.insert !== undefined
+        ? normalizePerm(apiPermissions.insert)
+        : null;
+
+    const hasApiRemove =
+      apiPermissions.can_remove !== undefined
+        ? normalizePerm(apiPermissions.can_remove)
+        : apiPermissions.remove !== undefined
+        ? normalizePerm(apiPermissions.remove)
+        : null;
+
+    const can_update = isOverride ? true : hasApiUpdate !== null ? hasApiUpdate : false;
+    const can_insert = isOverride ? true : hasApiInsert !== null ? hasApiInsert : false;
+    const can_remove = isOverride ? true : hasApiRemove !== null ? hasApiRemove : false;
+    const can_read = true;
+
+    return {
+      permissions: {
+        can_read,
+        can_insert,
+        can_update,
+        can_remove
+      },
+      loading: isLoading,
+      error
+    };
+  }, [user?.role, data, isLoading, error]);
 };

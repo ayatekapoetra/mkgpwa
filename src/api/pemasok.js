@@ -82,3 +82,34 @@ export const useGetPemasokDelor = () => {
 
   return memoizedValue;
 };
+
+export const previewKodePemasok = async () => {
+  const candidateUrls = [
+    '/master/pemasok/preview-kode',
+    '/master/pemasok/next-code',
+    '/api/master/pemasok/preview-kode',
+    '/api/master/pemasok/next-code',
+  ];
+
+  for (const url of candidateUrls) {
+    try {
+      const response = await fetcher(url);
+      const resData = response?.rows || response?.data || response;
+      const kode =
+        resData?.kode ||
+        (typeof resData === 'string' ? resData : null) ||
+        (typeof response?.kode === 'string' ? response.kode : null);
+      if (kode) return kode;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  // Fallback direct request
+  try {
+    const directRes = await fetcher('/master/pemasok/preview-kode');
+    return directRes?.rows?.kode || directRes?.kode || '';
+  } catch {
+    return '';
+  }
+};

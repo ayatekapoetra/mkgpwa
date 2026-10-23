@@ -217,7 +217,6 @@ export default function OrderPaymentCreatePage() {
 
   const [bisnisId, setBisnisId] = useState("");
   const [trxDate, setTrxDate] = useState(today());
-  const [narasi, setNarasi] = useState("");
   const [walletType, setWalletType] = useState("bank");
   const [walletId, setWalletId] = useState("");
   const [wallets, setWallets] = useState([]);
@@ -350,6 +349,7 @@ export default function OrderPaymentCreatePage() {
         .map((a) => ({
           faktur_id: Number(a.id),
           amount: Number(a.amount) || 0,
+          narasi: a.narasi ? String(a.narasi).trim() : "",
           pemasok_id: a.pemasok_id,
           paymentProof: a.paymentProof,
         }))
@@ -394,15 +394,22 @@ export default function OrderPaymentCreatePage() {
     }
     setSaving(true);
     try {
+      const itemNarasiList = payloadAllocations
+        .map((a) => a.narasi?.trim())
+        .filter(Boolean);
+      const computedNarasi = itemNarasiList.length
+        ? itemNarasiList.join("; ")
+        : `Pembayaran ${payloadAllocations.length} faktur / ${pemasokCount} pemasok`;
+
       const body = {
         bisnis_id: Number(bisnisId),
         trx_date: trxDate,
-        narasi:
-          narasi ||
-          `Pembayaran ${payloadAllocations.length} faktur / ${pemasokCount} pemasok`,
+        narasi: computedNarasi,
         allocations: payloadAllocations.map((a) => ({
           faktur_id: a.faktur_id,
           amount: a.amount,
+          narasi: a.narasi || "",
+          description: a.narasi || "",
           bukti_pembayaran: a.paymentProof?.dataUrl || undefined,
         })),
         post: Boolean(post),
@@ -565,16 +572,6 @@ export default function OrderPaymentCreatePage() {
                 </MenuItem>
               ))}
             </TextField>
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              minRows={2}
-              label="Narasi"
-              value={narasi}
-              onChange={(e) => setNarasi(e.target.value)}
-            />
           </Grid>
         </Grid>
 
@@ -757,6 +754,26 @@ export default function OrderPaymentCreatePage() {
                             Maksimal {money(remaining)} · {amount > 0 ? `${((amount / Math.max(remaining, 1)) * 100).toFixed(1)}% dari sisa` : "Belum dialokasikan"}
                           </Typography>
                         </Box>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Narasi Item"
+                          placeholder="Keterangan / narasi spesifik untuk baris pembayaran ini"
+                          value={row.narasi || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setAllocations((prev) =>
+                              prev.map((a) =>
+                                String(a.id) === String(row.id)
+                                  ? { ...a, narasi: val }
+                                  : a,
+                              ),
+                            );
+                          }}
+                        />
                       </Grid>
 
                       <Grid item xs={12}>

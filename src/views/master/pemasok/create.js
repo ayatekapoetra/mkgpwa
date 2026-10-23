@@ -1,12 +1,12 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { CardActions, Grid, Button, Typography } from "@mui/material";
+import { CardActions, Grid, Button, Typography, IconButton, CircularProgress, Tooltip } from "@mui/material";
 
-import { Send2, User, Location, Call, Sms, Clock } from "iconsax-react";
+import { Send2, User, Location, Call, Sms, Clock, Refresh } from "iconsax-react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 
@@ -20,6 +20,7 @@ import axiosServices from "utils/axios";
 
 import { openNotification } from "api/notification";
 import { saveRequest } from "lib/offlineFetch";
+import { previewKodePemasok } from "api/pemasok";
 
 const msgSuccess = {
   open: true,
@@ -52,8 +53,30 @@ const initialValues = {
   rekening: [],
 };
 
+function AutoKodeEffect({ onMount }) {
+  useEffect(() => {
+    onMount();
+  }, [onMount]);
+  return null;
+}
+
 export default function AddPemasokScreen() {
   const route = useRouter();
+  const [kodeLoading, setKodeLoading] = useState(false);
+
+  const handleGenerateKode = async (setFieldValue) => {
+    setKodeLoading(true);
+    try {
+      const nextKode = await previewKodePemasok();
+      if (nextKode && setFieldValue) {
+        setFieldValue("kode", nextKode);
+      }
+    } catch {
+      openNotification({ ...msgError, message: "Gagal memuat kode pemasok otomatis" });
+    } finally {
+      setKodeLoading(false);
+    }
+  };
 
   const validationSchema = Yup.object({
     kode: Yup.string().required("Kode wajib diisi"),
@@ -116,17 +139,31 @@ export default function AddPemasokScreen() {
         <Formik initialValues={initialValues} enableReinitialize={true} validationSchema={validationSchema} onSubmit={onSubmitHandle}>
           {({ errors, handleChange, handleSubmit, touched, values, setFieldValue }) => (
             <Form noValidate onSubmit={handleSubmit}>
+              <AutoKodeEffect onMount={() => handleGenerateKode(setFieldValue)} />
               <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
-                <Grid item xs={12} sm={2} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={3} sx={{ mb: 4 }}>
                   <InputForm
-                    label="Kode"
+                    label="Kode Pemasok"
                     type="text"
                     name="kode"
                     errors={errors.kode}
                     touched={touched.kode}
                     value={values.kode}
                     onChange={handleChange}
+                    readOnly={true}
                     startAdornment={<User />}
+                    endAdornment={
+                      <Tooltip title="Refresh / Generate Kode Otomatis">
+                        <IconButton
+                          size="small"
+                          edge="end"
+                          disabled={kodeLoading}
+                          onClick={() => handleGenerateKode(setFieldValue)}
+                        >
+                          {kodeLoading ? <CircularProgress size={18} /> : <Refresh size={18} />}
+                        </IconButton>
+                      </Tooltip>
+                    }
                   />
                   {Boolean(errors.kode) && (
                     <Typography variant="body2" color="error" gutterBottom>
@@ -134,7 +171,7 @@ export default function AddPemasokScreen() {
                     </Typography>
                   )}
                 </Grid>
-                <Grid item xs={12} sm={6} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={5} sx={{ mb: 4 }}>
                   <InputForm
                     label="Nama Pemasok"
                     type="text"
