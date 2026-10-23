@@ -166,7 +166,7 @@ export function buildPollBody(rows, { sender_phone, recipient_phone }, mode = 'p
         po_id: item.po_id,
         file_name: `purchase-order-${item.po_id}.pdf`,
         mime_type: 'application/pdf',
-        source: { method: 'GET', path: `/scm/purchase-orders/${item.po_id}/print` }
+         source: { method: 'GET', path: `/scm/purchase-orders/${item.po_id}/print` }
       })),
       text: mode === 'text' ? buildPurchaseOrderText(items, summary) : null
     },

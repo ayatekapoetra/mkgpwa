@@ -40,6 +40,8 @@ export const endpoints = {
   print: (id) => `/scm/purchase-orders/${id}/print`,
   salesOrderCode: (id) => `/scm/purchase-orders/${id}/sales-order-code`,
   reconciliation: (id) => `/scm/purchase-orders/${id}/reconciliation`,
+  hermesDelivery: '/scm/purchase-orders/hermes-delivery',
+  hermesDeliveryStatus: (requestId) => `/scm/purchase-orders/hermes-delivery/${encodeURIComponent(requestId)}`,
   bisnis: "/master/bisnis-unit/list?my_units=true",
   cabang: "/master/cabang/list",
   gudang: "/master/gudang/list",
@@ -185,6 +187,25 @@ export const usePurchaseOrderAccess = () => {
       mutate,
     };
   }, [data, error, isLoading, isValidating, mutate]);
+};
+
+export const submitPurchaseOrderHermes = async (payload) => {
+  const response = await axiosServices.post(endpoints.hermesDelivery, payload, {
+    headers: { 'Idempotency-Key': payload.request_id },
+    skipRetry: true,
+    skipOfflineQueue: true,
+    skipAuthRedirect: true,
+  });
+  return response.data;
+};
+
+export const getPurchaseOrderHermesStatus = async (requestId) => {
+  const response = await axiosServices.get(endpoints.hermesDeliveryStatus(requestId), {
+    skipRetry: true,
+    skipOfflineQueue: true,
+    skipAuthRedirect: true,
+  });
+  return response.data;
 };
 
 export const useGetPurchaseOrders = (params = {}, enabled = true) => {

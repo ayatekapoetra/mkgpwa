@@ -1,13 +1,13 @@
 # Contract API — Pengiriman Purchase Order / Hermes
 
-Versi request: **1.1**. Endpoint berikut merupakan kontrak untuk diimplementasikan di Hermes; **belum tersedia di aplikasi Next.js**. Path hook dan nama event lama dipertahankan; request sekarang membedakan tiga mode pengiriman. Event hasil vote tetap versi 1.0 karena strukturnya tidak berubah.
+Versi request: **1.1**. Hook Hermes berjalan di service Hermes; aplikasi Next.js mengirim melalui backend MKG dan memantau status delivery. Path hook dan nama event lama dipertahankan; request sekarang membedakan tiga mode pengiriman. Event hasil vote tetap versi 1.0 karena strukturnya tidak berubah.
 
 ## 1. Status implementasi frontend
 
 - List `/purchasing-orders`: **Pilih Data** membuka checkbox; **Preview (N)** muncul setelah ada pilihan. Select-all hanya berlaku pada halaman yang sedang ditampilkan. Filter/pagination tidak menghapus pilihan.
 - Preview `/purchasing-orders/preview`: memuat detail terbaru dari endpoint PO yang sudah ada, maksimal empat request bersamaan. Semua PO harus berhasil dimuat sebelum JSON dapat dibuat.
 - Input **penerima pesan** wajib untuk semua mode. **Penerima hasil polling** wajib hanya pada mode `pdf_poll`. `08…` dinormalisasi menjadi `+628…`, `62…` menjadi `+62…`; nomor internasional menggunakan E.164.
-- Footer **Reset** hanya menghapus key fitur ini untuk pengguna aktif, lalu kembali ke list. Dropdown **Kirim Data** berisi **Kirim PDF**, **Kirim PDF dan Polling**, dan **Kirim Pesan Text Saja**. Memilih action menyiapkan dan mengunduh JSON, bukan mengirim WhatsApp. Pilihan tidak otomatis dihapus setelah JSON diunduh.
+- Footer **Reset** hanya menghapus key fitur ini untuk pengguna aktif, lalu kembali ke list. Dropdown **Kirim Data** berisi **Kirim PDF**, **Kirim PDF dan Polling**, dan **Kirim Pesan Text Saja**. Memilih action mengirim paket ke backend Hermes dan mempertahankan `request_id` untuk retry idempoten. Pilihan tidak otomatis dihapus setelah request dikirim.
 - Key localStorage: `purchase-order-poll:v1:<user_id>`. Menyimpan ID/kode PO, kedua nomor, dan metadata idempotensi; tidak menyimpan token, rekening, atau seluruh detail dokumen.
 - Detail diambil ulang saat preview dibuka atau **Muat Ulang Data** ditekan. UI menampilkan data terbaru, bukan snapshot nominal dari localStorage.
 - Hanya `pdf_poll` menyertakan **Setuju / Tolak / Perlu Revisi**; satu jawaban berlaku untuk **seluruh PO** dalam satu paket. Mode lainnya tidak membuat polling.
@@ -99,6 +99,12 @@ Frontend menjumlahkan nominal menggunakan satuan sen/integer, bukan penjumlahan 
 3. Key sama dengan payload berbeda: `409 IDEMPOTENCY_CONFLICT`.
 4. Frontend menyimpan SHA-256 dari isi bisnis paket (tanpa `request_id`/`created_at`) secara lokal. Unduhan ulang dengan data, mode, dan nomor yang sama menggunakan UUID/timestamp yang sama. Perubahan isi/mode/nomor membuat UUID baru. Fingerprint lokal tidak dikirim ke Hermes.
 5. Berkas JSON belum berarti sudah diterima Hermes; request `202` belum berarti pesan telah terkirim.
+
+### Integrasi aplikasi
+
+Preview mengirim request ke backend MKG `POST /api/scm/purchase-orders/hermes-delivery`; browser tidak pernah menerima atau mengirim `HERMES_HOOK_TOKEN`. Backend menyimpan payload dan fingerprint sebelum meneruskan request ke Hermes. Status dipantau melalui `GET /api/scm/purchase-orders/hermes-delivery/:request_id` dan hanya dapat dibaca oleh user yang membuat request.
+
+Hermes mengambil PDF melalui endpoint kontrak `/api/scm/purchase-orders/:id/print` dengan `Authorization: Bearer <HERMES_PDF_TOKEN>`. Endpoint yang sama tetap menerima JWT browser untuk cetak manual; token service hanya disimpan pada konfigurasi server.
 
 ## 4. Respons
 

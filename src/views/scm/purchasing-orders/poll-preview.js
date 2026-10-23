@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 
-import { usePurchaseOrderAccess } from 'api/purchase-orders';
+import { getPurchaseOrderHermesStatus, submitPurchaseOrderHermes, usePurchaseOrderAccess } from 'api/purchase-orders';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import usePollSelection from './use-poll-selection';
@@ -14,18 +14,6 @@ import PollPreviewView from './poll-preview-view';
 
 function phoneError(value) {
   try { normalizeWhatsAppPhone(value); return ''; } catch (error) { return error.message; }
-}
-
-function downloadPayload(payload) {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `purchase-order-${payload.delivery.mode}-${payload.request_id}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function PurchaseOrderPollPreview() {
@@ -40,6 +28,7 @@ export default function PurchaseOrderPollPreview() {
   const [deliveryMode, setDeliveryMode] = useState('pdf_poll');
   const [artifact, setArtifact] = useState(null);
   const [message, setMessage] = useState('');
+  const [deliveryStatus, setDeliveryStatus] = useState(null);
   const [error, setError] = useState('');
   const submitting = useRef(false);
   const lifetime = useRef(0);
@@ -71,6 +60,22 @@ export default function PurchaseOrderPollPreview() {
   const currentArtifact = artifact && artifact.key === selection.key && artifact.ids === ids &&
     artifact.rows === details.rows && artifact.sender === phones.sender_phone && artifact.recipient === phones.recipient_phone && artifact.mode === deliveryMode ? artifact : null;
 
+  useEffect(() => {
+    const requestId = currentArtifact?.payload?.request_id;
+    if (!requestId || !deliveryStatus || ['completed', 'failed'].includes(deliveryStatus.status)) return undefined;
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const result = await getPurchaseOrderHermesStatus(requestId);
+        if (!cancelled) setDeliveryStatus(result);
+      } catch (failure) {
+        if (!cancelled) setDeliveryStatus((current) => ({ ...current, status: current?.status || 'queued', error: failure?.diagnostic?.message || failure?.message || 'Status Hermes belum dapat dimuat.' }));
+      }
+    };
+    const timer = setTimeout(refresh, 3000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [currentArtifact, deliveryStatus]);
+
   const editPhone = (name, value) => {
     setContacts((current) => ({ ...current, key: selection.key, [name]: value }));
     setError('');
@@ -87,6 +92,7 @@ export default function PurchaseOrderPollPreview() {
     setTouched(true);
     setError('');
     setMessage('');
+    setDeliveryStatus(null);
     const needsSender = deliveryHasPoll(mode) && phoneError(phones.sender_phone);
     if (needsSender || recipientError) {
       document.getElementById?.(recipientError ? 'po-poll-recipient' : 'po-poll-sender')?.focus();
@@ -105,12 +111,19 @@ export default function PurchaseOrderPollPreview() {
         current.phones.sender_phone !== phones.sender_phone || current.phones.recipient_phone !== phones.recipient_phone) {
         throw new Error('Pilihan atau nomor berubah. Periksa preview lalu coba lagi.');
       }
-      if (!selection.savePrepared(prepared, { sender_phone: phones.sender_phone, recipient_phone: phones.recipient_phone }, ids)) return;
-      setArtifact({ key: selection.key, ids, rows: details.rows, sender: phones.sender_phone, recipient: phones.recipient_phone, mode, payload });
-      downloadPayload(payload);
-      setMessage(`${DELIVERY_MODES.find((option) => option.id === mode).label}: JSON Hermes berhasil disiapkan dan diunduh. Pesan WhatsApp belum dikirim karena hook Hermes belum terhubung.`);
+       const submitted = await submitPurchaseOrderHermes(payload);
+       if (!selection.savePrepared(prepared, { sender_phone: phones.sender_phone, recipient_phone: phones.recipient_phone }, ids)) return;
+       setArtifact({ key: selection.key, ids, rows: details.rows, sender: phones.sender_phone, recipient: phones.recipient_phone, mode, payload });
+       setDeliveryStatus(submitted);
+       setMessage(`${DELIVERY_MODES.find((option) => option.id === mode).label}: request diterima Hermes. Status pengiriman sedang dipantau.`);
     } catch (failure) {
-      if (lifetime.current === started.lifetime) setError(failure?.message || 'Gagal menyiapkan JSON Hermes.');
+      if (lifetime.current === started.lifetime) {
+        const diagnostic = failure?.diagnostic || {};
+        const fieldMessage = Array.isArray(failure?.errors)
+          ? failure.errors.map((item) => item?.message).filter(Boolean).join(' ')
+          : '';
+        setError(diagnostic.message || fieldMessage || failure?.message || 'Gagal mengirim paket Hermes.');
+      }
     } finally {
       submitting.current = false;
       if (lifetime.current === started.lifetime) setPreparing(false);
@@ -132,7 +145,7 @@ export default function PurchaseOrderPollPreview() {
         selection={selection} details={details} canRead={canRead} accessLoading={accessLoading} accessError={accessError}
         phones={phones} touched={touched} senderError={senderError} recipientError={recipientError} complete={complete}
         summary={summary} preview={preview} currentArtifact={currentArtifact} preparing={preparing} error={error} message={message}
-        deliveryMode={deliveryMode}
+        deliveryMode={deliveryMode} deliveryStatus={deliveryStatus}
         onEditPhone={editPhone} onSavePhones={savePhones} onPrepare={handlePrepare} onReset={handleReset}
       />
     </>

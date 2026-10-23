@@ -174,7 +174,7 @@ function PollIllustration({ count, ready }) {
 
 export default function PollPreviewView({
   selection, details, canRead, accessLoading, accessError, phones, touched, senderError, recipientError,
-  complete, summary, preview, currentArtifact, preparing, error, message, deliveryMode = 'pdf_poll', onEditPhone, onSavePhones, onPrepare, onReset
+  complete, summary, preview, currentArtifact, preparing, error, message, deliveryStatus, deliveryMode = 'pdf_poll', onEditPhone, onSavePhones, onPrepare, onReset
 }) {
   const metrics = useMemo(() => ({
     items: details.rows.reduce((total, row) => total + row.items.filter((item) => item.aktif !== 'N').length, 0),
@@ -254,7 +254,7 @@ export default function PollPreviewView({
             <MainCard id="poll-json" content={false} sx={{ ...panelSx, scrollMarginTop: 96 }}>
               <Accordion disableGutters elevation={0} sx={{ '&::before': { display: 'none' } }} TransitionProps={{ unmountOnExit: true }}>
                 <AccordionSummary expandIcon={<ArrowDown2 size={18} />} sx={{ px: { xs: 2, md: 2.75 }, py: 1 }}>
-                  <SectionHeading icon={<Code1 size={21} />} title="Paket JSON Hermes" description={currentArtifact ? 'Paket siap diunduh dan diproses oleh Hermes.' : 'Pratinjau struktur data untuk integrasi.'} />
+                   <SectionHeading icon={<Code1 size={21} />} title="Paket JSON Hermes" description={currentArtifact ? 'Paket sudah dikirim dan dapat dilacak melalui status Hermes.' : 'Pratinjau struktur data untuk integrasi.'} />
                 </AccordionSummary>
                 <AccordionDetails sx={{ px: { xs: 2, md: 2.75 }, pb: 2.75 }}>
                   {preview ? <Stack spacing={1.5}>
@@ -300,7 +300,7 @@ export default function PollPreviewView({
                 <Stack spacing={1.5}>
                   <SectionHeading icon={deliveryMode === 'pdf' ? <DocumentDownload size={21} /> : <MessageText size={21} />} title={deliveryMode === 'pdf' ? 'Dokumen PDF' : 'Pratinjau pesan teks'} description={deliveryMode === 'pdf' ? `${count} dokumen PDF dari endpoint cetak PO.` : 'Ringkasan seluruh PO untuk penerima pesan.'} />
                   {deliveryMode === 'text' && <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320, overflowY: 'auto', p: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>{preview?.delivery.text || 'Lengkapi nomor penerima untuk melihat pesan.'}</Typography>}
-                  <Typography variant="caption" color="text.secondary">Mode ini tidak menyertakan polling. Hermes belum terhubung; JSON disiapkan untuk diproses kemudian.</Typography>
+                   <Typography variant="caption" color="text.secondary">Mode ini tidak menyertakan polling. Status pengiriman tetap dapat dipantau dari request Hermes.</Typography>
                 </Stack>
               </MainCard>
             )}
@@ -313,14 +313,16 @@ export default function PollPreviewView({
                 {withPoll && <ReadinessRow ready={senderReady}>Nomor penerima hasil valid</ReadinessRow>}
               </Stack>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.8, display: 'block' }}>Hermes belum terhubung. Kirim Data mengunduh JSON; status PO tidak diubah dan WhatsApp belum dikirim.</Typography>
+               <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.8, display: 'block' }}>
+                 {deliveryStatus ? `Status Hermes: ${deliveryStatus.status}.` : 'Kirim Data mengirim paket ke Hermes.'} Status PO tidak diubah.
+               </Typography>
             </MainCard>
           </Stack>
         </Box>
       </>}
 
       {error && <Alert severity="error" sx={{ borderRadius: 2 }} role="alert">{error}</Alert>}
-      {message && currentArtifact && <Alert severity="success" sx={{ borderRadius: 2 }} role="status">{message}</Alert>}
+      {message && currentArtifact && <Alert severity={deliveryStatus?.status === 'failed' ? 'error' : 'success'} sx={{ borderRadius: 2 }} role="status">{deliveryStatus?.error || message}</Alert>}
 
       <Box sx={(theme) => ({
         position: 'sticky', bottom: { xs: 8, sm: 16 }, zIndex: 10, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider',
@@ -330,8 +332,8 @@ export default function PollPreviewView({
           <Stack direction="row" alignItems="center" spacing={1.25} sx={{ minWidth: 0 }}>
             <IconTile color={preview ? 'success' : 'primary'} small>{preview ? <TickCircle size={19} /> : <DocumentDownload size={19} />}</IconTile>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="subtitle2" fontWeight={700}>{currentArtifact ? 'JSON berhasil disiapkan' : preview ? 'Paket siap disiapkan' : 'Periksa paket pengiriman Anda'}</Typography>
-              <Typography variant="caption" color="text.secondary">{hasSelection ? `${count} PO · ${withPoll ? 'PDF + 1 polling' : deliveryMode === 'pdf' ? 'PDF saja' : 'Teks saja'}` : 'Pilih PO untuk memulai'} · Unduhan JSON untuk Hermes</Typography>
+               <Typography variant="subtitle2" fontWeight={700}>{currentArtifact ? 'Request Hermes berhasil dibuat' : preview ? 'Paket siap dikirim' : 'Periksa paket pengiriman Anda'}</Typography>
+               <Typography variant="caption" color="text.secondary">{hasSelection ? `${count} PO · ${withPoll ? 'PDF + 1 polling' : deliveryMode === 'pdf' ? 'PDF saja' : 'Teks saja'}` : 'Pilih PO untuk memulai'} · Status pengiriman dipantau</Typography>
             </Box>
           </Stack>
           <Stack direction="row" spacing={1.25} sx={{ flexShrink: 0 }}>

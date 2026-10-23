@@ -90,7 +90,7 @@
             "type": "object", "additionalProperties": false, "required": ["method", "path"],
             "properties": {
               "method": { "const": "GET" },
-              "path": { "type": "string", "pattern": "^/scm/purchase-orders/[1-9]\\d*/print$", "description": "Relative to Hermes' configured PO API base URL. ID must match po_id; never accept an arbitrary URL. No credentials in payload." }
+              "path": { "type": "string", "pattern": "^/scm/purchase-orders/[1-9]\\d*/print$", "description": "Relative to Hermes' configured PO API base URL. Same Contract v1.1 path; Hermes authenticates with HERMES_PDF_TOKEN while browsers keep using JWT. ID must match po_id; never accept an arbitrary URL. No credentials in payload." }
             }
           }
         }

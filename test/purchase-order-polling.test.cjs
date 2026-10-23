@@ -376,15 +376,14 @@ for (const mobile of [false, true]) {
   });
 }
 
-test('preview dropdown exports each requested mode, validates polling contacts, and resets selection', async () => {
+test('preview dropdown submits each requested mode, validates polling contacts, and resets selection', async () => {
   const p = await helpers();
   const h = hookRuntime();
   const rows = [order(1)];
   let selectionData = p.selectPollRows(p.emptyPollSelection(), rows, true);
   let reset = 0;
   let navigation;
-  const blobs = [];
-  let downloads = 0;
+  const submissions = [];
   let focused;
   const view = (await load(base + 'poll-preview-view.js', {
     react: h.react, 'next/link': 'NextLink', '@mui/material': mui(),
@@ -397,7 +396,7 @@ test('preview dropdown exports each requested mode, validates polling contacts, 
     react: h.react,
     'next/link': 'NextLink', 'next/navigation': { useRouter: () => ({ push: (url) => { navigation = url; } }) },
     uuid: { v4: () => metadata.request_id }, 'iconsax-react': { ArrowDown2: 'ArrowDown2' }, '@mui/material': mui(),
-    'api/purchase-orders': { usePurchaseOrderAccess: () => ({ permissions: { can_read: true } }) },
+    'api/purchase-orders': { usePurchaseOrderAccess: () => ({ permissions: { can_read: true } }), submitPurchaseOrderHermes: async (payload) => { submissions.push(payload); return { request_id: payload.request_id, status: 'queued' }; }, getPurchaseOrderHermesStatus: async () => ({ status: 'completed' }) },
     'components/@extended/Breadcrumbs': 'Breadcrumbs', 'components/MainCard': 'MainCard', config: { APP_DEFAULT_PATH: '/home' },
     './use-poll-selection': () => ({
       key: 'user-1', ready: true, data: selectionData, error: '',
@@ -410,9 +409,9 @@ test('preview dropdown exports each requested mode, validates polling contacts, 
     './poll-preview-view': view,
     './utils': { formatCurrency: String, getRelationName: () => 'Example', getStatusMeta: () => ({ label: 'Verify' }) }
   }, {
-    URL: { createObjectURL: (blob) => { blobs.push(blob); return 'blob:poll'; }, revokeObjectURL() {} },
-    document: { body: { appendChild() {} }, createElement: () => ({ click() { downloads++; }, remove() {} }), getElementById: (id) => ({ focus() { focused = id; } }) },
-    setTimeout: (callback) => callback()
+    URL: { createObjectURL: () => 'blob:poll', revokeObjectURL() {} },
+    document: { body: { appendChild() {} }, createElement: () => ({ click() {}, remove() {} }), getElementById: (id) => ({ focus() { focused = id; } }) },
+    setTimeout: (callback) => callback(), clearTimeout: () => {}
   })).default;
   const render = () => h.render(() => walk(Page()));
   render();
@@ -429,38 +428,38 @@ test('preview dropdown exports each requested mode, validates polling contacts, 
     await options.find((node) => node.props.children.find((child) => child.type === 'ListItemText')?.props.primary === label).props.onClick();
   };
   await choose('Kirim PDF dan Polling');
-  assert.equal(downloads, 0);
+  assert.equal(submissions.length, 0);
   assert.equal(focused, 'po-poll-recipient');
   nodes = render();
   assert.ok(nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor penerima pesan').props.error);
   nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor penerima pesan').props.onChange({ target: { value: phones.recipient_phone } });
   await choose('Kirim PDF');
-  assert.equal(downloads, 1);
-  const pdf = JSON.parse(await blobs[0].text());
+  assert.equal(submissions.length, 1);
+  const pdf = submissions[0];
   assert.equal(pdf.delivery.mode, 'pdf');
   assert.equal(pdf.poll, null);
   assert.equal(pdf.sender_phone, null);
   await choose('Kirim Pesan Text Saja');
-  assert.equal(downloads, 2);
-  const textOnly = JSON.parse(await blobs[1].text());
+  assert.equal(submissions.length, 2);
+  const textOnly = submissions[1];
   assert.equal(textOnly.delivery.mode, 'text');
   assert.equal(textOnly.delivery.pdf_documents.length, 0);
   assert.match(textOnly.delivery.text, /PO-1/);
   await choose('Kirim PDF dan Polling');
-  assert.equal(downloads, 2, 'polling still requires the result recipient');
+  assert.equal(submissions.length, 2, 'polling still requires the result recipient');
   nodes = render();
   nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor penerima hasil polling').props.onChange({ target: { value: phones.sender_phone } });
   nodes = render();
   await choose('Kirim PDF dan Polling');
-  assert.equal(downloads, 3);
-  const payload = JSON.parse(await blobs[2].text());
+  assert.equal(submissions.length, 3);
+  const payload = submissions[2];
   assert.equal(payload.delivery.mode, 'pdf_poll');
   assert.equal(payload.sender_phone, '+6281234567890');
   assert.equal(payload.recipient_phone, phones.recipient_phone);
   assert.equal(payload.items[0].po_id, '1');
   assert.equal(payload.result_handling.update_purchase_orders, false);
   nodes = render();
-  assert.ok(nodes.some((node) => node.type === 'Alert' && text(node).includes('Pesan WhatsApp belum dikirim')));
+  assert.ok(nodes.some((node) => node.type === 'Alert' && text(node).includes('request diterima Hermes')));
   nodes.find((node) => node.type === 'Button' && text(node) === 'Reset').props.onClick();
   assert.equal(reset, 1);
   assert.equal(navigation, '/purchasing-orders');
