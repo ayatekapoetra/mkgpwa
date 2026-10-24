@@ -46,14 +46,23 @@ const MainDrawer = ({ window }) => {
           {drawerHeader}
           {drawerContent}
         </MiniDrawerStyled>
-      ) : (
+      ) : drawerOpen ? (
         <Drawer
           container={container}
           variant="temporary"
-          open={drawerOpen}
+          open={Boolean(drawerOpen)}
           onClose={() => handlerDrawerOpen(false)}
+          ModalProps={{ keepMounted: false }}
           sx={{
             display: { xs: 'block', lg: 'none' },
+            '&[aria-hidden="true"]': {
+              pointerEvents: 'none !important',
+              visibility: 'hidden !important'
+            },
+            '&.MuiDrawer-modal[aria-hidden="true"]': {
+              pointerEvents: 'none !important',
+              visibility: 'hidden !important'
+            },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
@@ -67,7 +76,7 @@ const MainDrawer = ({ window }) => {
           {drawerHeader}
           {drawerContent}
         </Drawer>
-      )}
+      ) : null}
     </Box>
   );
 };

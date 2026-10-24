@@ -21,6 +21,7 @@ import Dialog from './Dialog';
 import DialogContentText from './DialogContentText';
 import DialogTitle from './DialogTitle';
 import Drawer from './Drawer';
+import Modal from './Modal';
 import Fab from './Fab';
 import FormHelperText from './FormHelperText';
 import IconButton from './IconButton';
@@ -74,6 +75,7 @@ export default function ComponentsOverrides(theme) {
     DialogContentText(theme),
     DialogTitle(),
     Drawer(),
+    Modal(),
     Fab(theme),
     FormHelperText(),
     IconButton(theme),
