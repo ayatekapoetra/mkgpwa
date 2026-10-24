@@ -36,7 +36,9 @@
     "build:static": "node build-electron.js",
     "lint": "next lint --quiet",
     "clean": "rm -rf .next out node_modules/.cache",
-    "prettier": "prettier --write ./src"
+    "prettier": "prettier --write ./src",
+    "start:staging": "next start -p 13000",
+    "dev:staging": "next dev -p 13000"
   },
   "dependencies": {
     "@aws-sdk/client-textract": "^3.840.0",

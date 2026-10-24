@@ -497,10 +497,11 @@ export default function OrderPaymentDetailPage() {
 
       // Signature table — compact autotable matching legacy layout
       const sig = printData?.signatures || {};
+      const isPD = Boolean(printData?.no_pd || row?.no_pd || row?.reff_pd || !row?.no_po);
       const sigRows = [
         { label: 'Diajukan Oleh :\nPart Manager', ...sig.diajukan },
-        { label: 'Diketahui Oleh :\nKeuangan', ...sig.diketahui },
-        { label: 'Disetujui Oleh :\nOperational Manager', ...sig.disetujui },
+        { label: isPD ? 'Diketahui Oleh :\nOperational Manager' : 'Diketahui Oleh :\nKeuangan', ...sig.diketahui },
+        { label: isPD ? 'Disetujui Oleh :\nKeuangan' : 'Disetujui Oleh :\nOperational Manager', ...sig.disetujui },
         { label: 'Dibayar oleh :\nFinance/Kasir', ...sig.dibayar },
       ];
 
