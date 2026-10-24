@@ -32,7 +32,15 @@ const MainDrawer = ({ window }) => {
   const drawerHeader = useMemo(() => <DrawerHeader open={drawerOpen} />, [drawerOpen]);
 
   return (
-    <Box component="nav" sx={{ flexShrink: { md: 0 }, zIndex: 1200 }} aria-label="mailbox folders">
+    <Box
+      component="nav"
+      sx={{
+        flexShrink: { md: 0 },
+        zIndex: 1200,
+        ...(!downLG ? {} : { pointerEvents: 'none' })
+      }}
+      aria-label="mailbox folders"
+    >
       {!downLG ? (
         <MiniDrawerStyled variant="permanent" open={drawerOpen}>
           {drawerHeader}
@@ -43,8 +51,7 @@ const MainDrawer = ({ window }) => {
           container={container}
           variant="temporary"
           open={drawerOpen}
-          onClose={() => handlerDrawerOpen(!drawerOpen)}
-          ModalProps={{ keepMounted: true }}
+          onClose={() => handlerDrawerOpen(false)}
           sx={{
             display: { xs: 'block', lg: 'none' },
             '& .MuiDrawer-paper': {
@@ -52,7 +59,8 @@ const MainDrawer = ({ window }) => {
               width: DRAWER_WIDTH,
               borderRight: `1px solid ${theme.palette.divider}`,
               backgroundImage: 'none',
-              boxShadow: 'inherit'
+              boxShadow: 'inherit',
+              pointerEvents: 'auto'
             }
           }}
         >

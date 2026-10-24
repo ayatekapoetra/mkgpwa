@@ -38,11 +38,13 @@ const DashboardLayout = ({ children }) => {
 
   // set media wise responsive drawer
   useEffect(() => {
-    if (!miniDrawer) {
+    if (downLG) {
+      handlerDrawerOpen(false);
+    } else if (!miniDrawer) {
       handlerDrawerOpen(!downXL);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [downXL]);
+  }, [downLG, downXL]);
 
   // Temporarily disable menu loading check for testing
   // if (menuMasterLoading) return <Loader />;
@@ -55,7 +57,10 @@ const DashboardLayout = ({ children }) => {
       <Box
         component="main"
         sx={{
-          width: drawerOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : `calc(100% - ${MINI_DRAWER_WIDTH}px)`,
+          width: {
+            xs: '100%',
+            lg: drawerOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : `calc(100% - ${MINI_DRAWER_WIDTH}px)`
+          },
           flexGrow: 1,
           p: { xs: 1, sm: 3 }
         }}
