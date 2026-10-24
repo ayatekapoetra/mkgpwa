@@ -129,14 +129,16 @@ export async function downloadBreakdownPdf(params = {}) {
 }
 
 export async function getBreakdownMasters() {
-  const labels = ['cabangs', 'equipments', 'lokasis', 'penyewas', 'shifts', 'pengawases'];
+  const labels = ['cabangs', 'equipments', 'lokasis', 'penyewas', 'shifts', 'pengawases', 'towerLamps'];
   const requests = [
     axiosServices.get('/master/cabang/list'),
     axiosServices.get('/master/equipment/produksi'),
     axiosServices.get('/master/lokasi-kerja/list'),
     axiosServices.get('/master/penyewa/list'),
     axiosServices.get('/master/shift/list'),
-    axiosServices.get('/master/karyawan/pengawas')
+    axiosServices.get('/master/karyawan/pengawas'),
+    // /produksi includes LT, but does not include the distinct TL (Tower Lamp) category.
+    axiosServices.get('/master/equipment/list', { params: { kategori: 'TL' } })
   ];
 
   const results = await Promise.allSettled(requests);
@@ -144,12 +146,19 @@ export async function getBreakdownMasters() {
   const _failed = [];
   results.forEach((result, index) => {
     const label = labels[index];
-    if (result.status === 'fulfilled') {
-      out[label] = result.value.data?.rows || result.value.data || [];
+    if (result.status === 'fulfilled' && !result.value.data?.diagnostic?.error) {
+      const payload = result.value.data?.rows ?? result.value.data;
+      out[label] = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.rows) ? payload.rows : [];
     } else {
       out[label] = [];
-      _failed.push(label);
+      _failed.push(label === 'towerLamps' ? 'equipment TL' : label);
     }
   });
-  return { ...out, _failed };
+  const equipments = new Map();
+  const towerLamps = out.towerLamps.filter((item) => String(item?.kategori || '').trim().toUpperCase() === 'TL');
+  [...out.equipments, ...towerLamps].forEach((item) => {
+    if (item?.id != null) equipments.set(String(item.id), item);
+  });
+  delete out.towerLamps;
+  return { ...out, equipments: [...equipments.values()], _failed };
 }
