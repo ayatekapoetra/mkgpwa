@@ -15,7 +15,8 @@ const compiled = Promise.all([apiFile, formFile, utilsFile].map(async (file) => 
 )).code])).then(Object.fromEntries);
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const towerLamp = { id: 900, kode: 'TL-001', nama: 'Tower Lamp 6 kW', kategori: 'TL' };
-const production = [{ id: 1, kode: 'EX-001', kategori: 'HE' }, { id: 2, kode: 'LT-001', kategori: 'LT' }];
+const towerLampTLS = { id: 901, kode: 'TLS-001', nama: 'Tower Lamp Solar', kategori: 'TLS' };
+const production = [{ id: 1, kode: 'EX-001', kategori: 'HE' }, { id: 2, kode: 'LT-001', kategori: 'LT' }, towerLampTLS];
 
 async function load(file, dependencies) {
   const module = { exports: {} };
@@ -34,7 +35,7 @@ function transport({ paginated = false, failure, duplicate = false } = {}) {
     async get(url, config) {
       requests.push({ url, config });
       if (failure === url) throw new Error('Network error');
-      if (url === '/master/equipment/produksi') return { data: { rows: duplicate ? [...production, { ...towerLamp, id: '900' }] : production } };
+      if (url === '/master/equipment/produksi') return { data: { rows: duplicate ? [...production, { ...towerLamp, id: '900' }, { ...towerLampTLS, id: '901' }] : production } };
       if (url === '/master/equipment/list') {
         assert.equal(config.params.kategori, 'TL');
         const lamps = [towerLamp];
@@ -66,12 +67,13 @@ async function api(client, hooks = { useMemo: (factory) => factory() }, detail) 
 }
 
 for (const paginated of [false, true]) {
-  test(`breakdown masters include TL alongside existing HE/LT for ${paginated ? 'paginated' : 'flat'} equipment responses`, async () => {
+  test(`breakdown masters include TL alongside existing HE/LT/TLS for ${paginated ? 'paginated' : 'flat'} equipment responses`, async () => {
     const client = transport({ paginated });
     const { getBreakdownMasters } = await api(client);
     const result = await getBreakdownMasters();
-    assert.deepEqual(Array.from(result.equipments, (row) => row.kategori), ['HE', 'LT', 'TL']);
+    assert.deepEqual(Array.from(result.equipments, (row) => row.kategori), ['HE', 'LT', 'TLS', 'TL']);
     assert.equal(result.equipments.find((row) => row.id === 900).nama, towerLamp.nama);
+    assert.equal(result.equipments.find((row) => row.id === 901).nama, towerLampTLS.nama);
     assert.equal(result._failed.length, 0);
     assert.equal(result.pengawases[0].id, 7);
     assert.equal(client.requests.length, 7);
@@ -79,17 +81,18 @@ for (const paginated of [false, true]) {
   });
 }
 
-test('merged equipment uses unique IDs even when production already includes a Tower Lamp', async () => {
+test('merged equipment uses unique IDs even when production already includes Tower Lamp TL and TLS', async () => {
   const { getBreakdownMasters } = await api(transport({ duplicate: true }));
   const result = await getBreakdownMasters();
-  assert.equal(result.equipments.length, 3);
+  assert.equal(result.equipments.length, 4);
   assert.equal(result.equipments.filter((row) => String(row.id) === '900').length, 1);
+  assert.equal(result.equipments.filter((row) => String(row.id) === '901').length, 1);
 });
 
 test('a TL request failure preserves production options and reports the missing category', async () => {
   const { getBreakdownMasters } = await api(transport({ failure: '/master/equipment/list' }));
   const result = await getBreakdownMasters();
-  assert.deepEqual(Array.from(result.equipments, (row) => row.kategori), ['HE', 'LT']);
+  assert.deepEqual(Array.from(result.equipments, (row) => row.kategori), ['HE', 'LT', 'TLS']);
   assert.ok(result._failed.includes('equipment TL'));
   assert.equal(result.lokasis.length, 1);
 });
@@ -183,4 +186,50 @@ test('the edit form resolves a stored TL equipment ID against the loaded options
   assert.equal(equipment.props.value.id, 900);
   assert.equal(equipment.props.value.kategori, 'TL');
   assert.equal(equipment.props.isOptionEqualToValue(equipment.props.value, { id: '900' }), true);
+});
+
+test('towerLamps response supporting TLS category is accepted and merged without duplicate IDs', async () => {
+  const client = transport();
+  const origGet = client.get;
+  client.get = async (url, config) => {
+    if (url === '/master/equipment/list') {
+      return { data: { rows: [towerLamp, { id: 902, kode: 'TLS-002', nama: 'Tower Lamp Mobile', kategori: 'TLS' }] } };
+    }
+    return origGet(url, config);
+  };
+  const { getBreakdownMasters } = await api(client);
+  const result = await getBreakdownMasters();
+  assert.ok(result.equipments.find((row) => row.id === 902 && row.kategori === 'TLS'));
+});
+
+test('Tower Lamp TLS is selectable in the actual create form and submitted as equipment_id', async () => {
+  const f = await formFixture();
+  let nodes = f.render();
+  const equipment = autocomplete(nodes, 'Equipment');
+  const lamp = equipment.props.options.find((row) => row.kategori === 'TLS');
+  assert.ok(lamp);
+  assert.match(equipment.props.getOptionLabel(lamp), /TLS-001.*Tower Lamp Solar/);
+  equipment.props.onChange(null, lamp);
+  for (const label of ['Lokasi Kerja', 'Pengawas', 'Penyewa']) {
+    const input = autocomplete(nodes, label);
+    input.props.onChange(null, input.props.options[0]);
+  }
+  nodes.find((node) => node.type === 'TextField' && node.props.label === 'Waktu Breakdown').props.onChange({ target: { value: '2026-10-22T19:00' } });
+  nodes.find((node) => node.type === 'Select' && node.props.label === 'Kategori *').props.onChange({ target: { value: 'ELECTRICAL' } });
+  nodes.find((node) => node.type === 'TextField' && node.props.label === 'Deskripsi Problem').props.onChange({ target: { value: 'Solar cell tidak berfungsi' } });
+  nodes = f.render();
+  assert.equal(autocomplete(nodes, 'Equipment').props.value.id, 901);
+  await nodes.find((node) => node.type === 'form').props.onSubmit({ preventDefault() {} });
+  assert.equal(f.client.posts.length, 1);
+  assert.equal(f.client.posts[0].url, '/operation/daily-breakdown/create');
+  assert.equal(f.client.posts[0].body.equipment_id, 901);
+  assert.equal(f.client.posts[0].body.items[0].problem_issue, 'Solar cell tidak berfungsi');
+});
+
+test('the edit form resolves a stored TLS equipment ID against the loaded options', async () => {
+  const f = await formFixture({ id: 56, equipment_id: '901', breakdown_at: '2026-10-22 19:00:00', items: [] });
+  const equipment = autocomplete(f.render(), 'Equipment');
+  assert.equal(equipment.props.value.id, 901);
+  assert.equal(equipment.props.value.kategori, 'TLS');
+  assert.equal(equipment.props.isOptionEqualToValue(equipment.props.value, { id: '901' }), true);
 });

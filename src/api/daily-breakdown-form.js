@@ -155,7 +155,10 @@ export async function getBreakdownMasters() {
     }
   });
   const equipments = new Map();
-  const towerLamps = out.towerLamps.filter((item) => String(item?.kategori || '').trim().toUpperCase() === 'TL');
+  const towerLamps = out.towerLamps.filter((item) => {
+    const kat = String(item?.kategori || '').trim().toUpperCase();
+    return kat === 'TL' || kat === 'TLS';
+  });
   [...out.equipments, ...towerLamps].forEach((item) => {
     if (item?.id != null) equipments.set(String(item.id), item);
   });
