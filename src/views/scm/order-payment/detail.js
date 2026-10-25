@@ -32,7 +32,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Gallery, Receipt2, AddCircle, Trash, Printer } from "iconsax-react";
+import { Gallery, Receipt2, AddCircle, Trash, Printer, CalendarEdit } from "iconsax-react";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
@@ -54,6 +54,8 @@ import { APP_DEFAULT_PATH } from "config";
 import PaymentProofManager from './PaymentProofManager';
 import AddItemDialog from './AddItemDialog';
 import { paymentProofStorageKey, applyPaymentAttachmentChange } from './payment-proofs';
+import { canRescheduleDueDate } from "./rescheduleDueDateHelpers";
+import RescheduleDueDateModal from "./RescheduleDueDateModal";
 
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
@@ -249,12 +251,14 @@ export default function OrderPaymentDetailPage() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [removeItemTarget, setRemoveItemTarget] = useState(null);
   const [removingItem, setRemovingItem] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [printing, setPrinting] = useState(false);
   const [automaticPrint, setAutomaticPrint] = useState(false);
   const automaticPrintId = useRef(null);
   const mutationLock = useRef(false);
   const busy = posting || removing || attachmentBusy;
 
+  const canReschedule = canRescheduleDueDate(permissions);
   const pending = row?.status === "pending";
 
   useEffect(() => {
@@ -812,6 +816,27 @@ export default function OrderPaymentDetailPage() {
                       </Stack>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
                         <Typography variant="subtitle1" fontWeight={800} color="primary.main">Rp {money(it.subtotal)}</Typography>
+                        {canReschedule ? (
+                          <Tooltip title="Ubah Jatuh Tempo Faktur" arrow>
+                            <IconButton
+                              size="small"
+                              color="warning"
+                              disabled={busy}
+                              aria-label="Ubah Jatuh Tempo"
+                              onClick={() =>
+                                setRescheduleTarget({
+                                  id: it.trx_beli || it.faktur_id,
+                                  kdfb: it.faktur_kode,
+                                  date_faktur: it.date_faktur || it.created_at,
+                                  due_date: it.due_date,
+                                  termin_id: it.termin_id,
+                                })
+                              }
+                            >
+                              <CalendarEdit size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : null}
                         {canRemoveItem ? (
                           <IconButton size="small" color="error" disabled={busy} aria-label="Hapus item" onClick={() => setRemoveItemTarget(it)}>
                             <Trash size={16} />
@@ -1120,6 +1145,16 @@ export default function OrderPaymentDetailPage() {
               </Button>
             </DialogActions>
           </Dialog>
+
+          <RescheduleDueDateModal
+            open={Boolean(rescheduleTarget)}
+            onClose={() => setRescheduleTarget(null)}
+            faktur={rescheduleTarget}
+            permissions={permissions}
+            onSuccess={() => {
+              refresh();
+            }}
+          />
 
       </MainCard>
     </>

@@ -19,6 +19,7 @@ export const endpoints = {
   print: (id) => `/scm/order-payments/${id}/print`,
   attachments: (id) => `/scm/order-payments/${id}/attachments`,
   attachment: (id, fileId) => `/scm/order-payments/${id}/attachments/${fileId}`,
+  rescheduleDueDate: (id) => `/api/faktur-beli/${id}/reschedule-due-date`,
 };
 
 const permissionDefaults = {
@@ -27,6 +28,7 @@ const permissionDefaults = {
   can_update: false,
   can_delete: false,
   can_post: false,
+  can_reschedule_due_date: false,
   can_export: false,
   can_upload_attachment: false,
   can_replace_attachment: false,
@@ -38,10 +40,15 @@ const isOn = (v) =>
   v === 1 ||
   ["Y", "1", "TRUE"].includes(String(v || "").toUpperCase());
 
-const normalizePermissions = (p = {}) =>
-  Object.fromEntries(
+const normalizePermissions = (p = {}) => {
+  const norm = Object.fromEntries(
     Object.keys(permissionDefaults).map((k) => [k, isOn(p[k])]),
   );
+  if (!norm.can_reschedule_due_date && (isOn(p.approval) || isOn(p.approve))) {
+    norm.can_reschedule_due_date = true;
+  }
+  return norm;
+};
 
 function extractAccessPayload(data) {
   // Supports:
@@ -302,3 +309,59 @@ export async function fetchPrintDefinition(id) {
   if (payload?.diagnostic?.error) throw new Error(payload.diagnostic.error);
   return payload?.rows;
 }
+
+export async function rescheduleDueDate(fakturId, body) {
+  if (!fakturId) throw new Error("ID Faktur tidak ditemukan");
+  const payload = {
+    new_due_date: body?.new_due_date,
+    reason: body?.reason,
+    termin_id: body?.termin_id ?? null,
+  };
+  try {
+    const res = await axiosServices.post(
+      endpoints.rescheduleDueDate(fakturId),
+      payload,
+      {
+        skipOfflineQueue: true,
+        skipRetry: true,
+      }
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) {
+      throw new Error(
+        typeof diag.error === "string"
+          ? diag.error
+          : "Gagal menjadwalkan ulang jatuh tempo",
+      );
+    }
+    return res?.data?.rows ?? res?.data?.data ?? res?.data;
+  } catch (error) {
+    const status = error?.response?.status || error?.status;
+    if (status === 403) {
+      const serverMsg =
+        error?.response?.data?.diagnostic?.error ||
+        error?.diagnostic?.error ||
+        "Anda tidak memiliki hak persetujuan untuk mengubah tanggal jatuh tempo";
+      const err = new Error(
+        typeof serverMsg === "string"
+          ? serverMsg
+          : "Anda tidak memiliki hak persetujuan untuk mengubah tanggal jatuh tempo",
+      );
+      err.status = 403;
+      throw err;
+    }
+    const message =
+      error?.response?.data?.diagnostic?.error ||
+      error?.diagnostic?.error ||
+      error?.message ||
+      "Gagal menjadwalkan ulang jatuh tempo";
+    const err = new Error(
+      typeof message === "string"
+        ? message
+        : "Gagal menjadwalkan ulang jatuh tempo",
+    );
+    err.status = status;
+    throw err;
+  }
+}
+

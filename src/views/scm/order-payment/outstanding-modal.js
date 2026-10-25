@@ -13,14 +13,16 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  IconButton,
   MenuItem,
   Stack,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
+import { CalendarEdit } from "iconsax-react";
 
-import { fetchOutstanding } from "api/order-payments";
+import { fetchOutstanding, useOrderPaymentAccess } from "api/order-payments";
 import {
   usePurchaseOrderCabang,
   usePurchaseOrderPemasok,
@@ -36,6 +38,8 @@ import {
   getUnpayableReason,
   isRowPayable,
 } from "./outstandingHelpers";
+import { canRescheduleDueDate } from "./rescheduleDueDateHelpers";
+import RescheduleDueDateModal from "./RescheduleDueDateModal";
 
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
@@ -92,6 +96,10 @@ export default function OutstandingModal({
     total_pages: 1,
   });
   const [loading, setLoading] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+
+  const { permissions } = useOrderPaymentAccess();
+  const canReschedule = canRescheduleDueDate(permissions);
 
   const { rows: pemasok = [] } = usePurchaseOrderPemasok({}, open);
   const { rows: cabang = [] } = usePurchaseOrderCabang(
@@ -533,34 +541,53 @@ export default function OutstandingModal({
                           </Stack>
                         </td>
                         <td>
-                          <Typography variant="body2" fontWeight={600} noWrap>
-                            {dueMeta.dateFormatted}
-                          </Typography>
-                          {dueMeta.status !== "none" && (
-                            <Chip
-                              size="small"
-                              label={dueMeta.label}
-                              color={dueMeta.color}
-                              variant={dueMeta.status === "safe" ? "outlined" : "filled"}
-                              sx={{
-                                mt: 0.5,
-                                height: 20,
-                                fontSize: 11,
-                                "& .MuiChip-label": { px: 1 },
-                              }}
-                            />
-                          )}
-                          {terminLabel && (
-                            <Typography
-                              variant="caption"
-                              color="info.main"
-                              display="block"
-                              fontWeight={600}
-                              sx={{ mt: 0.5 }}
-                            >
-                              {terminLabel}
-                            </Typography>
-                          )}
+                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                            <Box>
+                              <Typography variant="body2" fontWeight={600} noWrap>
+                                {dueMeta.dateFormatted}
+                              </Typography>
+                              {dueMeta.status !== "none" && (
+                                <Chip
+                                  size="small"
+                                  label={dueMeta.label}
+                                  color={dueMeta.color}
+                                  variant={dueMeta.status === "safe" ? "outlined" : "filled"}
+                                  sx={{
+                                    mt: 0.5,
+                                    height: 20,
+                                    fontSize: 11,
+                                    "& .MuiChip-label": { px: 1 },
+                                  }}
+                                />
+                              )}
+                              {terminLabel && (
+                                <Typography
+                                  variant="caption"
+                                  color="info.main"
+                                  display="block"
+                                  fontWeight={600}
+                                  sx={{ mt: 0.5 }}
+                                >
+                                  {terminLabel}
+                                </Typography>
+                              )}
+                            </Box>
+                            {canReschedule && (
+                              <Tooltip title="Ubah Jatuh Tempo (Reschedule)" arrow>
+                                <IconButton
+                                  size="small"
+                                  color="warning"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRescheduleTarget(row);
+                                  }}
+                                  aria-label="Ubah Jatuh Tempo"
+                                >
+                                  <CalendarEdit size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Stack>
                         </td>
                         <td>
                           <Chip
@@ -662,6 +689,32 @@ export default function OutstandingModal({
           Tambah ke alokasi
         </Button>
       </DialogActions>
+
+      <RescheduleDueDateModal
+        open={Boolean(rescheduleTarget)}
+        onClose={() => setRescheduleTarget(null)}
+        faktur={rescheduleTarget}
+        permissions={permissions}
+        onSuccess={(updated) => {
+          setRows((prev) =>
+            prev.map((r) =>
+              r.id === updated.id || (r.kdfb && r.kdfb === updated.kdfb)
+                ? { ...r, due_date: updated.due_date, new_due_date: updated.due_date }
+                : r
+            )
+          );
+          setChecked((prev) => {
+            if (!prev[updated.id]) return prev;
+            return {
+              ...prev,
+              [updated.id]: {
+                ...prev[updated.id],
+                due_date: updated.due_date,
+              },
+            };
+          });
+        }}
+      />
     </Dialog>
   );
 }

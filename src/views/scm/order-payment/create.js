@@ -27,9 +27,9 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Bank, Building, CardReceive, Eye, Gallery, Receipt2, Trash } from "iconsax-react";
+import { Bank, Building, CalendarEdit, CardReceive, Eye, Gallery, Receipt2, Trash } from "iconsax-react";
 
-import { createOrderPayment, fetchWallets } from "api/order-payments";
+import { createOrderPayment, fetchWallets, useOrderPaymentAccess } from "api/order-payments";
 import { usePurchaseOrderBisnis } from "api/purchase-orders";
 import { openNotification } from "api/notification";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
@@ -37,6 +37,8 @@ import MainCard from "components/MainCard";
 import BtnBack from "components/BtnBack";
 import { APP_DEFAULT_PATH } from "config";
 import OutstandingModal from "./outstanding-modal";
+import { canRescheduleDueDate } from "./rescheduleDueDateHelpers";
+import RescheduleDueDateModal from "./RescheduleDueDateModal";
 
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
@@ -227,6 +229,10 @@ export default function OrderPaymentCreatePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [detailRow, setDetailRow] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+
+  const { permissions } = useOrderPaymentAccess();
+  const canReschedule = canRescheduleDueDate(permissions);
 
   const handleProofFile = (id, file) => {
     if (!file) return;
@@ -667,6 +673,13 @@ export default function OrderPaymentCreatePage() {
                           color={String(status).toLowerCase().includes("lunas") ? "success" : "warning"}
                           variant="outlined"
                         />
+                        {canReschedule ? (
+                          <Tooltip title="Ubah Jatuh Tempo Faktur">
+                            <IconButton size="small" color="warning" onClick={() => setRescheduleTarget(row)}>
+                              <CalendarEdit size={17} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : null}
                         <Tooltip title="Lihat detail faktur">
                           <IconButton size="small" color="primary" onClick={() => setDetailRow(row)}>
                             <Eye size={17} />
@@ -1082,12 +1095,41 @@ export default function OrderPaymentCreatePage() {
             </Stack>
           ) : null}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
+        <DialogActions sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between" }}>
+          {canReschedule ? (
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<CalendarEdit size={16} />}
+              onClick={() => setRescheduleTarget(detailRow)}
+            >
+              Ubah Jatuh Tempo
+            </Button>
+          ) : <Box />}
           <Button variant="outlined" onClick={() => setDetailRow(null)}>
             Tutup
           </Button>
         </DialogActions>
       </Dialog>
+
+      <RescheduleDueDateModal
+        open={Boolean(rescheduleTarget)}
+        onClose={() => setRescheduleTarget(null)}
+        faktur={rescheduleTarget}
+        permissions={permissions}
+        onSuccess={(updated) => {
+          if (detailRow && (detailRow.id === updated.id || detailRow.kdfb === updated.kdfb)) {
+            setDetailRow((prev) => (prev ? { ...prev, due_date: updated.due_date } : null));
+          }
+          setAllocations((prev) =>
+            prev.map((item) =>
+              item.id === updated.id || item.kdfb === updated.kdfb
+                ? { ...item, due_date: updated.due_date }
+                : item
+            )
+          );
+        }}
+      />
     </>
   );
 }
