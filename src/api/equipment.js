@@ -8,6 +8,7 @@ import { useOfflineStorage } from 'lib/useOfflineStorage';
 export const endpoints = {
   public: '/public/equipment',
   key: '/master/equipment',
+  rentalModels: '/rental-models',
   list: '/list'
 };
 

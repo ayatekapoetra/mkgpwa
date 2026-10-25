@@ -58,6 +58,52 @@ export function useRentalEquipmentOptions(params = { limit: 1000 }) {
   return { data: Array.isArray(options) ? options : options?.data || [], loading: result.isLoading, error: result.error };
 }
 
+export const RENTAL_TOOLS = [
+  { type: 'BUCKET', label: 'BUCKET (Standar)', defaultActive: true },
+  { type: 'BREAKER', label: 'BREAKER (Pencil Tools / Pemecah Batu)', defaultActive: false },
+  { type: 'LONGARM', label: 'LONGARM (Long Arm / Jangkauan Panjang)', defaultActive: false }
+];
+
+export function useRentalEquipmentModels() {
+  const result = useSWR('/master/equipment/rental-models', fetcher, { revalidateOnFocus: false });
+  const publicEquip = useSWR('/public/equipment/list?limit=1000', fetcher, { revalidateOnFocus: false });
+
+  const models = useMemo(() => {
+    const raw = unwrap(result.data);
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw;
+    }
+    const fallbackList = unwrap(publicEquip.data);
+    const eqList = Array.isArray(fallbackList) ? fallbackList : (fallbackList?.data || fallbackList?.rows || []);
+    if (Array.isArray(eqList) && eqList.length > 0) {
+      const groupMap = {};
+      eqList.forEach((eq) => {
+        const tipe = (eq.tipe || eq.type || 'equipment').toLowerCase().trim();
+        const kategori = (eq.kategori || eq.category || 'HE').toUpperCase().trim();
+        const model = (eq.model || eq.nama || eq.abbr || eq.kode || '').trim();
+        if (!tipe || !model) return;
+        const key = `${kategori}:${tipe}`;
+        if (!groupMap[key]) {
+          groupMap[key] = { kategori, tipe, models: new Set() };
+        }
+        groupMap[key].models.add(model);
+      });
+      return Object.values(groupMap).map((g) => ({
+        kategori: g.kategori,
+        tipe: g.tipe,
+        models: Array.from(g.models).sort()
+      }));
+    }
+    return [];
+  }, [result.data, publicEquip.data]);
+
+  return {
+    data: models,
+    loading: result.isLoading && publicEquip.isLoading,
+    error: result.error && publicEquip.error
+  };
+}
+
 async function mutate(method, url, payload) {
   try {
     const response = method === 'delete'

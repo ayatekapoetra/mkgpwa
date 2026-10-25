@@ -13,22 +13,25 @@ import {
   Magicpen,
   ReceiptItem,
   Trash,
+  TruckFast,
 } from "iconsax-react";
 import {
   Alert,
   Autocomplete,
   Box,
   Button,
+  Card,
+  Checkbox,
   Chip,
   Divider,
+  FormControlLabel,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
   Paper,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -43,41 +46,42 @@ import {
   getErrorMessage,
   updateRentalContract,
   useRentalContract,
-  useRentalEquipmentOptions,
+  useRentalEquipmentModels,
+  RENTAL_TOOLS,
 } from "api/rental-contract";
 import { openNotification } from "api/notification";
 
-// Normalisasi tanggal ke format `YYYY-MM-DD` yang dibutuhkan `<input type="date">`.
-// Menggunakan moment (zona lokal) agar tidak selisih 1 hari ketika nilai API
-// berupa ISO string UTC (mis. "2026-05-10T17:00:00.000Z" => 2026-05-11 di UTC+7).
 const toInputDate = (value) => {
   if (!value) return "";
   const parsed = moment(value);
   return parsed.isValid() ? parsed.format("YYYY-MM-DD") : "";
 };
 
-const emptyGroup = () => ({
-  equipment: [],
-  role: "MAIN",
-  effective_from: "",
-  effective_to: "",
+const emptyItem = () => ({
+  tipe: "",
+  model: "",
+  quantity: 1,
   billing_unit: "HOUR",
-  unit_price: "",
-  minimum_quantity: "0",
+  minimum_quantity: "200",
   minimum_period: "CALENDAR_MONTH",
   notes: "",
+  rates: {
+    BUCKET: { active: true, unit_price: "" },
+    BREAKER: { active: false, unit_price: "" },
+    LONGARM: { active: false, unit_price: "" },
+  },
 });
 
-const units = [
-  { value: "HOUR", label: "Per jam kerja", hint: "Durasi waktu kerja" },
-  { value: "DAY", label: "Per hari kalender", hint: "Hari kalender" },
-  { value: "MONTH", label: "Per bulan kalender", hint: "Bulan kalender" },
+const billingUnits = [
+  { value: "HOUR", label: "Per Jam", hint: "Dihitung per jam kerja (SMU)" },
+  { value: "DAY", label: "Per Hari", hint: "Dihitung per hari kalender" },
+  { value: "MONTH", label: "Per Bulan", hint: "Dihitung per bulan kalender" },
 ];
 
 const minimumPeriods = [
-  { value: "DAY", label: "Per hari" },
-  { value: "CALENDAR_MONTH", label: "Per bulan kalender" },
-  { value: "RENTAL_TERM", label: "Seluruh masa sewa" },
+  { value: "CALENDAR_MONTH", label: "Per Bulan Kalender" },
+  { value: "DAY", label: "Per Hari" },
+  { value: "RENTAL_TERM", label: "Seluruh Masa Sewa" },
 ];
 
 const schema = Yup.object({
@@ -92,127 +96,95 @@ const schema = Yup.object({
   end_date: Yup.date()
     .min(Yup.ref("start_date"), "Tanggal akhir harus setelah tanggal mulai")
     .required("Tanggal akhir wajib diisi"),
-  groups: Yup.array()
-    .min(1, "Minimal satu grup tarif wajib diisi")
+  items: Yup.array()
+    .min(1, "Minimal satu item alat dalam kontrak")
+    .test(
+      "no-duplicate-models",
+      "Tidak boleh ada model equipment yang duplikat dalam 1 form kontrak",
+      (items) => {
+        if (!items || !items.length) return true;
+        const seen = new Set();
+        for (const it of items) {
+          const m = (it?.model || "").trim().toLowerCase();
+          if (m) {
+            if (seen.has(m)) return false;
+            seen.add(m);
+          }
+        }
+        return true;
+      },
+    )
     .of(
       Yup.object({
-        equipment: Yup.array()
-          .min(1, "Pilih minimal satu equipment")
-          .of(
-            Yup.object({
-              id: Yup.mixed().required("Equipment wajib diisi"),
-            }),
-          )
-          .required("Pilih minimal satu equipment"),
-        role: Yup.string()
-          .oneOf(["MAIN", "BACKUP"], "Role harus MAIN atau BACKUP")
-          .default("MAIN")
-          .required("Role wajib diisi"),
-        effective_from: Yup.date().required("Wajib diisi"),
-        effective_to: Yup.date()
-          .min(Yup.ref("effective_from"), "Periode tarif tidak valid")
-          .required("Wajib diisi"),
-        billing_unit: Yup.string().oneOf(["HOUR", "DAY", "MONTH"]).required(),
-        unit_price: Yup.number()
-          .moreThan(0, "Harga harus lebih besar dari 0")
-          .required("Wajib diisi"),
-        minimum_quantity: Yup.number()
-          .min(0, "Minimum tidak boleh negatif")
-          .required("Wajib diisi"),
-        minimum_period: Yup.string()
-          .oneOf(["DAY", "CALENDAR_MONTH", "RENTAL_TERM"])
-          .required(),
-      }),
-    )
-    .test(
-      "equipment-period-overlap",
-      "Equipment yang sama tidak boleh memiliki periode tarif yang overlap antar grup",
-      (groups) => {
-        const entries = [];
-        (groups || []).forEach((group, groupIndex) => {
-          (group.equipment || []).forEach((eq, eqIndex) => {
-            entries.push({
-              equipmentId: String(eq.id ?? ""),
-              key: `${groupIndex}-${eqIndex}`,
-              from: group.effective_from,
-              to: group.effective_to,
+        tipe: Yup.string().trim().required("Kategori / Tipe alat wajib dipilih"),
+        model: Yup.string().trim().required("Model equipment wajib dipilih"),
+        quantity: Yup.number()
+          .typeError("Jumlah unit harus berupa angka")
+          .integer("Jumlah unit harus bilangan bulat")
+          .min(1, "Jumlah unit minimal 1")
+          .required("Jumlah unit wajib diisi"),
+        billing_unit: Yup.string()
+          .oneOf(["HOUR", "DAY", "MONTH"])
+          .required("Satuan sewa wajib dipilih"),
+        minimum_quantity: Yup.number().when("billing_unit", {
+          is: "HOUR",
+          then: (s) =>
+            s
+              .typeError("Minimum jam harus berupa angka")
+              .min(0, "Minimum jam tidak boleh negatif"),
+          otherwise: (s) => s.nullable(),
+        }),
+        rates: Yup.object().test(
+          "at-least-one-active-tool-rate",
+          "Minimal 1 tools wajib dicentang dan bernilai lebih dari 0",
+          (rates) => {
+            if (!rates) return false;
+            const tools = ["BUCKET", "BREAKER", "LONGARM"];
+            return tools.some((t) => {
+              const r = rates[t];
+              return r?.active && Number(r?.unit_price) > 0;
             });
-          });
-        });
-        return entries.every((entry, index) =>
-          entries
-            .slice(index + 1)
-            .every(
-              (other) =>
-                entry.equipmentId !== other.equipmentId ||
-                entry.equipmentId === "" ||
-                !entry.from ||
-                !entry.to ||
-                !other.from ||
-                !other.to ||
-                new Date(entry.from) > new Date(other.to) ||
-                new Date(other.from) > new Date(entry.to),
-            ),
-        );
-      },
-    )
-    .test(
-      "within-contract-period",
-      "Periode tarif harus berada dalam masa kontrak",
-      (groups, context) => {
-        const { start_date, end_date } = context.parent || {};
-        return (groups || []).every(
-          (group) =>
-            (!start_date ||
-              !group.effective_from ||
-              new Date(group.effective_from) >= new Date(start_date)) &&
-            (!end_date ||
-              !group.effective_to ||
-              new Date(group.effective_to) <= new Date(end_date)),
-        );
-      },
+          },
+        ),
+      }),
     ),
 });
-
-const optionLabel = (option) =>
-  option
-    ? `${option.kode || option.code || option.nomor || option.id} - ${option.nama || option.name || option.model || ""}`
-    : "";
 
 function SectionTitle({ icon: Icon, eyebrow, title, description, action }) {
   return (
     <Stack
-      direction="row"
-      alignItems="flex-start"
+      direction={{ xs: "column", sm: "row" }}
       justifyContent="space-between"
-      spacing={2}
+      alignItems={{ sm: "center" }}
+      spacing={1.5}
     >
-      <Stack direction="row" spacing={1.5} alignItems="flex-start">
+      <Stack direction="row" spacing={1.5} alignItems="center">
         <Box
           sx={{
-            p: 1,
+            width: 38,
+            height: 38,
             borderRadius: 2,
             bgcolor: "primary.lighter",
             color: "primary.main",
-            display: "flex",
+            display: "grid",
+            placeItems: "center",
+            flexShrink: 0,
           }}
         >
           <Icon size={20} />
         </Box>
         <Box>
-          <Typography
-            variant="overline"
-            color="primary.main"
-            fontWeight={800}
-            letterSpacing={1}
-          >
-            {eyebrow}
-          </Typography>
-          <Typography variant="h5" sx={{ lineHeight: 1.25 }}>
-            {title}
-          </Typography>
+          {eyebrow && (
+            <Typography
+              variant="overline"
+              sx={{ color: "primary.main", fontWeight: 700 }}
+            >
+              {eyebrow}
+            </Typography>
+          )}
+          <Typography variant="h5">{title}</Typography>
           {description && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography variant="caption" color="text.secondary">
               {description}
             </Typography>
           )}
@@ -223,313 +195,429 @@ function SectionTitle({ icon: Icon, eyebrow, title, description, action }) {
   );
 }
 
-function GroupFields({
-  group,
-  groupIndex,
+const optionLabel = (option) => {
+  if (!option) return "";
+  if (typeof option === "string") return option;
+  return (
+    option.nama ||
+    option.name ||
+    option.kode ||
+    option.code ||
+    String(option.id || "")
+  );
+};
+
+function ItemFields({
+  item,
+  index,
+  itemsHelper,
+  values,
   errors,
   touched,
   handleChange,
-  equipmentOptions,
-  equipmentLoading,
   setFieldValue,
-  groupsHelper,
-  values,
+  modelsData = [],
 }) {
-  const groupError = getIn(errors, `groups.${groupIndex}`) || {};
-  const groupTouched = getIn(touched, `groups.${groupIndex}`) || {};
-  const unit = units.find((option) => option.value === group.billing_unit);
-  const field = (name) => `groups.${groupIndex}.${name}`;
-  const error = (name) => Boolean(groupTouched[name] && groupError[name]);
+  const field = (name) => `items[${index}].${name}`;
+  const itemError = getIn(errors, `items[${index}]`) || {};
+  const itemTouched = getIn(touched, `items[${index}]`) || {};
 
-  const handleEquipmentChange = (_, selectedOptions) => {
-    const selectedIds = new Set(
-      selectedOptions.map((option) => String(option.id)),
+  const tipeOptions = useMemo(() => {
+    const set = new Set();
+    modelsData.forEach((m) => {
+      if (m.tipe) set.add(m.tipe);
+    });
+    return Array.from(set).sort();
+  }, [modelsData]);
+
+  const modelOptions = useMemo(() => {
+    if (!item.tipe) return [];
+    const matched = modelsData.filter(
+      (m) => (m.tipe || "").toLowerCase() === item.tipe.toLowerCase(),
     );
-    const kept = (group.equipment || []).filter((eq) =>
-      selectedIds.has(String(eq.id)),
-    );
-    const keptIds = new Set(kept.map((eq) => String(eq.id)));
-    const added = selectedOptions
-      .filter((option) => !keptIds.has(String(option.id)))
-      .map((option) => ({
-        id: option.id,
-        kode: option.kode || option.code || option.nomor || option.id,
-        nama: option.nama || option.name || option.model || "",
-      }));
-    setFieldValue(field("equipment"), [...kept, ...added]);
+    const set = new Set();
+    matched.forEach((m) => (m.models || []).forEach((mod) => set.add(mod)));
+    return Array.from(set).sort();
+  }, [modelsData, item.tipe]);
+
+  const handleTipeChange = (_, option) => {
+    const val = typeof option === "string" ? option : option || "";
+    setFieldValue(field("tipe"), val);
+    if (!val) {
+      setFieldValue(field("model"), "");
+    } else {
+      const available = modelsData
+        .filter((m) => (m.tipe || "").toLowerCase() === val.toLowerCase())
+        .flatMap((m) => m.models || []);
+      if (!available.includes(item.model)) {
+        setFieldValue(field("model"), "");
+      }
+    }
   };
 
-  const setGroupRole = (role) => {
-    setFieldValue(field("role"), role);
+  const handleModelChange = (_, option) => {
+    const val = typeof option === "string" ? option : option || "";
+    setFieldValue(field("model"), val);
   };
+
+  const hasRateError =
+    itemError.rates && typeof itemError.rates === "string";
 
   return (
     <Paper
       variant="outlined"
-      sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 2.5, borderColor: "divider" }}
+      sx={{
+        p: { xs: 2, md: 2.5 },
+        borderRadius: 2.5,
+        borderColor: "divider",
+        position: "relative",
+      }}
     >
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        spacing={1.5}
-        sx={{ mb: 2 }}
-      >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              bgcolor: "primary.lighter",
-              color: "primary.main",
-              display: "grid",
-              placeItems: "center",
-              fontWeight: 800,
-            }}
-          >
-            {String(groupIndex + 1).padStart(2, "0")}
-          </Box>
-          <Box>
-            <Typography variant="h6">Grup Tarif {groupIndex + 1}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {group.equipment.length} equipment ·{" "}
-              {group.role === "BACKUP" ? "Cadangan" : "Utama"}
-            </Typography>
-          </Box>
-        </Stack>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Tooltip title="Hapus grup">
-            <span>
-              <IconButton
-                color="error"
-                disabled={values.groups.length === 1}
-                onClick={() => groupsHelper.remove(groupIndex)}
-              >
-                <Trash size={19} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Stack>
-      </Stack>
-
-      <Autocomplete
-        multiple
-        options={equipmentOptions || []}
-        loading={equipmentLoading}
-        value={group.equipment.map((eq) => ({
-          id: eq.id,
-          kode: eq.kode,
-          nama: eq.nama,
-        }))}
-        getOptionLabel={optionLabel}
-        isOptionEqualToValue={(a, b) => String(a?.id ?? "") === String(b?.id ?? "")}
-        onChange={handleEquipmentChange}
-        renderTags={(value, getTagProps) =>
-          value.map((option, index) => {
-            const { key, ...tagProps } = getTagProps({ index });
-            return (
-              <Chip
-                key={key}
-                size="small"
-                label={optionLabel(option)}
-                {...tagProps}
-              />
-            );
-          })
-        }
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Pilih equipment (multi-select)"
-            placeholder="Cari dan pilih satu atau lebih equipment"
-            error={error("equipment") || Boolean(groupError.equipment)}
-            helperText={
-              groupTouched.equipment &&
-              (typeof groupError.equipment === "string"
-                ? groupError.equipment
-                : "Pilih minimal satu equipment")
-            }
-          />
-        )}
-        sx={{ mb: 2 }}
-      />
-
-      <Grid container spacing={1.5}>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <TextField
-            fullWidth
-            size="small"
-            type="date"
-            label="Mulai berlaku"
-            name={field("effective_from")}
-            value={group.effective_from}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-            error={error("effective_from")}
-            helperText={groupTouched.effective_from && groupError.effective_from}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <TextField
-            fullWidth
-            size="small"
-            type="date"
-            label="Berakhir"
-            name={field("effective_to")}
-            value={group.effective_to}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-            error={error("effective_to")}
-            helperText={groupTouched.effective_to && groupError.effective_to}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <TextField
-            fullWidth
-            size="small"
-            select
-            label="Skema tarif"
-            name={field("billing_unit")}
-            value={group.billing_unit}
-            onChange={handleChange}
-          >
-            {units.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <TextField
-            fullWidth
-            size="small"
-            type="number"
-            label="Harga satuan"
-            name={field("unit_price")}
-            value={group.unit_price}
-            onChange={handleChange}
-            inputProps={{ min: 0, step: "0.01" }}
-            error={error("unit_price")}
-            helperText={groupTouched.unit_price && groupError.unit_price}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <TextField
-            fullWidth
-            size="small"
-            type="number"
-            label="Minimum kuantitas"
-            name={field("minimum_quantity")}
-            value={group.minimum_quantity}
-            onChange={handleChange}
-            inputProps={{ min: 0, step: "0.01" }}
-            error={error("minimum_quantity")}
-            helperText={
-              groupTouched.minimum_quantity && groupError.minimum_quantity
-            }
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            fullWidth
-            size="small"
-            select
-            label="Minimum berlaku"
-            name={field("minimum_period")}
-            value={group.minimum_period}
-            onChange={handleChange}
-          >
-            {minimumPeriods.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Grid>
-        <Grid item xs={12} md={8}>
-          <TextField
-            fullWidth
-            size="small"
-            label="Catatan tarif (opsional)"
-            name={field("notes")}
-            value={group.notes}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ height: "100%", pt: { xs: 0, sm: 0.5 } }}
-          >
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 700, whiteSpace: "nowrap" }}
-            >
-              Role grup
-            </Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={group.role || "MAIN"}
-              onChange={(_, value) => {
-                if (value) setGroupRole(value);
-              }}
+      <Stack spacing={2.5}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
               sx={{
-                "& .MuiToggleButton-root": {
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 1.5,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: 0.4,
-                  lineHeight: 1.2,
-                },
+                width: 32,
+                height: 32,
+                borderRadius: 1.5,
+                bgcolor: "primary.lighter",
+                color: "primary.main",
+                display: "grid",
+                placeItems: "center",
+                fontWeight: 800,
+                fontSize: "0.85rem",
               }}
             >
-              <ToggleButton
-                value="MAIN"
-                sx={{
-                  color: "primary.main",
-                  "&.Mui-selected": {
-                    bgcolor: "primary.main",
-                    color: "primary.contrastText",
-                  },
-                }}
-              >
-                MAIN
-              </ToggleButton>
-              <ToggleButton
-                value="BACKUP"
-                sx={{
-                  color: "warning.main",
-                  "&.Mui-selected": {
-                    bgcolor: "warning.main",
-                    color: "warning.contrastText",
-                  },
-                }}
-              >
-                BACKUP
-              </ToggleButton>
-            </ToggleButtonGroup>
+              {index + 1}
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>
+                {item.model
+                  ? `${item.tipe ? item.tipe.toUpperCase() : "ALAT"} · ${item.model}`
+                  : `Item Spesifikasi Alat #${index + 1}`}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {item.quantity ? `${item.quantity} Unit` : "1 Unit"} ·{" "}
+                {item.billing_unit === "HOUR"
+                  ? "Sewa Per Jam"
+                  : item.billing_unit === "DAY"
+                    ? "Sewa Per Hari"
+                    : "Sewa Per Bulan"}
+              </Typography>
+            </Box>
           </Stack>
+
+          {values.items.length > 1 && (
+            <Tooltip title="Hapus item">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => itemsHelper.remove(index)}
+              >
+                <Trash size={18} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+
+        <Divider />
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Autocomplete
+              options={tipeOptions}
+              value={item.tipe || null}
+              onChange={handleTipeChange}
+              freeSolo
+              getOptionLabel={(opt) => (opt ? opt.toUpperCase() : "")}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  required
+                  size="small"
+                  label="Kategori / Tipe Alat"
+                  placeholder="Pilih atau ketik tipe (mis. EXCAVATOR)"
+                  error={itemTouched.tipe && !!itemError.tipe}
+                  helperText={itemTouched.tipe && itemError.tipe}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Autocomplete
+              options={modelOptions}
+              value={item.model || null}
+              onChange={handleModelChange}
+              freeSolo
+              disabled={!item.tipe && modelOptions.length === 0}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  required
+                  size="small"
+                  label="Model Equipment"
+                  placeholder={
+                    item.tipe
+                      ? "Pilih atau ketik model (mis. PC200-8)"
+                      : "Pilih tipe dahulu"
+                  }
+                  error={itemTouched.model && !!itemError.model}
+                  helperText={itemTouched.model && itemError.model}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              required
+              size="small"
+              type="number"
+              label="Jumlah Unit"
+              name={field("quantity")}
+              value={item.quantity}
+              onChange={handleChange}
+              inputProps={{ min: 1, step: 1 }}
+              error={itemTouched.quantity && !!itemError.quantity}
+              helperText={
+                (itemTouched.quantity && itemError.quantity) ||
+                "Kebutuhan unit kontrak (min. 1)"
+              }
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              select
+              fullWidth
+              required
+              size="small"
+              label="Satuan Sewa"
+              name={field("billing_unit")}
+              value={item.billing_unit}
+              onChange={handleChange}
+              error={itemTouched.billing_unit && !!itemError.billing_unit}
+              helperText={itemTouched.billing_unit && itemError.billing_unit}
+            >
+              {billingUnits.map((u) => (
+                <MenuItem key={u.value} value={u.value}>
+                  {u.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          {item.billing_unit === "HOUR" && (
+            <>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  label="Minimum Jam Kerja"
+                  name={field("minimum_quantity")}
+                  value={item.minimum_quantity}
+                  onChange={handleChange}
+                  inputProps={{ min: 0, step: 1 }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">Jam</InputAdornment>
+                    ),
+                  }}
+                  error={
+                    itemTouched.minimum_quantity &&
+                    !!itemError.minimum_quantity
+                  }
+                  helperText={
+                    (itemTouched.minimum_quantity &&
+                      itemError.minimum_quantity) ||
+                    "Klausul min. jam (mis. 200)"
+                  }
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="Periode Minimum"
+                  name={field("minimum_period")}
+                  value={item.minimum_period}
+                  onChange={handleChange}
+                >
+                  {minimumPeriods.map((p) => (
+                    <MenuItem key={p.value} value={p.value}>
+                      {p.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            </>
+          )}
+
+          <Grid
+            item
+            xs={12}
+            sm={item.billing_unit === "HOUR" ? 12 : 12}
+            md={item.billing_unit === "HOUR" ? 6 : 12}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              label="Catatan Item (Opsional)"
+              name={field("notes")}
+              value={item.notes}
+              onChange={handleChange}
+              placeholder="Spesifikasi khusus, lampiran pekerjaan, dll."
+            />
+          </Grid>
         </Grid>
 
-      </Grid>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ display: "block", mt: 1 }}
-      >
-        {unit?.label || "Skema tarif"} berlaku untuk seluruh equipment dalam
-        grup ini.{" "}
-        {group.billing_unit === "HOUR"
-          ? "Basis: durasi waktu kerja."
-          : `Basis: ${unit?.hint || "periode kalender"}.`}
-      </Typography>
+        <Card
+          variant="outlined"
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "background.default" : "#fafafa",
+            borderColor: hasRateError ? "error.main" : "divider",
+          }}
+        >
+          <Stack spacing={1.5}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              justifyContent="space-between"
+              alignItems={{ sm: "center" }}
+              spacing={1}
+            >
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  Konfigurasi Multi-Tools & Tarif Sewa
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Pilih attachment tools yang disepakati beserta nominal tarif
+                  sewa (min. 1 tools aktif &gt; 0).
+                </Typography>
+              </Box>
+              {hasRateError && (
+                <Chip
+                  size="small"
+                  color="error"
+                  label={itemError.rates}
+                  sx={{ fontWeight: 600 }}
+                />
+              )}
+            </Stack>
+
+            <Grid container spacing={2}>
+              {RENTAL_TOOLS.map((tool) => {
+                const toolActive = Boolean(item.rates?.[tool.type]?.active);
+                const toolPrice = item.rates?.[tool.type]?.unit_price ?? "";
+                const rateField = (prop) =>
+                  `items[${index}].rates.${tool.type}.${prop}`;
+
+                return (
+                  <Grid item xs={12} md={4} key={tool.type}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: toolActive ? "background.paper" : "transparent",
+                        borderColor: toolActive ? "primary.main" : "divider",
+                        borderWidth: toolActive ? 2 : 1,
+                        transition: "all 0.2s ease-in-out",
+                      }}
+                    >
+                      <Stack spacing={1.25}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={toolActive}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setFieldValue(rateField("active"), checked);
+                                if (!checked) {
+                                  setFieldValue(rateField("unit_price"), "");
+                                }
+                              }}
+                              color="primary"
+                            />
+                          }
+                          label={
+                            <Typography
+                              variant="body2"
+                              fontWeight={toolActive ? 700 : 500}
+                              color={toolActive ? "text.primary" : "text.secondary"}
+                            >
+                              {tool.label}
+                            </Typography>
+                          }
+                        />
+
+                        {toolActive ? (
+                          <TextField
+                            fullWidth
+                            required
+                            size="small"
+                            type="number"
+                            label={`Tarif ${tool.type}`}
+                            name={rateField("unit_price")}
+                            value={toolPrice}
+                            onChange={handleChange}
+                            inputProps={{ min: 0, step: 1000 }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  Rp
+                                </InputAdornment>
+                              ),
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  {item.billing_unit === "HOUR"
+                                    ? "/ Jam"
+                                    : item.billing_unit === "DAY"
+                                      ? "/ Hari"
+                                      : "/ Bulan"}
+                                </InputAdornment>
+                              ),
+                            }}
+                            error={
+                              toolActive &&
+                              (!toolPrice || Number(toolPrice) <= 0)
+                            }
+                            helperText={
+                              toolActive &&
+                              (!toolPrice || Number(toolPrice) <= 0)
+                                ? "Tarif wajib > 0"
+                                : ""
+                            }
+                          />
+                        ) : (
+                          <Typography
+                            variant="caption"
+                            color="text.disabled"
+                            sx={{ pl: 4, display: "block" }}
+                          >
+                            Tidak diaktifkan
+                          </Typography>
+                        )}
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Stack>
+        </Card>
+      </Stack>
     </Paper>
   );
 }
@@ -541,19 +629,20 @@ function ContractFields({
   handleChange,
   setFieldValue,
 }) {
-  const { data: equipmentOptions, loading: equipmentLoading } =
-    useRentalEquipmentOptions({ limit: 1000 });
+  const { data: modelsData } = useRentalEquipmentModels();
   const { bisnisUnit } = useGetBisnisUnit({ my_units: "true" });
   const { penyewa } = useGetPenyewa({ page: 1, perPage: 1000 });
   const bisnisOptions = bisnisUnit?.rows || [];
-  const hasOutOfRange =
-    getIn(errors, "groups") && typeof getIn(errors, "groups") === "string";
-  const duplicateOverlap = hasOutOfRange;
+
+  const itemArrayError =
+    errors.items && typeof errors.items === "string" ? errors.items : null;
+
   return (
     <Stack spacing={3}>
       <MainCard
         sx={{
-          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.lighter} 0%, ${theme.palette.background.paper} 100%)`,
+          background: (theme) =>
+            `linear-gradient(135deg, ${theme.palette.primary.lighter} 0%, ${theme.palette.background.paper} 100%)`,
           borderColor: "primary.100",
         }}
       >
@@ -578,19 +667,20 @@ function ContractFields({
             <Box>
               <Typography variant="h4">Susun kesepakatan rental</Typography>
               <Typography color="text.secondary">
-                Tentukan siapa penyewanya, unit yang disewa, dan aturan harga
-                yang berlaku.
+                Tentukan penyewa, spesifikasi model unit alat berat, dan tarif
+                multi-tools attachment.
               </Typography>
             </Box>
           </Stack>
           <Chip
             icon={<ChartSuccess size={17} />}
-            label={`${values.groups.length} grup tarif`}
+            label={`${values.items.length} Model Item`}
             color="primary"
             variant="outlined"
           />
         </Stack>
       </MainCard>
+
       <MainCard>
         <SectionTitle
           icon={ReceiptItem}
@@ -681,6 +771,8 @@ function ContractFields({
                   <Calendar size={18} style={{ marginRight: 8 }} />
                 ),
               }}
+              error={touched.start_date && !!errors.start_date}
+              helperText={touched.start_date && errors.start_date}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -698,6 +790,8 @@ function ContractFields({
                   <Calendar size={18} style={{ marginRight: 8 }} />
                 ),
               }}
+              error={touched.end_date && !!errors.end_date}
+              helperText={touched.end_date && errors.end_date}
             />
           </Grid>
           <Grid item xs={12}>
@@ -714,61 +808,63 @@ function ContractFields({
           </Grid>
         </Grid>
       </MainCard>
+
       <Alert
         severity="info"
         icon={<InfoCircle size={22} />}
         sx={{ borderRadius: 2 }}
       >
         <Typography variant="body2" fontWeight={700}>
-          Cara membaca tarif
+          Model Alat & Multi-Tools Attachment
         </Typography>
         <Typography variant="body2">
-          Setiap grup tarif berlaku untuk satu set equipment dengan konfigurasi
-          tarif yang sama (periode, skema, harga, minimum). Equipment yang sama
-          dapat muncul di beberapa grup jika periodenya tidak overlap.
+          Pilih kategori dan model equipment yang disewa. Setiap item dapat
+          mengaktifkan beberapa varian attachment tools (Bucket, Breaker, Long
+          Arm) dengan tarif sewa masing-masing.
         </Typography>
       </Alert>
+
       <MainCard>
-        <SectionTitle
-          icon={ChartSuccess}
-          eyebrow="02 · EQUIPMENT & TARIF"
-          title="Grup tarif per equipment"
-          description="Setiap grup memiliki konfigurasi tarif bersama untuk equipment terpilih."
-          action={
-            <Button
-              variant="outlined"
-              startIcon={<Add size={17} />}
-              onClick={() =>
-                setFieldValue("groups", [...values.groups, emptyGroup()])
-              }
-            >
-              Tambah grup
-            </Button>
-          }
-        />
-        <Divider sx={{ my: 2.5 }} />
-        {duplicateOverlap && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {errors.groups}
-          </Alert>
-        )}
         <FieldArray
-          name="groups"
-          render={(groupsHelper) => (
-            <Stack spacing={2}>
-              {values.groups.map((group, groupIndex) => (
-                <GroupFields
-                  key={groupIndex}
-                  group={group}
-                  groupIndex={groupIndex}
+          name="items"
+          render={(itemsHelper) => (
+            <Stack spacing={2.5}>
+              <SectionTitle
+                icon={TruckFast}
+                eyebrow="02 · SPESIFIKASI ALAT & TARIF"
+                title="Daftar Model Alat & Multi-Tools"
+                description="Tentukan model unit, jumlah kebutuhan, dan skema tarif attachment."
+                action={
+                  <Button
+                    variant="contained"
+                    startIcon={<Add size={17} />}
+                    onClick={() => itemsHelper.push(emptyItem())}
+                  >
+                    Tambah Model Alat
+                  </Button>
+                }
+              />
+
+              <Divider />
+
+              {itemArrayError && (
+                <Alert severity="error" sx={{ mb: 1 }}>
+                  {itemArrayError}
+                </Alert>
+              )}
+
+              {values.items.map((item, index) => (
+                <ItemFields
+                  key={index}
+                  item={item}
+                  index={index}
+                  itemsHelper={itemsHelper}
+                  values={values}
                   errors={errors}
                   touched={touched}
                   handleChange={handleChange}
-                  equipmentOptions={equipmentOptions}
-                  equipmentLoading={equipmentLoading}
                   setFieldValue={setFieldValue}
-                  groupsHelper={groupsHelper}
-                  values={values}
+                  modelsData={modelsData}
                 />
               ))}
             </Stack>
@@ -779,57 +875,54 @@ function ContractFields({
   );
 }
 
-const regroupItems = (items = []) => {
-  const groups = [];
-  const keyOf = (item) =>
-    [
-      item.effective_from || "",
-      item.effective_to || "",
-      item.billing_unit || "",
-      String(item.unit_price ?? ""),
-      String(item.minimum_quantity ?? "0"),
-      item.minimum_period || "",
-      item.notes || "",
-      item.role || "MAIN",
-    ].join("|");
-  items.forEach((item) => {
-    const key = keyOf(item);
-    let group = groups.find((g) => g._key === key);
-    if (!group) {
-      group = {
-        _key: key,
-        equipment: [],
-        role: item.role || "MAIN",
-        effective_from: toInputDate(item.effective_from),
-        effective_to: toInputDate(item.effective_to),
-        billing_unit: item.billing_unit || "HOUR",
-        unit_price: String(item.unit_price ?? ""),
-        minimum_quantity: String(item.minimum_quantity ?? "0"),
-        minimum_period: item.minimum_period || "CALENDAR_MONTH",
-        notes: item.notes || "",
-      };
-      groups.push(group);
-    }
-    const eq = item.equipment || item.equipment_id;
-    if (eq && (eq.id || typeof eq === "number" || typeof eq === "string")) {
-      const full =
-        typeof eq === "object"
-          ? eq
-          : { id: eq, kode: String(eq), nama: "" };
-      group.equipment.push({
-        id: full.id,
-        kode: full.kode || full.code || full.nomor || full.id,
-        nama: full.nama || full.name || full.model || "",
+const mapContractItemsToForm = (items = []) => {
+  if (!items || !items.length) return [emptyItem()];
+  return items.map((item) => {
+    const ratesMap = {
+      BUCKET: { active: false, unit_price: "" },
+      BREAKER: { active: false, unit_price: "" },
+      LONGARM: { active: false, unit_price: "" },
+    };
+
+    const rawRates = item.rates || item.tools_rates || [];
+    if (Array.isArray(rawRates) && rawRates.length > 0) {
+      rawRates.forEach((r) => {
+        const type = (r.tools_type || "").toUpperCase();
+        if (ratesMap[type]) {
+          ratesMap[type].active =
+            r.is_active === "Y" || r.is_active === true || r.is_active === 1;
+          ratesMap[type].unit_price = String(r.unit_price ?? "");
+        }
       });
+    } else if (item.unit_price) {
+      ratesMap.BUCKET.active = true;
+      ratesMap.BUCKET.unit_price = String(item.unit_price ?? "");
+    } else {
+      ratesMap.BUCKET.active = true;
     }
+
+    return {
+      id: item.id || undefined,
+      tipe: item.tipe || item.equipment?.tipe || "",
+      model: item.model || item.equipment?.model || item.equipment?.nama || "",
+      quantity: Number(item.quantity) || 1,
+      billing_unit: item.billing_unit || "HOUR",
+      minimum_quantity:
+        item.minimum_quantity !== undefined && item.minimum_quantity !== null
+          ? String(item.minimum_quantity)
+          : "0",
+      minimum_period: item.minimum_period || "CALENDAR_MONTH",
+      notes: item.notes || "",
+      rates: ratesMap,
+    };
   });
-  return groups.map(({ _key, ...rest }) => rest);
 };
 
 export default function RentalContractForm({ id = null }) {
   const router = useRouter();
   const edit = Boolean(id);
   const { data: detail, loading } = useRentalContract(id);
+
   const initialValues = useMemo(() => {
     const row = detail?.header || detail || {};
     return edit && detail
@@ -840,7 +933,7 @@ export default function RentalContractForm({ id = null }) {
           start_date: toInputDate(row.start_date),
           end_date: toInputDate(row.end_date),
           notes: row.notes || "",
-          groups: regroupItems(detail.items || row.items || []),
+          items: mapContractItemsToForm(detail.items || row.items || []),
         }
       : {
           contract_number: "",
@@ -849,9 +942,10 @@ export default function RentalContractForm({ id = null }) {
           start_date: "",
           end_date: "",
           notes: "",
-          groups: [emptyGroup()],
+          items: [emptyItem()],
         };
   }, [detail, edit]);
+
   if (loading) return <Typography>Memuat kontrak...</Typography>;
   if (edit && (detail?.header?.status || detail?.status) === "APPROVED")
     return (
@@ -860,6 +954,7 @@ export default function RentalContractForm({ id = null }) {
         kontrak revisi untuk perubahan.
       </Alert>
     );
+
   return (
     <>
       <Breadcrumbs
@@ -886,24 +981,43 @@ export default function RentalContractForm({ id = null }) {
               penyewa_id: Number(values.penyewa_id),
               start_date: values.start_date,
               end_date: values.end_date,
-              notes: values.notes,
-              items: values.groups.flatMap((group) =>
-                group.equipment.map((eq) => ({
-                  equipment_id: Number(eq.id),
-                  role: group.role,
-                  effective_from: group.effective_from,
-                  effective_to: group.effective_to,
-                  billing_unit: group.billing_unit,
-                  unit_price: String(group.unit_price),
-                  minimum_quantity: String(group.minimum_quantity),
-                  minimum_period: group.minimum_period,
-                  notes: group.notes,
-                })),
-              ),
+              notes: values.notes || "",
+              items: values.items.map((it) => {
+                const itemRates = [];
+                ["BUCKET", "BREAKER", "LONGARM"].forEach((toolType) => {
+                  const cfg = it.rates?.[toolType] || {};
+                  const isActive = Boolean(cfg.active);
+                  const price = Number(cfg.unit_price || 0);
+                  itemRates.push({
+                    tools_type: toolType,
+                    unit_price: isActive ? price : 0,
+                    is_active: isActive ? "Y" : "N",
+                  });
+                });
+
+                return {
+                  tipe: it.tipe,
+                  model: it.model,
+                  quantity: Math.max(1, parseInt(it.quantity, 10) || 1),
+                  billing_unit: it.billing_unit,
+                  minimum_quantity:
+                    it.billing_unit === "HOUR"
+                      ? Number(it.minimum_quantity) || 0
+                      : null,
+                  minimum_period:
+                    it.billing_unit === "HOUR"
+                      ? it.minimum_period || "CALENDAR_MONTH"
+                      : null,
+                  notes: it.notes || "",
+                  rates: itemRates,
+                };
+              }),
             };
+
             const saved = edit
               ? await updateRentalContract(id, payload)
               : await createRentalContract(payload);
+
             openNotification({
               title: "success",
               message: edit
@@ -949,13 +1063,11 @@ export default function RentalContractForm({ id = null }) {
                 <Stack direction="row" spacing={1} alignItems="center">
                   <InfoCircle size={19} color="#697586" />
                   <Typography variant="body2" color="text.secondary">
-                    Draft belum memengaruhi invoice atau tagihan.
+                    Draft belum memengaruhi invoice atau tagihan operasional.
                   </Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button
-                    onClick={() => router.push("/rental-contracts")}
-                  >
+                  <Button onClick={() => router.push("/rental-contracts")}>
                     Batal
                   </Button>
                   <Button

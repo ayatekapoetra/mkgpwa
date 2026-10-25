@@ -15,6 +15,24 @@ const formatDate = (value) => {
   return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
 };
 
+const formatModelSummary = (row) => {
+  if (row.model_summary) return row.model_summary;
+  const items = row.items || [];
+  if (Array.isArray(items) && items.length > 0) {
+    return items
+      .map((it) => {
+        const name = it.model || it.equipment?.model || it.tipe || it.equipment?.nama || 'Alat';
+        const qty = it.quantity || 1;
+        return `${name} (${qty} Unit)`;
+      })
+      .join(', ');
+  }
+  if (row.total_units) {
+    return `${row.total_units} Unit`;
+  }
+  return '-';
+};
+
 const initialFilters = {
   search: '',
   contract_number: '',
@@ -93,10 +111,10 @@ export default function RentalContractList() {
             <SummaryCard label="Kontrak Aktif" value={stats.loading ? '…' : stats.totalActive} icon={DocumentText} color="primary" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Equipment Main" value={stats.loading ? '…' : stats.totalMain} icon={Buildings} color="info" />
+            <SummaryCard label="Model Alat Disewa" value={stats.loading ? '…' : (stats.totalModels ?? stats.totalMain ?? 0)} icon={Buildings} color="info" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <SummaryCard label="Equipment Backup" value={stats.loading ? '…' : stats.totalBackup} icon={ShieldTick} color="warning" />
+            <SummaryCard label="Total Unit Kebutuhan" value={stats.loading ? '…' : (stats.totalUnits ?? ((stats.totalMain || 0) + (stats.totalBackup || 0)) ?? 0)} icon={ShieldTick} color="warning" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <SummaryCard label="Expired Terdekat" value={stats.nearestExpiry ? formatDate(stats.nearestExpiry) : '—'} icon={CalendarTick} color="error" helper="Tanggal kontrak berakhir" />
@@ -114,9 +132,10 @@ export default function RentalContractList() {
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: 'primary.lighter' }}>
-                  <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>No</TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: 'primary.main', width: 40 }}>No</TableCell>
                   <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>Kode Kontrak</TableCell>
                   <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>Penyewa</TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>Model Alat & Total Unit</TableCell>
                   <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>Periode</TableCell>
                   <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>Status</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 800, color: 'primary.main' }}>Aksi</TableCell>
@@ -128,6 +147,11 @@ export default function RentalContractList() {
                     <TableCell><Typography variant="caption" fontWeight={600}>{(result.page - 1) * result.perPage + idx + 1}</Typography></TableCell>
                     <TableCell><Typography variant="body2" fontWeight={800} color="primary.main">{row.contract_number || `#${row.id}`}</Typography></TableCell>
                     <TableCell><Typography variant="body2">{row.penyewa_name || row.penyewa?.nama || row.penyewa_id || '-'}</Typography></TableCell>
+                    <TableCell sx={{ maxWidth: 280 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>
+                        {formatModelSummary(row)}
+                      </Typography>
+                    </TableCell>
                     <TableCell><Typography variant="caption" color="text.secondary">{formatDate(row.start_date)} - {formatDate(row.end_date)}</Typography></TableCell>
                     <TableCell><Chip size="small" color={statusColor[row.status] || 'default'} label={statusLabel[row.status] || row.status} sx={{ fontWeight: 700, height: 22 }} /></TableCell>
                     <TableCell align="center">
