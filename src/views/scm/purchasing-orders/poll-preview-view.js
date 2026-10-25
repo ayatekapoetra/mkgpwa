@@ -126,6 +126,15 @@ const OrderCard = memo(function OrderCard({ row, index }) {
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
           <Chip size="small" variant="outlined" label={`PR: ${row.kode_pr || '—'}`} />
           <Chip size="small" variant="outlined" label={`Prioritas: ${row.prioritas || '—'}`} />
+          {row.top_type === 'CREDIT' && (
+            <Chip size="small" variant="outlined" color="warning" label={`TOP: Kredit Net ${row.top_days || 30} Hari`} />
+          )}
+          {row.top_type === 'INSTALLMENT' && (
+            <Chip size="small" variant="outlined" color="info" label={`TOP: Bertahap (DP ${row.dp_percent || 0}% + Pelunasan Net ${row.top_days || 14} Hari)`} />
+          )}
+          {(!row.top_type || row.top_type === 'CASH') && (
+            <Chip size="small" variant="outlined" label="TOP: Tunai (CASH)" />
+          )}
         </Stack>
         <Typography variant="caption" color="text.secondary">KETERANGAN DOKUMEN</Typography>
         <Typography variant="body2" sx={{ mt: 0.5, mb: 2, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.narasi || 'Tidak ada keterangan tambahan.'}</Typography>

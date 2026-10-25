@@ -16,6 +16,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
@@ -27,6 +28,15 @@ import {
 import Paginate from "components/Paginate";
 import { getSelectedOption } from "views/scm/purchasing-orders/utils";
 
+import {
+  formatDate,
+  getDeliveryMeta,
+  getDueDateMeta,
+  getTerminLabel,
+  getUnpayableReason,
+  isRowPayable,
+} from "./outstandingHelpers";
+
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
     minimumFractionDigits: 0,
@@ -37,20 +47,6 @@ const truncate = (v, max = 50) => {
   const s = String(v || "").trim();
   if (!s) return "";
   return s.length > max ? `${s.slice(0, max)}…` : s;
-};
-
-const formatDate = (v) => {
-  if (!v) return "—";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) {
-    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-    return String(v);
-  }
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}-${mm}-${yyyy}`;
 };
 
 const cellSx = {
@@ -156,9 +152,17 @@ export default function OutstandingModal({
 
   const selectedRows = useMemo(() => Object.values(checked), [checked]);
 
+  const isRowPayable = (r) => r.is_payable !== false && !r.disabled;
+
+  const payableRows = useMemo(() => rows.filter(isRowPayable), [rows]);
+
   const pageSelectedCount = rows.filter((r) => checked[r.id]).length;
 
+  const allPayableChecked =
+    payableRows.length > 0 && payableRows.every((r) => checked[r.id]);
+
   const toggle = (row) => {
+    if (!isRowPayable(row)) return;
     setChecked((prev) => {
       const next = { ...prev };
       if (next[row.id]) delete next[row.id];
@@ -168,15 +172,14 @@ export default function OutstandingModal({
   };
 
   const togglePage = () => {
-    const allOn = rows.length > 0 && rows.every((r) => checked[r.id]);
     setChecked((prev) => {
       const next = { ...prev };
-      if (allOn) {
-        rows.forEach((r) => {
+      if (allPayableChecked) {
+        payableRows.forEach((r) => {
           delete next[r.id];
         });
       } else {
-        rows.forEach((r) => {
+        payableRows.forEach((r) => {
           next[r.id] = r;
         });
       }
@@ -383,33 +386,62 @@ export default function OutstandingModal({
                     <th style={{ width: 48 }}>
                       <Checkbox
                         size="small"
-                        checked={
-                          rows.length > 0 && rows.every((r) => checked[r.id])
-                        }
+                        checked={allPayableChecked}
                         indeterminate={
                           pageSelectedCount > 0 &&
-                          pageSelectedCount < rows.length
+                          pageSelectedCount < payableRows.length
                         }
                         onChange={togglePage}
+                        disabled={!payableRows.length}
                       />
                     </th>
                     <th>Faktur</th>
                     <th>Pemasok</th>
                     <th>PO / PD</th>
-                    <th style={{ textAlign: "right" }}>Sisa</th>
+                    <th>Jatuh Tempo & Termin</th>
+                    <th>Status Pengiriman</th>
+                    <th style={{ textAlign: "right" }}>Sisa Tagihan</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => {
+                    const payable = isRowPayable(row);
                     const isOn = Boolean(checked[row.id]);
+                    const dueMeta = getDueDateMeta(row);
+                    const deliveryMeta = getDeliveryMeta(row);
+                    const terminLabel = getTerminLabel(row);
+                    const unpayableReason =
+                      row.reason_unpayable ||
+                      "Barang belum diterima (GRN pending), pelunasan belum dapat diproses kasir.";
+
                     return (
-                      <tr key={row.id}>
+                      <tr
+                        key={row.id}
+                        style={{
+                          opacity: payable ? 1 : 0.65,
+                          backgroundColor: !payable
+                            ? "rgba(0, 0, 0, 0.02)"
+                            : "inherit",
+                        }}
+                      >
                         <td>
-                          <Checkbox
-                            size="small"
-                            checked={isOn}
-                            onChange={() => toggle(row)}
-                          />
+                          {payable ? (
+                            <Checkbox
+                              size="small"
+                              checked={isOn}
+                              onChange={() => toggle(row)}
+                            />
+                          ) : (
+                            <Tooltip
+                              title={unpayableReason}
+                              arrow
+                              placement="top"
+                            >
+                              <span>
+                                <Checkbox size="small" checked={false} disabled />
+                              </span>
+                            </Tooltip>
+                          )}
                         </td>
                         <td>
                           <Typography variant="body2" fontWeight={700} noWrap>
@@ -500,10 +532,93 @@ export default function OutstandingModal({
                             </Typography>
                           </Stack>
                         </td>
+                        <td>
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            {dueMeta.dateFormatted}
+                          </Typography>
+                          {dueMeta.status !== "none" && (
+                            <Chip
+                              size="small"
+                              label={dueMeta.label}
+                              color={dueMeta.color}
+                              variant={dueMeta.status === "safe" ? "outlined" : "filled"}
+                              sx={{
+                                mt: 0.5,
+                                height: 20,
+                                fontSize: 11,
+                                "& .MuiChip-label": { px: 1 },
+                              }}
+                            />
+                          )}
+                          {terminLabel && (
+                            <Typography
+                              variant="caption"
+                              color="info.main"
+                              display="block"
+                              fontWeight={600}
+                              sx={{ mt: 0.5 }}
+                            >
+                              {terminLabel}
+                            </Typography>
+                          )}
+                        </td>
+                        <td>
+                          <Chip
+                            size="small"
+                            label={deliveryMeta.label}
+                            color={deliveryMeta.color}
+                            variant="outlined"
+                            sx={{
+                              height: 22,
+                              fontSize: 11,
+                              "& .MuiChip-label": { px: 1 },
+                            }}
+                          />
+                          {deliveryMeta.receivedAt && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                              sx={{ mt: 0.5 }}
+                            >
+                              Tiba: {deliveryMeta.receivedAt}
+                            </Typography>
+                          )}
+                          {!payable && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              display="block"
+                              sx={{
+                                mt: 0.5,
+                                fontWeight: 600,
+                                maxWidth: 180,
+                                whiteSpace: "normal",
+                              }}
+                            >
+                              {unpayableReason}
+                            </Typography>
+                          )}
+                        </td>
                         <td style={{ textAlign: "right" }}>
                           <Typography variant="body2" fontWeight={700} noWrap>
-                            {money(row.sisa ?? row.total)}
+                            {money(
+                              row.next_due_amount ??
+                                row.nominal_termin ??
+                                row.sisa ??
+                                row.total
+                            )}
                           </Typography>
+                          {row.nominal_termin &&
+                            Number(row.sisa) > Number(row.nominal_termin) && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                display="block"
+                              >
+                                dari total sisa {money(row.sisa)}
+                              </Typography>
+                            )}
                           <Typography
                             variant="caption"
                             color="text.secondary"

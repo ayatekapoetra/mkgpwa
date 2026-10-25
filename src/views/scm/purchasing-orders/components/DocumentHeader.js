@@ -158,6 +158,63 @@ export default function DocumentHeader({ row, canEdit = false, onUpdated }) {
           <Stack spacing={0.5}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="caption" color="text.secondary">
+                Syarat Pembayaran (TOP)
+              </Typography>
+              {canEdit && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => {
+                    setInitialMode("all");
+                    setOpenEdit(true);
+                  }}
+                  sx={{ textTransform: "none", py: 0.2, px: 1, fontSize: "0.75rem" }}
+                >
+                  Edit Header & TOP
+                </Button>
+              )}
+            </Stack>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              {(!row?.top_type || row?.top_type === "CASH") && (
+                <Chip size="small" label="Tunai / Cash (CASH)" color="default" />
+              )}
+              {row?.top_type === "CREDIT" && (
+                <Chip
+                  size="small"
+                  label={`Kredit Net ${row?.top_days || 30} Hari`}
+                  color="warning"
+                  variant="outlined"
+                />
+              )}
+              {row?.top_type === "INSTALLMENT" && (
+                <Chip
+                  size="small"
+                  label={`Bertahap (DP ${row?.dp_percent || 0}% + Pelunasan)`}
+                  color="info"
+                  variant="outlined"
+                />
+              )}
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {(!row?.top_type || row?.top_type === "CASH") &&
+                "Jatuh tempo saat serah terima barang (COD)."}
+              {row?.top_type === "CREDIT" &&
+                `Jatuh tempo ${row?.top_days || 30} hari kalender setelah barang diterima (GRN).`}
+              {row?.top_type === "INSTALLMENT" && (
+                <>
+                  DP {row?.dp_percent}% ({formatCurrency(row?.dp_amount || Math.round((Number(row?.grandtotal || row?.total || 0) * (Number(row?.dp_percent || 0) / 100)))).trim()})
+                  {" · "}
+                  Pelunasan {100 - (Number(row?.dp_percent) || 0)}% ({row?.top_days || 14} hari pasca-GRN)
+                </>
+              )}
+            </Typography>
+          </Stack>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Stack spacing={0.5}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary">
                 Narasi / Keterangan Dokumen
               </Typography>
               {canEdit && (
