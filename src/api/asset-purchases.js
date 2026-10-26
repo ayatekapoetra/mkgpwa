@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 
 import axiosServices, { fetcher } from 'utils/axios';
 import { generateIdempotencyKey } from 'utils/idempotency';
@@ -64,13 +64,31 @@ export const getAssetErrorMessage = (error, fallback = 'Proses gagal') => {
   return typeof candidate === 'string' ? candidate : candidate?.message || fallback;
 };
 
+export const isVersionConflict = (error) => {
+  const code = error?.diagnostic?.code || error?.response?.data?.diagnostic?.code || error?.code;
+  const status = error?.status || error?.response?.status;
+  return code === 'VERSION_CONFLICT' || status === 409;
+};
+
+export const invalidateAssetCache = async () => {
+  try {
+    await mutate(
+      (key) => typeof key === 'string' && (key.startsWith('/asset-') || key.startsWith('/financing-')),
+      undefined,
+      { revalidate: true }
+    );
+  } catch {
+    // Abaikan kegagalan revalidasi cache agar tidak mengacaukan aliran data utama
+  }
+};
+
 const queryString = (params = {}) => {
   const clean = Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value !== null && value !== undefined));
   const query = new URLSearchParams(clean).toString();
   return query ? `?${query}` : '';
 };
 
-const swrOptions = { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: true };
+const swrOptions = { revalidateOnFocus: false, revalidateIfStale: true, revalidateOnReconnect: true };
 
 export function useAssetList(endpoint, params = {}, active = true) {
   const url = active ? `${endpoint}${queryString(params)}` : null;
@@ -99,7 +117,11 @@ export function useAssetList(endpoint, params = {}, active = true) {
 }
 
 export function useAssetDetail(endpoint, active = true) {
-  const { data, error, isLoading, isValidating, mutate } = useSWR(active && endpoint ? endpoint : null, fetcher, swrOptions);
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    active && endpoint ? endpoint : null,
+    fetcher,
+    { ...swrOptions, revalidateIfStale: true, revalidateOnMount: true }
+  );
   return useMemo(() => {
     const row = normalizeAssetDetail(data);
     const rawPermissions = data?.permissions || data?.data?.permissions || row?.permissions || {};
@@ -108,9 +130,9 @@ export function useAssetDetail(endpoint, active = true) {
 }
 
 export const useAssetPurchases = (params, active = true) => useAssetList(assetEndpoints.purchases, params, active);
-export const useAssetPurchase = (id, active = true) => useAssetDetail(id ? assetEndpoints.purchase(id) : null, active);
-export const useAssetContracts = (params, active = true) => useAssetList(assetEndpoints.contracts, params, active);
 export const useAssetContract = (id, active = true) => useAssetDetail(id ? assetEndpoints.contract(id) : null, active);
+export const useAssetContracts = (params, active = true) => useAssetList(assetEndpoints.contracts, params, active);
+export const useAssetPurchase = (id, active = true) => useAssetDetail(id ? assetEndpoints.purchase(id) : null, active);
 export const useAssetPayments = (params, active = true) => useAssetList(assetEndpoints.payments, params, active);
 export const useAssetPayment = (id, active = true) => useAssetDetail(id ? assetEndpoints.payment(id) : null, active);
 export const useAssetGiros = (params, active = true) => useAssetList(assetEndpoints.giros, params, active);
@@ -120,6 +142,7 @@ export async function assetMutation(method, endpoint, payload = {}, version = nu
   const headers = { 'Idempotency-Key': generateIdempotencyKey() };
   if (version !== null && version !== undefined) headers['If-Match'] = String(version);
   const response = await axiosServices.request({ method, url: endpoint, data: payload, headers, skipOfflineQueue: true });
+  await invalidateAssetCache();
   return response.data;
 }
 

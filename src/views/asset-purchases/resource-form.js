@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert, Box, Button, Divider, Grid, MenuItem, Stack, TextField, Typography } from '@mui/material';
 
-import { assetEndpoints, assetMutation, getAssetErrorMessage, saveAssetResource, useAssetDetail, useAssetList } from 'api/asset-purchases';
+import { assetEndpoints, assetMutation, getAssetErrorMessage, isVersionConflict, saveAssetResource, useAssetDetail, useAssetList } from 'api/asset-purchases';
 import { usePurchaseOrderBisnis } from 'api/purchase-orders';
 import { openNotification } from 'api/notification';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -218,7 +218,7 @@ export default function AssetResourceForm({ definitionKey, purchaseId = null, re
   const detailEndpoint = isEdit && definition.updateEndpoint
     ? (purchaseId ? definition.updateEndpoint(purchaseId, resourceId) : definition.updateEndpoint(resourceId))
     : null;
-  const { row: existing, loading: detailLoading, error: detailError } = useAssetDetail(detailEndpoint, Boolean(detailEndpoint));
+  const { row: existing, loading: detailLoading, error: detailError, mutate: mutateDetail } = useAssetDetail(detailEndpoint, Boolean(detailEndpoint));
 
   const [form, setForm] = useState(() => {
     if (definitionKey === 'payments') return { currency_code: 'IDR', allocations: [{ installment_id: '', allocation_type: 'PRINCIPAL', planned_amount: '' }] };
@@ -252,6 +252,16 @@ export default function AssetResourceForm({ definitionKey, purchaseId = null, re
       openNotification({ open: true, title: 'success', message: `${definition.title} berhasil ${isEdit ? 'diperbarui' : 'dibuat'}`, alert: { color: 'success' } });
       router.push(parentPath);
     } catch (error) {
+      if (isVersionConflict(error)) {
+        await mutateDetail?.();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diubah oleh sesi lain; form dimuat ulang dengan versi terbaru — mohon tinjau ulang perubahan Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
       openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error, `${definition.title} gagal disimpan`), alert: { color: 'error' } });
     } finally {
       setSaving(false);

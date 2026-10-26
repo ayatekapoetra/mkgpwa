@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, Paper, Stack, TextField, Typography } from '@mui/material';
 
-import { assetEndpoints, getAssetErrorMessage, reversePaymentInstruction, runResourceAction, useAssetContract, useAssetGiro, useAssetPayment } from 'api/asset-purchases';
+import { assetEndpoints, getAssetErrorMessage, isVersionConflict, reversePaymentInstruction, runResourceAction, useAssetContract, useAssetGiro, useAssetPayment } from 'api/asset-purchases';
 import { openNotification } from 'api/notification';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
@@ -106,7 +106,29 @@ export default function AssetRegisterDetail({ type, id }) {
   if (result.error || !result.row) return <ErrorScreen error={result.error || { message: 'Data tidak ditemukan' }} variant="data" showDetails={false} />;
   if (!result.permissions.can_read) return <ErrorScreen error={{ message: `Anda tidak memiliki akses ke ${definition.title.toLowerCase()} ini.` }} variant="data" showDetails={false} />;
   const row = result.row;
-  const process = async (payload) => { setLoading(true); try { await runResourceAction(definition.endpoint(id), action[0], payload, row.version); openNotification({ open: true, title: 'success', message: 'Aksi berhasil diproses', alert: { color: 'success' } }); setAction(null); result.mutate(); } catch (error) { openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } }); } finally { setLoading(false); } };
+  const process = async (payload) => {
+    setLoading(true);
+    try {
+      await runResourceAction(definition.endpoint(id), action[0], payload, row.version);
+      openNotification({ open: true, title: 'success', message: 'Aksi berhasil diproses', alert: { color: 'success' } });
+      setAction(null);
+      result.mutate();
+    } catch (error) {
+      if (isVersionConflict(error)) {
+        await result.mutate();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diperbarui oleh sesi lain; tampilan dimuat ulang dengan versi terbaru — silakan ulangi aksi Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
+      openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } });
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleReverse = async (payload) => {
     setReverseLoading(true);
     try {
@@ -115,6 +137,16 @@ export default function AssetRegisterDetail({ type, id }) {
       setReverseOpen(false);
       result.mutate();
     } catch (error) {
+      if (isVersionConflict(error)) {
+        await result.mutate();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diperbarui oleh sesi lain; tampilan dimuat ulang dengan versi terbaru — silakan ulangi aksi Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
       openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } });
     } finally {
       setReverseLoading(false);

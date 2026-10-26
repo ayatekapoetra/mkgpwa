@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Box, Button, Card, CardContent, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, Paper, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { Add, DocumentDownload, Edit, TickCircle } from 'iconsax-react';
 
-import { assetEndpoints, getAssetErrorMessage, getAssetPurchasePoPdf, runApprovalAction, runPurchaseAction, useAssetDetail, useAssetList, useAssetPurchase } from 'api/asset-purchases';
+import { assetEndpoints, getAssetErrorMessage, getAssetPurchasePoPdf, isVersionConflict, runApprovalAction, runPurchaseAction, useAssetDetail, useAssetList, useAssetPurchase } from 'api/asset-purchases';
 import { openNotification } from 'api/notification';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
@@ -44,20 +44,64 @@ function ActionDialog({ action, open, onClose, onSubmit, loading }) {
   return <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm"><DialogTitle>{humanize(action)} pengajuan</DialogTitle><DialogContent><Typography sx={{ mb: 2 }}>Pastikan data dan dokumen pendukung sudah diperiksa.</Typography>{needsReason && <TextField fullWidth required multiline minRows={3} label="Alasan" value={reason} onChange={(e) => setReason(e.target.value)} />}</DialogContent><DialogActions><Button onClick={onClose}>Batal</Button><Button variant="contained" color={action === 'reject' ? 'error' : 'primary'} disabled={loading || (needsReason && !reason.trim())} onClick={() => onSubmit({ reason: reason.trim() })}>{loading ? 'Memproses...' : 'Konfirmasi'}</Button></DialogActions></Dialog>;
 }
 
-function ApprovalSection({ purchase, permissions }) {
+function ApprovalSection({ purchase, permissions, onMutatePurchase }) {
   const result = useAssetList(assetEndpoints.approvalSteps(purchase.id));
   const [action, setAction] = useState(null);
   const [loading, setLoading] = useState(false);
   const active = result.rows.find((row) => ['PENDING', 'ACTIVE'].includes(row.status) || row.is_actionable);
-  const process = async (payload) => { setLoading(true); try { await runApprovalAction(purchase.id, active.id, action, payload, purchase.version); openNotification({ open: true, title: 'success', message: 'Keputusan approval tersimpan', alert: { color: 'success' } }); setAction(null); result.mutate(); } catch (error) { openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } }); } finally { setLoading(false); } };
+  const process = async (payload) => {
+    setLoading(true);
+    try {
+      await runApprovalAction(purchase.id, active.id, action, payload, purchase.version);
+      openNotification({ open: true, title: 'success', message: 'Keputusan approval tersimpan', alert: { color: 'success' } });
+      setAction(null);
+      await onMutatePurchase?.();
+      result.mutate();
+    } catch (error) {
+      if (isVersionConflict(error)) {
+        await onMutatePurchase?.();
+        await result.mutate();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diperbarui oleh sesi lain; tampilan dimuat ulang dengan versi terbaru — silakan ulangi aksi Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
+      openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } });
+    } finally {
+      setLoading(false);
+    }
+  };
   return <StateContent loading={result.loading} error={result.error} empty={!result.rows.length} onRetry={result.mutate}><Stack spacing={1.5}>{result.rows.map((step) => <Paper variant="outlined" sx={{ p: 2 }} key={step.id}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography fontWeight={700}>{step.sequence}. {step.name || humanize(step.step_type)}</Typography><Typography variant="body2" color="text.secondary">{step.approver_name || step.approver_role || humanize(step.approver_type)} · quorum {step.approval_count || 0}/{step.required_approvals || 1}</Typography></Box><StatusChip status={step.status} /></Stack></Paper>)}{permissions.can_approve && active && <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button variant="contained" color="success" onClick={() => setAction('approve')}>Setujui step aktif</Button>{permissions.can_reject && <Button color="error" onClick={() => setAction('reject')}>Tolak</Button>}{permissions.can_return && <Button color="warning" onClick={() => setAction('return')}>Kembalikan</Button>}</Stack>}<ActionDialog action={action} open={Boolean(action)} onClose={() => setAction(null)} onSubmit={process} loading={loading} /></Stack></StateContent>;
 }
 
-function LazyResourceSection({ tab, purchase, permissions }) {
+function LazyResourceSection({ tab, purchase, permissions, onMutatePurchase }) {
   const endpoint = sectionEndpoints[tab]?.(purchase.id);
   const result = useAssetList(endpoint, {}, Boolean(endpoint));
   const config = sectionConfig[tab];
-  const select = async (row) => { try { await import('api/asset-purchases').then(({ assetMutation }) => assetMutation('post', `${endpoint}/${row.id}/select`, {}, purchase.version)); result.mutate(); openNotification({ open: true, title: 'success', message: 'Pilihan berhasil diperbarui', alert: { color: 'success' } }); } catch (error) { openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } }); } };
+  const select = async (row) => {
+    try {
+      await import('api/asset-purchases').then(({ assetMutation }) => assetMutation('post', `${endpoint}/${row.id}/select`, {}, purchase.version));
+      await onMutatePurchase?.();
+      result.mutate();
+      openNotification({ open: true, title: 'success', message: 'Pilihan berhasil diperbarui', alert: { color: 'success' } });
+    } catch (error) {
+      if (isVersionConflict(error)) {
+        await onMutatePurchase?.();
+        await result.mutate();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diperbarui oleh sesi lain; data dimuat ulang dengan versi terbaru — silakan ulangi pilihan Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
+      openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } });
+    }
+  };
   return <Stack spacing={2}>{config && permissions[config.permission] && <Box><Button variant="contained" startIcon={<Add />} component={Link} href={config.createPath(purchase.id)}>Tambah {config.title}</Button></Box>}<StateContent loading={result.loading} error={result.error} empty={!result.rows.length} onRetry={result.mutate}><RowCards rows={result.rows} kind={config?.title || humanize(tab)} canSelect={['offers', 'financing'].includes(tab) && permissions[config?.permission]} onSelect={select} editPath={config?.editPath ? (rowId) => config.editPath(purchase.id, rowId) : null} /></StateContent></Stack>;
 }
 
@@ -117,7 +161,29 @@ export default function AssetPurchaseDetail({ id, initialTab = 'summary' }) {
     }
   };
 
-  const processAction = async (payload) => { setLoadingAction(true); try { await runPurchaseAction(id, action, payload, purchase.version); openNotification({ open: true, title: 'success', message: 'Status pengajuan berhasil diperbarui', alert: { color: 'success' } }); setAction(null); result.mutate(); } catch (error) { openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } }); } finally { setLoadingAction(false); } };
+  const processAction = async (payload) => {
+    setLoadingAction(true);
+    try {
+      await runPurchaseAction(id, action, payload, purchase.version);
+      openNotification({ open: true, title: 'success', message: 'Status pengajuan berhasil diperbarui', alert: { color: 'success' } });
+      setAction(null);
+      result.mutate();
+    } catch (error) {
+      if (isVersionConflict(error)) {
+        await result.mutate();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diperbarui oleh sesi lain; tampilan dimuat ulang dengan versi terbaru — silakan ulangi aksi Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
+      openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error), alert: { color: 'error' } });
+    } finally {
+      setLoadingAction(false);
+    }
+  };
   const embedded = { items: purchase.items || [], documents: purchase.documents || purchase.files || [], integration: purchase.integration_links || purchase.integrations || [], audit: purchase.histories || purchase.audit || [] };
 
   return <>
@@ -127,8 +193,8 @@ export default function AssetPurchaseDetail({ id, initialTab = 'summary' }) {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', overflowX: 'auto' }}><Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable" scrollButtons="auto">{tabs.filter(([value]) => value !== 'audit' || result.permissions.can_view_audit).map(([value, label]) => <Tab key={value} value={value} label={label} />)}</Tabs></Box>
       <Box sx={{ p: { xs: 2, md: 3 } }}>
         {tab === 'summary' && <Grid container spacing={2}><Grid item xs={12} md={8}><Paper variant="outlined" sx={{ p: 2.5 }}><Typography variant="h5" sx={{ mb: 2 }}>Informasi transaksi</Typography><Grid container spacing={2}>{[['Tanggal dokumen', date(purchase.document_date)], ['Jenis aset', humanize(purchase.asset_type)], ['Kategori', purchase.category_code], ['Pembiayaan', humanize(purchase.financing_type)], ['Kepemilikan', humanize(purchase.ownership_scheme)], ['Budget', humanize(purchase.budget_status)], ['Referensi budget', purchase.budget_reference], ['Versi', purchase.version]].map(([label, value]) => <Grid item xs={6} md={4} key={label}><Info label={label} value={value} /></Grid>)}</Grid></Paper></Grid><Grid item xs={12} md={4}><Paper variant="outlined" sx={{ p: 2.5 }}><Typography variant="h5" sx={{ mb: 2 }}>Dimensi organisasi</Typography><Stack spacing={2}><Info label="Bisnis pemohon" value={purchase.requesting_business_name || purchase.requesting_business_id} /><Info label="Legal owner" value={purchase.legal_owner_business_name || purchase.legal_owner_business_id} /><Info label="Perusahaan pembayar" value={purchase.paying_business_name || purchase.paying_business_id} /><Info label="Pengguna operasional" value={purchase.operational_user_business_name || purchase.operational_user_business_id} /></Stack></Paper></Grid></Grid>}
-        {tab === 'approval' && <ApprovalSection purchase={purchase} permissions={result.permissions} />}
-        {['offers', 'financing', 'receipts', 'units'].includes(tab) && <><LazyResourceSection tab={tab} purchase={purchase} permissions={result.permissions} />{tab === 'financing' && <ContractSection purchase={purchase} permissions={result.permissions} />}</>}
+        {tab === 'approval' && <ApprovalSection purchase={purchase} permissions={result.permissions} onMutatePurchase={result.mutate} />}
+        {['offers', 'financing', 'receipts', 'units'].includes(tab) && <><LazyResourceSection tab={tab} purchase={purchase} permissions={result.permissions} onMutatePurchase={result.mutate} />{tab === 'financing' && <ContractSection purchase={purchase} permissions={result.permissions} />}</>}
         {tab === 'payments' && <PurchasePayments purchase={purchase} />}
         {['items', 'documents', 'integration', 'audit'].includes(tab) && <RowCards rows={embedded[tab] || []} kind={tabs.find(([value]) => value === tab)?.[1]} />}
       </Box>
