@@ -65,10 +65,42 @@ export default function EditHeaderDialog({
   const [prioritas, setPrioritas] = useState("");
   const [narasi, setNarasi] = useState("");
 
-  // Payment terms (TOP) state
+  // Payment terms (TOP) and metode state
+  const [metode, setMetode] = useState("tunai");
   const [topType, setTopType] = useState("CASH");
   const [topDays, setTopDays] = useState(30);
   const [dpPercent, setDpPercent] = useState(30);
+
+  const handleMetodeChange = (nextMetode) => {
+    setMetode(nextMetode);
+    if (nextMetode === "tunai") {
+      setTopType("CASH");
+      setTopDays(0);
+      setDpPercent(0);
+    } else {
+      if (topType === "CASH") {
+        setTopType("CREDIT");
+        setTopDays(30);
+      }
+    }
+  };
+
+  const handleTopTypeChange = (nextType) => {
+    setTopType(nextType);
+    if (nextType === "CASH") {
+      setMetode("tunai");
+      setTopDays(0);
+      setDpPercent(0);
+    } else {
+      setMetode("kredit");
+      if (nextType === "CREDIT" && (!topDays || Number(topDays) <= 0)) {
+        setTopDays(30);
+      } else if (nextType === "INSTALLMENT") {
+        if (!topDays || Number(topDays) <= 0) setTopDays(14);
+        if (!dpPercent || Number(dpPercent) <= 0) setDpPercent(30);
+      }
+    }
+  };
 
   const editingBank = initialMode !== "narasi";
   const editingHeader = initialMode === "all";
@@ -106,6 +138,12 @@ export default function EditHeaderDialog({
       setSelectedRekeningId(row.rekening_id ? String(row.rekening_id) : "");
 
       const currentTop = String(row.top_type || "CASH").toUpperCase();
+      const currentMetode = row.metode
+        ? String(row.metode).toLowerCase()
+        : currentTop === "CASH"
+        ? "tunai"
+        : "kredit";
+      setMetode(currentMetode);
       setTopType(["CASH", "CREDIT", "INSTALLMENT"].includes(currentTop) ? currentTop : "CASH");
       setTopDays(
         row.top_days !== undefined && row.top_days !== null && Number(row.top_days) > 0
@@ -198,6 +236,7 @@ export default function EditHeaderDialog({
         top_type: editingHeader ? topType : undefined,
         top_days: editingHeader ? (topType === "CASH" ? 0 : Number(topDays)) : undefined,
         dp_percent: editingHeader ? (topType === "INSTALLMENT" ? Number(dpPercent) : 0) : undefined,
+        metode: editingHeader ? metode : undefined,
       });
 
       await updatePurchaseOrderHeader(row.id, payload);
@@ -311,24 +350,97 @@ export default function EditHeaderDialog({
             <>
               <Divider />
 
-              {/* Syarat Pembayaran (TOP) Section */}
+              {/* Metode Pembayaran & Syarat Pembayaran (TOP) Section */}
               <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Metode Pembayaran (PO Grouping)
+                </Typography>
+                <FormControl component="fieldset" fullWidth sx={{ mb: 2 }}>
+                  <RadioGroup
+                    row
+                    value={metode}
+                    onChange={(e) => handleMetodeChange(e.target.value)}
+                  >
+                    <Grid container spacing={1.5}>
+                      <Grid item xs={12} sm={6}>
+                        <Paper
+                          variant="outlined"
+                          sx={{
+                            p: 1.5,
+                            height: "100%",
+                            borderColor: metode === "tunai" ? "success.main" : "divider",
+                            bgcolor: metode === "tunai" ? "action.hover" : "background.paper",
+                            borderRadius: 1,
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                          }}
+                          onClick={() => {
+                            if (!loading) handleMetodeChange("tunai");
+                          }}
+                        >
+                          <FormControlLabel
+                            value="tunai"
+                            control={<Radio size="small" color="success" />}
+                            label={
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  Tunai (Cash / Bayar di Muka)
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Default TOP: CASH (0 Hari Jatuh Tempo)
+                                </Typography>
+                              </Box>
+                            }
+                            disabled={loading}
+                            sx={{ m: 0, alignItems: "flex-start" }}
+                          />
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Paper
+                          variant="outlined"
+                          sx={{
+                            p: 1.5,
+                            height: "100%",
+                            borderColor: metode === "kredit" ? "info.main" : "divider",
+                            bgcolor: metode === "kredit" ? "action.hover" : "background.paper",
+                            borderRadius: 1,
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                          }}
+                          onClick={() => {
+                            if (!loading) handleMetodeChange("kredit");
+                          }}
+                        >
+                          <FormControlLabel
+                            value="kredit"
+                            control={<Radio size="small" color="info" />}
+                            label={
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  Kredit (Tempo / Bertahap)
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Pilihan TOP: CREDIT (Net Hari) atau INSTALLMENT (DP)
+                                </Typography>
+                              </Box>
+                            }
+                            disabled={loading}
+                            sx={{ m: 0, alignItems: "flex-start" }}
+                          />
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  </RadioGroup>
+                </FormControl>
+
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                   Syarat Pembayaran (Terms of Payment / TOP)
                 </Typography>
                 <FormControl component="fieldset" fullWidth sx={{ mb: 2 }}>
                   <RadioGroup
                     value={topType}
-                    onChange={(e) => {
-                      const nextType = e.target.value;
-                      setTopType(nextType);
-                      if (nextType === "CREDIT" && (!topDays || Number(topDays) <= 0)) {
-                        setTopDays(30);
-                      } else if (nextType === "INSTALLMENT") {
-                        if (!topDays || Number(topDays) <= 0) setTopDays(14);
-                        if (!dpPercent || Number(dpPercent) <= 0) setDpPercent(30);
-                      }
-                    }}
+                    onChange={(e) => handleTopTypeChange(e.target.value)}
                   >
                     <Grid container spacing={1.5}>
                       {PURCHASE_ORDER_TOP_TYPES.map((item) => (
@@ -346,13 +458,7 @@ export default function EditHeaderDialog({
                             }}
                             onClick={() => {
                               if (!loading) {
-                                setTopType(item.value);
-                                if (item.value === "CREDIT" && (!topDays || Number(topDays) <= 0)) {
-                                  setTopDays(30);
-                                } else if (item.value === "INSTALLMENT") {
-                                  if (!topDays || Number(topDays) <= 0) setTopDays(14);
-                                  if (!dpPercent || Number(dpPercent) <= 0) setDpPercent(30);
-                                }
+                                handleTopTypeChange(item.value);
                               }
                             }}
                           >

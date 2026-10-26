@@ -11,15 +11,31 @@ export const PURCHASE_ORDER_TOP_TYPES = [
   { value: "INSTALLMENT", label: "Bertahap DP + Pelunasan (INSTALLMENT)", description: "Uang muka saat PO dan pelunasan setelah barang diterima" },
 ];
 
-/** Validates and normalizes payment terms (TOP: CASH, CREDIT, INSTALLMENT) */
-export const normalizePaymentTerms = ({ top_type = "CASH", top_days = 0, dp_percent = 0 } = {}) => {
+export const PURCHASE_ORDER_METODE_OPTIONS = [
+  { value: "tunai", label: "Tunai", description: "Pembayaran tunai / COD / bayar lunas di muka (CASH)" },
+  { value: "kredit", label: "Kredit", description: "Pembayaran dengan termin kredit / bertahap (CREDIT / INSTALLMENT)" },
+];
+
+/**
+ * Validates and normalizes payment terms (TOP: CASH, CREDIT, INSTALLMENT) & synchronizes metode (tunai/kredit).
+ * Sesuai BR-SCM-002:
+ * - CASH -> metode otomatis 'tunai'
+ * - CREDIT / INSTALLMENT -> metode otomatis 'kredit'
+ */
+export const normalizePaymentTerms = ({ top_type = "CASH", top_days = 0, dp_percent = 0, metode } = {}) => {
   const type = String(top_type || "CASH").toUpperCase();
   if (!["CASH", "CREDIT", "INSTALLMENT"].includes(type)) {
     throw new Error("Syarat pembayaran harus berupa CASH, CREDIT, atau INSTALLMENT");
   }
 
+  const derivedMetode = type === "CASH" ? "tunai" : "kredit";
+  const finalMetode =
+    metode && ["tunai", "kredit"].includes(String(metode).toLowerCase())
+      ? String(metode).toLowerCase()
+      : derivedMetode;
+
   if (type === "CASH") {
-    return { top_type: "CASH", top_days: 0, dp_percent: 0 };
+    return { top_type: "CASH", top_days: 0, dp_percent: 0, metode: "tunai" };
   }
 
   if (type === "CREDIT") {
@@ -27,7 +43,7 @@ export const normalizePaymentTerms = ({ top_type = "CASH", top_days = 0, dp_perc
     if (isNaN(days) || days <= 0) {
       throw new Error("Masa kredit (top_days) harus berupa angka positif lebih dari 0 hari");
     }
-    return { top_type: "CREDIT", top_days: days, dp_percent: 0 };
+    return { top_type: "CREDIT", top_days: days, dp_percent: 0, metode: finalMetode };
   }
 
   if (type === "INSTALLMENT") {
@@ -39,7 +55,7 @@ export const normalizePaymentTerms = ({ top_type = "CASH", top_days = 0, dp_perc
     if (isNaN(days) || days <= 0) {
       throw new Error("Masa kredit pelunasan (top_days) harus berupa angka positif lebih dari 0 hari");
     }
-    return { top_type: "INSTALLMENT", top_days: days, dp_percent: percent };
+    return { top_type: "INSTALLMENT", top_days: days, dp_percent: percent, metode: "kredit" };
   }
 };
 
@@ -56,10 +72,11 @@ export const buildPurchaseOrderHeaderPayload = ({
   top_type,
   top_days,
   dp_percent,
+  metode,
 }) => {
   if (initialMode === "narasi") return { narasi };
   if (initialMode === "top") {
-    return normalizePaymentTerms({ top_type, top_days, dp_percent });
+    return normalizePaymentTerms({ top_type, top_days, dp_percent, metode });
   }
   if (!["all", "rekening", "new_rekening"].includes(initialMode)) {
     throw new Error("Mode edit header PO tidak valid");
@@ -74,8 +91,8 @@ export const buildPurchaseOrderHeaderPayload = ({
       }
       payload.prioritas = prioritas;
     }
-    if (top_type !== undefined) {
-      const terms = normalizePaymentTerms({ top_type, top_days, dp_percent });
+    if (top_type !== undefined || metode !== undefined) {
+      const terms = normalizePaymentTerms({ top_type, top_days, dp_percent, metode });
       Object.assign(payload, terms);
     }
   }

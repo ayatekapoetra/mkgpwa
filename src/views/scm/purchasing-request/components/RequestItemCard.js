@@ -281,7 +281,8 @@ function CommercialSummary({ item }) {
         display: "grid",
         gridTemplateColumns: {
           xs: "repeat(2,1fr)",
-          md: "repeat(4,1fr)",
+          sm: "repeat(3,1fr)",
+          md: "repeat(5,1fr)",
         },
         gap: 1.5,
       }}
@@ -307,6 +308,19 @@ function CommercialSummary({ item }) {
         <Typography>
           {formatCurrency(item.harga)} / {item.ppn || 0}%
         </Typography>
+      </Box>
+      <Box>
+        <Typography variant="caption" color="text.secondary">
+          Metode Bayar
+        </Typography>
+        <Box sx={{ mt: 0.2 }}>
+          <Chip
+            size="small"
+            label={String(item.metode || "kredit").toUpperCase()}
+            color={String(item.metode || "").toLowerCase() === "tunai" ? "success" : "info"}
+            variant="outlined"
+          />
+        </Box>
       </Box>
       <Box>
         <Typography variant="caption" color="text.secondary">

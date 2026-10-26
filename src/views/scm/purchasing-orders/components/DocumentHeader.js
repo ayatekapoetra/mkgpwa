@@ -176,6 +176,12 @@ export default function DocumentHeader({ row, canEdit = false, onUpdated }) {
               )}
             </Stack>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Chip
+                size="small"
+                label={`Metode: ${String(row?.metode || (row?.top_type === "CASH" ? "tunai" : "kredit")).toUpperCase()}`}
+                color={String(row?.metode || "").toLowerCase() === "tunai" || row?.top_type === "CASH" ? "success" : "info"}
+                variant="outlined"
+              />
               {(!row?.top_type || row?.top_type === "CASH") && (
                 <Chip size="small" label="Tunai / Cash (CASH)" color="default" />
               )}

@@ -2,7 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Alert, Box, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Divider,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 
 import {
   approvePurchasingRequest,
@@ -30,7 +48,8 @@ import {
   RequestItemCard,
   SelectionToolbar,
 } from "./components";
-import { calculateItemTotals } from "./utils";
+import { calculateItemTotals, formatCurrency } from "./utils";
+import { groupApprovalItems } from "./approvalGrouping";
 
 /** Displays a purchasing request and coordinates its permitted workflow actions. */
 export default function PurchasingRequestDetail() {
@@ -53,6 +72,7 @@ export default function PurchasingRequestDetail() {
   const [drafts, setDrafts] = useState({});
   const [selectedValidation, setSelectedValidation] = useState([]);
   const [selectedApproval, setSelectedApproval] = useState([]);
+  const [approvalMetodeOverrides, setApprovalMetodeOverrides] = useState({});
   const [dialog, setDialog] = useState(null);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -178,10 +198,42 @@ export default function PurchasingRequestDetail() {
     );
   };
 
+  const selectedItemsToApprove = useMemo(() => {
+    return items.filter((item) => selectedApproval.includes(item.id));
+  }, [items, selectedApproval]);
+
+  const approvalGroups = useMemo(() => {
+    return groupApprovalItems(selectedItemsToApprove, approvalMetodeOverrides);
+  }, [selectedItemsToApprove, approvalMetodeOverrides]);
+
+  const setAllMetode = (metodeVal) => {
+    const updated = {};
+    selectedItemsToApprove.forEach((item) => {
+      updated[item.id] = metodeVal;
+    });
+    setApprovalMetodeOverrides(updated);
+  };
+
+  const handleItemMetodeChange = (itemId, nextMetode) => {
+    setApprovalMetodeOverrides((prev) => ({
+      ...prev,
+      [itemId]: nextMetode,
+    }));
+  };
+
   const approveSelectedItems = () => {
+    const payloadItems = selectedApproval.map((id) => {
+      const it = items.find((x) => x.id === id);
+      const metode =
+        approvalMetodeOverrides[id] !== undefined
+          ? approvalMetodeOverrides[id]
+          : it?.metode || "kredit";
+      return { id, metode };
+    });
+
     executeAction(
-      () => approvePurchasingRequest(selectedApproval),
-      "Approval berhasil, Purchase Order telah dibuat",
+      () => approvePurchasingRequest(payloadItems),
+      `Approval berhasil, ${approvalGroups.length} Purchase Order telah dibuat`,
       "Approval",
     );
   };
@@ -365,14 +417,174 @@ export default function PurchasingRequestDetail() {
       </MainCard>
       <ActionDialog
         open={dialog === "approve"}
-        title="Approval Purchasing Request"
-        description={`Approve ${selectedApproval.length} dari ${pendingApproval.length} item? Purchase Order hanya dibuat untuk item yang dipilih, berdasarkan supplier dan PPN.`}
-        confirmLabel={`Approve ${selectedApproval.length} Item & Buat PO`}
+        title="Approval Purchasing Request & Pembuatan PO"
+        maxWidth="md"
+        confirmLabel={`Approve & Buat ${approvalGroups.length} Dokumen PO`}
         color="success"
         loading={loading}
         onClose={() => setDialog(null)}
         onConfirm={approveSelectedItems}
-      />
+      >
+        <Stack spacing={2.5} sx={{ mt: 1 }}>
+          <Alert severity="info" variant="outlined">
+            Sesuai <b>PRD-SCM-002</b>, item yang disetujui akan dikelompokkan ke Purchase Order terpisah berdasarkan kombinasi: <b>Pemasok</b>, <b>Tarif PPN</b>, dan <b>Metode Pembayaran (Tunai vs Kredit)</b>.
+          </Alert>
+
+          {/* Table seleksi metode item */}
+          <Box>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Konfigurasi Metode Bayar Item ({selectedItemsToApprove.length} Item Dipilih)
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                  onClick={() => setAllMetode("tunai")}
+                  sx={{ textTransform: "none", py: 0.2, px: 1, fontSize: "0.75rem" }}
+                >
+                  Set Semua Tunai
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="info"
+                  onClick={() => setAllMetode("kredit")}
+                  sx={{ textTransform: "none", py: 0.2, px: 1, fontSize: "0.75rem" }}
+                >
+                  Set Semua Kredit
+                </Button>
+              </Stack>
+            </Stack>
+
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead sx={{ bgcolor: "action.hover" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Item Sparepart</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Supplier</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>Qty / PPN</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Subtotal</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 150 }}>Metode Bayar</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {selectedItemsToApprove.map((item) => {
+                    const currentMetode =
+                      approvalMetodeOverrides[item.id] !== undefined
+                        ? approvalMetodeOverrides[item.id]
+                        : (item.metode || "kredit");
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {item.barang?.nama || item.barang?.nm_barang || item.nama_barang || item.description || `Item #${item.id}`}
+                          </Typography>
+                          {item.kdbarang && (
+                            <Typography variant="caption" color="text.secondary">
+                              Kode: {item.kdbarang}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {item.pemasok?.nama_pemasok || item.pemasok?.nama || item.pemasok?.name || "-"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="body2">
+                            {item.qty_acc || item.qty} {item.stn}
+                          </Typography>
+                          <Chip
+                            size="small"
+                            label={Number(item.ppn) > 0 ? `PPN ${item.ppn}%` : "Non-PPN"}
+                            color={Number(item.ppn) > 0 ? "warning" : "default"}
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.6875rem", mt: 0.5 }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight={600}>
+                            {formatCurrency(item.subtotal)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            size="small"
+                            value={currentMetode}
+                            onChange={(e) => handleItemMetodeChange(item.id, e.target.value)}
+                            sx={{ fontSize: "0.8125rem", height: 32 }}
+                            fullWidth
+                          >
+                            <MenuItem value="tunai">Tunai (CASH)</MenuItem>
+                            <MenuItem value="kredit">Kredit (CREDIT)</MenuItem>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+
+          {/* Preview Pembentukan Dokumen PO */}
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Simulasi Dokumen PO yang Akan Diterbitkan ({approvalGroups.length} Purchase Order):
+            </Typography>
+            <Stack spacing={1.5}>
+              {approvalGroups.map((group, idx) => (
+                <Paper
+                  key={group.group_key}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    bgcolor: "background.paper",
+                    borderLeft: 4,
+                    borderLeftColor: group.metode === "tunai" ? "success.main" : "info.main",
+                  }}
+                >
+                  <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
+                    <Box>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                        <Typography variant="subtitle2" fontWeight={700}>
+                          PO #{idx + 1}: {group.pemasok_name}
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={group.metode_label.toUpperCase()}
+                          color={group.metode === "tunai" ? "success" : "info"}
+                          sx={{ fontWeight: 600, height: 22 }}
+                        />
+                        <Chip
+                          size="small"
+                          label={group.ppn_label}
+                          color={group.is_ppn ? "warning" : "default"}
+                          variant="outlined"
+                          sx={{ height: 22 }}
+                        />
+                      </Stack>
+                      <Typography variant="caption" color="text.secondary">
+                        {group.items.length} item sparepart · {group.default_top.label} ({group.default_top.description})
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: { sm: "right" } }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Estimasi Grand Total
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                        {formatCurrency(group.grandtotal)}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        </Stack>
+      </ActionDialog>
       <ActionDialog
         open={dialog === "rollback"}
         title="Rollback Purchasing Request"

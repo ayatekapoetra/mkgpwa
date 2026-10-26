@@ -457,6 +457,7 @@ export const approvePurchasingRequest = async (items) => {
   const payload = {
     items: values.map((item) => ({
       id: typeof item === "object" ? item.id : item,
+      ...(typeof item === "object" && item.metode ? { metode: String(item.metode).toLowerCase() } : {}),
     })),
   };
   const response = await axiosServices.put(endpoints.approve, payload, {

@@ -24,6 +24,7 @@ export default function ActionDialog({
   requireReason = false,
   onClose,
   onConfirm,
+  maxWidth = "sm",
   children,
 }) {
   return (
@@ -31,7 +32,7 @@ export default function ActionDialog({
       open={open}
       onClose={loading ? undefined : onClose}
       fullWidth
-      maxWidth="sm"
+      maxWidth={maxWidth}
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
