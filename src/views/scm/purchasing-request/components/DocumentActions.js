@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Button, Divider, Paper, Stack, Typography } from "@mui/material";
-import { DocumentDownload, Edit, Refresh, TickCircle } from "iconsax-react";
+import { DocumentDownload, Edit, Refresh, TickCircle, Trash } from "iconsax-react";
+import { isPrDeletable } from "../deletePrHelper";
 
 /** Renders document actions allowed by the resolved request permissions. */
 export default function DocumentActions({
@@ -20,6 +21,7 @@ export default function DocumentActions({
   onStartApproval,
   onApprove,
   onRollback,
+  onDelete,
 }) {
   const rollbackTargets = {
     active: "Draft",
@@ -99,6 +101,17 @@ export default function DocumentActions({
             onClick={onRollback}
           >
             Rollback ke {rollbackTarget}
+          </Button>
+        )}
+        {isPrDeletable(row, permissions) && (
+          <Button
+            color="error"
+            variant="outlined"
+            startIcon={<Trash />}
+            onClick={onDelete}
+            disabled={loading}
+          >
+            Hapus PR
           </Button>
         )}
       </Stack>

@@ -151,7 +151,11 @@ export default function PurchasingRequestPage() {
                 </Box>
               ) : (
                 <>
-                  <PurchasingRequestList rows={rows} />
+                  <PurchasingRequestList
+                    rows={rows}
+                    permissions={permissions}
+                    onDeleted={mutate}
+                  />
                   <Paginate
                     page={page || params.page}
                     perPage={perPage}

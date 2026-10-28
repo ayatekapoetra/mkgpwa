@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import moment from "moment";
 import "moment/locale/id";
@@ -21,10 +22,20 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { Trash } from "iconsax-react";
 
+import { openNotification } from "api/notification";
+import {
+  deletePurchasingRequest,
+  getPurchasingRequestError,
+} from "api/purchasing-request";
 import StatusChip from "./components/StatusChip";
 import ProgressIndicator from "./components/ProgressIndicator";
+import DeletePrDialog from "./components/DeletePrDialog";
 import { formatCurrency } from "./utils";
+import { isPrDeletable } from "./deletePrHelper";
+
+export { isPrDeletable } from "./deletePrHelper";
 
 moment.locale("id");
 
@@ -60,7 +71,7 @@ function EmptyRequestList() {
 }
 
 /** Renders purchasing requests in the desktop table layout. */
-function DesktopRequestList({ rows }) {
+function DesktopRequestList({ rows, permissions, onDeleteRequest }) {
   if (!rows.length) {
     return <EmptyRequestList />;
   }
@@ -85,17 +96,31 @@ function DesktopRequestList({ rows }) {
         <TableBody>
           {rows.map((row) => {
             const stats = calculateItemStats(row);
+            const canDelete = isPrDeletable(row, permissions);
             return (
               <TableRow hover key={row.id}>
                 <TableCell>
-                  <Button
-                    component={Link}
-                    href={`/purchasing-request/${row.id}`}
-                    size="small"
-                    variant="outlined"
-                  >
-                    Detail
-                  </Button>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Button
+                      component={Link}
+                      href={`/purchasing-request/${row.id}`}
+                      size="small"
+                      variant="outlined"
+                    >
+                      Detail
+                    </Button>
+                    {canDelete && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Trash size={16} />}
+                        onClick={() => onDeleteRequest?.(row)}
+                      >
+                        Hapus
+                      </Button>
+                    )}
+                  </Stack>
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={700}>
@@ -181,7 +206,7 @@ function DesktopRequestList({ rows }) {
 }
 
 /** Renders purchasing requests as cards on smaller screens. */
-function MobileRequestList({ rows }) {
+function MobileRequestList({ rows, permissions, onDeleteRequest }) {
   if (!rows.length) {
     return <EmptyRequestList />;
   }
@@ -189,6 +214,7 @@ function MobileRequestList({ rows }) {
     <Stack spacing={1.5}>
       {rows.map((row) => {
         const stats = calculateItemStats(row);
+        const canDelete = isPrDeletable(row, permissions);
         return (
           <Card variant="outlined" key={row.id}>
             <CardContent>
@@ -240,14 +266,36 @@ function MobileRequestList({ rows }) {
                   </Box>
                 </Stack>
                 <ProgressIndicator items={row.items || []} />
-                <Button
-                  fullWidth
-                  component={Link}
-                  href={`/purchasing-request/${row.id}`}
-                  variant="outlined"
-                >
-                  Lihat Detail
-                </Button>
+                {canDelete ? (
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      fullWidth
+                      component={Link}
+                      href={`/purchasing-request/${row.id}`}
+                      variant="outlined"
+                    >
+                      Lihat Detail
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Trash size={16} />}
+                      onClick={() => onDeleteRequest?.(row)}
+                    >
+                      Hapus
+                    </Button>
+                  </Stack>
+                ) : (
+                  <Button
+                    fullWidth
+                    component={Link}
+                    href={`/purchasing-request/${row.id}`}
+                    variant="outlined"
+                  >
+                    Lihat Detail
+                  </Button>
+                )}
               </Stack>
             </CardContent>
           </Card>
@@ -258,12 +306,81 @@ function MobileRequestList({ rows }) {
 }
 
 /** Selects the existing responsive list layout for purchasing requests. */
-export default function PurchasingRequestList({ rows = [] }) {
+export default function PurchasingRequestList({
+  rows = [],
+  permissions,
+  onDeleted,
+  mutate,
+  onDeleteRequest: customOnDeleteRequest,
+}) {
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down("md"));
-  return mobile ? (
-    <MobileRequestList rows={rows} />
-  ) : (
-    <DesktopRequestList rows={rows} />
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteRequest = (row) => {
+    if (typeof customOnDeleteRequest === "function") {
+      customOnDeleteRequest(row);
+    } else {
+      setDeleteTarget(row);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deletePurchasingRequest(deleteTarget.id);
+      openNotification({
+        open: true,
+        title: "Berhasil",
+        message: `Purchasing Request ${deleteTarget.kode || ""} berhasil dihapus/dinonaktifkan.`,
+        alert: { color: "success" },
+      });
+      setDeleteTarget(null);
+      if (typeof onDeleted === "function") {
+        onDeleted();
+      } else if (typeof mutate === "function") {
+        mutate();
+      }
+    } catch (error) {
+      const parsed = getPurchasingRequestError(
+        error,
+        "Gagal menghapus Purchasing Request",
+      );
+      openNotification({
+        open: true,
+        title: "Gagal Menghapus",
+        message: parsed.message,
+        alert: { color: "error" },
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      {mobile ? (
+        <MobileRequestList
+          rows={rows}
+          permissions={permissions}
+          onDeleteRequest={handleDeleteRequest}
+        />
+      ) : (
+        <DesktopRequestList
+          rows={rows}
+          permissions={permissions}
+          onDeleteRequest={handleDeleteRequest}
+        />
+      )}
+      <DeletePrDialog
+        open={Boolean(deleteTarget)}
+        row={deleteTarget}
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
+    </>
   );
 }
