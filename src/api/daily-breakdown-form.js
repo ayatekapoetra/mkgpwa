@@ -34,7 +34,8 @@ export const useBreakdownList = (params, enabled = true) => {
   const url = enabled ? `${endpoints.key}${endpoints.list}${query ? `?${query}` : ''}` : null;
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, {
-    revalidateIfStale: false,
+    revalidateIfStale: true,
+    keepPreviousData: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: true
   });
@@ -82,7 +83,8 @@ export const useBreakdownStatistics = (params, enabled = true) => {
   const url = enabled ? `${endpoints.key}${endpoints.statistics}${query ? `?${query}` : ''}` : null;
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, {
-    revalidateIfStale: false,
+    revalidateIfStale: true,
+    keepPreviousData: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: true
   });

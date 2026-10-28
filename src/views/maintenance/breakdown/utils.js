@@ -6,9 +6,12 @@ moment.locale('id');
 export const BREAKDOWN_STATUS = [
   { code: 0, label: 'Tunggu Teknisi', color: '#fbbf24', colorDark: '#92400e', bg: '#fef3c7', bgDark: '#451a03', muiColor: 'warning' },
   { code: 1, label: 'Tunggu Part', color: '#f472b6', colorDark: '#831843', bg: '#fef9c3', bgDark: '#78350f', muiColor: 'secondary' },
+  { code: 2, label: 'Wait Services', color: '#c084fc', colorDark: '#6d28d9', bg: '#f3e8ff', bgDark: '#4c1d95', muiColor: 'secondary' },
   { code: 8, label: 'Sedang Dikerjakan', color: '#60a5fa', colorDark: '#1e40af', bg: '#dbeafe', bgDark: '#1e3a8a', muiColor: 'info' },
   { code: 9, label: 'Selesai', color: '#34d399', colorDark: '#064e3b', bg: '#d1fae5', bgDark: '#064e3b', muiColor: 'success' }
 ];
+
+export const ALL_BREAKDOWN_STATUSES = [0, 1, 2, 8, 9];
 
 export const KATEGORI = [
   { value: 'MECHANICAL', label: 'Mechanical' },
@@ -156,7 +159,7 @@ export const formatDateIssue = (value) => {
 export const defaultFilters = {
   page: 1,
   perPage: 25,
-  status: [],
+  status: [0, 1, 2, 8, 9],
   cabang_id: '',
   equipment_id: '',
   lokasi_id: '',
@@ -165,19 +168,38 @@ export const defaultFilters = {
 };
 
 export const hasActiveFilters = (filters) => {
-  const hasStatus = Array.isArray(filters.status) && filters.status.length > 0;
-  return hasStatus || !!filters.cabang_id || !!filters.equipment_id || !!filters.lokasi_id || !!filters.startdate || !!filters.enddate;
+  if (!filters) return false;
+  const isCustomStatus = Array.isArray(filters.status) &&
+    filters.status.length > 0 &&
+    filters.status.length < ALL_BREAKDOWN_STATUSES.length;
+  return Boolean(
+    isCustomStatus ||
+    filters.cabang_id ||
+    filters.equipment_id ||
+    filters.lokasi_id ||
+    filters.startdate ||
+    filters.enddate
+  );
 };
 
-export const buildCompactParams = (filters) => {
-  const params = { page: filters.page, perPage: filters.perPage };
+export const buildCompactParams = (filters = {}) => {
+  const params = {
+    page: filters.page || 1,
+    perPage: filters.perPage || 25
+  };
+
   if (Array.isArray(filters.status) && filters.status.length > 0) {
     params.status = filters.status.join(',');
+  } else {
+    // When status is empty array or undefined, default to all statuses (0,1,2,8,9)
+    params.status = ALL_BREAKDOWN_STATUSES.join(',');
   }
-  if (filters.cabang_id) params.cabang_id = filters.cabang_id;
-  if (filters.equipment_id) params.equipment_id = filters.equipment_id;
-  if (filters.lokasi_id) params.lokasi_id = filters.lokasi_id;
-  if (filters.startdate) params.startdate = filters.startdate;
-  if (filters.enddate) params.enddate = filters.enddate;
+
+  ['cabang_id', 'equipment_id', 'lokasi_id', 'startdate', 'enddate'].forEach((key) => {
+    if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+      params[key] = filters[key];
+    }
+  });
+
   return params;
 };

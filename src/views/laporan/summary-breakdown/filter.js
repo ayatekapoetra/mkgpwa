@@ -107,6 +107,8 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
   }, [params.penyewa_ids, penyewaOptions]);
 
   useEffect(() => {
+    if (equipmentLoading || !equipmentOptions || equipmentOptions.length === 0) return;
+
     const allowedIds = new Set(filteredEquipmentOptions.map((item) => item.id));
     const current = params.equipment_ids || [];
     const normalized = current.filter((item) => {
@@ -117,7 +119,7 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
     if (normalized.length !== current.length) {
       setParams((prev) => ({ ...prev, page: 1, equipment_ids: normalized }));
     }
-  }, [filteredEquipmentOptions, params.equipment_ids, setParams]);
+  }, [equipmentLoading, equipmentOptions, filteredEquipmentOptions, params.equipment_ids, setParams]);
 
   const onResetFilter = () => {
     const dates = defaultDates();
