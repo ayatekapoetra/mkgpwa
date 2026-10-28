@@ -5,9 +5,9 @@ export const POLL_OPTIONS = [
 ];
 
 export const DELIVERY_MODES = [
-  { id: 'pdf', label: 'Kirim PDF', description: 'Dokumen PDF setiap PO, tanpa polling.' },
-  { id: 'pdf_poll', label: 'Kirim PDF dan Polling', description: 'Dokumen PDF dan satu polling untuk seluruh PO.' },
-  { id: 'text', label: 'Kirim Pesan Text Saja', description: 'Ringkasan PO dalam pesan teks, tanpa PDF atau polling.' }
+  { id: 'pdf_text', label: 'Kirim PDF dan Text', description: 'Dokumen PDF ringkasan dan pesan teks WhatsApp lengkap dengan narasi tiap item.' },
+  { id: 'pdf', label: 'Kirim PDF', description: 'Dokumen PDF setiap PO, tanpa pesan teks.' },
+  { id: 'text', label: 'Kirim Pesan Text Saja', description: 'Ringkasan PO dalam pesan teks, tanpa PDF.' }
 ];
 
 export const deliveryHasPoll = (mode) => mode === 'pdf_poll';
@@ -121,6 +121,7 @@ export function toPollItem(row) {
       item_id: item.id == null ? null : String(item.id),
       item_code: item.barang?.kode || null,
       item_name: item.barang?.nama || item.narasi || 'Non-part item',
+      item_narasi: item.narasi || null,
       quantity: decimal(item.qty, `Qty item ${row.kdpo}`),
       unit: item.stn || item.satuan || item.barang?.satuan || item.barang?.satuan_order || null
     }))
@@ -145,7 +146,15 @@ export function buildPurchaseOrderText(items, summary) {
   const documents = items.map((item, index) => {
     const org = [item.business_unit.name || item.business_unit.initial, item.branch_name].filter(Boolean).join(' · ');
     const itemLines = item.line_items.length
-      ? item.line_items.slice(0, 5).map((line) => `   • ${line.item_name}${line.item_code ? ` _(${line.item_code})_` : ''} — ${line.quantity}${line.unit ? ' ' + line.unit : ''}`).join('\n')
+      ? item.line_items.slice(0, 5).map((line) => {
+          const mainLine = `   • ${line.item_name}${line.item_code ? ` _(${line.item_code})_` : ''} — ${line.quantity}${line.unit ? ' ' + line.unit : ''}`;
+          const narasi = line.item_narasi ? String(line.item_narasi).trim() : '';
+          const hasCustomNarasi = narasi && narasi !== String(line.item_name).trim();
+          if (hasCustomNarasi) {
+            return `${mainLine}\n     ↳ _Catatan/Narasi: ${narasi}_`;
+          }
+          return mainLine;
+        }).join('\n')
         + (item.line_items.length > 5 ? `\n   • _...dan ${item.line_items.length - 5} item lainnya_` : '')
       : '   • _(tidak ada item aktif)_';
     return [
@@ -171,41 +180,41 @@ export function buildPurchaseOrderText(items, summary) {
   return [header, ...documents, footer].join('\n\n');
 }
 
-export function buildPollBody(rows, { sender_phone, recipient_phone }, mode = 'pdf_poll') {
-  if (!DELIVERY_MODES.some((option) => option.id === mode)) throw new Error('Mode pengiriman tidak valid.');
+export function buildPollBody(rows, { sender_phone, recipient_phone } = {}, mode = 'pdf_text') {
+  let effectiveMode = mode;
+  if (effectiveMode === 'pdf_poll') {
+    effectiveMode = 'pdf_text';
+  }
+  if (!DELIVERY_MODES.some((option) => option.id === effectiveMode)) throw new Error('Mode pengiriman tidak valid.');
   if (!rows.length) throw new Error('Pilih minimal satu PO.');
   const items = rows.map(toPollItem);
   if (new Set(items.map((item) => item.po_id)).size !== items.length) throw new Error('Terdapat PO duplikat.');
-  const withPoll = deliveryHasPoll(mode);
   const summary = summarizePollItems(items);
+  const hasPdf = effectiveMode === 'pdf' || effectiveMode === 'pdf_text';
+  const hasText = effectiveMode === 'text' || effectiveMode === 'pdf_text';
   return {
     schema_version: '1.1',
     event: 'purchase_order_poll.requested',
-    sender_phone: withPoll ? normalizeWhatsAppPhone(sender_phone) : null,
+    sender_phone: null,
     recipient_phone: normalizeWhatsAppPhone(recipient_phone),
     delivery: {
-      mode,
-      pdf_documents: mode === 'text' ? [] : [{
+      mode: effectiveMode,
+      pdf_documents: hasPdf ? [{
         po_id: items[0].po_id,
         file_name: `purchase-order-${items[0].po_id}.pdf`,
         mime_type: 'application/pdf',
         source: { method: 'GET', path: `/scm/purchase-orders/${items[0].po_id}/print` }
-      }],
-      text: mode === 'text' ? buildPurchaseOrderText(items, summary) : null
+      }] : [],
+      text: hasText ? buildPurchaseOrderText(items, summary) : null
     },
-    poll: withPoll ? {
-      question: 'Bagaimana keputusan Anda untuk seluruh PO pada daftar berikut?',
-      allow_multiple_answers: false,
-      scope: 'all_selected_purchase_orders',
-      options: POLL_OPTIONS.map((option) => ({ ...option }))
-    } : null,
+    poll: null,
     items,
     summary,
-    result_handling: { send_result_to: withPoll ? 'sender_phone' : null, include_recommendation: withPoll, update_purchase_orders: false }
+    result_handling: { send_result_to: null, include_recommendation: false, update_purchase_orders: false }
   };
 }
 
-export async function preparePollPayload(rows, phones, previous, metadata, mode = 'pdf_poll') {
+export async function preparePollPayload(rows, phones, previous, metadata, mode = 'pdf_text') {
   const body = buildPollBody(rows, phones, mode);
   if (typeof crypto === 'undefined' || !crypto.subtle) throw new Error('Pembuatan JSON memerlukan browser dengan Web Crypto melalui HTTPS atau localhost.');
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(body)));

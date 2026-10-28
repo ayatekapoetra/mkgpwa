@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Hermes Purchase Order WhatsApp Delivery Hook",
-    "version": "1.1.0",
-    "description": "Proposed Hermes API. Next.js exports JSON for pdf, pdf_poll or text delivery. Hermes fetches the referenced PO print PDFs with its configured backend credentials. Only pdf_poll creates one native poll and reports results to sender_phone. The existing hook path/event name is retained. No PO mutation is permitted."
+    "version": "1.2.0",
+    "description": "Proposed Hermes API. Next.js exports JSON for pdf_text, pdf, or text delivery. Hermes fetches the referenced PO print PDFs with its configured backend credentials. WhatsApp delivery contains PDF and/or full formatted text with line item narrative notes. No PO mutation is permitted."
   },
   "paths": {
     "/hooks/purchase-order-polls": {
@@ -53,6 +53,7 @@
           "item_id": { "$ref": "#/components/schemas/NullableText" },
           "item_code": { "$ref": "#/components/schemas/NullableText" },
           "item_name": { "type": "string", "minLength": 1 },
+          "item_narasi": { "$ref": "#/components/schemas/NullableText" },
           "quantity": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
           "unit": { "$ref": "#/components/schemas/NullableText" }
         }
@@ -98,7 +99,7 @@
       "Delivery": {
         "type": "object", "additionalProperties": false, "required": ["mode", "pdf_documents", "text"],
         "properties": {
-          "mode": { "enum": ["pdf", "pdf_poll", "text"] },
+          "mode": { "enum": ["pdf_text", "pdf", "text"], "default": "pdf_text" },
           "pdf_documents": { "type": "array", "items": { "$ref": "#/components/schemas/PdfDocument" } },
           "text": { "type": ["string", "null"] }
         }
@@ -140,22 +141,28 @@
         },
         "allOf": [
           {
-            "if": { "properties": { "delivery": { "properties": { "mode": { "const": "pdf_poll" } } } } },
-            "then": { "properties": {
-              "sender_phone": { "$ref": "#/components/schemas/Phone" },
-              "poll": { "$ref": "#/components/schemas/NativePoll" },
-              "delivery": { "properties": { "pdf_documents": { "minItems": 1, "maxItems": 1 }, "text": { "type": "null" } } },
-              "result_handling": { "properties": { "send_result_to": { "const": "sender_phone" }, "include_recommendation": { "const": true } } }
-            } },
-            "else": { "properties": {
-              "sender_phone": { "type": "null" }, "poll": { "type": "null" },
-              "result_handling": { "properties": { "send_result_to": { "type": "null" }, "include_recommendation": { "const": false } } }
-            } }
+            "properties": {
+              "sender_phone": { "type": "null" },
+              "poll": { "type": "null" },
+              "result_handling": {
+                "properties": {
+                  "send_result_to": { "type": "null" },
+                  "include_recommendation": { "const": false }
+                }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "delivery": { "properties": { "mode": { "const": "pdf_text" } } } } },
+            "then": { "properties": { "delivery": { "properties": { "pdf_documents": { "minItems": 1, "maxItems": 1 }, "text": { "type": "string", "minLength": 1 } } } } }
+          },
+          {
+            "if": { "properties": { "delivery": { "properties": { "mode": { "const": "pdf" } } } } },
+            "then": { "properties": { "delivery": { "properties": { "pdf_documents": { "minItems": 1, "maxItems": 1 }, "text": { "type": "null" } } } } }
           },
           {
             "if": { "properties": { "delivery": { "properties": { "mode": { "const": "text" } } } } },
-            "then": { "properties": { "delivery": { "properties": { "pdf_documents": { "maxItems": 0 }, "text": { "type": "string", "minLength": 1 } } } } },
-            "else": { "properties": { "delivery": { "properties": { "pdf_documents": { "minItems": 1, "maxItems": 1 }, "text": { "type": "null" } } } } }
+            "then": { "properties": { "delivery": { "properties": { "pdf_documents": { "maxItems": 0 }, "text": { "type": "string", "minLength": 1 } } } } }
           }
         ]
       },

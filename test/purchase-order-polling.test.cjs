@@ -229,26 +229,26 @@ test('preview detail fetching is access-gated and cancels the previous user scop
   h.unmount();
 });
 
-test('one poll covers all POs, filters inactive lines, and sums decimals/currencies exactly', async () => {
+test('one delivery package covers all POs, supports item narration, filters inactive lines, and sums decimals/currencies exactly', async () => {
   const p = await helpers();
   const body = p.buildPollBody([
-    order(1, { items: [{ id: 1, qty: 2 }, { id: 2, qty: 99, aktif: 'N' }] }),
+    order(1, { items: [{ id: 1, qty: 2, barang: { kode: 'B-1', nama: 'Filter', satuan: 'PCS' }, narasi: 'Catatan teknis part A' }, { id: 2, qty: 99, aktif: 'N' }] }),
     order(2, { grandtotal: '0.20' }),
     order(3, { currency: 'USD', grandtotal: '9999999999999999.99' }),
     order(4, { currency: 'USD', grandtotal: '0.01' })
   ], phones);
   assert.equal(body.items.length, 4);
   assert.equal(body.items[0].line_items.length, 1);
-  assert.equal(body.poll.allow_multiple_answers, false);
-  assert.equal(body.poll.scope, 'all_selected_purchase_orders');
-  assert.equal(body.poll.options.length, 3);
+  assert.equal(body.items[0].line_items[0].item_narasi, 'Catatan teknis part A');
+  assert.equal(body.poll, null);
   assert.deepEqual(plain(body.summary.totals_by_currency), [{ currency: 'IDR', amount: '0.30' }, { currency: 'USD', amount: '10000000000000000.00' }]);
   assert.equal(body.result_handling.update_purchase_orders, false);
-  assert.equal(body.sender_phone, '+6281234567890');
-  assert.equal(body.delivery.mode, 'pdf_poll');
+  assert.equal(body.sender_phone, null);
+  assert.equal(body.delivery.mode, 'pdf_text');
   assert.equal(body.delivery.pdf_documents.length, 1);
   assert.equal(body.delivery.pdf_documents[0].source.path, '/scm/purchase-orders/1/print');
   assert.equal(body.delivery.pdf_documents[0].file_name, 'purchase-order-1.pdf');
+  assert.match(body.delivery.text, /Catatan\/Narasi: Catatan teknis part A/);
   for (const bad of [order(1, { grandtotal: null }), order(1, { grandtotal: '1.005' }), order(1, { items: undefined }), order(1, { request_date: '2026-02-30' })]) assert.throws(() => p.buildPollBody([bad], phones));
   assert.throws(() => p.buildPollBody([order(1), order(1)], phones), /duplikat/);
 });
@@ -271,8 +271,28 @@ test('PDF and text modes require only the recipient and never include a poll or 
   assert.match(text.delivery.text, /PO-2/);
   assert.match(text.delivery.text, /Filter/);
   assert.match(text.delivery.text, /IDR 0,30/);
-  assert.throws(() => p.buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf_poll'), /nomor WhatsApp/);
+  const fallback = p.buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf_poll');
+  assert.equal(fallback.delivery.mode, 'pdf_text');
+  assert.equal(fallback.poll, null);
+  assert.equal(fallback.sender_phone, null);
   assert.throws(() => p.buildPollBody(rows, phones, 'unsupported'), /Mode pengiriman/);
+});
+
+test('item narration appears when provided and distinct from item name, omitted otherwise', async () => {
+  const p = await helpers();
+  const rows = [
+    order(1, {
+      items: [
+        { id: 10, qty: 1, barang: { kode: 'K-01', nama: 'Baut Hex 10mm' }, narasi: 'Baut grade baja 8.8 tahan karat' },
+        { id: 11, qty: 2, barang: { kode: 'K-02', nama: 'Mur Hex 10mm' }, narasi: 'Mur Hex 10mm' },
+        { id: 12, qty: 3, barang: { kode: 'K-03', nama: 'Ring Plat' }, narasi: null }
+      ]
+    })
+  ];
+  const body = p.buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf_text');
+  assert.match(body.delivery.text, /• Baut Hex 10mm _\(K-01\)_ — 1\n     ↳ _Catatan\/Narasi: Baut grade baja 8\.8 tahan karat_/);
+  assert.doesNotMatch(body.delivery.text, /↳ _Catatan\/Narasi: Mur Hex 10mm_/);
+  assert.doesNotMatch(body.delivery.text, /↳ _Catatan\/Narasi: Ring Plat_/);
 });
 
 test('unchanged JSON reuses idempotency metadata; changed content or numbers creates a new request', async () => {
@@ -324,7 +344,7 @@ test('generated JSON and examples conform to the published schemas; native poll 
   const { payload } = await p.preparePollPayload([order(1)], phones, null, metadata);
   assert.equal(requestSchema(plain(payload)), true, JSON.stringify(requestSchema.errors));
   assert.equal(requestSchema(example), true, JSON.stringify(requestSchema.errors));
-  for (const mode of ['pdf', 'pdf_poll', 'text']) {
+  for (const mode of ['pdf', 'pdf_text', 'text']) {
     const generated = await p.preparePollPayload([order(1)], phones, null, metadata, mode);
     assert.equal(requestSchema(plain(generated.payload)), true, JSON.stringify(requestSchema.errors));
   }
@@ -333,7 +353,7 @@ test('generated JSON and examples conform to the published schemas; native poll 
     assert.equal(requestSchema(sample), true, JSON.stringify(requestSchema.errors));
   }
   const textRequest = plain((await p.preparePollPayload([order(1)], phones, null, metadata, 'text')).payload);
-  assert.equal(requestSchema({ ...textRequest, poll: payload.poll }), false, 'text must not include a poll');
+  assert.equal(requestSchema({ ...textRequest, poll: { question: 'x', allow_multiple_answers: false, scope: 'all_selected_purchase_orders', options: [] } }), false, 'text must not include a poll');
   assert.equal(requestSchema({ ...textRequest, delivery: { ...textRequest.delivery, pdf_documents: payload.delivery.pdf_documents } }), false, 'text must not attach PDFs');
   assert.equal(requestSchema({ ...plain(payload), delivery: { ...payload.delivery, pdf_documents: [] } }), false, 'PDF/poll requires document references');
   assert.equal(voteSchema(vote), true, JSON.stringify(voteSchema.errors));
@@ -428,12 +448,12 @@ test('preview dropdown submits each requested mode, validates polling contacts, 
     assert.equal(options.length, 3);
     await options.find((node) => node.props.children.find((child) => child.type === 'ListItemText')?.props.primary === label).props.onClick();
   };
-  await choose('Kirim PDF dan Polling');
+  await choose('Kirim PDF dan Text');
   assert.equal(submissions.length, 0);
   assert.equal(focused, 'po-poll-recipient');
   nodes = render();
-  assert.ok(nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor penerima pesan').props.error);
-  nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor penerima pesan').props.onChange({ target: { value: phones.recipient_phone } });
+  assert.ok(nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor WhatsApp Penerima').props.error);
+  nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor WhatsApp Penerima').props.onChange({ target: { value: phones.recipient_phone } });
   await choose('Kirim PDF');
   assert.equal(submissions.length, 1);
   const pdf = submissions[0];
@@ -446,16 +466,12 @@ test('preview dropdown submits each requested mode, validates polling contacts, 
   assert.equal(textOnly.delivery.mode, 'text');
   assert.equal(textOnly.delivery.pdf_documents.length, 0);
   assert.match(textOnly.delivery.text, /PO-1/);
-  await choose('Kirim PDF dan Polling');
-  assert.equal(submissions.length, 2, 'polling still requires the result recipient');
-  nodes = render();
-  nodes.find((node) => node.type === 'TextField' && node.props.label === 'Nomor penerima hasil polling').props.onChange({ target: { value: phones.sender_phone } });
-  nodes = render();
-  await choose('Kirim PDF dan Polling');
+  await choose('Kirim PDF dan Text');
   assert.equal(submissions.length, 3);
   const payload = submissions[2];
-  assert.equal(payload.delivery.mode, 'pdf_poll');
-  assert.equal(payload.sender_phone, '+6281234567890');
+  assert.equal(payload.delivery.mode, 'pdf_text');
+  assert.equal(payload.sender_phone, null);
+  assert.equal(payload.poll, null);
   assert.equal(payload.recipient_phone, phones.recipient_phone);
   assert.equal(payload.items[0].po_id, '1');
   assert.equal(payload.result_handling.update_purchase_orders, false);

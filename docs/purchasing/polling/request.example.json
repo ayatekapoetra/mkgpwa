@@ -1,25 +1,16 @@
 {
   "schema_version": "1.1",
   "event": "purchase_order_poll.requested",
-  "sender_phone": "+6281234567890",
+  "sender_phone": null,
   "recipient_phone": "+6289876543210",
   "delivery": {
-    "mode": "pdf_poll",
+    "mode": "pdf_text",
     "pdf_documents": [
       { "po_id": "101", "file_name": "purchase-order-101.pdf", "mime_type": "application/pdf", "source": { "method": "GET", "path": "/scm/purchase-orders/101/print" } }
     ],
-    "text": null
+    "text": "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📋 *RINGKASAN PURCHASE ORDER*\n🕐 22 Oktober 2026 10:00 WITA\n📦 2 dokumen terpilih\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n*1. PO-2026-00101*\n🏢 PT. Contoh Perusahaan · Site A\n🏭 PT. Contoh Pemasok\n📅 2026-10-22  |  🔖 P1\n📝 _Pengadaan sparepart equipment_\n📦 Rincian item:\n   • Filter Oli _(BRG-001)_ — 10 PCS\n     ↳ _Catatan/Narasi: Genuine part Komatsu_\n💰 *Grand Total: IDR 2.500.000,00*\n\n*2. PO-2026-00102*\n🏢 PT. Contoh Perusahaan · Site A\n🏭 CV. Contoh Supplier\n📅 2026-10-22  |  🔖 P2\n📝 _Pengadaan perlengkapan operasional_\n📦 Rincian item:\n   • _(tidak ada item aktif)_\n💰 *Grand Total: IDR 1.500.000,00*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n💼 *Total 2 PO:*\n   *IDR 4.000.000,00*\n━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   },
-  "poll": {
-    "question": "Bagaimana keputusan Anda untuk seluruh PO pada daftar berikut?",
-    "allow_multiple_answers": false,
-    "scope": "all_selected_purchase_orders",
-    "options": [
-      { "id": "approve", "label": "Setuju" },
-      { "id": "reject", "label": "Tolak" },
-      { "id": "request_revision", "label": "Perlu Revisi" }
-    ]
-  },
+  "poll": null,
   "items": [
     {
       "po_id": "101",
@@ -35,7 +26,7 @@
       "currency": "IDR",
       "grand_total": "2500000.00",
       "line_items": [
-        { "item_id": "501", "item_code": "BRG-001", "item_name": "Filter Oli", "quantity": "10", "unit": "PCS" }
+        { "item_id": "501", "item_code": "BRG-001", "item_name": "Filter Oli", "item_narasi": "Genuine part Komatsu", "quantity": "10", "unit": "PCS" }
       ]
     },
     {
@@ -59,8 +50,8 @@
     "totals_by_currency": [{ "currency": "IDR", "amount": "4000000.00" }]
   },
   "result_handling": {
-    "send_result_to": "sender_phone",
-    "include_recommendation": true,
+    "send_result_to": null,
+    "include_recommendation": false,
     "update_purchase_orders": false
   },
   "request_id": "b6ea9e86-2123-423f-9a93-9203952a390a",
