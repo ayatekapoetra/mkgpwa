@@ -11,7 +11,7 @@ import { calculateDocumentTotals, formatCurrency } from "../utils";
  */
 export default function DocumentSummaryCard({
   row = null,
-  items = [],
+  items,
   drafts = null,
 }) {
   const totals = useMemo(

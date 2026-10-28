@@ -22,10 +22,12 @@ export const calculateItemTotals = (item) => {
 /** Calculates aggregated financial metrics for active request items. */
 export const calculateDocumentTotals = ({
   row = null,
-  items = [],
+  items,
   drafts = null,
 } = {}) => {
-  const rawItems = items && items.length > 0 ? items : (row?.items || []);
+  // An available empty list is authoritative (including after the last deletion).
+  const hasItems = Array.isArray(items) || Array.isArray(row?.items);
+  const rawItems = Array.isArray(items) ? items : (row?.items || []);
   const activeItems = (rawItems || []).filter(
     (item) => item && item.aktif !== "N",
   );
@@ -45,7 +47,7 @@ export const calculateDocumentTotals = ({
     ) {
       return acc + Number(item.tot_harga);
     }
-    const qty = Number(item.qty_acc || item.qty_req || item.qty || 0);
+    const qty = Number(item.qty_acc ?? item.qty_req ?? item.qty ?? 0);
     const harga = Number(item.harga || 0);
     const kurs = item.currency === "USD" ? (Number(item.kurs) || 1) : 1;
     return acc + qty * harga * kurs;
@@ -64,7 +66,7 @@ export const calculateDocumentTotals = ({
     ) {
       return acc + Number(item.ppn_rp);
     }
-    const qty = Number(item.qty_acc || item.qty_req || item.qty || 0);
+    const qty = Number(item.qty_acc ?? item.qty_req ?? item.qty ?? 0);
     const harga = Number(item.harga || 0);
     const kurs = item.currency === "USD" ? (Number(item.kurs) || 1) : 1;
     const gross = qty * harga * kurs;
@@ -80,7 +82,7 @@ export const calculateDocumentTotals = ({
     ) {
       return acc + Number(item.subtotal);
     }
-    const qty = Number(item.qty_acc || item.qty_req || item.qty || 0);
+    const qty = Number(item.qty_acc ?? item.qty_req ?? item.qty ?? 0);
     const harga = Number(item.harga || 0);
     const kurs = item.currency === "USD" ? (Number(item.kurs) || 1) : 1;
     const gross = qty * harga * kurs;
@@ -90,7 +92,7 @@ export const calculateDocumentTotals = ({
   }, 0);
 
   const rowTotal = Number(row?.total_ro || 0);
-  const grandTotal = itemsSubtotal > 0 ? itemsSubtotal : rowTotal;
+  const grandTotal = hasItems ? itemsSubtotal : rowTotal;
 
   const validatedCount = effectiveItems.filter(
     (item) => item.user_validated || item.date_validated,
@@ -237,7 +239,7 @@ export const getBarangInfoFields = (barang) => {
 /** Calculates row summary statistics for the list view. */
 export const calculateItemStats = (row) => {
   const items = (row?.items || []).filter((item) => item && item.aktif !== "N");
-  const totals = calculateDocumentTotals({ row, items });
+  const totals = calculateDocumentTotals({ row });
 
   return {
     total: items.length,
