@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -24,6 +24,7 @@ import {
 
 import {
   approvePurchasingRequest,
+  deletePurchasingRequest,
   getPurchasingRequestError,
   printPurchasingRequest,
   rollbackPurchasingRequest,
@@ -42,6 +43,7 @@ import { APP_DEFAULT_PATH } from "config";
 import {
   ActionDialog,
   AttachmentsCard,
+  DeletePrDialog,
   DocumentActions,
   DocumentHeader,
   ProgressCard,
@@ -54,6 +56,7 @@ import { groupApprovalItems } from "./approvalGrouping";
 /** Displays a purchasing request and coordinates its permitted workflow actions. */
 export default function PurchasingRequestDetail() {
   const params = useParams();
+  const router = useRouter();
   const { permissions: access } = usePurchasingRequestAccess();
   const { row, rowLoading, rowError, mutate } = useShowPurchasingRequest(
     params.id,
@@ -246,6 +249,28 @@ export default function PurchasingRequestDetail() {
     );
   };
 
+  const handleDeletePr = async () => {
+    setLoading(true);
+    try {
+      await deletePurchasingRequest(row.id);
+      notify(
+        "success",
+        `Purchasing Request ${row.kode || ""} berhasil dihapus/dinonaktifkan.`,
+        "Berhasil",
+      );
+      setDialog(null);
+      router.push("/purchasing-request");
+    } catch (error) {
+      const apiError = getPurchasingRequestError(
+        error,
+        "Gagal menghapus Purchasing Request",
+      );
+      notify("error", apiError.message, "Gagal Menghapus");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const printDocument = async () => {
     try {
       const blob = await printPurchasingRequest(row.id);
@@ -410,6 +435,7 @@ export default function PurchasingRequestDetail() {
               onStartApproval={startApprovalMode}
               onApprove={() => setDialog("approve")}
               onRollback={() => setDialog("rollback")}
+              onDelete={() => setDialog("delete")}
             />
             <ProgressCard items={items} />
           </Stack>
@@ -597,6 +623,13 @@ export default function PurchasingRequestDetail() {
         requireReason
         onClose={() => setDialog(null)}
         onConfirm={rollbackItems}
+      />
+      <DeletePrDialog
+        open={dialog === "delete"}
+        row={row}
+        loading={loading}
+        onClose={() => setDialog(null)}
+        onConfirm={handleDeletePr}
       />
     </>
   );
