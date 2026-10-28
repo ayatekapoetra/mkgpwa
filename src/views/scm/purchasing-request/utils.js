@@ -19,6 +19,102 @@ export const calculateItemTotals = (item) => {
   };
 };
 
+/** Calculates aggregated financial metrics for active request items. */
+export const calculateDocumentTotals = ({
+  row = null,
+  items = [],
+  drafts = null,
+} = {}) => {
+  const rawItems = items && items.length > 0 ? items : (row?.items || []);
+  const activeItems = (rawItems || []).filter(
+    (item) => item && item.aktif !== "N",
+  );
+
+  const effectiveItems = activeItems.map((item) => {
+    if (drafts && drafts[item.id]) {
+      return { ...item, ...drafts[item.id] };
+    }
+    return item;
+  });
+
+  const totalGross = effectiveItems.reduce((acc, item) => {
+    if (
+      item.tot_harga !== undefined &&
+      item.tot_harga !== null &&
+      Number(item.tot_harga) > 0
+    ) {
+      return acc + Number(item.tot_harga);
+    }
+    const qty = Number(item.qty_acc || item.qty_req || item.qty || 0);
+    const harga = Number(item.harga || 0);
+    const kurs = item.currency === "USD" ? (Number(item.kurs) || 1) : 1;
+    return acc + qty * harga * kurs;
+  }, 0);
+
+  const totalDiscount = effectiveItems.reduce(
+    (acc, item) => acc + Number(item.potongan || 0),
+    0,
+  );
+
+  const totalPpn = effectiveItems.reduce((acc, item) => {
+    if (
+      item.ppn_rp !== undefined &&
+      item.ppn_rp !== null &&
+      Number(item.ppn_rp) > 0
+    ) {
+      return acc + Number(item.ppn_rp);
+    }
+    const qty = Number(item.qty_acc || item.qty_req || item.qty || 0);
+    const harga = Number(item.harga || 0);
+    const kurs = item.currency === "USD" ? (Number(item.kurs) || 1) : 1;
+    const gross = qty * harga * kurs;
+    const taxable = Math.max(0, gross - Number(item.potongan || 0));
+    return acc + (taxable * Number(item.ppn || 0)) / 100;
+  }, 0);
+
+  const itemsSubtotal = effectiveItems.reduce((acc, item) => {
+    if (
+      item.subtotal !== undefined &&
+      item.subtotal !== null &&
+      Number(item.subtotal) > 0
+    ) {
+      return acc + Number(item.subtotal);
+    }
+    const qty = Number(item.qty_acc || item.qty_req || item.qty || 0);
+    const harga = Number(item.harga || 0);
+    const kurs = item.currency === "USD" ? (Number(item.kurs) || 1) : 1;
+    const gross = qty * harga * kurs;
+    const taxable = Math.max(0, gross - Number(item.potongan || 0));
+    const ppn = (taxable * Number(item.ppn || 0)) / 100;
+    return acc + (taxable + ppn);
+  }, 0);
+
+  const rowTotal = Number(row?.total_ro || 0);
+  const grandTotal = itemsSubtotal > 0 ? itemsSubtotal : rowTotal;
+
+  const validatedCount = effectiveItems.filter(
+    (item) => item.user_validated || item.date_validated,
+  ).length;
+  const approvedCount = effectiveItems.filter(
+    (item) => item.user_approved || item.date_approved,
+  ).length;
+
+  const hasValidatedPrice =
+    grandTotal > 0 || validatedCount > 0 || approvedCount > 0;
+
+  return {
+    itemCount: effectiveItems.length,
+    validatedCount,
+    approvedCount,
+    totalGross,
+    totalDiscount,
+    totalPpn,
+    itemsSubtotal,
+    grandTotal,
+    hasValidatedPrice,
+  };
+};
+
 /** Finds an option whose identifier matches the supplied value. */
 export const getSelectedOption = (options, id) => {
   return options.find((option) => String(option.id) === String(id)) || null;
@@ -136,4 +232,34 @@ export const getBarangInfoFields = (barang) => {
       colSpan: 1,
     },
   ];
+};
+
+/** Calculates row summary statistics for the list view. */
+export const calculateItemStats = (row) => {
+  const items = (row?.items || []).filter((item) => item && item.aktif !== "N");
+  const totals = calculateDocumentTotals({ row, items });
+
+  return {
+    total: items.length,
+    validated: totals.validatedCount,
+    approved: totals.approvedCount,
+    totalGross: totals.totalGross,
+    totalDiscount: totals.totalDiscount,
+    totalPpn: totals.totalPpn,
+    grandTotal: totals.grandTotal,
+    hasValidatedPrice: totals.hasValidatedPrice,
+  };
+};
+
+/** Checks whether a request description has non-empty content. */
+export const hasDescriptionContent = (description) => {
+  if (description === null || description === undefined) {
+    return false;
+  }
+  return String(description).trim().length > 0;
+};
+
+/** Formats purchasing request description with custom fallback for empty values. */
+export const getRequestDescription = (description, fallback = "-") => {
+  return hasDescriptionContent(description) ? String(description).trim() : fallback;
 };

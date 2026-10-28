@@ -3,6 +3,7 @@ export { default as AttachmentsCard } from "./AttachmentsCard";
 export { default as DeletePrDialog } from "./DeletePrDialog";
 export { default as DocumentActions } from "./DocumentActions";
 export { default as DocumentHeader } from "./DocumentHeader";
+export { default as DocumentSummaryCard } from "./DocumentSummaryCard";
 export { default as ProgressCard } from "./ProgressCard";
 export { default as ProgressIndicator } from "./ProgressIndicator";
 export { default as RequestHeaderFields } from "./RequestHeaderFields";

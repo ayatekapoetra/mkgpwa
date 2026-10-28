@@ -18,6 +18,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -32,32 +33,12 @@ import {
 import StatusChip from "./components/StatusChip";
 import ProgressIndicator from "./components/ProgressIndicator";
 import DeletePrDialog from "./components/DeletePrDialog";
-import { formatCurrency } from "./utils";
+import { calculateItemStats, formatCurrency, hasDescriptionContent } from "./utils";
 import { isPrDeletable } from "./deletePrHelper";
 
 export { isPrDeletable } from "./deletePrHelper";
 
 moment.locale("id");
-
-const calculateItemStats = (row) => {
-  const items = (row.items || []).filter((item) => item.aktif !== "N");
-  return {
-    total: items.length,
-    validated: items.filter(
-      (item) => item.user_validated || item.date_validated,
-    ).length,
-    approved: items.filter((item) => item.user_approved || item.date_approved)
-      .length,
-    totalDiscount: items.reduce(
-      (total, item) => total + Number(item.potongan || 0),
-      0,
-    ),
-    totalPpn: items.reduce(
-      (total, item) => total + Number(item.ppn_rp || 0),
-      0,
-    ),
-  };
-};
 
 /** Displays the empty state when no requests match the current filters. */
 function EmptyRequestList() {
@@ -151,10 +132,40 @@ function DesktopRequestList({ rows, permissions, onDeleteRequest }) {
                   <Typography variant="body2">
                     {row.bisnis?.name || row.bisnis?.initial || "-"}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
                     {row.cabang?.nama || "-"} /{" "}
                     {row.gudang?.nama || row.gudang?.name || "-"}
                   </Typography>
+                  {hasDescriptionContent(row.description) ? (
+                    <Tooltip title={row.description} arrow placement="top">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        sx={{
+                          maxWidth: 220,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {row.description}
+                      </Typography>
+                    </Tooltip>
+                  ) : (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      -
+                    </Typography>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Chip
@@ -178,23 +189,44 @@ function DesktopRequestList({ rows, permissions, onDeleteRequest }) {
                   </Box>
                 </TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" fontWeight={700}>
-                    {formatCurrency(row.total_ro)}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Diskon: {formatCurrency(stats.totalDiscount)}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    PPN: {formatCurrency(stats.totalPpn)}
-                  </Typography>
+                  {stats.hasValidatedPrice ? (
+                    <>
+                      <Typography variant="body2" fontWeight={700}>
+                        {formatCurrency(stats.grandTotal)}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        Diskon: {formatCurrency(stats.totalDiscount)}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        PPN: {formatCurrency(stats.totalPpn)}
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="body2"
+                        fontWeight={700}
+                        color="text.secondary"
+                      >
+                        -
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        Menunggu validasi
+                      </Typography>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -234,9 +266,23 @@ function MobileRequestList({ rows, permissions, onDeleteRequest }) {
                   </Box>
                   <StatusChip status={row.status} />
                 </Stack>
-                <Typography variant="body2">
-                  {row.description || "Tanpa deskripsi"}
-                </Typography>
+                {hasDescriptionContent(row.description) ? (
+                  <Tooltip title={row.description} arrow placement="top">
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        cursor: "pointer",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {row.description}
+                    </Typography>
+                  </Tooltip>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Tanpa deskripsi
+                  </Typography>
+                )}
                 <Typography variant="caption" color="text.secondary">
                   {row.creator?.nmlengkap || row.creator?.nama_lengkap || "-"} ·{" "}
                   {row.cabang?.nama || "-"}
@@ -246,23 +292,44 @@ function MobileRequestList({ rows, permissions, onDeleteRequest }) {
                     Item {stats.total}
                   </Typography>
                   <Box sx={{ textAlign: "right" }}>
-                    <Typography variant="body2" fontWeight={700}>
-                      {formatCurrency(row.total_ro)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      Diskon: {formatCurrency(stats.totalDiscount)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      PPN: {formatCurrency(stats.totalPpn)}
-                    </Typography>
+                    {stats.hasValidatedPrice ? (
+                      <>
+                        <Typography variant="body2" fontWeight={700}>
+                          {formatCurrency(stats.grandTotal)}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          Diskon: {formatCurrency(stats.totalDiscount)}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          PPN: {formatCurrency(stats.totalPpn)}
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <Typography
+                          variant="body2"
+                          fontWeight={700}
+                          color="text.secondary"
+                        >
+                          -
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          Menunggu validasi
+                        </Typography>
+                      </>
+                    )}
                   </Box>
                 </Stack>
                 <ProgressIndicator items={row.items || []} />
