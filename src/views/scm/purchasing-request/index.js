@@ -42,7 +42,7 @@ export default function PurchasingRequestPage() {
   const [params, setParams] = useState(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
   const { permissions, loading: accessLoading } = usePurchasingRequestAccess();
-  const { rows, page, perPage, total, lastPage, loading, error } =
+  const { rows, page, perPage, total, lastPage, loading, error, mutate } =
     useGetPurchasingRequests(params, permissions.can_read);
   const counts = useMemo(
     () =>
