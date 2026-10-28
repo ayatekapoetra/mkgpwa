@@ -107,7 +107,9 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
   }, [params.penyewa_ids, penyewaOptions]);
 
   useEffect(() => {
-    if (equipmentLoading || !equipmentOptions || equipmentOptions.length === 0) return;
+    // Area filtering also depends on cabangAreaMap; equipment can arrive first.
+    // Lokasi selections carry their cabang IDs and do not depend on lokasiOptions.
+    if (equipmentLoading || cabangLoading || !equipmentOptions || equipmentOptions.length === 0) return;
 
     const allowedIds = new Set(filteredEquipmentOptions.map((item) => item.id));
     const current = params.equipment_ids || [];
@@ -119,7 +121,7 @@ export default function FilterSummaryBreakdown({ open, count, params, setParams,
     if (normalized.length !== current.length) {
       setParams((prev) => ({ ...prev, page: 1, equipment_ids: normalized }));
     }
-  }, [equipmentLoading, equipmentOptions, filteredEquipmentOptions, params.equipment_ids, setParams]);
+  }, [equipmentLoading, cabangLoading, equipmentOptions, filteredEquipmentOptions, params.equipment_ids, setParams]);
 
   const onResetFilter = () => {
     const dates = defaultDates();
