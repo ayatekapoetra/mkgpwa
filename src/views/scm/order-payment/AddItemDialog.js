@@ -1,6 +1,4 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -8,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -21,19 +18,28 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { AddCircle, ReceiptAdd, Calculator } from 'iconsax-react';
+import { AddCircle, ReceiptAdd, Calculator, Bank, Receipt2 } from 'iconsax-react';
 import { fetchDebitCoas, addOrderPaymentItem } from 'api/order-payments';
 import { openNotification } from 'api/notification';
 
 const money = (v) =>
   new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(v) || 0);
 
-export default function AddItemDialog({ open, onClose, paymentId, existingInvoices = [], onAdded }) {
+export default function AddItemDialog({
+  open,
+  onClose,
+  paymentId,
+  bisnisId,
+  existingInvoices = [],
+  onAdded,
+  onAddLocal,
+}) {
   const theme = useTheme();
+  const [itemType, setItemType] = useState('expense'); // 'expense' (Biaya Operasional / Admin Bank) or 'invoice' (Alokasi Faktur Tambahan)
   const [coas, setCoas] = useState([]);
   const [coaLoading, setCoaLoading] = useState(false);
   const [coa, setCoa] = useState(null);
-  const [qty, setQty] = useState('');
+  const [qty, setQty] = useState('1');
   const [hargaStn, setHargaStn] = useState('');
   const [description, setDescription] = useState('');
   const [faktur, setFaktur] = useState(null);
@@ -41,17 +47,20 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!open || !paymentId) return;
+    if (!open) return;
+    if (!paymentId && !bisnisId) return;
     setCoaLoading(true);
-    fetchDebitCoas(paymentId)
-      .then((rows) => setCoas(rows))
+    const target = paymentId || { bisnis_id: bisnisId };
+    fetchDebitCoas(target)
+      .then((rows) => setCoas(rows || []))
       .catch(() => setCoas([]))
       .finally(() => setCoaLoading(false));
-  }, [open, paymentId]);
+  }, [open, paymentId, bisnisId]);
 
   const reset = () => {
+    setItemType('expense');
     setCoa(null);
-    setQty('');
+    setQty('1');
     setHargaStn('');
     setDescription('');
     setFaktur(null);
@@ -65,24 +74,53 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
   };
 
   const subtotal = (Number(qty) || 0) * (Number(hargaStn) || 0);
-  const isFormReady = coa && Number(qty) > 0 && Number(hargaStn) > 0;
+  const isFormReady =
+    itemType === 'expense'
+      ? Boolean(coa) && Number(qty) > 0 && Number(hargaStn) > 0
+      : Boolean(faktur) && Number(qty) > 0 && Number(hargaStn) > 0;
 
   const handleSubmit = async () => {
     setError('');
-    if (!coa) return setError('Akun debit wajib dipilih');
+    if (itemType === 'expense') {
+      if (!coa) return setError('Akun debit (COA Beban) wajib dipilih');
+    } else {
+      if (!faktur) return setError('Faktur pembelian wajib dipilih');
+    }
     if (!qty || Number(qty) <= 0) return setError('Qty harus lebih besar dari 0');
     if (!hargaStn || Number(hargaStn) <= 0) return setError('Harga satuan harus lebih besar dari 0');
 
     setSubmitting(true);
     try {
-      const body = {
-        coa_debit: Number(coa.id),
-        qty: Number(qty),
+      const payload = {
+        coa_debit: coa ? Number(coa.id) : undefined,
+        qty: Number(qty) || 1,
         harga_stn: Number(hargaStn),
-        description: description || undefined,
-        trx_beli: faktur ? Number(faktur.trx_beli) : undefined,
+        description: description ? description.trim() : (itemType === 'expense' ? 'Biaya transfer admin bank' : undefined),
+        trx_beli: itemType === 'invoice' && faktur ? Number(faktur.trx_beli || faktur.id) : undefined,
       };
-      const updated = await addOrderPaymentItem(paymentId, body);
+
+      if (onAddLocal) {
+        onAddLocal({
+          id: `manual-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          item_type: itemType,
+          coa_debit: coa ? Number(coa.id) : null,
+          coa_kode: coa?.kode || '',
+          coa_name: coa?.name || '',
+          qty: Number(qty) || 1,
+          harga_stn: Number(hargaStn),
+          amount: (Number(qty) || 1) * Number(hargaStn),
+          subtotal: (Number(qty) || 1) * Number(hargaStn),
+          description: description ? description.trim() : (itemType === 'expense' ? 'Biaya transfer admin bank' : ''),
+          narasi: description ? description.trim() : '',
+          trx_beli: itemType === 'invoice' && faktur ? Number(faktur.trx_beli || faktur.id) : null,
+          faktur_kode: itemType === 'invoice' && faktur ? (faktur.faktur_kode || `Faktur #${faktur.trx_beli}`) : null,
+        });
+        reset();
+        onClose();
+        return;
+      }
+
+      const updated = await addOrderPaymentItem(paymentId, payload);
       openNotification({
         open: true,
         title: 'Berhasil',
@@ -137,7 +175,7 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
             </Typography>
             <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.5 }}>
               <Typography variant="body2" color="text.secondary">
-                Biaya tambahan seperti administrasi bank
+                Biaya administrasi bank, materai, atau penyesuaian alokasi faktur
               </Typography>
             </Stack>
           </Box>
@@ -152,21 +190,124 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
         ) : null}
 
         <Stack spacing={2.5}>
+          {/* Pilihan Tipe Item (Pemisahan Visual Jelas) */}
+          <Box>
+            <Typography variant="overline" fontWeight={800} color="text.secondary" sx={{ letterSpacing: 1, mb: 1, display: 'block' }}>
+              Tipe Item Pembayaran
+            </Typography>
+            <Grid container spacing={1.5}>
+              <Grid item xs={12} sm={6}>
+                <Box
+                  onClick={() => {
+                    setItemType('expense');
+                    setFaktur(null);
+                  }}
+                  sx={{
+                    p: 1.75,
+                    cursor: 'pointer',
+                    borderRadius: 2.5,
+                    border: '2px solid',
+                    borderColor: itemType === 'expense' ? 'primary.main' : 'divider',
+                    bgcolor: itemType === 'expense' ? alpha(theme.palette.primary.main, 0.06) : 'background.paper',
+                    transition: 'all 0.15s ease',
+                    height: '100%',
+                    '&:hover': {
+                      borderColor: itemType === 'expense' ? 'primary.main' : 'primary.light',
+                    },
+                  }}
+                >
+                  <Stack direction="row" spacing={1.25} alignItems="flex-start">
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1.5,
+                        display: 'grid',
+                        placeItems: 'center',
+                        bgcolor: itemType === 'expense' ? 'primary.main' : alpha(theme.palette.text.secondary, 0.1),
+                        color: itemType === 'expense' ? 'primary.contrastText' : 'text.secondary',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Bank size={18} />
+                    </Box>
+                    <Box minWidth={0}>
+                      <Typography variant="subtitle2" fontWeight={800} color={itemType === 'expense' ? 'primary.main' : 'text.primary'}>
+                        Biaya Operasional / Admin Bank
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.3 }}>
+                        Non-faktur: admin transfer, materai, beban biaya
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Box
+                  onClick={() => setItemType('invoice')}
+                  sx={{
+                    p: 1.75,
+                    cursor: 'pointer',
+                    borderRadius: 2.5,
+                    border: '2px solid',
+                    borderColor: itemType === 'invoice' ? 'primary.main' : 'divider',
+                    bgcolor: itemType === 'invoice' ? alpha(theme.palette.primary.main, 0.06) : 'background.paper',
+                    transition: 'all 0.15s ease',
+                    height: '100%',
+                    '&:hover': {
+                      borderColor: itemType === 'invoice' ? 'primary.main' : 'primary.light',
+                    },
+                  }}
+                >
+                  <Stack direction="row" spacing={1.25} alignItems="flex-start">
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1.5,
+                        display: 'grid',
+                        placeItems: 'center',
+                        bgcolor: itemType === 'invoice' ? 'primary.main' : alpha(theme.palette.text.secondary, 0.1),
+                        color: itemType === 'invoice' ? 'primary.contrastText' : 'text.secondary',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Receipt2 size={18} />
+                    </Box>
+                    <Box minWidth={0}>
+                      <Typography variant="subtitle2" fontWeight={800} color={itemType === 'invoice' ? 'primary.main' : 'text.primary'}>
+                        Alokasi Faktur Tambahan
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.3 }}>
+                        Pilih faktur pembelian untuk dialokasikan
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider />
+
           {/* Section: Akun & Faktur */}
           <Box>
             <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.75 }}>
               <Box sx={{ width: 4, height: 18, borderRadius: 2, bgcolor: 'primary.main' }} />
               <Typography variant="overline" fontWeight={800} color="text.secondary" sx={{ letterSpacing: 1 }}>
-                Akun &amp; Referensi
+                {itemType === 'expense' ? 'Akun Beban Debit' : 'Faktur & Akun Debit'}
               </Typography>
             </Stack>
+
             <Stack spacing={2}>
+              {/* Dropdown Akun Debit (COA) */}
               <Autocomplete
                 loading={coaLoading}
                 options={coas}
                 value={coa}
                 onChange={(_, val) => setCoa(val)}
-                getOptionLabel={(o) => o.label || ''}
+                getOptionLabel={(o) => o.label || `${o.kode} - ${o.name}` || ''}
                 isOptionEqualToValue={(a, b) => a?.id === b?.id}
                 renderOption={(props, option) => {
                   const { key, ...optionProps } = props;
@@ -193,10 +334,10 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Akun Debit (COA)"
-                    required
+                    label="Akun Debit (COA Beban)"
+                    required={itemType === 'expense'}
                     placeholder="Cari kode atau nama COA..."
-                    helperText={coa ? `${coa.kode} — ${coa.name}` : 'Pilih akun debit untuk jurnal item'}
+                    helperText={coa ? `${coa.kode} — ${coa.name}` : (itemType === 'expense' ? 'Wajib pilih akun debit untuk pencatatan beban operasional/admin bank' : 'Pilih akun debit jika ingin menentukan COA spesifik')}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
@@ -206,27 +347,50 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
                 )}
                 noOptionsText="Tidak ada COA aktif untuk unit bisnis ini"
               />
-              <Autocomplete
-                options={existingInvoices}
-                value={faktur}
-                onChange={(_, val) => setFaktur(val)}
-                getOptionLabel={(o) => o.faktur_kode || `Faktur #${o.trx_beli}`}
-                isOptionEqualToValue={(a, b) => a?.trx_beli === b?.trx_beli}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Faktur (opsional)"
-                    placeholder="Tanpa faktur — biaya lepas"
-                    helperText="Tautkan ke faktur existing atau biarkan kosong"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
-                  />
-                )}
-                noOptionsText="Belum ada faktur pada pembayaran ini"
-              />
+
+              {/* Input Faktur: Tampilan sesuai mode */}
+              {itemType === 'expense' ? (
+                <TextField
+                  label="Faktur Pembelian"
+                  disabled
+                  value="Non-Faktur (Biaya Operasional Langsung)"
+                  helperText="Opsi faktur dinonaktifkan untuk biaya operasional / admin bank agar sisa hutang faktur tidak terpotong"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: (t) => alpha(t.palette.action.disabledBackground, 0.5),
+                    },
+                  }}
+                />
+              ) : (
+                <Autocomplete
+                  options={existingInvoices}
+                  value={faktur}
+                  onChange={(_, val) => {
+                    setFaktur(val);
+                    if (val && !description) {
+                      setDescription(`Alokasi faktur ${val.faktur_kode || val.kdfb || val.trx_beli || ''}`);
+                    }
+                  }}
+                  getOptionLabel={(o) => o.faktur_kode || `Faktur #${o.trx_beli || o.id}`}
+                  isOptionEqualToValue={(a, b) => (a?.trx_beli || a?.id) === (b?.trx_beli || b?.id)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Pilih Nomor Faktur Tambahan"
+                      required
+                      placeholder="Pilih faktur pembelian..."
+                      helperText={faktur ? `Faktur terpilih: ${faktur.faktur_kode || faktur.trx_beli}` : 'Pilih faktur untuk alokasi tambahan'}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        },
+                      }}
+                    />
+                  )}
+                  noOptionsText="Belum ada faktur pada transaksi ini"
+                />
+              )}
             </Stack>
           </Box>
 
@@ -250,7 +414,7 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
                   value={qty}
                   onChange={(e) => setQty(e.target.value)}
                   inputProps={{ min: 0, step: 'any' }}
-                  placeholder="0"
+                  placeholder="1"
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Grid>
@@ -258,7 +422,7 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
                 <TextField
                   fullWidth
                   type="number"
-                  label="Harga Satuan"
+                  label={itemType === 'expense' ? 'Nominal Biaya' : 'Harga Satuan'}
                   required
                   value={hargaStn}
                   onChange={(e) => setHargaStn(e.target.value)}
@@ -281,7 +445,7 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
             label="Narasi / Deskripsi"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Contoh: Biaya administrasi transfer bank untuk pembayaran PO-2026-001"
+            placeholder={itemType === 'expense' ? 'Contoh: Biaya administrasi transfer bank' : 'Keterangan tambahan untuk alokasi faktur'}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -336,17 +500,6 @@ export default function AddItemDialog({ open, onClose, paymentId, existingInvoic
               </Stack>
             </CardContent>
           </Card>
-
-          {/* Info hint */}
-          <Stack direction="row" spacing={0.75} alignItems="flex-start" sx={{ px: 0.5 }}>
-            <Chip
-              size="small"
-              variant="outlined"
-              color="info"
-              label="Total pembayaran akan diperbarui otomatis setelah item ditambahkan"
-              sx={{ fontSize: 11, height: 'auto', '& .MuiChip-label': { whiteSpace: 'normal', py: 0.5 } }}
-            />
-          </Stack>
         </Stack>
       </DialogContent>
 

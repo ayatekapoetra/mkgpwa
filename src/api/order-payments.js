@@ -13,7 +13,7 @@ export const endpoints = {
   detail: (id) => `/scm/order-payments/${id}`,
   post: (id) => `/scm/order-payments/${id}/post`,
   remove: (id) => `/scm/order-payments/${id}`,
-  debitCoas: (id) => `/scm/order-payments/${id}/debit-coas`,
+  debitCoas: (id) => (id && id !== "debit-coas" ? `/scm/order-payments/${id}/debit-coas` : "/scm/order-payments/debit-coas"),
   items: (id) => `/scm/order-payments/${id}/items`,
   item: (id, itemId) => `/scm/order-payments/${id}/items/${itemId}`,
   print: (id) => `/scm/order-payments/${id}/print`,
@@ -282,11 +282,19 @@ export async function deleteOrderPaymentAttachment(id, fileId) {
   }
 }
 
-export async function fetchDebitCoas(id) {
-  const res = await axiosServices.get(endpoints.debitCoas(id), { skipOfflineQueue: true });
+export async function fetchDebitCoas(idOrParams, maybeParams = {}) {
+  let url = endpoints.debitCoas();
+  let params = {};
+  if (typeof idOrParams === "object" && idOrParams !== null) {
+    params = idOrParams;
+  } else if (idOrParams) {
+    url = endpoints.debitCoas(idOrParams);
+    params = maybeParams;
+  }
+  const res = await axiosServices.get(url, { params, skipOfflineQueue: true });
   const payload = res?.data;
   if (payload?.diagnostic?.error) throw new Error(payload.diagnostic.error);
-  return payload?.rows || [];
+  return payload?.rows || payload?.data?.rows || (Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []));
 }
 
 export async function addOrderPaymentItem(id, body) {

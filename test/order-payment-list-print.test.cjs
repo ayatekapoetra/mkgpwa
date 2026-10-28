@@ -68,6 +68,7 @@ async function fixture(options = {}) {
         };
         if (dependency === 'api/notification') return { openNotification: notice => calls.notices.push(notice) };
         if (dependency === 'config') return { APP_DEFAULT_PATH: '/home' };
+        if (dependency === './rescheduleDueDateHelpers') return { canRescheduleDueDate: () => false };
         if (dependency.startsWith('components/') || dependency.startsWith('./')) return () => null;
         if (dependency === 'jspdf') return { __esModule: true, default: Pdf };
         if (dependency === 'jspdf-autotable') return { __esModule: true, default: doc => { doc.lastAutoTable = { finalY: 80 }; } };

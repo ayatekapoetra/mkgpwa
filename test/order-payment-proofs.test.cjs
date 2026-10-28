@@ -7,7 +7,15 @@ const React = require('react');
 const { transform } = require('next/dist/build/swc');
 
 const base = 'src/views/scm/order-payment/';
-const paths = [base + 'payment-proofs.js', base + 'PaymentProofManager.js', base + 'detail.js', 'src/api/order-payments.js'];
+const paths = [
+  base + 'payment-proofs.js',
+  base + 'PaymentProofManager.js',
+  base + 'detail.js',
+  'src/api/order-payments.js',
+  base + 'rescheduleDueDateHelpers.js',
+  base + 'AddItemDialog.js',
+  base + 'RescheduleDueDateModal.js',
+];
 const compiled = Promise.all(paths.map(async file => [file, (await transform(fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8'), {
   filename: file, jsc: { parser: { syntax: 'ecmascript', jsx: true }, transform: { react: { runtime: 'classic' } }, target: 'es2022' }, module: { type: 'commonjs' }
 })).code])).then(Object.fromEntries);
@@ -46,6 +54,7 @@ async function fixture(options = {}) {
     },
     useRef(initial) { const index = cursor++; if (!slots[index]) slots[index] = { current: initial }; return slots[index]; },
     useMemo: factory => factory(),
+    useCallback: fn => fn,
     useEffect(callback, deps) {
       const index = cursor++;
       const previous = slots[index];
@@ -92,10 +101,18 @@ async function fixture(options = {}) {
     const module = { exports: {} };
     cache[file] = module;
     vm.runInNewContext(source[file], {
-      module, exports: module.exports, React, window, File, FormData, atob, Uint8Array, Intl,
+      module, exports: module.exports, React, window, File, FormData, atob, Uint8Array, Intl, URLSearchParams,
       require(name) {
         if (name === 'react') return react;
-        if (name === '@mui/material') return new Proxy({}, { get: (_, key) => key });
+        if (name === '@mui/material' || name.startsWith('@mui/material/')) {
+          return new Proxy({}, {
+            get: (_, key) => {
+              if (key === 'alpha') return (c, o) => c;
+              if (key === 'useTheme') return () => ({ palette: { primary: { main: '#1890ff', contrastText: '#fff' }, info: { main: '#13c2c2' }, secondary: { main: '#f5222d', contrastText: '#fff' }, action: { disabledBackground: '#f5f5f5' }, divider: '#f0f0f0', background: { paper: '#fff' } } });
+              return key;
+            }
+          });
+        }
         if (name.startsWith('@mui/icons-material/')) return () => null;
         if (name === 'iconsax-react') return new Proxy({}, { get: () => () => null });
         if (name === 'next/link') return 'a';

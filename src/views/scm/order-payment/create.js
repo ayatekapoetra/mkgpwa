@@ -27,15 +27,22 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Bank, Building, CalendarEdit, CardReceive, Eye, Gallery, Receipt2, Trash } from "iconsax-react";
+import { AddCircle, Bank, Building, CalendarEdit, CardReceive, Eye, Gallery, Receipt2, Trash } from "iconsax-react";
 
-import { createOrderPayment, fetchWallets, useOrderPaymentAccess } from "api/order-payments";
+import {
+  addOrderPaymentItem,
+  createOrderPayment,
+  fetchWallets,
+  postOrderPayment,
+  useOrderPaymentAccess,
+} from "api/order-payments";
 import { usePurchaseOrderBisnis } from "api/purchase-orders";
 import { openNotification } from "api/notification";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
 import MainCard from "components/MainCard";
 import BtnBack from "components/BtnBack";
 import { APP_DEFAULT_PATH } from "config";
+import AddItemDialog from "./AddItemDialog";
 import OutstandingModal from "./outstanding-modal";
 import { canRescheduleDueDate } from "./rescheduleDueDateHelpers";
 import RescheduleDueDateModal from "./RescheduleDueDateModal";
@@ -230,6 +237,8 @@ export default function OrderPaymentCreatePage() {
   const [detailRow, setDetailRow] = useState(null);
   const [saving, setSaving] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [manualItems, setManualItems] = useState([]);
+  const [addItemOpen, setAddItemOpen] = useState(false);
 
   const { permissions } = useOrderPaymentAccess();
   const canReschedule = canRescheduleDueDate(permissions);
@@ -364,6 +373,19 @@ export default function OrderPaymentCreatePage() {
   );
 
   const totalAlloc = payloadAllocations.reduce((s, a) => s + a.amount, 0);
+  const totalManual = useMemo(
+    () =>
+      manualItems.reduce(
+        (s, m) =>
+          s +
+          (Number(m.amount) ||
+            (Number(m.qty || 1) * Number(m.harga_stn || 0)) ||
+            0),
+        0
+      ),
+    [manualItems]
+  );
+  const grandTotal = totalAlloc + totalManual;
   const pemasokCount = new Set(
     allocations.map((a) => a.pemasok_id).filter(Boolean),
   ).size;
@@ -382,7 +404,7 @@ export default function OrderPaymentCreatePage() {
   const canSubmit =
     bisnisId &&
     payloadAllocations.length > 0 &&
-    totalAlloc > 0 &&
+    grandTotal > 0 &&
     walletId &&
     selectedWallet?.coa_id;
 
@@ -418,12 +440,35 @@ export default function OrderPaymentCreatePage() {
           description: a.narasi || "",
           bukti_pembayaran: a.paymentProof?.dataUrl || undefined,
         })),
-        post: Boolean(post),
+        post: manualItems.length > 0 ? false : Boolean(post),
       };
       if (walletType === "bank") body.bank_id = Number(walletId);
       else body.kas_id = Number(walletId);
 
       const data = await createOrderPayment(body);
+
+      // Tambahkan item manual (biaya admin bank / operasional / penyesuaian) jika ada
+      if (manualItems.length > 0 && data?.id) {
+        for (const item of manualItems) {
+          await addOrderPaymentItem(data.id, {
+            coa_debit: item.coa_debit ? Number(item.coa_debit) : undefined,
+            qty: Number(item.qty || 1),
+            harga_stn: Number(item.harga_stn || item.amount),
+            description: item.description || item.narasi || undefined,
+            trx_beli: item.trx_beli ? Number(item.trx_beli) : undefined,
+          });
+        }
+        if (post) {
+          await postOrderPayment(data.id, {
+            coa_kredit: selectedWallet.coa_id,
+            bank_id: walletType === "bank" ? Number(walletId) : undefined,
+            kas_id: walletType === "kas" ? Number(walletId) : undefined,
+            trx_date: trxDate,
+            narasi: computedNarasi,
+          });
+        }
+      }
+
       const proofs = Object.fromEntries(
         allocations
           .filter((allocation) => allocation.paymentProof?.dataUrl)
@@ -505,6 +550,7 @@ export default function OrderPaymentCreatePage() {
               onChange={(e) => {
                 setBisnisId(e.target.value);
                 setAllocations([]);
+                setManualItems([]);
               }}
               helperText={loadingBisnis ? "Memuat bisnis unit..." : ""}
               InputProps={{
@@ -581,13 +627,34 @@ export default function OrderPaymentCreatePage() {
           </Grid>
         </Grid>
 
-        <Stack direction="row" spacing={1.5} mt={2} mb={2}>
+        <Stack direction="row" spacing={1.5} mt={2} mb={2} flexWrap="wrap">
           <Button
             variant="contained"
             onClick={openOutstandingModal}
             disabled={!bisnisId}
+            startIcon={<Receipt2 size={18} />}
           >
             Muat faktur outstanding
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => {
+              if (!bisnisId) {
+                openNotification({
+                  open: true,
+                  title: "Validasi",
+                  message: "Pilih bisnis unit terlebih dahulu",
+                  alert: { color: "warning" },
+                });
+                return;
+              }
+              setAddItemOpen(true);
+            }}
+            disabled={!bisnisId}
+            startIcon={<AddCircle size={18} />}
+          >
+            + Tambah Item Manual / Penyesuaian
           </Button>
         </Stack>
 
@@ -705,6 +772,21 @@ export default function OrderPaymentCreatePage() {
                               bold
                               href={row.reff ? `/purchasing-orders/${row.reff}` : undefined}
                             />
+                            {row.po_narasi ? (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                display="block"
+                                sx={{
+                                  fontStyle: "italic",
+                                  mt: 0.5,
+                                  wordBreak: "break-word",
+                                  lineHeight: 1.25,
+                                }}
+                              >
+                                Keterangan PO: {row.po_narasi}
+                              </Typography>
+                            ) : null}
                           </Grid>
                           <Grid item xs={12} sm={6}>
                             <InfoField
@@ -804,6 +886,100 @@ export default function OrderPaymentCreatePage() {
           </Stack>
         )}
 
+        {/* Daftar Item Manual & Penyesuaian */}
+        {manualItems.length > 0 && (
+          <Box sx={{ mt: 3, mb: 2 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+              <Typography variant="subtitle2" fontWeight={800}>
+                Item Penyesuaian / Biaya Tambahan ({manualItems.length})
+              </Typography>
+              <Chip
+                size="small"
+                color="secondary"
+                variant="outlined"
+                label={`Total Penyesuaian: Rp ${money(totalManual)}`}
+              />
+            </Stack>
+            <Stack spacing={1.5}>
+              {manualItems.map((item, idx) => (
+                <Card
+                  key={item.id || idx}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 2,
+                    borderColor: "divider",
+                    bgcolor: (t) => alpha(t.palette.secondary?.lighter || t.palette.info?.light || "#f1f5f9", 0.08),
+                  }}
+                >
+                  <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      justifyContent="space-between"
+                      alignItems={{ sm: "center" }}
+                      spacing={1.5}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 1.5,
+                            display: "grid",
+                            placeItems: "center",
+                            bgcolor: "secondary.main",
+                            color: "secondary.contrastText",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Bank size={18} />
+                        </Box>
+                        <Box minWidth={0}>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography variant="subtitle2" fontWeight={800} noWrap>
+                              {item.description || (item.item_type === "expense" ? "Biaya Operasional / Admin Bank" : "Item Penyesuaian")}
+                            </Typography>
+                            <Chip
+                              size="small"
+                              label={item.item_type === "expense" ? "Biaya Beban" : "Faktur Tambahan"}
+                              color="secondary"
+                              sx={{ height: 20, fontSize: 11 }}
+                            />
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            {item.coa_kode ? `${item.coa_kode} — ${item.coa_name}` : "COA Beban Debit"}
+                            {item.faktur_kode ? ` · ${item.faktur_kode}` : ""}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Box textAlign={{ xs: "left", sm: "right" }}>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            {item.qty} × Rp {money(item.harga_stn)}
+                          </Typography>
+                          <Typography variant="subtitle2" fontWeight={800} color="primary.main">
+                            Rp {money(item.amount || item.subtotal || item.qty * item.harga_stn)}
+                          </Typography>
+                        </Box>
+                        <Tooltip title="Hapus item penyesuaian">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              setManualItems((prev) => prev.filter((_, i) => i !== idx));
+                            }}
+                          >
+                            <Trash size={16} />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
         <Stack
           direction={{ xs: "column", sm: "row" }}
           justifyContent="space-between"
@@ -811,8 +987,15 @@ export default function OrderPaymentCreatePage() {
           spacing={2}
         >
           <Alert severity="info" sx={{ flex: 1 }}>
-            Total alokasi: <strong>{money(totalAlloc)}</strong> ·{" "}
-            {payloadAllocations.length} faktur · {pemasokCount} pemasok
+            Total alokasi: <strong>{money(grandTotal)}</strong>
+            {manualItems.length > 0 ? (
+              <span>
+                {" "}(Faktur: {money(totalAlloc)} + Penyesuaian: {money(totalManual)})
+              </span>
+            ) : null}
+            {" "}· {payloadAllocations.length} faktur
+            {manualItems.length > 0 ? ` · ${manualItems.length} item manual` : ""}
+            {" "}· {pemasokCount} pemasok
           </Alert>
           <Stack direction="row" spacing={1.5}>
             <Button
@@ -846,6 +1029,25 @@ export default function OrderPaymentCreatePage() {
         excludeIds={allocations.map((a) => a.id)}
         onClose={() => setModalOpen(false)}
         onConfirm={handleModalConfirm}
+      />
+
+      <AddItemDialog
+        open={addItemOpen}
+        onClose={() => setAddItemOpen(false)}
+        bisnisId={bisnisId}
+        existingInvoices={allocations.map((a) => ({
+          trx_beli: a.id,
+          faktur_kode: a.kdfb || a.faktur_kode || `Faktur #${a.id}`,
+        }))}
+        onAddLocal={(item) => {
+          setManualItems((prev) => [...prev, item]);
+          openNotification({
+            open: true,
+            title: "Item Ditambahkan",
+            message: `${item.description || "Item penyesuaian"} ditambahkan ke daftar pembayaran`,
+            alert: { color: "success" },
+          });
+        }}
       />
 
       <Dialog
@@ -901,6 +1103,16 @@ export default function OrderPaymentCreatePage() {
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <InfoField label="Purchase Order (PO)" value={detailRow.no_po || "—"} bold />
+                    {detailRow.po_narasi ? (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        sx={{ fontStyle: "italic", mt: 0.5, wordBreak: "break-word" }}
+                      >
+                        Keterangan PO: {detailRow.po_narasi}
+                      </Typography>
+                    ) : null}
                     {detailRow.reff_po ? (
                       <Typography variant="caption" color="text.secondary">
                         Ref: {detailRow.reff_po}

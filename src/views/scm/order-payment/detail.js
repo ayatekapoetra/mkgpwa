@@ -571,7 +571,7 @@ export default function OrderPaymentDetailPage() {
 
   useEffect(() => {
     if (loading || error || !row || row.status !== 'paid' || automaticPrintId.current === id) return;
-    if (new URLSearchParams(window.location.search).get('print') !== '1') return;
+    if (typeof window === "undefined" || new URLSearchParams(window?.location?.search || "").get("print") !== "1") return;
     automaticPrintId.current = id;
     setAutomaticPrint(true);
     void handlePrint({ replaceCurrentWindow: true });
@@ -810,8 +810,18 @@ export default function OrderPaymentDetailPage() {
                       <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
                         <Box sx={{ width: 34, height: 34, borderRadius: 1.5, display: "grid", placeItems: "center", bgcolor: "primary.main", color: "primary.contrastText", flexShrink: 0 }}><Receipt2 size={18} /></Box>
                         <Box minWidth={0}>
-                          <Typography variant="subtitle2" fontWeight={800} noWrap>{it.faktur_kode || `Faktur #${it.trx_beli}`}</Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap display="block">{it.barang_nama || it.description || it.barang_kode || "Alokasi pembayaran"}</Typography>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography variant="subtitle2" fontWeight={800} noWrap>
+                              {it.faktur_kode || (!it.trx_beli ? (it.description || "Biaya Operasional / Admin Bank") : `Faktur #${it.trx_beli}`)}
+                            </Typography>
+                            {!it.trx_beli && (
+                              <Chip size="small" label="Non-Faktur / Beban" color="secondary" sx={{ height: 20, fontSize: 11 }} />
+                            )}
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" noWrap display="block">
+                            {it.barang_nama || it.description || it.barang_kode || "Alokasi pembayaran"}
+                            {it.no_po ? ` · PO: ${it.no_po}` : ""}
+                          </Typography>
                         </Box>
                       </Stack>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
@@ -847,8 +857,34 @@ export default function OrderPaymentDetailPage() {
                   </Box>
                   <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
                     <Grid container spacing={1.5}>
-                      <Grid item xs={12} sm={6} md={4}><Field label="Barang / deskripsi" value={it.barang_nama || it.description || it.barang_kode || "—"} /></Grid>
-                      <Grid item xs={12} sm={6} md={3}>
+                      <Grid item xs={12} sm={6} md={(it.no_po || it.po_narasi) ? 3 : 4}>
+                        <Field label="Barang / deskripsi" value={it.barang_nama || it.description || it.barang_kode || "—"} />
+                      </Grid>
+                      {(it.no_po || it.po_narasi) ? (
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Field label="PO & Keterangan">
+                            <Stack spacing={0.25}>
+                              <Typography variant="body2" fontWeight={800} color="text.primary">
+                                {it.no_po || "—"}
+                              </Typography>
+                              {it.po_narasi ? (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{
+                                    fontStyle: "italic",
+                                    lineHeight: 1.25,
+                                    wordBreak: "break-word",
+                                  }}
+                                >
+                                  {it.po_narasi}
+                                </Typography>
+                              ) : null}
+                            </Stack>
+                          </Field>
+                        </Grid>
+                      ) : null}
+                      <Grid item xs={12} sm={6} md={(it.no_po || it.po_narasi) ? 2 : 3}>
                         <Field label="Akun debit">
                           {it.debit_kode ? (
                             <Stack spacing={0}>
@@ -865,8 +901,8 @@ export default function OrderPaymentDetailPage() {
                         </Field>
                       </Grid>
                       <Grid item xs={6} sm={3} md={1}><Field label="Qty" value={it.qty} /></Grid>
-                      <Grid item xs={6} sm={3} md={2}><Field label="Harga satuan" value={`Rp ${money(it.harga_stn)}`} /></Grid>
-                      <Grid item xs={12} md={2}><Field label="Subtotal" value={`Rp ${money(it.subtotal)}`} /></Grid>
+                      <Grid item xs={6} sm={3} md={(it.no_po || it.po_narasi) ? 1.5 : 2}><Field label="Harga satuan" value={`Rp ${money(it.harga_stn)}`} /></Grid>
+                      <Grid item xs={12} md={(it.no_po || it.po_narasi) ? 1.5 : 2}><Field label="Subtotal" value={`Rp ${money(it.subtotal)}`} /></Grid>
                     </Grid>
                   </CardContent>
                 </Card>
@@ -1103,6 +1139,7 @@ export default function OrderPaymentDetailPage() {
             open={addItemOpen}
             onClose={() => setAddItemOpen(false)}
             paymentId={id}
+            bisnisId={row?.bisnis_id}
             existingInvoices={existingInvoices}
             onAdded={() => refresh()}
           />

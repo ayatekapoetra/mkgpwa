@@ -524,6 +524,24 @@ export default function OutstandingModal({
                                 {row.no_po}
                               </Typography>
                             ) : null}
+                            {row.po_narasi ? (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                  wordBreak: "break-word",
+                                  fontStyle: "italic",
+                                  lineHeight: 1.25,
+                                }}
+                                title={row.po_narasi}
+                              >
+                                Keterangan PO: {row.po_narasi}
+                              </Typography>
+                            ) : null}
                             {row.no_pd ? (
                               <Typography variant="body2" noWrap fontWeight={700}>
                                 {row.no_pd}
