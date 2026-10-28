@@ -2,6 +2,7 @@ export const ASSET_TYPES = ['VEHICLE', 'HEAVY_EQUIPMENT', 'PROPERTY', 'OTHER'];
 export const FINANCING_TYPES = ['CASH', 'VENDOR_CREDIT', 'BANK_LOAN', 'MULTIFINANCE', 'FINANCE_LEASE', 'OPERATING_LEASE', 'OTHER'];
 export const OWNERSHIP_SCHEMES = ['COMPANY_OWNED', 'SGU'];
 export const ASSET_CONDITIONS = ['NEW', 'USED'];
+export const CURRENCIES = ['IDR', 'USD', 'EUR', 'SGD', 'JPY', 'CNY', 'AUD'];
 
 export const labels = {
   VEHICLE: 'Kendaraan', HEAVY_EQUIPMENT: 'Alat berat', PROPERTY: 'Properti', OTHER: 'Lainnya', NEW: 'Baru', USED: 'Bekas',

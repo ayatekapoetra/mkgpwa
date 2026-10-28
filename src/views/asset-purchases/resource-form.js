@@ -12,7 +12,7 @@ import MainCard from 'components/MainCard';
 import LoadingScreen from 'components/screens/LoadingScreen';
 import ErrorScreen from 'components/screens/ErrorScreen';
 import { APP_DEFAULT_PATH } from 'config';
-import { ASSET_TYPES, FINANCING_TYPES, humanize } from './presentation';
+import { ASSET_TYPES, CURRENCIES, FINANCING_TYPES, humanize } from './presentation';
 
 const OPTIONAL_FIELDS = ['max_amount', 'effective_to', 'fee_expense_account_source_id', 'current_liability_account_source_id', 'debit_account_source_id', 'contract_id', 'payment_instruction_id', 'notes', 'brand', 'model', 'manufacture_year', 'requesting_branch_id', 'operational_site_id', 'budget_reference'];
 
@@ -29,7 +29,7 @@ export const resourceFieldDefinitions = {
     detailEndpoint: (purchaseId) => `${assetEndpoints.purchase(purchaseId)}/vendor-offers`,
     fields: [
       ['vendor_id', 'ID vendor', 'text'], ['offer_number', 'Nomor penawaran', 'text'], ['offer_date', 'Tanggal penawaran', 'date'],
-      ['valid_until', 'Berlaku sampai', 'date'], ['currency_code', 'Mata uang', 'text'], ['gross_amount', 'Nilai bruto', 'number'],
+      ['valid_until', 'Berlaku sampai', 'date'], ['currency_code', 'Mata uang', 'select', CURRENCIES], ['gross_amount', 'Nilai bruto', 'number'],
       ['discount_amount', 'Diskon', 'number'], ['tax_amount', 'Pajak', 'number'], ['other_cost_amount', 'Biaya lain', 'number'],
       ['payment_terms', 'Termin pembayaran', 'text'], ['delivery_terms', 'Termin pengiriman', 'text'], ['warranty_terms', 'Garansi', 'text']
     ]
@@ -77,7 +77,7 @@ export const resourceFieldDefinitions = {
       ['financing_type', 'Skema pembiayaan', 'select', FINANCING_TYPES], ['ownership_scheme', 'Kepemilikan', 'select', ['COMPANY_OWNED', 'SGU']],
       ['legal_owner_type', 'Tipe legal owner', 'select', ['COMPANY', 'FINANCING_PROVIDER']],
       ['legal_owner_business_id', 'ID bisnis legal owner', 'text'], ['paying_business_id', 'ID perusahaan pembayar', 'text'],
-      ['operational_user_business_id', 'ID pengguna operasional', 'text'], ['currency_code', 'Mata uang', 'text'],
+      ['operational_user_business_id', 'ID pengguna operasional', 'text'], ['currency_code', 'Mata uang', 'select', CURRENCIES],
       ['asset_price', 'Harga aset', 'number'], ['down_payment_amount', 'Down payment', 'number'],
       ['principal_amount', 'Pokok pembiayaan', 'number'], ['interest_method', 'Metode bunga', 'select', ['FLAT', 'EFFECTIVE', 'ANNUITY', 'CUSTOM_SCHEDULE']],
       ['interest_rate', 'Bunga (%)', 'number'], ['tenor_months', 'Tenor (bulan)', 'number'],
@@ -102,7 +102,7 @@ export const resourceFieldDefinitions = {
       ['payee_source_id', 'ID penerima', 'text'], ['payee_name_snapshot', 'Nama penerima', 'text'],
       ['payment_purpose', 'Tujuan pembayaran', 'select', ['BOOKING_FEE', 'DOWN_PAYMENT', 'INSTALLMENT', 'EARLY_SETTLEMENT', 'BUYOUT', 'TAX', 'LEGAL_FEE', 'BROKER_FEE', 'APPRAISAL_FEE', 'INSURANCE', 'OTHER']],
       ['payment_channel', 'Kanal', 'select', ['TRANSFER', 'GIRO', 'CASH', 'VIRTUAL_ACCOUNT', 'AUTO_DEBIT', 'OTHER']],
-      ['paying_business_id', 'ID perusahaan pembayar', 'text'], ['currency_code', 'Mata uang', 'text'],
+      ['paying_business_id', 'ID perusahaan pembayar', 'text'], ['currency_code', 'Mata uang', 'select', CURRENCIES],
       ['amount', 'Nilai', 'number'], ['due_date', 'Jatuh tempo', 'date'], ['notes', 'Catatan', 'text']
     ]
   },
@@ -118,7 +118,7 @@ export const resourceFieldDefinitions = {
       ['purpose', 'Tujuan giro', 'select', ['PAYMENT', 'COLLATERAL']], ['company_bank_id', 'ID rekening bank sumber', 'text'],
       ['giro_number', 'Nomor giro', 'text'], ['payee_type', 'Jenis penerima', 'select', ['VENDOR', 'FINANCING_PROVIDER', 'NOTARY', 'BROKER', 'TAX_AUTHORITY', 'APPRAISER', 'INSURANCE_PROVIDER', 'OTHER']],
       ['payee_source_id', 'ID penerima', 'text'], ['payee_name_snapshot', 'Nama penerima', 'text'],
-      ['currency_code', 'Mata uang', 'text'], ['amount', 'Nominal', 'number'],
+      ['currency_code', 'Mata uang', 'select', CURRENCIES], ['amount', 'Nominal', 'number'],
       ['issue_date', 'Tanggal terbit', 'date'], ['effective_date', 'Tanggal efektif', 'date']
     ]
   }
@@ -187,7 +187,7 @@ function FormField({ name, label, type, options, value, onChange }) {
       >
         {options?.map((option) => (
           <MenuItem value={option} key={option}>
-            {name === 'is_active' ? (option === '1' ? 'Aktif' : 'Nonaktif') : humanize(option)}
+            {name === 'is_active' ? (option === '1' ? 'Aktif' : 'Nonaktif') : (name === 'currency_code' ? option : humanize(option))}
           </MenuItem>
         ))}
       </TextField>
@@ -221,15 +221,16 @@ export default function AssetResourceForm({ definitionKey, purchaseId = null, re
   const { row: existing, loading: detailLoading, error: detailError } = useAssetDetail(detailEndpoint, Boolean(detailEndpoint));
 
   const [form, setForm] = useState(() => {
+    if (definitionKey === 'offers') return { currency_code: 'IDR' };
     if (definitionKey === 'payments') return { currency_code: 'IDR', allocations: [{ installment_id: '', allocation_type: 'PRINCIPAL', planned_amount: '' }] };
     if (definitionKey === 'giros') return { currency_code: 'IDR' };
-    if (definitionKey === 'contracts') return { financing_type: 'BANK_LOAN', ownership_scheme: 'COMPANY_OWNED', interest_method: 'FLAT' };
+    if (definitionKey === 'contracts') return { currency_code: 'IDR', financing_type: 'BANK_LOAN', ownership_scheme: 'COMPANY_OWNED', interest_method: 'FLAT' };
     return {};
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (isEdit && existing) setForm({ ...existing });
+    if (isEdit && existing) setForm({ currency_code: 'IDR', ...existing });
   }, [isEdit, existing]);
 
   const update = (name, value) => setForm((current) => ({ ...current, [name]: value }));
