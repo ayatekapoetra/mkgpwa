@@ -17,6 +17,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -24,7 +25,7 @@ import {
 
 import StatusChip from "./components/StatusChip";
 import ProgressIndicator from "./components/ProgressIndicator";
-import { calculateItemStats, formatCurrency } from "./utils";
+import { calculateItemStats, formatCurrency, hasDescriptionContent } from "./utils";
 
 moment.locale("id");
 
@@ -106,10 +107,40 @@ function DesktopRequestList({ rows }) {
                   <Typography variant="body2">
                     {row.bisnis?.name || row.bisnis?.initial || "-"}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
                     {row.cabang?.nama || "-"} /{" "}
                     {row.gudang?.nama || row.gudang?.name || "-"}
                   </Typography>
+                  {hasDescriptionContent(row.description) ? (
+                    <Tooltip title={row.description} arrow placement="top">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        sx={{
+                          maxWidth: 220,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {row.description}
+                      </Typography>
+                    </Tooltip>
+                  ) : (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      -
+                    </Typography>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Chip
@@ -209,9 +240,23 @@ function MobileRequestList({ rows }) {
                   </Box>
                   <StatusChip status={row.status} />
                 </Stack>
-                <Typography variant="body2">
-                  {row.description || "Tanpa deskripsi"}
-                </Typography>
+                {hasDescriptionContent(row.description) ? (
+                  <Tooltip title={row.description} arrow placement="top">
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        cursor: "pointer",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {row.description}
+                    </Typography>
+                  </Tooltip>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Tanpa deskripsi
+                  </Typography>
+                )}
                 <Typography variant="caption" color="text.secondary">
                   {row.creator?.nmlengkap || row.creator?.nama_lengkap || "-"} ·{" "}
                   {row.cabang?.nama || "-"}

@@ -250,3 +250,16 @@ export const calculateItemStats = (row) => {
     hasValidatedPrice: totals.hasValidatedPrice,
   };
 };
+
+/** Checks whether a request description has non-empty content. */
+export const hasDescriptionContent = (description) => {
+  if (description === null || description === undefined) {
+    return false;
+  }
+  return String(description).trim().length > 0;
+};
+
+/** Formats purchasing request description with custom fallback for empty values. */
+export const getRequestDescription = (description, fallback = "-") => {
+  return hasDescriptionContent(description) ? String(description).trim() : fallback;
+};
