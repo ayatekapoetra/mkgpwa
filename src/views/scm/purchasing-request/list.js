@@ -24,29 +24,9 @@ import {
 
 import StatusChip from "./components/StatusChip";
 import ProgressIndicator from "./components/ProgressIndicator";
-import { formatCurrency } from "./utils";
+import { calculateItemStats, formatCurrency } from "./utils";
 
 moment.locale("id");
-
-const calculateItemStats = (row) => {
-  const items = (row.items || []).filter((item) => item.aktif !== "N");
-  return {
-    total: items.length,
-    validated: items.filter(
-      (item) => item.user_validated || item.date_validated,
-    ).length,
-    approved: items.filter((item) => item.user_approved || item.date_approved)
-      .length,
-    totalDiscount: items.reduce(
-      (total, item) => total + Number(item.potongan || 0),
-      0,
-    ),
-    totalPpn: items.reduce(
-      (total, item) => total + Number(item.ppn_rp || 0),
-      0,
-    ),
-  };
-};
 
 /** Displays the empty state when no requests match the current filters. */
 function EmptyRequestList() {
@@ -153,23 +133,44 @@ function DesktopRequestList({ rows }) {
                   </Box>
                 </TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" fontWeight={700}>
-                    {formatCurrency(row.total_ro)}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Diskon: {formatCurrency(stats.totalDiscount)}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    PPN: {formatCurrency(stats.totalPpn)}
-                  </Typography>
+                  {stats.hasValidatedPrice ? (
+                    <>
+                      <Typography variant="body2" fontWeight={700}>
+                        {formatCurrency(stats.grandTotal)}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        Diskon: {formatCurrency(stats.totalDiscount)}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        PPN: {formatCurrency(stats.totalPpn)}
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="body2"
+                        fontWeight={700}
+                        color="text.secondary"
+                      >
+                        -
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        Menunggu validasi
+                      </Typography>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -220,23 +221,44 @@ function MobileRequestList({ rows }) {
                     Item {stats.total}
                   </Typography>
                   <Box sx={{ textAlign: "right" }}>
-                    <Typography variant="body2" fontWeight={700}>
-                      {formatCurrency(row.total_ro)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      Diskon: {formatCurrency(stats.totalDiscount)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      PPN: {formatCurrency(stats.totalPpn)}
-                    </Typography>
+                    {stats.hasValidatedPrice ? (
+                      <>
+                        <Typography variant="body2" fontWeight={700}>
+                          {formatCurrency(stats.grandTotal)}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          Diskon: {formatCurrency(stats.totalDiscount)}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          PPN: {formatCurrency(stats.totalPpn)}
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <Typography
+                          variant="body2"
+                          fontWeight={700}
+                          color="text.secondary"
+                        >
+                          -
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          Menunggu validasi
+                        </Typography>
+                      </>
+                    )}
                   </Box>
                 </Stack>
                 <ProgressIndicator items={row.items || []} />

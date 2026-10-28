@@ -44,6 +44,7 @@ import {
   AttachmentsCard,
   DocumentActions,
   DocumentHeader,
+  DocumentSummaryCard,
   ProgressCard,
   RequestItemCard,
   SelectionToolbar,
@@ -383,6 +384,11 @@ export default function PurchasingRequestDetail() {
                 />
               ))}
             </Stack>
+            <DocumentSummaryCard
+              row={row}
+              items={items}
+              drafts={mode === "validate" ? drafts : null}
+            />
             {hasAttachedFiles ? (
               <AttachmentsCard files={attachedFiles} />
             ) : null}
