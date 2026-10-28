@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -10,33 +12,76 @@ import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import MainCard from 'components/MainCard';
+import useDebouncedValue from 'hooks/useDebouncedValue';
 
 import { Add, Building3, Code } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 
 export default function FilterBisnisUnit({ count, open, onClose, data, setData, anchor = 'right' }) {
+  const [localName, setLocalName] = useState(data?.name || '');
+  const [localKode, setLocalKode] = useState(data?.kode || '');
+
+  const debouncedName = useDebouncedValue(localName, 350);
+  const debouncedKode = useDebouncedValue(localKode, 350);
+
+  // Sync external changes (e.g. reset or initial) to local state
+  useEffect(() => {
+    const nextName = data?.name || '';
+    if (nextName !== localName) {
+      setLocalName(nextName);
+    }
+  }, [data?.name]);
+
+  useEffect(() => {
+    const nextKode = data?.kode || '';
+    if (nextKode !== localKode) {
+      setLocalKode(nextKode);
+    }
+  }, [data?.kode]);
+
+  // Sync debounced values back to parent params
+  useEffect(() => {
+    setData((prev) => {
+      const currentName = prev?.name || '';
+      const currentKode = prev?.kode || '';
+      if (currentName === debouncedName && currentKode === debouncedKode) {
+        return prev;
+      }
+      return {
+        ...prev,
+        name: debouncedName,
+        kode: debouncedKode,
+        page: 1
+      };
+    });
+  }, [debouncedName, debouncedKode, setData]);
+
   const onResetFilterHandle = () => {
-    setData({
+    setLocalName('');
+    setLocalKode('');
+    setData((prev) => ({
+      ...prev,
       name: '',
       kode: '',
       page: 1,
       perPages: 25
-    });
+    }));
   };
 
   return (
     <div>
-      <SwipeableDrawer anchor={anchor} onClose={onClose} open={open}>
+      <SwipeableDrawer anchor={anchor} onClose={onClose} onOpen={() => {}} open={open}>
         <Stack p={1} sx={{ maxWidth: anchor == 'right' ? '400px' : '100vw' }}>
           <MainCard content={true} title={<HeaderFilter count={count} onClose={onClose} />}>
             <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
               <Grid item xs={12} sm={12} lg={12}>
                 <InputSearch 
                   label="Nama Unit Bisnis"
+                  name="nama-unit-bisnis"
                   size="medium" 
                   type="text" 
-                  value={data['name']} 
-                  onChange={(e) => setData({ ...data, name: e.target.value })} 
+                  value={localName} 
+                  onChange={(e) => setLocalName(e.target.value)} 
                   startAdornment={
                     <InputAdornment position="start">
                       <Building3 size={20} />
@@ -47,10 +92,11 @@ export default function FilterBisnisUnit({ count, open, onClose, data, setData, 
               <Grid item xs={12} sm={12} lg={12}>
                 <InputSearch 
                   label="Kode"
+                  name="kode-unit-bisnis"
                   size="medium" 
                   type="text" 
-                  value={data['kode']} 
-                  onChange={(e) => setData({ ...data, kode: e.target.value })} 
+                  value={localKode} 
+                  onChange={(e) => setLocalKode(e.target.value)} 
                   startAdornment={
                     <InputAdornment position="start">
                       <Code size={20} />

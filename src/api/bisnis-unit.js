@@ -14,7 +14,8 @@ export const useGetBisnisUnit = (params) => {
   const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
-    revalidateOnReconnect: false
+    revalidateOnReconnect: false,
+    keepPreviousData: true
   });
 
   const memoizedValue = useMemo(() => {
