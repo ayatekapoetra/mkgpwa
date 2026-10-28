@@ -47,7 +47,10 @@ import {
   getBreakdownMasters
 } from 'api/daily-breakdown-form';
 import { downloadSummaryBreakdownPdf } from 'api/summary-breakdown';
+import useFilterStorage from 'hooks/useFilterStorage';
+import useDebouncedValue from 'hooks/useDebouncedValue';
 import {
+  ALL_BREAKDOWN_STATUSES,
   BREAKDOWN_STATUS,
   buildCompactParams,
   calculateDuration,
@@ -73,26 +76,34 @@ const saveDownload = ({ blob, filename }) => {
 };
 
 const SUMMARY_CARDS = [
-  { key: 'total', label: 'Total', color: '#6366f1', bg: '#eef2ff', field: 'total' },
-  { key: 0, label: 'Tunggu Teknisi', color: '#92400e', bg: '#fef3c7', field: 'waiting_teknisi' },
-  { key: 1, label: 'Tunggu Part', color: '#831843', bg: '#fef9c3', field: 'waiting_part' },
-  { key: 8, label: 'Sedang Dikerjakan', color: '#1e40af', bg: '#dbeafe', field: 'in_progress' },
-  { key: 9, label: 'Selesai', color: '#064e3b', bg: '#d1fae5', field: 'completed' }
+  { key: 'total', label: 'Total', color: '#6366f1', bg: '#eef2ff', field: 'total', statusCode: 'all' },
+  { key: 0, label: 'Tunggu Teknisi', color: '#92400e', bg: '#fef3c7', field: 'waiting_teknisi', statusCode: 0 },
+  { key: 1, label: 'Tunggu Part', color: '#831843', bg: '#fef9c3', field: 'waiting_part', statusCode: 1 },
+  { key: 8, label: 'Sedang Dikerjakan', color: '#1e40af', bg: '#dbeafe', field: 'in_progress', statusCode: 8 },
+  { key: 9, label: 'Selesai', color: '#064e3b', bg: '#d1fae5', field: 'completed', statusCode: 9 }
 ];
 
 export default function BreakdownList() {
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [filters, setFilters] = useState(defaultFilters);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_daily_breakdown', defaultFilters, { storage: 'session' });
   const [filterOpen, setFilterOpen] = useState(false);
   const [reportAnchor, setReportAnchor] = useState(null);
   const [downloadingReport, setDownloadingReport] = useState('');
   const [masters, setMasters] = useState({ cabangs: [], equipments: [], lokasis: [], penyewas: [], shifts: [], pengawases: [] });
 
   const compactParams = useMemo(() => buildCompactParams(filters), [filters]);
-  const { data, total, dataLoading, dataError, mutate } = useBreakdownList(compactParams, true);
-  const { data: statistics, dataLoading: statLoading } = useBreakdownStatistics(compactParams, true);
+  const debouncedCompactParams = useDebouncedValue(compactParams, 300);
+
+  // Statistics parameter excludes status and pagination so counter remains informative
+  const statParams = useMemo(() => {
+    const { status, page, perPage, ...rest } = debouncedCompactParams;
+    return rest;
+  }, [debouncedCompactParams]);
+
+  const { data, total, dataLoading, dataError, mutate } = useBreakdownList(debouncedCompactParams, true);
+  const { data: statistics, dataLoading: statLoading } = useBreakdownStatistics(statParams, true);
 
   useEffect(() => {
     let mounted = true;
@@ -126,8 +137,16 @@ export default function BreakdownList() {
   };
 
   const handleResetFilter = () => {
-    setFilters({ ...defaultFilters });
+    resetFilters();
     setFilterOpen(false);
+  };
+
+  const handleSelectQuickFilter = (status) => {
+    setFilters((prev) => ({
+      ...prev,
+      status,
+      page: 1
+    }));
   };
 
   const handleOutstandingReport = async () => {
@@ -189,7 +208,12 @@ export default function BreakdownList() {
     <>
       <Breadcrumbs custom heading="Daily Breakdown" links={[{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Maintenances' }, { title: 'Daily Breakdown', to: '/daily-breakdown' }]} />
 
-      <SummaryCards statistics={statistics} loading={statLoading} />
+      <SummaryCards
+        statistics={statistics}
+        loading={statLoading}
+        activeStatus={filters.status}
+        onSelectStatus={handleSelectQuickFilter}
+      />
 
       <MainCard
         sx={{ mt: 2 }}
@@ -443,7 +467,7 @@ export default function BreakdownList() {
   );
 }
 
-function SummaryCards({ statistics, loading }) {
+function SummaryCards({ statistics, loading, activeStatus, onSelectStatus }) {
   const values = {
     total: statistics?.total || 0,
     waiting_teknisi: statistics?.by_status?.waiting_teknisi || 0,
@@ -452,31 +476,76 @@ function SummaryCards({ statistics, loading }) {
     completed: statistics?.by_status?.completed || 0
   };
 
+  const isAll = !Array.isArray(activeStatus) ||
+    activeStatus.length === 0 ||
+    (activeStatus.length >= ALL_BREAKDOWN_STATUSES.length &&
+      ALL_BREAKDOWN_STATUSES.every((c) => activeStatus.includes(c)));
+
+  const handleCardClick = (card) => {
+    if (!onSelectStatus) return;
+    if (card.statusCode === 'all') {
+      onSelectStatus([...ALL_BREAKDOWN_STATUSES]);
+      return;
+    }
+    // If this card is already specifically active, toggle back to 'all'
+    if (!isAll && activeStatus?.length === 1 && activeStatus[0] === card.statusCode) {
+      onSelectStatus([...ALL_BREAKDOWN_STATUSES]);
+    } else {
+      onSelectStatus([card.statusCode]);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-      {SUMMARY_CARDS.map((card) => (
-        <Box
-          key={card.key}
-          sx={{
-            flex: { xs: '1 1 calc(50% - 6px)', sm: '1 1 0' },
-            minWidth: 0
-          }}
-        >
-          <Card variant="outlined" sx={{ height: '100%', borderColor: card.color, bgcolor: 'background.paper' }}>
-            <CardContent sx={{ py: 1, px: 1.5, '&:last-child': { pb: 1 }, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 6, height: 28, borderRadius: 1, bgcolor: card.color, flexShrink: 0 }} />
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {card.label}
-                </Typography>
-                <Typography variant="h5" sx={{ color: card.color, fontWeight: 700, lineHeight: 1.2 }}>
-                  {loading ? <CircularProgress size={14} /> : values[card.field]}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Box>
-      ))}
+      {SUMMARY_CARDS.map((card) => {
+        const isSelected = card.statusCode === 'all'
+          ? isAll
+          : !isAll && activeStatus?.length === 1 && activeStatus[0] === card.statusCode;
+
+        return (
+          <Box
+            key={card.key}
+            sx={{
+              flex: { xs: '1 1 calc(50% - 6px)', sm: '1 1 0' },
+              minWidth: 0
+            }}
+          >
+            <Card
+              variant="outlined"
+              onClick={() => handleCardClick(card)}
+              role="button"
+              tabIndex={0}
+              sx={{
+                height: '100%',
+                borderColor: isSelected ? card.color : card.color,
+                borderWidth: isSelected ? 2 : 1,
+                borderStyle: 'solid',
+                bgcolor: isSelected ? card.bg : 'background.paper',
+                boxShadow: isSelected ? 2 : 0,
+                cursor: 'pointer',
+                transition: 'all 0.18s ease-in-out',
+                '&:hover': {
+                  boxShadow: 2,
+                  borderColor: card.color,
+                  transform: 'translateY(-1px)'
+                }
+              }}
+            >
+              <CardContent sx={{ py: 1, px: 1.5, '&:last-child': { pb: 1 }, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 6, height: 28, borderRadius: 1, bgcolor: card.color, flexShrink: 0 }} />
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {card.label}
+                  </Typography>
+                  <Typography variant="h5" sx={{ color: card.color, fontWeight: 700, lineHeight: 1.2 }}>
+                    {loading ? <CircularProgress size={14} /> : values[card.field]}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        );
+      })}
     </Box>
   );
 }
@@ -488,24 +557,62 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
     if (open) setLocal(filters);
   }, [open, filters]);
 
+  const isAllActive = !Array.isArray(local.status) ||
+    local.status.length === 0 ||
+    (local.status.length >= ALL_BREAKDOWN_STATUSES.length &&
+      ALL_BREAKDOWN_STATUSES.every((c) => local.status.includes(c)));
+
   const toggleStatus = (code) => {
-    // "all" (Semua) → reset filter status menjadi kosong (tampilkan semua status)
     if (code === 'all') {
-      setLocal((prev) => ({ ...prev, status: [] }));
+      setLocal((prev) => ({ ...prev, status: [...ALL_BREAKDOWN_STATUSES] }));
       return;
     }
+
     setLocal((prev) => {
       const arr = Array.isArray(prev.status) ? prev.status : [];
-      return {
-        ...prev,
-        status: arr.includes(code) ? arr.filter((s) => s !== code) : [...arr, code]
-      };
+      const currentlyAll = arr.length === 0 ||
+        (arr.length >= ALL_BREAKDOWN_STATUSES.length &&
+          ALL_BREAKDOWN_STATUSES.every((c) => arr.includes(c)));
+
+      if (currentlyAll) {
+        return { ...prev, status: [code] };
+      }
+
+      let next;
+      if (arr.includes(code)) {
+        next = arr.filter((s) => s !== code);
+      } else {
+        next = [...arr, code];
+      }
+
+      if (next.length === 0 || (next.length >= ALL_BREAKDOWN_STATUSES.length && ALL_BREAKDOWN_STATUSES.every((c) => next.includes(c)))) {
+        return { ...prev, status: [...ALL_BREAKDOWN_STATUSES] };
+      }
+
+      return { ...prev, status: next };
     });
   };
 
-  const isAllActive = !Array.isArray(local.status) || local.status.length === 0;
-
   const isFiltered = useMemo(() => hasActiveFilters(local), [local]);
+
+  const filteredLokasis = useMemo(() => {
+    if (!local.cabang_id) return masters.lokasis || [];
+    return (masters.lokasis || []).filter(
+      (item) => String(item.cabang_id || item?.cabang?.id || '') === String(local.cabang_id)
+    );
+  }, [masters.lokasis, local.cabang_id]);
+
+  const filteredEquipments = useMemo(() => {
+    if (!local.cabang_id) return masters.equipments || [];
+    return (masters.equipments || []).filter(
+      (item) => String(item.cabang_id || item?.cabang?.id || '') === String(local.cabang_id)
+    );
+  }, [masters.equipments, local.cabang_id]);
+
+  const handleReset = () => {
+    setLocal(defaultFilters);
+    onReset();
+  };
 
   return (
     <Drawer open={open} onClose={onClose} anchor="right" PaperProps={{ sx: { width: { xs: 350, sm: 474 } } }}>
@@ -534,11 +641,12 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
                     bgcolor: isAllActive ? '#6366f1' : 'transparent',
                     color: isAllActive ? '#fff' : 'text.primary',
                     borderColor: '#6366f1',
+                    fontWeight: isAllActive ? 600 : 400,
                     '&:hover': { bgcolor: isAllActive ? '#6366f1' : '#eef2ff' }
                   }}
                 />
                 {BREAKDOWN_STATUS.map((opt) => {
-                  const active = local.status?.includes(opt.code);
+                  const active = !isAllActive && local.status?.includes(opt.code);
                   return (
                     <Chip
                       key={opt.code}
@@ -551,6 +659,7 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
                         bgcolor: active ? opt.color : 'transparent',
                         color: active ? '#fff' : 'text.primary',
                         borderColor: opt.color,
+                        fontWeight: active ? 600 : 400,
                         '&:hover': { bgcolor: active ? opt.color : `${opt.bg}` }
                       }}
                     />
@@ -569,22 +678,40 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
                   getOptionLabel={(option) => (option?.nama ? `[${option.kode || ''}] ${option.nama}` : '')}
                   isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
                   value={masters.cabangs.find((item) => String(item.id) === String(local.cabang_id)) || null}
-                  onChange={(_e, value) => setLocal((prev) => ({ ...prev, cabang_id: value?.id || '' }))}
+                  onChange={(_e, value) => {
+                    const newCabangId = value?.id ? String(value.id) : '';
+                    setLocal((prev) => {
+                      const eqValid = !prev.equipment_id || (newCabangId ? (masters.equipments || []).some(
+                        (eq) => String(eq.id) === String(prev.equipment_id) && String(eq.cabang_id || eq?.cabang?.id || '') === newCabangId
+                      ) : true);
+
+                      const locValid = !prev.lokasi_id || (newCabangId ? (masters.lokasis || []).some(
+                        (loc) => String(loc.id) === String(prev.lokasi_id) && String(loc.cabang_id || loc?.cabang?.id || '') === newCabangId
+                      ) : true);
+
+                      return {
+                        ...prev,
+                        cabang_id: newCabangId,
+                        equipment_id: eqValid ? prev.equipment_id : '',
+                        lokasi_id: locValid ? prev.lokasi_id : ''
+                      };
+                    });
+                  }}
                   renderInput={(params) => <TextField {...params} label="Cabang" size="small" />}
                 />
                 <Autocomplete
-                  options={masters.equipments}
+                  options={filteredEquipments}
                   getOptionLabel={(option) => (option?.kode ? `${option.kode} - ${option.nama || ''}` : option?.nama || '')}
                   isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
-                  value={masters.equipments.find((item) => String(item.id) === String(local.equipment_id)) || null}
+                  value={filteredEquipments.find((item) => String(item.id) === String(local.equipment_id)) || null}
                   onChange={(_e, value) => setLocal((prev) => ({ ...prev, equipment_id: value?.id || '' }))}
                   renderInput={(params) => <TextField {...params} label="Equipment" size="small" />}
                 />
                 <Autocomplete
-                  options={masters.lokasis}
+                  options={filteredLokasis}
                   getOptionLabel={(option) => option?.nama || option?.nama_lokasi || ''}
                   isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
-                  value={masters.lokasis.find((item) => String(item.id) === String(local.lokasi_id)) || null}
+                  value={filteredLokasis.find((item) => String(item.id) === String(local.lokasi_id)) || null}
                   onChange={(_e, value) => setLocal((prev) => ({ ...prev, lokasi_id: value?.id || '' }))}
                   renderInput={(params) => <TextField {...params} label="Lokasi" size="small" />}
                 />
@@ -624,7 +751,7 @@ function FilterDrawer({ open, onClose, filters, onApply, onReset, masters }) {
 
         <Divider sx={{ my: 2 }} />
         <Stack direction="row" spacing={1.5}>
-          <Button variant="outlined" fullWidth onClick={onReset} disabled={!isFiltered}>
+          <Button variant="outlined" fullWidth onClick={handleReset} disabled={!isFiltered}>
             Reset
           </Button>
           <Button variant="contained" fullWidth onClick={() => onApply(local)}>
