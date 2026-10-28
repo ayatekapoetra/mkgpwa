@@ -230,7 +230,7 @@ export default function AssetResourceForm({ definitionKey, purchaseId = null, re
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (isEdit && existing) setForm({ currency_code: 'IDR', ...existing });
+    if (isEdit && existing) setForm({ ...existing, currency_code: existing.currency_code || 'IDR' });
   }, [isEdit, existing]);
 
   const update = (name, value) => setForm((current) => ({ ...current, [name]: value }));
