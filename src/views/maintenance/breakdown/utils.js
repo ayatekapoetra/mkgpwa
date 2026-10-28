@@ -181,3 +181,12 @@ export const buildCompactParams = (filters) => {
   if (filters.enddate) params.enddate = filters.enddate;
   return params;
 };
+
+export const formatBreakdownIssues = (items) => {
+  if (!Array.isArray(items) || items.length === 0) return '-';
+  const issues = items
+    .filter((it) => it && it.aktif !== 'N')
+    .map((it) => (it.problem_issue || it.deskripsi || '').trim())
+    .filter(Boolean);
+  return issues.length > 0 ? issues.join(', ') : '-';
+};

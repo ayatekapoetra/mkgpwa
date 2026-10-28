@@ -53,6 +53,7 @@ import {
   calculateDuration,
   defaultFilters,
   formatBreakdownAt,
+  formatBreakdownIssues,
   formatDateIssue,
   getStatusInfo,
   hasActiveFilters
@@ -242,6 +243,11 @@ export default function BreakdownList() {
             {rows.map((row) => {
               const statusInfo = getStatusInfo(row.status);
               const eq = equipmentOption(row.equipment_id);
+              const lk = lokasiOption(row.lokasi_id);
+              const issueText = formatBreakdownIssues(row.items);
+              const durationText = calculateDuration(row.breakdown_at, row.ready_at).text;
+              const locationName = lk?.nama || row.lokasi?.nama || '-';
+
               return (
                 <Card key={row.id} variant="outlined" component={Link} href={`/daily-breakdown/${row.id}`} sx={{ textDecoration: 'none', color: 'inherit' }}>
                   <CardContent>
@@ -263,13 +269,40 @@ export default function BreakdownList() {
                       </Stack>
                       <Typography variant="body2">{formatBreakdownAt(row.breakdown_at)}</Typography>
                     </Stack>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, px: 1, py: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-                      <Typography variant="caption">Problems: {row.items?.length || 0} issue</Typography>
-                      <Typography variant="caption">Durasi: {calculateDuration(row.breakdown_at, row.ready_at).text}</Typography>
+                    <Box sx={{ mt: 1, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 600, mb: 0.25 }}>
+                        Issue Breakdown:
+                      </Typography>
+                      {issueText !== '-' ? (
+                        <Tooltip title={issueText} arrow placement="top">
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              wordBreak: 'break-word'
+                            }}
+                          >
+                            {issueText}
+                          </Typography>
+                        </Tooltip>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </Box>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Lokasi: <Box component="span" sx={{ color: 'text.primary', fontWeight: 500 }}>{locationName}</Box>
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Durasi: <Box component="span" sx={{ color: 'text.primary', fontWeight: 500 }}>{durationText}</Box>
+                      </Typography>
                     </Stack>
-                    <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                      Lokasi: {row.lokasi?.nama || '-'}
-                    </Typography>
                   </CardContent>
                 </Card>
               );
@@ -287,8 +320,7 @@ export default function BreakdownList() {
                   <TableCell>Cabang</TableCell>
                   <TableCell>Tanggal</TableCell>
                   <TableCell>BD At</TableCell>
-                  <TableCell align="center">Issues</TableCell>
-                  <TableCell>Durasi</TableCell>
+                  <TableCell>Issue Breakdown</TableCell>
                   <TableCell>Lokasi</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="center">Aksi</TableCell>
@@ -301,6 +333,10 @@ export default function BreakdownList() {
                   const cb = cabangOption(row);
                   const lk = lokasiOption(row.lokasi_id);
                   const no = (filters.page - 1) * filters.perPage + index + 1;
+                  const issueText = formatBreakdownIssues(row.items);
+                  const durationText = calculateDuration(row.breakdown_at, row.ready_at).text;
+                  const locationName = lk?.nama || row.lokasi?.nama || '-';
+
                   return (
                     <TableRow key={row.id} hover>
                       <TableCell>{no}</TableCell>
@@ -322,13 +358,38 @@ export default function BreakdownList() {
                       </TableCell>
                       <TableCell>{formatDateIssue(row.date_issue)}</TableCell>
                       <TableCell>{formatBreakdownAt(row.breakdown_at)}</TableCell>
-                      <TableCell align="center">
-                        <Chip label={row.items?.length || 0} size="small" />
+                      <TableCell sx={{ minWidth: 200, maxWidth: 360 }}>
+                        {issueText !== '-' ? (
+                          <Tooltip title={issueText} arrow placement="top">
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                wordBreak: 'break-word',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {issueText}
+                            </Typography>
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            -
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2">{calculateDuration(row.breakdown_at, row.ready_at).text}</Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {locationName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                          {durationText}
+                        </Typography>
                       </TableCell>
-                      <TableCell>{lk?.nama || row.lokasi?.nama || '-'}</TableCell>
                       <TableCell>
                         <Chip label={statusInfo.label} size="small" sx={{ bgcolor: statusInfo.bg, color: statusInfo.text, fontWeight: 600 }} />
                       </TableCell>
