@@ -25,7 +25,7 @@ export default function PurchaseOrderPollPreview() {
   const [contacts, setContacts] = useState({ key: null, sender_phone: '', recipient_phone: '' });
   const [touched, setTouched] = useState(false);
   const [preparing, setPreparing] = useState(false);
-  const [deliveryMode, setDeliveryMode] = useState('pdf_poll');
+  const [deliveryMode, setDeliveryMode] = useState('pdf_text');
   const [artifact, setArtifact] = useState(null);
   const [message, setMessage] = useState('');
   const [deliveryStatus, setDeliveryStatus] = useState(null);
@@ -48,14 +48,14 @@ export default function PurchaseOrderPollPreview() {
 
   useEffect(() => () => { lifetime.current += 1; }, []);
 
-  const senderError = deliveryHasPoll(deliveryMode) ? phoneError(phones.sender_phone) : '';
+  const senderError = '';
   const recipientError = phoneError(phones.recipient_phone);
   const complete = canRead && selection.ready && !selection.error && !details.loading &&
     selection.data.items.length > 0 && details.rows.length === selection.data.items.length && Object.keys(details.errors).length === 0;
   const preview = useMemo(() => {
-    if (!complete || senderError || recipientError) return null;
+    if (!complete || recipientError) return null;
     try { return buildPollBody(details.rows, phones, deliveryMode); } catch { return null; }
-  }, [complete, senderError, recipientError, details.rows, phones, deliveryMode]);
+  }, [complete, recipientError, details.rows, phones, deliveryMode]);
   const summary = useMemo(() => complete ? summarizePollItems(details.rows.map(toPollItem)) : null, [complete, details.rows]);
   const currentArtifact = artifact && artifact.key === selection.key && artifact.ids === ids &&
     artifact.rows === details.rows && artifact.sender === phones.sender_phone && artifact.recipient === phones.recipient_phone && artifact.mode === deliveryMode ? artifact : null;
@@ -93,9 +93,8 @@ export default function PurchaseOrderPollPreview() {
     setError('');
     setMessage('');
     setDeliveryStatus(null);
-    const needsSender = deliveryHasPoll(mode) && phoneError(phones.sender_phone);
-    if (needsSender || recipientError) {
-      document.getElementById?.(recipientError ? 'po-poll-recipient' : 'po-poll-sender')?.focus();
+    if (recipientError) {
+      document.getElementById?.('po-poll-recipient')?.focus();
       return;
     }
     submitting.current = true;
