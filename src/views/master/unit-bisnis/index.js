@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import LinearProgress from '@mui/material/LinearProgress';
 
 import MainCard from 'components/MainCard';
 import ListTableBisnisUnit from './listtable';
@@ -26,17 +27,11 @@ const UnitBisnisScreen = () => {
     name: '',
     kode: ''
   });
-  const { bisnisUnit, bisnisUnitLoading, bisnisUnitError } = useGetBisnisUnit(params);
+  const { bisnisUnit, bisnisUnitLoading, bisnisUnitError, bisnisUnitValidating } = useGetBisnisUnit(params);
 
   const toggleFilterHandle = () => {
     setOpenFilter(!openFilter);
   };
-
-  if (bisnisUnitLoading) return <Typography variant="body1">Loading...</Typography>;
-  if (bisnisUnitError) {
-    console.log('Data error details:', bisnisUnitError);
-    return <p>Error fetching data: {JSON.stringify(bisnisUnitError)}</p>;
-  }
 
   return (
     <MainCard
@@ -57,17 +52,31 @@ const UnitBisnisScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <ListTableBisnisUnit data={{ data: bisnisUnit?.rows || [] }} />
+        {bisnisUnitError ? (
+          <Typography variant="body2" color="error" sx={{ px: 2, pt: 2 }}>
+            Error fetching data: {JSON.stringify(bisnisUnitError)}
+          </Typography>
+        ) : null}
 
-        <Stack sx={{ p: 2 }}>
-          <Paginate
-            page={bisnisUnit?.page || 1}
-            total={bisnisUnit?.total || 0}
-            lastPage={bisnisUnit?.lastPage || 1}
-            perPage={bisnisUnit?.perPage || 25}
-            onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
-          />
-        </Stack>
+        {(bisnisUnitLoading || bisnisUnitValidating) ? (
+          <LinearProgress sx={{ height: 3 }} />
+        ) : null}
+
+        {!bisnisUnitError && (
+          <>
+            <ListTableBisnisUnit data={{ data: bisnisUnit?.rows || [] }} />
+
+            <Stack sx={{ p: 2 }}>
+              <Paginate
+                page={bisnisUnit?.page || params.page}
+                total={bisnisUnit?.total || 0}
+                lastPage={bisnisUnit?.lastPage || 1}
+                perPage={bisnisUnit?.perPage || params.perPages}
+                onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))}
+              />
+            </Stack>
+          </>
+        )}
       </Stack>
 
       <FilterBisnisUnit 
