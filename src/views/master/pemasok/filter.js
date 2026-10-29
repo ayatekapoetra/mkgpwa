@@ -14,14 +14,18 @@ import MainCard from "components/MainCard";
 import { Add, User } from "iconsax-react";
 import InputSearch from "components/InputSearch";
 
-export default function FilterPemasok({ count, open, onClose, data, setData, anchor = "right" }) {
+export default function FilterPemasok({ count, open, onClose, data, setData, onReset, anchor = "right" }) {
   const onResetFilterHandle = () => {
-    setData({
-      page: 1,
-      perPages: 25,
-      nama_pemasok: "",
-      kode: "",
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        page: 1,
+        perPages: 25,
+        nama_pemasok: "",
+        kode: "",
+      });
+    }
   };
 
   return (

@@ -20,9 +20,16 @@ import { Eye, Filter } from 'iconsax-react';
 import ListPickupOrder from './list';
 import { useGetPickupOrder } from 'api/pickup-order';
 import FilterPickupOrder from './filter';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
+
+const DEFAULT_FILTERS = {
+  kode: '',
+  pickup_by: '',
+  keterangan: ''
+};
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -34,11 +41,7 @@ export default function PickupOrderScreen() {
   const { data, dataLoading } = useGetPickupOrder();
   const [state, setState] = useState([]);
   const [openFilter, setOpenFilter] = useState(false);
-  const [filtered, setFiltered] = useState({
-    kode: '',
-    pickup_by: '',
-    keterangan: ''
-  });
+  const [filtered, setFiltered, resetFiltered] = useFilterStorage('mkg_filter_scm_pickup_order', DEFAULT_FILTERS);
 
   useEffect(() => {
     const rows = Array.isArray(data) ? data : [];
@@ -77,7 +80,7 @@ export default function PickupOrderScreen() {
         }
         content={false}
       >
-        <FilterPickupOrder count={state.length} data={filtered} setData={setFiltered} open={openFilter} onClose={toggleFilterHandle} />
+        <FilterPickupOrder count={state.length} data={filtered} setData={setFiltered} onReset={resetFiltered} open={openFilter} onClose={toggleFilterHandle} />
         {dataLoading || !data ? (
           <div>loading...</div>
         ) : (

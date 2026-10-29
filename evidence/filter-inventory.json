@@ -1,0 +1,370 @@
+{
+  "officialCount": 48,
+  "standardizedExisting": [
+    "operational/timesheet",
+    "scm/order-payment",
+    "human-capital/crew-work-activity"
+  ],
+  "total": 51,
+  "entries": [
+    {
+      "file": "src/views/accounting/pengajuan-dana/index.js",
+      "key": "mkg_filter_accounting_pengajuan_dana",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/asset-purchases/list.js",
+      "key": "mkg_filter_asset_purchases",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/human-capital/absensi-karyawan/index.js",
+      "key": "mkg_filter_hc_absensi_karyawan",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/human-capital/crew-work-activity/index.js",
+      "key": "mkg_filter_human_capital_crew_work_activity",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/integration-issues/index.js",
+      "key": "mkg_filter_integration_issues",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/event-history/index.js",
+      "key": "mkg_filter_laporan_event_history",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/monitoring-order-part/index.js",
+      "key": "mkg_filter_laporan_monitoring_order_part",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/monitoring-sparepart-stock/index.js",
+      "key": "mkg_filter_laporan_monitoring_sparepart_stock",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/monitoring-stock-sparepart/index.js",
+      "key": "mkg_filter_laporan_monitoring_stock_sparepart",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/operating-history/index.js",
+      "key": "mkg_filter_laporan_operating_history",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/part-used-history/index.js",
+      "key": "mkg_filter_laporan_part_used_history",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/pemakaian-barang/index.js",
+      "key": "mkg_filter_laporan_pemakaian_barang",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/productivity/index.js",
+      "key": "mkg_filter_laporan_productivity",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/stokopname/index.js",
+      "key": "mkg_filter_laporan_stokopname",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/laporan/summary-breakdown/index.js",
+      "key": "mkg_filter_laporan_summary_breakdown",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/maintenance/breakdown/index.js",
+      "key": "mkg_filter_daily_breakdown",
+      "additionalKeys": [],
+      "pagination": "preserve BD-001",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/maintenance/work-order/index.js",
+      "key": "mkg_filter_maintenance_work_order",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/barang/index.js",
+      "key": "mkg_filter_master_barang",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/cabang/index.js",
+      "key": "mkg_filter_master_cabang",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/dom/index.js",
+      "key": "mkg_filter_master_dom",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/equipment/index.js",
+      "key": "mkg_filter_master_equipment",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/harga-beli/index.js",
+      "key": "mkg_filter_master_harga_beli",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/kegiatan-kerja/index.js",
+      "key": "mkg_filter_master_kegiatan_kerja",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/lokasi-kerja/index.js",
+      "key": "mkg_filter_master_lokasi_kerja",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/material/index.js",
+      "key": "mkg_filter_master_material",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/pemasok/index.js",
+      "key": "mkg_filter_master_pemasok",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/penyewa/index.js",
+      "key": "mkg_filter_master_penyewa",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/master/unit-bisnis/index.js",
+      "key": "mkg_filter_master_unit_bisnis",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/daily-activity/index.js",
+      "key": "mkg_filter_operational_daily_activity",
+      "additionalKeys": [
+        "mkg_filter_operational_daily_activity_plan"
+      ],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/equipment-mobilization/index.js",
+      "key": "mkg_filter_operational_equipment_mobilization",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/mining/daily-checker-pit/index.js",
+      "key": "mkg_filter_operational_daily_checker_pit",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/mining/daily-checker-stockpile/index.js",
+      "key": "mkg_filter_operational_daily_checker_stockpile",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/mining/fleet-assignment/FleetAssignmentWorkspace.js",
+      "key": "mkg_filter_operational_fleet_assignment",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/mining/mining-production-plan/index.js",
+      "key": "mkg_filter_operational_mining_production_plan",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/rental-contract/index.js",
+      "key": "mkg_filter_operational_rental_contract",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/operational/timesheet/index.js",
+      "key": "mkg_filter_operational_timesheet",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/other/penugasan-kerja/index.js",
+      "key": "mkg_filter_other_penugasan_kerja",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/delivery-order/index.js",
+      "key": "mkg_filter_scm_delivery_order",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/goods-receipt/index.js",
+      "key": "mkg_filter_scm_goods_receipt",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/order-payment/index.js",
+      "key": "mkg_filter_scm_order_payment",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/pickup-order/index.js",
+      "key": "mkg_filter_scm_pickup_order",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/purchasing-orders/index.js",
+      "key": "mkg_filter_scm_purchasing_orders",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/purchasing-request/index.js",
+      "key": "mkg_filter_scm_purchasing_request",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/scm/shipping-order/index.js",
+      "key": "mkg_filter_scm_shipping_order",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/setting/kegiatan-tag/index.js",
+      "key": "mkg_filter_setting_kegiatan_tag",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/setting/timesheet-tag/index.js",
+      "key": "mkg_filter_setting_timesheet_tag",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/setting/user-access/index.js",
+      "key": "mkg_filter_setting_user_access",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/setting/wa-config-breakdown/index.js",
+      "key": "mkg_filter_setting_wa_config_breakdown",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/warehouse/goods-issues/index.js",
+      "key": "mkg_filter_warehouse_goods_issues",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/warehouse/stokopname/index.js",
+      "key": "mkg_filter_warehouse_stokopname",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    },
+    {
+      "file": "src/views/warehouse/transfers/index.js",
+      "key": "mkg_filter_warehouse_transfers",
+      "additionalKeys": [],
+      "pagination": "restore defaults page1; omit page/offset",
+      "coverage": "AC-02 static inventory; AC-03..07 shared hook tests; runtime QA pending"
+    }
+  ]
+}

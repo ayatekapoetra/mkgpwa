@@ -15,16 +15,20 @@ import { Add, Building3, Code, User } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 import FilterBisnisUnit from 'components/FilterBisnisUnit';
 
-export default function FilterPenyewa({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterPenyewa({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      nama: '',
-      kode: '',
-      abbr: '',
-      bisnis_id: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        nama: '',
+        kode: '',
+        abbr: '',
+        bisnis_id: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   return (

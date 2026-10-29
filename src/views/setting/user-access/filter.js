@@ -19,18 +19,22 @@ import FilterUser from 'components/FilterUser';
 import FilterMenu from 'components/FilterMenu';
 import FilterSubmenu from 'components/FilterSubmenu';
 
-export default function FilterUserAccess({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterUserAccess({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const theme = useTheme();
 
   const onResetFilterHandle = () => {
-    setData({
-      keyword: '',
-      user_id: '',
-      menu_id: '',
-      submenu_id: '',
-      page: 1,
-      perPages: data.perPages || 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        keyword: '',
+        user_id: '',
+        menu_id: '',
+        submenu_id: '',
+        page: 1,
+        perPages: data.perPages || 25
+      });
+    }
   };
 
   const patchData = (updater) => {

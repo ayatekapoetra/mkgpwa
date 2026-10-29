@@ -15,7 +15,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { CloseSquare } from 'iconsax-react';
 import { useGetGudang } from 'api/gudang';
 
-export default function FilterShippingOrder({ count, data, setData, open, onClose }) {
+export default function FilterShippingOrder({ count, data, setData, onReset, open, onClose }) {
   const [kodeInput, setKodeInput] = useState(data.kode || '');
   const [narasiInput, setNarasiInput] = useState(data.narasi || '');
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
@@ -52,16 +52,20 @@ export default function FilterShippingOrder({ count, data, setData, open, onClos
   const handleReset = () => {
     setKodeInput('');
     setNarasiInput('');
-    setData((prev) => ({
-      ...prev,
-      page: 1,
-      kode: '',
-      narasi: '',
-      startDate: '',
-      endDate: '',
-      gudang_id: '',
-      status: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({
+        ...prev,
+        page: 1,
+        kode: '',
+        narasi: '',
+        startDate: '',
+        endDate: '',
+        gudang_id: '',
+        status: ''
+      }));
+    }
   };
 
   return (

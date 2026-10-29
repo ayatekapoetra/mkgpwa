@@ -14,6 +14,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadEventHistory, useGetEventHistory } from 'api/event-history';
 import FilterEventHistory from './filter';
 import ListEventHistory from './list';
@@ -24,6 +25,19 @@ const getDefaultDates = () => {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   return { startdate: `${year}-${month}-01`, enddate: `${year}-${month}-${day}` };
+};
+
+const defaultParams = () => {
+  const dates = getDefaultDates();
+  return {
+    page: 1,
+    perPage: 25,
+    startdate: dates.startdate,
+    enddate: dates.enddate,
+    penyewa_ids: [],
+    equipment_ids: [],
+    shift_ids: []
+  };
 };
 
 const saveBlob = ({ blob, filename }) => {
@@ -40,19 +54,10 @@ const saveBlob = ({ blob, filename }) => {
 const errorMessage = (error) => error?.diagnostic?.message || error?.message || 'Gagal memuat laporan Event History.';
 
 export default function EventHistoryScreen() {
-  const defaultDates = useMemo(() => getDefaultDates(), []);
   const { enqueueSnackbar } = useSnackbar();
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
-  const [params, setParams] = useState({
-    page: 1,
-    perPage: 25,
-    startdate: defaultDates.startdate,
-    enddate: defaultDates.enddate,
-    penyewa_ids: [],
-    equipment_ids: [],
-    shift_ids: []
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_laporan_event_history', defaultParams);
   const result = useGetEventHistory(params);
 
   const handleDownload = async (format) => {
@@ -107,6 +112,7 @@ export default function EventHistoryScreen() {
           count={result.total}
           params={params}
           setParams={setParams}
+          onReset={resetParams}
           onClose={() => setOpenFilter(false)}
         />
         <ListEventHistory

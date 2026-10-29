@@ -22,6 +22,7 @@ import Paginate from "components/Paginate";
 import { APP_DEFAULT_PATH } from "config";
 import PurchasingRequestFilter from "./filter";
 import PurchasingRequestList from "./list";
+import useFilterStorage from "hooks/useFilterStorage";
 
 const DEFAULT_FILTERS = {
   page: 1,
@@ -39,7 +40,10 @@ const DEFAULT_FILTERS = {
 
 /** Displays the permission-aware purchasing request list and filter controls. */
 export default function PurchasingRequestPage() {
-  const [params, setParams] = useState(DEFAULT_FILTERS);
+  const [params, setParams, resetParams] = useFilterStorage(
+    "mkg_filter_scm_purchasing_request",
+    DEFAULT_FILTERS
+  );
   const [filterOpen, setFilterOpen] = useState(false);
   const { permissions, loading: accessLoading } = usePurchasingRequestAccess();
   const { rows, page, perPage, total, lastPage, loading, error, mutate } =
@@ -180,7 +184,7 @@ export default function PurchasingRequestPage() {
           setFilterOpen(false);
         }}
         onReset={() => {
-          setParams(DEFAULT_FILTERS);
+          resetParams();
           setFilterOpen(false);
         }}
       />

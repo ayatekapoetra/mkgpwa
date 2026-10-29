@@ -87,7 +87,7 @@ export default function BreakdownList() {
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_daily_breakdown', defaultFilters, { storage: 'session' });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_daily_breakdown', defaultFilters, { preservePagination: true });
   const [filterOpen, setFilterOpen] = useState(false);
   const [reportAnchor, setReportAnchor] = useState(null);
   const [downloadingReport, setDownloadingReport] = useState('');

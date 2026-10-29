@@ -24,18 +24,22 @@ import FilterCabang from 'components/FilterCabang';
 import FilterLokasiPit from 'components/FilterLokasiPit';
 import FilterMaterialMining from 'components/FilterMaterialMining';
 
-export default function FilterDom({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterDom({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      kode: '',
-      cabang_id: '',
-      material_id: '',
-      cargo_type: '',
-      contractor_code: '',
-      status: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        kode: '',
+        cabang_id: '',
+        material_id: '',
+        cargo_type: '',
+        contractor_code: '',
+        status: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   return (

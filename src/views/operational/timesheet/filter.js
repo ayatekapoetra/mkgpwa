@@ -34,23 +34,28 @@ export default function FilterTimesheet({
   count,
   params,
   setParams,
+  onReset,
   onClose,
   anchor = "right",
 }) {
   const onResetFilter = () => {
-    setParams((prev) => ({
-      page: 1,
-      perPage: prev.perPage || 25,
-      id: '',
-      site_id: "",
-      karyawan_id: "",
-      penyewa_id: "",
-      equipment_id: "",
-      startdate: "",
-      enddate: "",
-      status: "",
-      type: "",
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setParams((prev) => ({
+        page: 1,
+        perPage: prev.perPage || 25,
+        id: '',
+        site_id: "",
+        karyawan_id: "",
+        penyewa_id: "",
+        equipment_id: "",
+        startdate: "",
+        enddate: "",
+        status: "",
+        type: "",
+      }));
+    }
   };
   return (
     <div>

@@ -25,8 +25,11 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import { useGetStokopnames } from 'api/stokopname';
 import FilterStokopname from './filter';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 moment.locale('id');
+
+const DEFAULT_FILTERS = { page: 1, perPage: 25 };
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -51,7 +54,7 @@ const formatQty = (value) => {
 };
 
 export default function StokopnameScreen() {
-  const [filters, setFilters] = useState({ page: 1, perPage: 25 });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_warehouse_stokopname', DEFAULT_FILTERS);
   const [openFilter, setOpenFilter] = useState(false);
   const { rows, total, page, perPage, lastPage, summary, dataLoading } = useGetStokopnames(filters);
 
@@ -176,6 +179,7 @@ export default function StokopnameScreen() {
         count={total}
         data={filters}
         setData={setFilters}
+        onReset={resetFilters}
         open={openFilter}
         onClose={() => setOpenFilter(false)}
       />

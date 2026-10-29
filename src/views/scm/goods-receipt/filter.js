@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography';
 import { CloseSquare } from 'iconsax-react';
 import { useGetGudang } from 'api/gudang';
 
-export default function FilterGoodsReceipt({ count, data, setData, open, onClose }) {
+export default function FilterGoodsReceipt({ count, data, setData, onReset, open, onClose }) {
   const [kodeReceiptInput, setKodeReceiptInput] = useState(data.kodeReceipt || '');
   const [kodeSjInput, setKodeSjInput] = useState(data.kodeSj || '');
   const [narasiInput, setNarasiInput] = useState(data.narasi || '');
@@ -59,16 +59,20 @@ export default function FilterGoodsReceipt({ count, data, setData, open, onClose
     setKodeReceiptInput('');
     setKodeSjInput('');
     setNarasiInput('');
-    setData((prev) => ({
-      ...prev,
-      page: 1,
-      kodeReceipt: '',
-      kodeSj: '',
-      narasi: '',
-      startDate: '',
-      endDate: '',
-      gudangId: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({
+        ...prev,
+        page: 1,
+        kodeReceipt: '',
+        kodeSj: '',
+        narasi: '',
+        startDate: '',
+        endDate: '',
+        gudangId: ''
+      }));
+    }
   };
 
   return (

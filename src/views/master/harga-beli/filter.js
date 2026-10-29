@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Autocomplete, Box, Button, Divider, Drawer, Stack, TextField, Typography } from '@mui/material';
 import { CloseSquare } from 'iconsax-react';
 
-export default function HargaBeliFilter({ open, onClose, filters, setFilters, options, total }) {
+export default function HargaBeliFilter({ open, onClose, filters, setFilters, onReset, options, total }) {
   const [draft, setDraft] = useState(filters);
 
   useEffect(() => {
@@ -13,9 +13,13 @@ export default function HargaBeliFilter({ open, onClose, filters, setFilters, op
 
   const update = (values) => setDraft((current) => ({ ...current, ...values }));
   const reset = () => {
-    const values = { ...filters, page: 1, search: '', barang_id: '', bisnis_id: '', gudang_id: '', periode_from: '', periode_to: '', aktif: 'Y' };
-    setDraft(values);
-    setFilters(values);
+    if (onReset) {
+      onReset({ perPage: filters.perPage });
+    } else {
+      const values = { ...filters, page: 1, search: '', barang_id: '', bisnis_id: '', gudang_id: '', periode_from: '', periode_to: '', aktif: 'Y' };
+      setFilters(values);
+    }
+    setDraft({ ...filters, page: 1, search: '', barang_id: '', bisnis_id: '', gudang_id: '', periode_from: '', periode_to: '', aktif: 'Y' });
   };
   const selected = (rows, id) => rows.find((row) => String(row.id) === String(id)) || null;
   const availableGudangs = (options.gudangs || []).filter((row) => !draft.bisnis_id || String(row.bisnis_id) === String(draft.bisnis_id));

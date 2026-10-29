@@ -29,7 +29,7 @@ const selectedOptions = (options, selected) => {
   return options.filter((option) => ids.has(String(option.id)));
 };
 
-export default function FilterEventHistory({ open, count, params, setParams, onClose }) {
+export default function FilterEventHistory({ open, count, params, setParams, onReset, onClose }) {
   const { penyewa: penyewaData = [], penyewaLoading } = usePublicPenyewa();
   const { data: equipmentData = [], dataLoading: equipmentLoading } = usePublicEquipment();
   const { data: shiftData = [], dataLoading: shiftLoading } = useGetShiftKerja();
@@ -39,8 +39,12 @@ export default function FilterEventHistory({ open, count, params, setParams, onC
   const update = (values) => setParams((previous) => ({ ...previous, ...values, page: 1 }));
 
   const reset = () => {
-    const dates = defaultDates();
-    update({ ...dates, penyewa_ids: [], equipment_ids: [], shift_ids: [] });
+    if (onReset) {
+      onReset();
+    } else {
+      const dates = defaultDates();
+      update({ ...dates, penyewa_ids: [], equipment_ids: [], shift_ids: [] });
+    }
   };
 
   return (

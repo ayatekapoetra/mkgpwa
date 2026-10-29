@@ -12,6 +12,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetPemakaianBarang } from 'api/pemakaian-barang';
 import FilterPemakaianBarang from 'views/laporan/pemakaian-barang/filter';
 import ListPemakaianBarang from 'views/laporan/pemakaian-barang/list';
@@ -20,14 +21,16 @@ import ChartPart from 'views/laporan/pemakaian-barang/chart-part';
 // EXCEL EXPORT
 import * as XLSX from 'xlsx';
 
+const defaultParams = {
+  thnbln: '2025-03',
+  equipment_id: '',
+  cabang_id: '',
+  kategori_equipment: ''
+};
+
 const LaporanEvaluasiPartScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    thnbln: '2025-03',
-    equipment_id: '',
-    cabang_id: '',
-    kategori_equipment: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_laporan_pemakaian_barang', defaultParams);
   const { data, dataLoading, dataError } = useGetPemakaianBarang(params);
 
   const toggleFilterHandle = () => {
@@ -60,7 +63,7 @@ const LaporanEvaluasiPartScreen = () => {
       content={false}
     >
       <Stack spacing={2} sx={{ px: 1, pb: 2 }}>
-        <FilterPemakaianBarang open={openFilter} count={data?.length} params={params} setParams={setParams} onClose={toggleFilterHandle} />
+        <FilterPemakaianBarang open={openFilter} count={data?.length} params={params} setParams={setParams} onReset={resetParams} onClose={toggleFilterHandle} />
         <ListPemakaianBarang data={data} params={params} onPageChange={(newPage) => setParams((prev) => ({ ...prev, page: newPage }))} />
         <ChartPart data={data} params={params} />
       </Stack>

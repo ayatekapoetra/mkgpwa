@@ -14,6 +14,7 @@ import { DocumentDownload, DocumentText, Filter } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadPartUsedHistory, usePartUsedHistory, usePartUsedHistoryAccess } from 'api/part-used-history';
 import PartUsedHistoryDetail from './detail';
 import PartUsedHistoryFilter from './filter';
@@ -47,7 +48,10 @@ const saveBlob = ({ blob, filename }) => {
 
 export default function PartUsedHistoryScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const [params, setParams] = useState(defaultParams);
+  const [params, setParams, resetParams] = useFilterStorage(
+    'mkg_filter_laporan_part_used_history',
+    defaultParams
+  );
   const [draftParams, setDraftParams] = useState(() => cloneParams(defaultParams()));
   const [openFilter, setOpenFilter] = useState(false);
   const [detailId, setDetailId] = useState(null);
@@ -63,7 +67,10 @@ export default function PartUsedHistoryScreen() {
     setParams({ ...cloneParams(draftParams), page: 1, perPage: params.perPage });
     setOpenFilter(false);
   };
-  const resetFilter = () => setDraftParams({ ...defaultParams(), perPage: params.perPage });
+  const resetFilter = () => {
+    resetParams({ perPage: params.perPage });
+    setDraftParams({ ...defaultParams(), perPage: params.perPage });
+  };
   const download = async (format) => {
     try {
       setExporting(format);

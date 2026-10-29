@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import moment from 'moment';
+import useFilterStorage from 'hooks/useFilterStorage';
 import MainCard from 'components/MainCard';
 import { Card, CardContent, Stack, Chip, IconButton, Button } from '@mui/material';
 import { HashtagDown, Filter } from 'iconsax-react';
@@ -12,13 +13,12 @@ import AbsensiTable from './table';
 import FilterAbsensi from './filter';
 
 const AbsensiKaryawanScreen = () => {
-  const defaultPeriode = moment().format('YYYY-MM');
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    periode: defaultPeriode,
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_hc_absensi_karyawan', () => ({
+    periode: moment().format('YYYY-MM'),
     cabang_id: '',
     karyawan_id: ''
-  });
+  }));
 
   const { attendance, attendanceLoading, attendanceError, total } = useMonthlyAttendance(params);
   const page = params.page || 1;
@@ -62,6 +62,7 @@ const AbsensiKaryawanScreen = () => {
       <FilterAbsensi
         data={params}
         setData={setParams}
+        onReset={resetParams}
         open={openFilter}
         count={total}
         onClose={toggleFilterHandle}

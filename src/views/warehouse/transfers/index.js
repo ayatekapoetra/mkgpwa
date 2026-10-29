@@ -32,8 +32,11 @@ import { APP_DEFAULT_PATH } from 'config';
 import { useGetWarehouseTransfers } from 'api/warehouse-transfer';
 import FilterWarehouseTransfers from './filter';
 import axiosServices from 'utils/axios';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 moment.locale('id');
+
+const DEFAULT_FILTERS = { page: 1, limit: 20, kode: '', narasi: '', status: '', gudang_src: '', gudang_target: '' };
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -50,7 +53,7 @@ const statusColor = {
 
 export default function WarehouseTransferScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const [filters, setFilters] = useState({ page: 1, limit: 20, kode: '', narasi: '', status: '', gudang_src: '', gudang_target: '' });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_warehouse_transfers', DEFAULT_FILTERS);
   const { data, dataLoading, dataError } = useGetWarehouseTransfers(filters);
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
@@ -115,7 +118,7 @@ export default function WarehouseTransferScreen() {
         }
         content={false}
       >
-        <FilterWarehouseTransfers count={data?.meta?.total} data={filters} setData={setFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
+        <FilterWarehouseTransfers count={data?.meta?.total} data={filters} setData={setFilters} onReset={resetFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
         {dataError ? (
           <Alert severity="warning" sx={{ m: 2 }}>Gagal memuat data transfer.</Alert>
         ) : dataLoading ? (

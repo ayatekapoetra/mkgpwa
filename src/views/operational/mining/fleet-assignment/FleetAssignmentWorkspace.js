@@ -31,6 +31,7 @@ import AddIcon from "@mui/icons-material/Add";
 
 import MainCard from "components/MainCard";
 import { alpha, useTheme } from "@mui/material/styles";
+import useFilterStorage from "hooks/useFilterStorage";
 import {
   fleetErrorMessage,
   useFleetAssignmentAccess,
@@ -183,7 +184,7 @@ export default function FleetAssignmentWorkspace() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [quickSearch, setQuickSearch] = useState("");
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);
-  const [scope, setScope] = useState({
+  const defaultScope = () => ({
     date_ops: searchParams.get("date_ops") || localDate(),
     shift_id: searchParams.get("shift_id") || "",
     area: searchParams.get("area") || "",
@@ -192,6 +193,7 @@ export default function FleetAssignmentWorkspace() {
     status: searchParams.get("status") || "",
     search: searchParams.get("search") || "",
   });
+  const [scope, setScope, resetScope] = useFilterStorage('mkg_filter_operational_fleet_assignment', defaultScope);
 
   useEffect(() => {
     const query = new URLSearchParams({ ...scope });
@@ -251,6 +253,7 @@ export default function FleetAssignmentWorkspace() {
         onClose={() => setFilterOpen(false)}
         scope={scope}
         setScope={setScope}
+        onReset={resetScope}
       />
 
       {!enabled && (

@@ -16,6 +16,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadProductivity, useGetProductivityV2 } from 'api/productivity';
 import FilterProductivity from './filter';
 import ListProductivity from './list';
@@ -26,6 +27,19 @@ const getDefaultDates = () => {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   return { startdate: `${year}-${month}-01`, enddate: `${year}-${month}-${day}` };
+};
+
+const defaultParams = () => {
+  const dates = getDefaultDates();
+  return {
+    page: 1,
+    perPage: 25,
+    startdate: dates.startdate,
+    enddate: dates.enddate,
+    penyewa_ids: [],
+    equipment_ids: [],
+    shift_ids: []
+  };
 };
 
 const errorMessage = (error) => error?.diagnostic?.message || error?.message || 'Gagal memuat laporan Productivity.';
@@ -43,20 +57,15 @@ const saveBlob = ({ blob, filename }) => {
 
 export default function ProductivityScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const defaultDates = useMemo(() => getDefaultDates(), []);
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_laporan_productivity', defaultParams);
   const [draftParams, setDraftParams] = useState({
-    startdate: defaultDates.startdate,
-    enddate: defaultDates.enddate,
-    penyewa_ids: [],
-    equipment_ids: [],
-    shift_ids: []
-  });
-  const [params, setParams] = useState({
-    page: 1,
-    perPage: 25,
-    ...draftParams
+    startdate: params.startdate,
+    enddate: params.enddate,
+    penyewa_ids: params.penyewa_ids || [],
+    equipment_ids: params.equipment_ids || [],
+    shift_ids: params.shift_ids || []
   });
 
   const result = useGetProductivityV2(params);
@@ -73,14 +82,33 @@ export default function ProductivityScreen() {
     }
   };
 
+  const openFilterDrawer = () => {
+    setDraftParams({
+      startdate: params.startdate,
+      enddate: params.enddate,
+      penyewa_ids: params.penyewa_ids || [],
+      equipment_ids: params.equipment_ids || [],
+      shift_ids: params.shift_ids || []
+    });
+    setOpenFilter(true);
+  };
+
   const applyFilters = () => {
-    setParams((previous) => ({ ...previous, ...draftParams, page: 1 }));
+    setParams((previous) => ({ ...previous, ...draftParams, page: 1, perPage: previous.perPage }));
     setOpenFilter(false);
   };
 
-  const resetFilters = (resetParams) => {
-    setDraftParams(resetParams);
-    setParams((previous) => ({ ...previous, ...resetParams, page: 1 }));
+  const resetFilters = (nextResetParams) => {
+    const dates = nextResetParams || getDefaultDates();
+    const fresh = {
+      startdate: dates.startdate,
+      enddate: dates.enddate,
+      penyewa_ids: dates.penyewa_ids || [],
+      equipment_ids: dates.equipment_ids || [],
+      shift_ids: dates.shift_ids || []
+    };
+    setDraftParams(fresh);
+    resetParams({ ...fresh, perPage: params.perPage });
   };
 
   return (
@@ -103,7 +131,7 @@ export default function ProductivityScreen() {
             </span>
           </Tooltip>
           <Tooltip title="Filter">
-            <IconButton aria-label="filter" color="primary" onClick={() => setOpenFilter((open) => !open)} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
+            <IconButton aria-label="filter" color="primary" onClick={openFilterDrawer} sx={{ bgcolor: 'transparent', '&:hover': { bgcolor: 'transparent' } }}>
               <FilterListIcon />
             </IconButton>
           </Tooltip>

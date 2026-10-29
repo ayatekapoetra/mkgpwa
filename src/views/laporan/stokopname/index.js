@@ -15,6 +15,7 @@ import { DocumentDownload, DocumentText, Filter } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadStokopnameReport, useStokopnameReport, useStokopnameReportAccess } from 'api/stokopname-report';
 import StokopnameReportFilter from './filter';
 import StokopnameReportList from './list';
@@ -52,7 +53,7 @@ const saveBlob = ({ blob, filename }) => {
 
 export default function StokopnameReportScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const [params, setParams] = useState(defaultParams);
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_laporan_stokopname', defaultParams);
   const [draftParams, setDraftParams] = useState(() => cloneParams(defaultParams()));
   const [openFilter, setOpenFilter] = useState(false);
   const [exporting, setExporting] = useState(null);
@@ -67,7 +68,10 @@ export default function StokopnameReportScreen() {
     setParams({ ...cloneParams(draftParams), page: 1, perPage: params.perPage });
     setOpenFilter(false);
   };
-  const resetFilter = () => setDraftParams({ ...defaultParams(), perPage: params.perPage });
+  const resetFilter = () => {
+    resetParams({ perPage: params.perPage });
+    setDraftParams({ ...defaultParams(), perPage: params.perPage });
+  };
   const download = async (format) => {
     try {
       setExporting(format);

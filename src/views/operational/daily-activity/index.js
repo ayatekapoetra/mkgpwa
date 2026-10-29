@@ -13,6 +13,7 @@ import { Add, Eye, FilterSearch } from 'iconsax-react';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadDailyActivities, useDailyActivities, useDailyActivityAccess } from 'api/daily-activity';
 import { STATUSES, PLAN_STATUS_LABELS, getHeaderId } from './utils';
 import DailyActivityFilter from './filter';
@@ -28,7 +29,8 @@ export default function DailyActivityList({ planView = false }) {
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
   const { permissions, accessLoading, accessError } = useDailyActivityAccess();
   const defaults = { ...initialFilters, is_plan: planView ? 'all' : 'false', plan_status: planView ? '' : 'REALIZED' };
-  const [filters, setFilters] = useState(defaults);
+  const storageKey = planView ? 'mkg_filter_operational_daily_activity_plan' : 'mkg_filter_operational_daily_activity';
+  const [filters, setFilters, resetFilters] = useFilterStorage(storageKey, defaults);
   const [showFilters, setShowFilters] = useState(false);
   const [exporting, setExporting] = useState('');
   const [exportError, setExportError] = useState('');
@@ -114,7 +116,7 @@ export default function DailyActivityList({ planView = false }) {
         options={options}
         planView={planView}
         onApply={setFilters}
-        onReset={() => setFilters(defaults)}
+        onReset={resetFilters}
       />
     </>
   );

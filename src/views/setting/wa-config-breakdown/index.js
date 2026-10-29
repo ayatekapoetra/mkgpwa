@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import useFilterStorage from "hooks/useFilterStorage";
 import Link from "next/link";
 
 import Button from "@mui/material/Button";
@@ -28,7 +29,7 @@ export default function EquipmentProjectWaScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [params, setParams] = useState({
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_setting_wa_config_breakdown', {
     page: 1,
     perPage: 25,
     project_id: "",
@@ -78,6 +79,7 @@ export default function EquipmentProjectWaScreen() {
         <FilterEquipmentProjectWa
           params={params}
           setParams={setParams}
+          onReset={resetParams}
           open={openFilter}
           onClose={toggleFilterHandle}
           count={data?.total}

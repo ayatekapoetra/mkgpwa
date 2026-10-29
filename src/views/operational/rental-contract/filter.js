@@ -29,7 +29,7 @@ const initialFilters = {
   equipment_ids: []
 };
 
-export default function FilterRentalContract({ open, onClose, data, setData, count = 0 }) {
+export default function FilterRentalContract({ open, onClose, data, setData, onReset, count = 0 }) {
   const [draft, setDraft] = useState(data || initialFilters);
   const { data: equipmentOptions, loading: equipmentLoading } = useRentalEquipmentOptions({ limit: 1000 });
   const { penyewa } = useGetPenyewa({ page: 1, perPage: 1000 });
@@ -48,7 +48,11 @@ export default function FilterRentalContract({ open, onClose, data, setData, cou
   const handleReset = () => {
     const reset = { ...initialFilters, page: 1, per_page: data?.per_page || 25 };
     setDraft(reset);
-    setData(reset);
+    if (onReset) {
+      onReset();
+    } else {
+      setData(reset);
+    }
     onClose?.();
   };
 

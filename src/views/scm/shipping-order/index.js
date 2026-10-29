@@ -21,10 +21,22 @@ import ListShippingOrder from './list';
 import { useGetShippingOrder } from 'api/shipping-order';
 import FilterShippingOrder from './filter';
 import Paginate from 'components/Paginate';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
+
+const DEFAULT_FILTERS = {
+  page: 1,
+  perPage: 25,
+  kode: '',
+  narasi: '',
+  startDate: '',
+  endDate: '',
+  gudang_id: '',
+  status: ''
+};
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -33,16 +45,7 @@ const breadcrumbLinks = [
 
 export default function ShippingOrderScreen() {
   const columns = DataColumn();
-  const [filtered, setFiltered] = useState({
-    page: 1,
-    perPage: 25,
-    kode: '',
-    narasi: '',
-    startDate: '',
-    endDate: '',
-    gudang_id: '',
-    status: ''
-  });
+  const [filtered, setFiltered, resetFiltered] = useFilterStorage('mkg_filter_scm_shipping_order', DEFAULT_FILTERS);
   const { data, dataLoading, dataError } = useGetShippingOrder(filtered);
   const [openFilter, setOpenFilter] = useState(false);
 
@@ -66,7 +69,7 @@ export default function ShippingOrderScreen() {
         }
         content={false}
       >
-        <FilterShippingOrder count={data?.total} data={filtered} setData={setFiltered} open={openFilter} onClose={toggleFilterHandle} />
+        <FilterShippingOrder count={data?.total} data={filtered} setData={setFiltered} onReset={resetFiltered} open={openFilter} onClose={toggleFilterHandle} />
         {dataError ? (
           <Alert severity="warning" sx={{ m: 2 }}>Gagal memuat shipping order. Periksa koneksi dan coba kembali.</Alert>
         ) : dataLoading ? (

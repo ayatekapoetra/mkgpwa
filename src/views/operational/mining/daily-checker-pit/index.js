@@ -9,6 +9,7 @@ import { Add, Filter, Refresh } from 'iconsax-react';
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { openNotification } from 'api/notification';
 import { useCheckerPitGroups } from 'api/checker-pit';
 
@@ -31,7 +32,7 @@ const defaultParams = {
 
 export default function DailyCheckerPitPage() {
   const router = useRouter();
-  const [params, setParams] = useState(defaultParams);
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_operational_daily_checker_pit', defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -151,7 +152,7 @@ export default function DailyCheckerPitPage() {
         )}
       </MainCard>
 
-      <CheckerPitFilter open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} />
+      <CheckerPitFilter open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} onReset={resetParams} />
     </>
   );
 }

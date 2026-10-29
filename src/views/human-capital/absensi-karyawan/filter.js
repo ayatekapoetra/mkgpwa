@@ -15,14 +15,18 @@ import FilterCabang from 'components/FilterCabang';
 import FilterKaryawan from 'components/FilterKaryawan';
 import { Add, Calendar, TagUser } from 'iconsax-react';
 
-export default function FilterAbsensi({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterAbsensi({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData((prev) => ({
-      ...prev,
-      periode: prev.periode || '',
-      cabang_id: '',
-      karyawan_id: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({
+        ...prev,
+        periode: prev.periode || '',
+        cabang_id: '',
+        karyawan_id: ''
+      }));
+    }
   };
 
   return (

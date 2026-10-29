@@ -19,8 +19,12 @@ const syncOptions = [
   { key: 'SYNCED', teks: 'Semua Synced' }
 ];
 
-export default function CheckerStockpileFilter({ open, onClose, params, setParams, anchor = 'right' }) {
+export default function CheckerStockpileFilter({ open, onClose, params, setParams, onReset: propOnReset, anchor = 'right' }) {
   const onReset = () => {
+    if (propOnReset) {
+      propOnReset();
+      return;
+    }
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const formatDate = (value) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;

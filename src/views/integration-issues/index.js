@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useState } from 'react';
+import useFilterStorage from 'hooks/useFilterStorage';
 import Link from 'next/link';
 import {
   Alert,
@@ -115,8 +116,8 @@ export default function IntegrationIssuesScreen() {
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
   const initial = { status: '', event_type: '', company_code: '', search: '', page: 1, per_page: 25 };
-  const [filters, setFilters] = useState(initial);
-  const [draft, setDraft] = useState(initial);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_integration_issues', initial);
+  const [draft, setDraft] = useState(filters);
   const { issues, summary, pagination, issuesLoading, issuesRefreshing, issuesError, refreshIssues } = useIntegrationIssues(filters);
 
   const applyFilters = () => setFilters({ ...draft, page: 1 });
@@ -180,6 +181,7 @@ export default function IntegrationIssuesScreen() {
               {COMPANY_OPTIONS.map((company) => <MenuItem key={company} value={company}>{company}</MenuItem>)}
             </TextField>
             <Button variant="contained" startIcon={<Filter size={18} />} onClick={applyFilters}>filter</Button>
+            <Button variant="outlined" color="secondary" onClick={() => { resetFilters(); setDraft({ status: '', event_type: '', company_code: '', search: '', page: 1, per_page: 25 }); }}>Reset</Button>
             <IconButton color="secondary" disabled={issuesRefreshing} onClick={() => refreshIssues()} aria-label="Refresh integration issues"><Refresh size={20} /></IconButton>
           </Stack>
         </Box>
