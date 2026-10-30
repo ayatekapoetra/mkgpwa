@@ -71,32 +71,14 @@ const normalizePermissions = (permissions = {}) =>
     ]),
   );
 
-export const getPurchasingRequestError = (
-  error,
-  fallback = "Proses Purchasing Request gagal",
-) => {
-  // The shared Axios interceptor rejects with response.data directly, while
-  // blob requests and network failures still use the native AxiosError shape.
-  const payload = error?.response?.data || error?.data || error || {};
-  const diagnostic = payload?.diagnostic || {};
-  const legacyMessage =
-    typeof diagnostic.error === "string" ? diagnostic.error : "";
-  const fieldMessage = Array.isArray(payload?.errors)
-    ? payload.errors.find((item) => item?.message)?.message
-    : "";
+import {
+  getPurchasingRequestError,
+  normalizeDetail,
+} from "./errorHelpers";
 
-  return {
-    message:
-      diagnostic.message ||
-      legacyMessage ||
-      payload.message ||
-      fieldMessage ||
-      error?.message ||
-      fallback,
-    code: diagnostic.code || null,
-    requestId: diagnostic.request_id || null,
-    errors: Array.isArray(payload?.errors) ? payload.errors : [],
-  };
+export {
+  getPurchasingRequestError,
+  normalizeDetail,
 };
 
 const toQueryString = (params = {}) => {
@@ -153,12 +135,6 @@ const normalizeList = (payload, params = {}) => {
       pagination.lastPage || pagination.last_page || pagination.totalPages || 1,
     ),
   };
-};
-
-const normalizeDetail = (payload) => {
-  const row = payload?.rows ?? payload?.data?.rows ?? payload?.data ?? null;
-  if (Array.isArray(row)) return row[0] || null;
-  return row;
 };
 
 export const usePurchasingRequestAccess = () => {

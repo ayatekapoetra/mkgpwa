@@ -29,6 +29,7 @@ import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
 import { useShowGoodsIssue, useGetGoodsIssueAudit, postGoodsIssue, voidGoodsIssue, reviseGoodsIssue, downloadGoodsIssuePdf } from 'api/goods-issue';
 import ActionDialog from 'views/scm/purchasing-request/components/ActionDialog';
+import { canShowVoidButton, canShowReviseButton, formatGoodsIssueActionError } from './goodsIssueGuard';
 
 import { DocumentDownload } from 'iconsax-react';
 
@@ -94,12 +95,16 @@ export default function GoodsIssueShowScreen({ id }) {
       setVoidReason('');
       await mutate();
     } catch (error) {
+      const errInfo = formatGoodsIssueActionError(error, 'Void gagal');
       openNotification({
         open: true,
-        title: 'error',
-        message: error?.response?.data?.message || error?.message || 'Void gagal',
+        title: errInfo.title || 'error',
+        message: errInfo.message,
         alert: { color: 'error' }
       });
+      if (errInfo.isConflict) {
+        await mutate().catch(() => {});
+      }
     } finally {
       setActionLoading(false);
     }
@@ -116,12 +121,16 @@ export default function GoodsIssueShowScreen({ id }) {
       const replacementId = response.data?.replacement_draft_id;
       router.push(`/goods-issues/${replacementId}/edit`);
     } catch (error) {
+      const errInfo = formatGoodsIssueActionError(error, 'Revise gagal');
       openNotification({
         open: true,
-        title: 'error',
-        message: error?.response?.data?.message || error?.message || 'Revise gagal',
+        title: errInfo.title || 'error',
+        message: errInfo.message,
         alert: { color: 'error' }
       });
+      if (errInfo.isConflict) {
+        await mutate().catch(() => {});
+      }
     } finally {
       setActionLoading(false);
     }
@@ -166,8 +175,8 @@ export default function GoodsIssueShowScreen({ id }) {
 
   const canUpdate = docPermissions?.can_update ?? false;
   const canPost = docPermissions?.can_post ?? false;
-  const canVoid = docPermissions?.can_void ?? false;
-  const canRevise = docPermissions?.can_revise ?? false;
+  const canVoid = canShowVoidButton({ header, permissions: docPermissions });
+  const canRevise = canShowReviseButton({ header, permissions: docPermissions });
   const totalValue = (items || []).reduce((sum, item) => sum + Number(item.extended_price || item.totharga_used || 0), 0);
 
   return (
@@ -187,12 +196,12 @@ export default function GoodsIssueShowScreen({ id }) {
                 {actionLoading ? <CircularProgress size={20} color="inherit" /> : 'Post'}
               </Button>
             ) : null}
-            {canVoid && (header.status === 'DRAFT' || header.status === 'POSTED') ? (
+            {canVoid ? (
               <Button variant="outlined" color="error" onClick={() => setVoidDialogOpen(true)} disabled={actionLoading}>
                 {header.status === 'DRAFT' ? 'Cancel Draft' : 'Void'}
               </Button>
             ) : null}
-            {canRevise && header.status === 'POSTED' ? (
+            {canRevise ? (
               <Button variant="contained" color="warning" onClick={() => setReviseDialogOpen(true)} disabled={actionLoading}>
                 Revise
               </Button>
@@ -409,7 +418,7 @@ export default function GoodsIssueShowScreen({ id }) {
         reason={voidReason}
         onReasonChange={setVoidReason}
         requireReason={header.status === 'POSTED'}
-        onClose={() => setVoidDialogOpen(false)}
+        onClose={() => !actionLoading && setVoidDialogOpen(false)}
         onConfirm={handleVoid}
       />
 
@@ -423,7 +432,7 @@ export default function GoodsIssueShowScreen({ id }) {
         reason={reviseReason}
         onReasonChange={setReviseReason}
         requireReason
-        onClose={() => setReviseDialogOpen(false)}
+        onClose={() => !actionLoading && setReviseDialogOpen(false)}
         onConfirm={handleRevise}
       />
     </Fragment>

@@ -31,6 +31,7 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import { useGetGoodsIssues, useGetGoodsIssuesAccess, downloadGoodsIssueReport } from 'api/goods-issue';
 import FilterGoodsIssues from './filter';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 moment.locale('id');
 
@@ -116,22 +117,24 @@ function SummaryCard({ label, value, sublabel, icon, accent, loading }) {
   );
 }
 
+const defaultFilters = () => ({
+  page: 1,
+  perPage: 25,
+  date_from: moment().startOf('month').format('YYYY-MM-DD'),
+  date_to: moment().format('YYYY-MM-DD'),
+  kode: '',
+  penerima: '',
+  narasi: '',
+  status: '',
+  bisnis_id: '',
+  gudang_id: '',
+  source_type: ''
+});
+
 export default function GoodsIssuesScreen() {
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
-  const [filters, setFilters] = useState({
-    page: 1,
-    perPage: 25,
-    date_from: moment().startOf('month').format('YYYY-MM-DD'),
-    date_to: moment().format('YYYY-MM-DD'),
-    kode: '',
-    penerima: '',
-    narasi: '',
-    status: '',
-    bisnis_id: '',
-    gudang_id: '',
-    source_type: ''
-  });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_warehouse_goods_issues', defaultFilters);
   const { permissions, loading: permLoading } = useGetGoodsIssuesAccess();
   const { rows, summary, total, page, perPage, lastPage, dataLoading, dataError, mutate } = useGetGoodsIssues(filters);
   const [openFilter, setOpenFilter] = useState(false);
@@ -193,7 +196,7 @@ export default function GoodsIssuesScreen() {
         }
         content={false}
       >
-        <FilterGoodsIssues count={total} data={filters} setData={setFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
+        <FilterGoodsIssues count={total} data={filters} setData={setFilters} onReset={resetFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
 
         <Box sx={{ p: 2.5, pb: 0 }}>
           <Box

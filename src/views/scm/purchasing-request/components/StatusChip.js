@@ -5,7 +5,9 @@ import { Chip } from "@mui/material";
 const STATUS = {
   draft: { label: "Draft", color: "default" },
   active: { label: "Check", color: "warning" },
+  check: { label: "Check", color: "warning" },
   approved: { label: "Validate", color: "info" },
+  validate: { label: "Validate", color: "info" },
   finish: { label: "Finish", color: "success" },
   done: { label: "Finish", color: "success" },
 };

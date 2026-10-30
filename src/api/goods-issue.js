@@ -231,3 +231,5 @@ export async function reviseGoodsIssue(id, payload) {
   const response = await axiosServices.post(`${endpoints.key}/${id}/revise`, payload, { skipOfflineQueue: true });
   return response.data;
 }
+
+export { getGoodsIssueError } from './errorHelpers';

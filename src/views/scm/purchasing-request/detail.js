@@ -26,6 +26,7 @@ import {
   approvePurchasingRequest,
   deletePurchasingRequest,
   getPurchasingRequestError,
+  normalizeDetail,
   printPurchasingRequest,
   rollbackPurchasingRequest,
   usePurchasingRequestAccess,
@@ -53,6 +54,11 @@ import {
 } from "./components";
 import { calculateItemTotals, formatCurrency } from "./utils";
 import { groupApprovalItems } from "./approvalGrouping";
+import {
+  filterEligibleApprovalItems,
+  validateApprovalPayload,
+  isApprovalConflict,
+} from "./approvalValidation";
 
 /** Displays a purchasing request and coordinates its permitted workflow actions. */
 export default function PurchasingRequestDetail() {
@@ -63,7 +69,8 @@ export default function PurchasingRequestDetail() {
     params.id,
     access.can_read,
   );
-  const { permissions } = usePurchasingRequestPermissions(row);
+  const { permissions, mutate: mutatePermissions } =
+    usePurchasingRequestPermissions(row);
   const { rows: suppliers = [] } = usePurchasingRequestPemasok(
     {},
     Boolean(row),
@@ -85,14 +92,19 @@ export default function PurchasingRequestDetail() {
     () => (row?.items || []).filter((item) => item.aktif !== "N"),
     [row],
   );
-  const pendingValidation = items.filter(
-    (item) => !item.user_validated && !item.date_validated,
+  const pendingValidation = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.aktif !== "N" &&
+          !item.user_validated &&
+          !item.date_validated,
+      ),
+    [items],
   );
-  const pendingApproval = items.filter(
-    (item) =>
-      (item.user_validated || item.date_validated) &&
-      !item.user_approved &&
-      !item.date_approved,
+  const pendingApproval = useMemo(
+    () => filterEligibleApprovalItems(items),
+    [items],
   );
 
   const notify = (color, message, title) => {
@@ -203,8 +215,12 @@ export default function PurchasingRequestDetail() {
   };
 
   const selectedItemsToApprove = useMemo(() => {
-    return items.filter((item) => selectedApproval.includes(item.id));
-  }, [items, selectedApproval]);
+    return items.filter(
+      (item) =>
+        selectedApproval.includes(item.id) &&
+        pendingApproval.some((p) => p.id === item.id),
+    );
+  }, [items, selectedApproval, pendingApproval]);
 
   const approvalGroups = useMemo(() => {
     return groupApprovalItems(selectedItemsToApprove, approvalMetodeOverrides);
@@ -225,21 +241,75 @@ export default function PurchasingRequestDetail() {
     }));
   };
 
-  const approveSelectedItems = () => {
-    const payloadItems = selectedApproval.map((id) => {
-      const it = items.find((x) => x.id === id);
-      const metode =
-        approvalMetodeOverrides[id] !== undefined
-          ? approvalMetodeOverrides[id]
-          : it?.metode || "kredit";
-      return { id, metode };
-    });
+  const approveSelectedItems = async () => {
+    if (loading) return;
+    setLoading(true);
 
-    executeAction(
-      () => approvePurchasingRequest(payloadItems),
-      `Approval berhasil, ${approvalGroups.length} Purchase Order telah dibuat`,
-      "Approval",
-    );
+    try {
+      const freshData = await mutate();
+      const freshRow = normalizeDetail(freshData) || row;
+      const freshItems = freshRow?.items || [];
+
+      const validation = validateApprovalPayload(
+        selectedApproval,
+        freshItems,
+        approvalMetodeOverrides,
+      );
+
+      if (!validation.valid || validation.payloadItems.length === 0) {
+        setSelectedApproval([]);
+        setApprovalMetodeOverrides({});
+        setDialog(null);
+        notify(
+          "error",
+          validation.errorReason ||
+            "Status item telah berubah atau item sudah tidak aktif. Silakan pilih ulang item.",
+          "Konflik Data Approval (Stale Selection)",
+        );
+        return;
+      }
+
+      await approvePurchasingRequest(validation.payloadItems);
+      await Promise.all([mutate(), mutatePermissions?.()]);
+
+      notify(
+        "success",
+        `Approval berhasil, ${approvalGroups.length} Purchase Order telah dibuat`,
+        "Approval",
+      );
+
+      setMode("view");
+      setSelectedValidation([]);
+      setSelectedApproval([]);
+      setApprovalMetodeOverrides({});
+      setDialog(null);
+      setReason("");
+    } catch (error) {
+      const apiError = getPurchasingRequestError(error, "Approval gagal");
+      const conflict =
+        isApprovalConflict(apiError) || isApprovalConflict(error);
+
+      if (conflict) {
+        setSelectedApproval([]);
+        setApprovalMetodeOverrides({});
+        setDialog(null);
+        await mutate().catch(() => {});
+        notify(
+          "error",
+          apiError.message ||
+            "Terjadi konflik status item pada dokumen PR. Silakan muat ulang dan pilih kembali item yang akan disetujui.",
+          `Konflik Approval (${apiError.code || "409"})`,
+        );
+      } else {
+        notify(
+          "error",
+          apiError.message,
+          `Approval Gagal (${apiError.status || apiError.code || "Error"})`,
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const rollbackItems = () => {
@@ -305,9 +375,12 @@ export default function PurchasingRequestDetail() {
   };
 
   const updateApprovalSelection = (itemId, event) => {
+    const isEligible = pendingApproval.some((p) => p.id === itemId);
+    if (!isEligible && event.target.checked) return;
+
     setSelectedApproval((current) =>
       event.target.checked
-        ? [...current, itemId]
+        ? [...current.filter((id) => id !== itemId), itemId]
         : current.filter((id) => id !== itemId),
     );
   };
@@ -433,7 +506,7 @@ export default function PurchasingRequestDetail() {
               pendingValidationCount={pendingValidation.length}
               pendingApprovalCount={pendingApproval.length}
               selectedValidationCount={selectedValidation.length}
-              selectedApprovalCount={selectedApproval.length}
+              selectedApprovalCount={selectedItemsToApprove.length}
               loading={loading}
               onPrint={printDocument}
               onToggleValidation={toggleValidationMode}
@@ -454,7 +527,8 @@ export default function PurchasingRequestDetail() {
         confirmLabel={`Approve & Buat ${approvalGroups.length} Dokumen PO`}
         color="success"
         loading={loading}
-        onClose={() => setDialog(null)}
+        disabled={loading || selectedItemsToApprove.length === 0}
+        onClose={() => !loading && setDialog(null)}
         onConfirm={approveSelectedItems}
       >
         <Stack spacing={2.5} sx={{ mt: 1 }}>

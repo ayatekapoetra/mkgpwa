@@ -19,6 +19,7 @@ export default function ActionDialog({
   confirmLabel = "Konfirmasi",
   color = "primary",
   loading,
+  disabled = false,
   reason,
   onReasonChange,
   requireReason = false,
@@ -62,6 +63,7 @@ export default function ActionDialog({
           onClick={onConfirm}
           disabled={
             loading ||
+            disabled ||
             (requireReason && String(reason || "").trim().length < 10)
           }
         >
