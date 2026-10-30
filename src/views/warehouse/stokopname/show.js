@@ -86,9 +86,15 @@ export default function StokopnameShowScreen({ id }) {
       openNotification({ title: 'success', message, alert: { color: 'success' } });
       mutate();
     } catch (error) {
+      const rawMsg = error?.response?.data?.message || error?.message || 'Gagal memproses aksi';
+      const friendlyMsg =
+        action === 'approve' &&
+        (rawMsg.includes('rack_id') || rawMsg.includes('ER_BAD_NULL_ERROR') || rawMsg.includes('RACK_NULL'))
+          ? 'Terjadi kesalahan rekap stok. Silakan hubungi administrator untuk memperbaiki data dokumen ini.'
+          : rawMsg;
       openNotification({
         title: 'error',
-        message: error?.response?.data?.message || error?.message || 'Gagal memproses aksi',
+        message: friendlyMsg,
         alert: { color: 'error' }
       });
     } finally {
