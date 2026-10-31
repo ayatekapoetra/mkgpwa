@@ -1,5 +1,21 @@
-import { Box, Stack, Typography, FormControl, TextField, Autocomplete } from '@mui/material';
+import { useState } from 'react';
+import {
+  Box,
+  Stack,
+  Typography,
+  FormControl,
+  TextField,
+  Autocomplete,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert
+} from '@mui/material';
 import { usePengajuanDanaPemasokRekenings } from 'api/pengajuan-dana';
+import axiosServices from 'utils/axios';
+import OptionSysOption from './OptionSysOption';
 import InputSkeleton from './InputSkeleton';
 
 const getAnRekening = (option) => option?.an_rekening || option?.an || '';
@@ -17,8 +33,47 @@ const OptionPemasokRekening = ({
   noRekeningField = 'no_rekening',
   anRekeningField = 'an_rekening'
 }) => {
-  const { rows, loading } = usePengajuanDanaPemasokRekenings(pemasokId ? { pemasok_id: pemasokId } : {});
+  const { rows, loading, mutate } = usePengajuanDanaPemasokRekenings(pemasokId ? { pemasok_id: pemasokId } : {});
   const options = Array.isArray(rows) ? rows : [];
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [form, setForm] = useState({ nm_bank: '', no_rekening: '', an: '' });
+
+  const closeDialog = () => {
+    if (saving) return;
+    setDialogOpen(false);
+    setSaveError('');
+    setForm({ nm_bank: '', no_rekening: '', an: '' });
+  };
+
+  const handleSave = async () => {
+    if (!form.nm_bank || !String(form.no_rekening).trim()) {
+      setSaveError('Nama bank dan nomor rekening wajib diisi');
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    try {
+      const res = await axiosServices.post(`/master/pemasok/${encodeURIComponent(pemasokId)}/rekening`, {
+        nm_bank: form.nm_bank,
+        no_rekening: String(form.no_rekening).trim(),
+        an: form.an
+      });
+      const created = res?.data?.rows || {};
+      if (typeof mutate === 'function') await mutate();
+      if (name) setFieldValue(name, created.id != null ? String(created.id) : '');
+      setFieldValue(bankField, created.nm_bank || form.nm_bank);
+      setFieldValue(noRekeningField, created.no_rekening || String(form.no_rekening).trim());
+      setFieldValue(anRekeningField, created.an || form.an || '');
+      setDialogOpen(false);
+      setForm({ nm_bank: '', no_rekening: '', an: '' });
+    } catch (err) {
+      setSaveError(err?.response?.data?.diagnostic?.message || err?.message || 'Gagal menyimpan rekening pemasok');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return <InputSkeleton height={40} />;
@@ -87,6 +142,46 @@ const OptionPemasokRekening = ({
           )}
         />
       </FormControl>
+      {pemasokId && !disabled && options.length === 0 && (
+        <Button size="small" sx={{ mt: 0.5 }} onClick={() => setDialogOpen(true)}>
+          + Tambah Rekening Pemasok
+        </Button>
+      )}
+      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Tambah Rekening Pemasok</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            {saveError && <Alert severity="error">{saveError}</Alert>}
+            <OptionSysOption
+              label="Nama Bank"
+              group="bank"
+              name="nm_bank"
+              value={form.nm_bank}
+              setFieldValue={(_field, value) => setForm((prev) => ({ ...prev, nm_bank: value }))}
+            />
+            <TextField
+              fullWidth
+              label="No Rekening"
+              value={form.no_rekening}
+              onChange={(e) => setForm((prev) => ({ ...prev, no_rekening: e.target.value }))}
+            />
+            <TextField
+              fullWidth
+              label="Atas Nama"
+              value={form.an}
+              onChange={(e) => setForm((prev) => ({ ...prev, an: e.target.value }))}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog} disabled={saving}>
+            Batal
+          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>
+            {saving ? 'Menyimpan...' : 'Simpan'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };
