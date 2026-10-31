@@ -9,17 +9,13 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 // THIRD-PARTY
-import { Inter, Poppins, Public_Sans, Roboto } from 'next/font/google';
+import { inter, poppins, publicSans, roboto } from 'fonts';
 
 // PROJECT IMPORTS
 import MainCard from 'components/MainCard';
 import { HEADER_HEIGHT } from 'config';
 import { useThemeConfig } from 'hooks/useConfig';
 
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
-const roboto = Roboto({ subsets: ['latin'], weight: ['300', '400', '500', '700'] });
-const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
-const publicSans = Public_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 // ==============================|| CUSTOMIZATION - FONT FAMILY ||============================== //
 

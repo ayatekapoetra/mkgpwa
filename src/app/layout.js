@@ -6,13 +6,8 @@ import ProviderWrapper from "./ProviderWrapper";
 import ServiceWorkerCleanup from "./ServiceWorkerCleanup";
 
 // layout.js atau _app.js
-import { Poppins } from "next/font/google";
+import { poppins } from "fonts";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"], // Pilih sesuai kebutuhanmu
-  display: "swap",
-});
 
 export const metadata = {
   title: "Makkuraga Dashboard",
