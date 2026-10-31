@@ -12,6 +12,7 @@ const OptionCabang = ({
   touched = false,
   startAdornment = null,
   disabled = false,
+  hint = '',
   setFieldValue
 }) => {
   const { data: array, dataLoading } = useCabang();
@@ -61,7 +62,7 @@ const OptionCabang = ({
                 {...params}
                 label={label}
                 error={touched && Boolean(error)}
-                helperText={touched && error}
+                helperText={touched && error ? error : hint}
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: startAdornment && (

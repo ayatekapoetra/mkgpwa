@@ -424,6 +424,7 @@ export default function PengajuanDanaForm({ mode = 'create', initialData = null,
                       error={errors.cabang_id}
                       touched={touched.cabang_id}
                       setFieldValue={setFieldValue}
+                      hint={!values.bisnis_id ? 'Pilih Bisnis Unit terlebih dahulu' : ''}
                       disabled={isSubmitting || !values.bisnis_id}
                     />
                   </Grid>
@@ -648,6 +649,7 @@ export default function PengajuanDanaForm({ mode = 'create', initialData = null,
                                       error={itemErrors.coa_id}
                                       touched={itemTouched.coa_id}
                                       setFieldValue={setFieldValue}
+                                      hint={!values.bisnis_id ? 'Pilih Bisnis Unit terlebih dahulu' : ''}
                                       disabled={isSubmitting || !values.bisnis_id}
                                     />
                                   </Grid>
@@ -691,6 +693,7 @@ export default function PengajuanDanaForm({ mode = 'create', initialData = null,
                                       name={`items.${index}.gudang_id`}
                                       label="Gudang (opsional)"
                                       setFieldValue={setFieldValue}
+                                      hint={!values.bisnis_id ? 'Pilih Bisnis Unit terlebih dahulu' : ''}
                                       disabled={isSubmitting || !values.bisnis_id}
                                     />
                                   </Grid>

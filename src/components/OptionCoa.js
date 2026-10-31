@@ -13,6 +13,7 @@ const OptionCoa = ({
   error = null,
   touched = false,
   disabled = false,
+  hint = '',
   setFieldValue
 }) => {
   const { rows, loading } = usePengajuanDanaCoas(bisnisId ? { bisnis_id: bisnisId } : {});
@@ -62,7 +63,7 @@ const OptionCoa = ({
             </li>
           )}
           renderInput={(params) => (
-            <TextField {...params} label={label} error={touched && Boolean(error)} helperText={touched && error} />
+            <TextField {...params} label={label} error={touched && Boolean(error)} helperText={touched && error ? error : hint} />
           )}
         />
       </FormControl>
