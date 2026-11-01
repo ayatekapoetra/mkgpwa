@@ -47,6 +47,18 @@ const PURCHASING_REQUEST_SCHEMA = Yup.object({
     ),
 });
 
+export const serializeRequestPayload = (formValues) => ({
+  ...formValues,
+  status: "draft",
+  items: (formValues?.items || []).map(
+    ({ barang, equipment: equipmentObject, ...item }) => ({
+      ...item,
+      currency: item.currency || "IDR",
+      kurs: item.kurs || 1,
+    }),
+  ),
+});
+
 /** Loads scoped master options and renders the interactive request form body. */
 function PurchasingRequestFormBody({
   values,
@@ -97,13 +109,7 @@ function PurchasingRequestFormBody({
   };
 
   const saveRequest = async (formValues, shouldSubmit) => {
-    const payload = {
-      ...formValues,
-      status: "draft",
-      items: formValues.items.map(
-        ({ barang, equipment: equipmentObject, ...item }) => item,
-      ),
-    };
+    const payload = serializeRequestPayload(formValues);
     let result;
 
     if (isEditMode) {
@@ -234,6 +240,8 @@ export default function PurchasingRequestForm({
         ?.filter((item) => item.aktif !== "N")
         .map((item) => ({
           ...item,
+          currency: item.currency || "IDR",
+          kurs: item.kurs || 1,
           barang: item.barang || null,
           equipment: item.equipment || null,
         })) || [{ ...EMPTY_REQUEST_ITEM }],

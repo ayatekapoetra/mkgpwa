@@ -71,6 +71,8 @@ export default function PurchasingRequestFormPage({ mode = "create" }) {
                 description: hasBarang ? "" : (d.narasi || d.aliaspart || ""),
                 woid: d.wo_id || null,
                 mro_id: d.mro_id || null,
+                currency: "IDR",
+                kurs: 1,
               };
             }),
           });

@@ -37,6 +37,8 @@ export const EMPTY_REQUEST_ITEM = {
   description: "",
   woid: null,
   mro_id: null,
+  currency: "IDR",
+  kurs: 1,
 };
 
 /** Renders a rich spare-part option so similar parts are easier to distinguish. */
