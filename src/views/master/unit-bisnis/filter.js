@@ -17,7 +17,7 @@ import useDebouncedValue from 'hooks/useDebouncedValue';
 import { Add, Building3, Code } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 
-export default function FilterBisnisUnit({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterBisnisUnit({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const [localName, setLocalName] = useState(data?.name || '');
   const [localKode, setLocalKode] = useState(data?.kode || '');
 
@@ -59,13 +59,11 @@ export default function FilterBisnisUnit({ count, open, onClose, data, setData, 
   const onResetFilterHandle = () => {
     setLocalName('');
     setLocalKode('');
-    setData((prev) => ({
-      ...prev,
-      name: '',
-      kode: '',
-      page: 1,
-      perPages: 25
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({ ...prev, name: '', kode: '', page: 1, perPages: 25 }));
+    }
   };
 
   return (

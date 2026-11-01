@@ -10,6 +10,7 @@ import { Add, DocumentDownload, Filter, Warning2 } from 'iconsax-react';
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { openNotification } from 'api/notification';
 import { useCheckerStockpileGroups, useCheckerStockpileUnmatchedCount } from 'api/checker-stockpile';
 
@@ -45,7 +46,7 @@ const defaultParams = {
 export default function DailyCheckerStockpilePage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [params, setParams] = useState(defaultParams);
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_operational_daily_checker_stockpile', defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -241,7 +242,7 @@ export default function DailyCheckerStockpilePage() {
         )}
       </MainCard>
 
-      <CheckerStockpileFilter open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} />
+      <CheckerStockpileFilter open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} onReset={resetParams} />
     </>
   );
 }

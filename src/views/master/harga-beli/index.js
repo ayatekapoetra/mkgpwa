@@ -10,6 +10,7 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
 import Paginate from 'components/Paginate';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useHargaBeliList, useHargaBeliOptions } from 'api/harga-beli';
 import HargaBeliFilter from './filter';
 
@@ -23,9 +24,11 @@ function PriceCard({ row, canUpdate }) {
   return <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}><Stack spacing={1.25}><Stack direction="row" justifyContent="space-between"><Box><Typography variant="subtitle1" fontWeight={700}>{row.barang_kode || '-'}</Typography><Typography variant="body2">{row.barang_nama || '-'}</Typography></Box><Chip size="small" label={row.aktif === 'Y' ? 'Aktif' : 'Tidak Aktif'} color={row.aktif === 'Y' ? 'success' : 'default'} /></Stack><Typography variant="h5" color="primary.main" fontWeight={800}>{formatCurrency(row.harga_beli)} <Typography component="span" variant="caption" color="text.secondary">/{row.satuan || '-'}</Typography></Typography><Stack direction="row" justifyContent="space-between"><Typography variant="caption" color="text.secondary">{row.periode} · {row.gudang_kode || row.gudang_nama || '-'}</Typography>{canUpdate ? <IconButton component={Link} href={`/harga-beli/${row.id}/edit`} size="small" color="primary"><Edit2 size={17} /></IconButton> : null}</Stack></Stack></Paper>;
 }
 
+const defaultFilters = { page: 1, perPage: 25, search: '', barang_id: '', bisnis_id: '', gudang_id: '', periode_from: '', periode_to: '', aktif: 'Y' };
+
 export default function HargaBeliScreen() {
   const theme = useTheme();
-  const [filters, setFilters] = useState({ page: 1, perPage: 25, search: '', barang_id: '', bisnis_id: '', gudang_id: '', periode_from: '', periode_to: '', aktif: 'Y' });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_master_harga_beli', defaultFilters);
   const [openFilter, setOpenFilter] = useState(false);
   const { rows, summary, permissions, page, perPage, lastPage, total, loading, refreshing, error } = useHargaBeliList(filters);
   const { options } = useHargaBeliOptions();
@@ -34,7 +37,7 @@ export default function HargaBeliScreen() {
   const breadcrumbs = [{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Master' }, { title: 'Harga Beli' }];
 
   return <Fragment><Breadcrumbs custom heading="Harga Beli" links={breadcrumbs} /><MainCard content={false} title={<Button component={Link} href="/harga-beli/create" variant="contained" disabled={!canInsert}>Tambah Harga</Button>} secondary={<Tooltip title="Filter"><IconButton color="secondary" onClick={() => setOpenFilter(true)}><Filter /></IconButton></Tooltip>}>
-    <HargaBeliFilter open={openFilter} onClose={() => setOpenFilter(false)} filters={filters} setFilters={setFilters} options={options} total={total} />
+    <HargaBeliFilter open={openFilter} onClose={() => setOpenFilter(false)} filters={filters} setFilters={setFilters} onReset={resetFilters} options={options} total={total} />
     <Box sx={{ p: 2.5, pb: 0 }}><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 1.5 }}>
       <SummaryCard label="Record Harga" value={total} detail="Sesuai filter aktif" icon={<UsdCoin size={20} variant="Bold" />} color={theme.palette.primary.main} loading={loading} />
       <SummaryCard label="Barang" value={Number(summary.total_barang) || 0} detail="Barang dengan harga" icon={<Box1 size={20} variant="Bold" />} color={theme.palette.info.main} loading={loading} />

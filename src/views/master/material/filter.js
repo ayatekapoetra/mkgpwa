@@ -13,12 +13,16 @@ import MainCard from 'components/MainCard';
 import { Add, SearchNormal1, Category2 } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 
-export default function FilterMaterial({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterMaterial({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      nama: '',
-      kategori: ''
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        nama: '',
+        kategori: ''
+      });
+    }
   };
 
   return (

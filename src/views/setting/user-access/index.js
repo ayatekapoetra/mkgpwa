@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import useFilterStorage from 'hooks/useFilterStorage';
 import Link from 'next/link';
 
 import Box from '@mui/material/Box';
@@ -80,7 +81,7 @@ function StatCard({ icon, label, value, color = 'primary', loading }) {
 const PermissionScreen = () => {
   const theme = useTheme();
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_setting_user_access', {
     keyword: '',
     user_id: '',
     menu_id: '',
@@ -244,7 +245,7 @@ const PermissionScreen = () => {
           }
           content={false}
         >
-          <FilterDom data={params} setData={setParams} open={openFilter} count={data?.total} onClose={() => setOpenFilter(false)} />
+          <FilterDom data={params} setData={setParams} onReset={resetParams} open={openFilter} count={data?.total} onClose={() => setOpenFilter(false)} />
 
           {activeFilters.length > 0 && (
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ px: 2.5, pt: 2 }}>
@@ -256,16 +257,7 @@ const PermissionScreen = () => {
                 variant="outlined"
                 color="secondary"
                 label="Reset semua"
-                onClick={() =>
-                  setParams({
-                    keyword: '',
-                    user_id: '',
-                    menu_id: '',
-                    submenu_id: '',
-                    page: 1,
-                    perPages: 25
-                  })
-                }
+                onClick={() => resetParams()}
               />
             </Stack>
           )}

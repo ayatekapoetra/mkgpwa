@@ -14,21 +14,24 @@ import MainCard from 'components/MainCard';
 import ListTableCabang from './listtable';
 import FilterCabang from './filter';
 
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetCabang } from 'api/cabang';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
+const defaultParams = {
+  page: 1,
+  perPages: 25,
+  nama: '',
+  kode: '',
+  area: '',
+  bisnis_id: '',
+  tipe: ''
+};
+
 const CabangScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 25,
-    nama: '',
-    kode: '',
-    area: '',
-    bisnis_id: '',
-    tipe: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_cabang', defaultParams);
   const { cabang, cabangLoading, cabangError, page, perPage, total, lastPage } = useGetCabang(params);
 
   const toggleFilterHandle = () => {
@@ -82,6 +85,7 @@ const CabangScreen = () => {
       <FilterCabang 
         data={params} 
         setData={setParams} 
+        onReset={resetParams}
         open={openFilter} 
         count={cabang?.total || 0} 
         onClose={toggleFilterHandle} 

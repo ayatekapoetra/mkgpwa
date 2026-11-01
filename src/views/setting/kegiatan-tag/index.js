@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import useFilterStorage from "hooks/useFilterStorage";
 import Link from "next/link";
 
 import Button from "@mui/material/Button";
@@ -28,7 +29,7 @@ export default function GroupTagKegiatanScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [params, setParams] = useState({
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_setting_kegiatan_tag', {
     page: 1,
     perPage: 25,
     ctg: "",
@@ -78,6 +79,7 @@ export default function GroupTagKegiatanScreen() {
         <FilterGroupTagKegiatan
           params={params}
           setParams={setParams}
+          onReset={resetParams}
           open={openFilter}
           onClose={toggleFilterHandle}
           count={data?.total}

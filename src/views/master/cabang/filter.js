@@ -16,17 +16,21 @@ import InputSearch from 'components/InputSearch';
 import FilterBisnisUnit from 'components/FilterBisnisUnit';
 import SelectSearch from 'components/SelectSearch';
 
-export default function FilterCabang({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterCabang({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      nama: '',
-      kode: '',
-      area: '',
-      bisnis_id: '',
-      tipe: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        nama: '',
+        kode: '',
+        area: '',
+        bisnis_id: '',
+        tipe: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   const tipeOptions = [

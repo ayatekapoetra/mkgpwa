@@ -16,19 +16,22 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import MainCard from 'components/MainCard';
 import ListMaterial from './list';
 import FilterMaterial from './filter';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 // THIRD - PARTY
 import { Edit2 } from 'iconsax-react';
 import { useQuery } from '@tanstack/react-query';
 import axiosServices from 'utils/axios';
 
+const defaultParams = {
+  nama: '',
+  kategori: ''
+};
+
 function MaterialScreen() {
   const columns = DataColumn();
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    nama: '',
-    kategori: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_material', defaultParams);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ['jenis-material', params],
@@ -82,6 +85,7 @@ function MaterialScreen() {
       <FilterMaterial 
         data={params} 
         setData={setParams} 
+        onReset={resetParams}
         open={openFilter} 
         count={filteredData.length} 
         onClose={toggleFilterHandle} 

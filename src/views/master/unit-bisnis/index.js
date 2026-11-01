@@ -15,18 +15,21 @@ import MainCard from 'components/MainCard';
 import ListTableBisnisUnit from './listtable';
 import FilterBisnisUnit from './filter';
 
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetBisnisUnit } from 'api/bisnis-unit';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
+const defaultParams = {
+  page: 1,
+  perPages: 25,
+  name: '',
+  kode: ''
+};
+
 const UnitBisnisScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 25,
-    name: '',
-    kode: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_unit_bisnis', defaultParams);
   const { bisnisUnit, bisnisUnitLoading, bisnisUnitError, bisnisUnitValidating } = useGetBisnisUnit(params);
 
   const toggleFilterHandle = () => {
@@ -82,6 +85,7 @@ const UnitBisnisScreen = () => {
       <FilterBisnisUnit 
         data={params} 
         setData={setParams} 
+        onReset={resetParams}
         open={openFilter} 
         count={bisnisUnit?.total || 0} 
         onClose={toggleFilterHandle} 

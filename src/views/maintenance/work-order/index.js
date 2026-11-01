@@ -33,6 +33,7 @@ import { ArrowRight2, Clock, Filter, Refresh } from 'iconsax-react';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { getBreakdownMasters } from 'api/daily-breakdown-form';
 import { useWorkOrderList } from 'api/work-order';
 import { getWorkOrderStatusInfo, parseApiDate, WORK_ORDER_STATUS } from '../breakdown/utils';
@@ -84,7 +85,7 @@ const twoLineText = {
 export default function WorkOrderList() {
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_maintenance_work_order', INITIAL_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [masters, setMasters] = useState({ cabangs: [], equipments: [], lokasis: [] });
   const params = useMemo(() => buildParams(filters), [filters]);
@@ -282,7 +283,7 @@ export default function WorkOrderList() {
           setFilterOpen(false);
         }}
         onReset={() => {
-          setFilters(INITIAL_FILTERS);
+          resetFilters();
           setFilterOpen(false);
         }}
       />

@@ -14,6 +14,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import {
   downloadOperatingHistory,
   downloadOperatingHistoryDetail,
@@ -32,6 +33,20 @@ const getDefaultDates = () => {
   return { startdate: `${year}-${month}-01`, enddate: `${year}-${month}-${day}` };
 };
 
+const defaultParams = () => {
+  const dates = getDefaultDates();
+  return {
+    page: 1,
+    perPage: 25,
+    startdate: dates.startdate,
+    enddate: dates.enddate,
+    penyewa_ids: [],
+    shift_ids: [],
+    kegiatan_ids: [],
+    equipment_ids: []
+  };
+};
+
 const saveBlob = ({ blob, filename }) => {
   const url = window.URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -44,20 +59,10 @@ const saveBlob = ({ blob, filename }) => {
 };
 
 export default function OperatingHistoryScreen({ detail = false }) {
-  const defaultDates = useMemo(() => getDefaultDates(), []);
   const { enqueueSnackbar } = useSnackbar();
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
-  const [params, setParams] = useState({
-    page: 1,
-    perPage: 25,
-    startdate: defaultDates.startdate,
-    enddate: defaultDates.enddate,
-    penyewa_ids: [],
-    shift_ids: [],
-    kegiatan_ids: [],
-    equipment_ids: []
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_laporan_operating_history', defaultParams);
   const summaryResult = useGetOperatingHistory(detail ? null : params);
   const detailResult = useGetOperatingHistoryDetail(detail ? params : null);
   const result = detail ? detailResult : summaryResult;
@@ -131,6 +136,7 @@ export default function OperatingHistoryScreen({ detail = false }) {
           count={result.total}
           params={params}
           setParams={setParams}
+          onReset={resetParams}
           onClose={() => setOpenFilter(false)}
           title={title}
         />

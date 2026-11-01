@@ -10,6 +10,7 @@ import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import Paginate from 'components/Paginate';
 import { APP_DEFAULT_PATH } from 'config';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { openNotification } from 'api/notification';
 import {
   deleteMiningProductionPlan,
@@ -38,7 +39,7 @@ const defaultParams = {
 };
 
 export default function MiningProductionPlanPage() {
-  const [params, setParams] = useState(defaultParams);
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_operational_mining_production_plan', defaultParams);
   const [openFilter, setOpenFilter] = useState(false);
   const { data, page, perPage, total, lastPage, dataLoading, dataError, mutate } = useGetMiningProductionPlan(params);
 
@@ -123,7 +124,7 @@ export default function MiningProductionPlanPage() {
         )}
       </MainCard>
 
-      <MiningProductionPlanFilter open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} />
+      <MiningProductionPlanFilter open={openFilter} onClose={() => setOpenFilter(false)} params={params} setParams={setParams} onReset={resetParams} />
     </>
   );
 }

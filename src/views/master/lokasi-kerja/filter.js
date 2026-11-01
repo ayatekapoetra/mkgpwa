@@ -16,17 +16,21 @@ import InputSearch from 'components/InputSearch';
 import FilterCabang from 'components/FilterCabang';
 import SelectSearch from 'components/SelectSearch';
 
-export default function FilterLokasiKerja({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterLokasiKerja({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      nama: '',
-      cabang_id: '',
-      type: '',
-      abbr: '',
-      area: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        nama: '',
+        cabang_id: '',
+        type: '',
+        abbr: '',
+        area: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   const typeOptions = [

@@ -19,8 +19,12 @@ const syncOptions = [
   { key: 'SYNCED', teks: 'Semua Synced' }
 ];
 
-export default function CheckerPitFilter({ open, onClose, params, setParams, anchor = 'right' }) {
+export default function CheckerPitFilter({ open, onClose, params, setParams, onReset: propOnReset, anchor = 'right' }) {
   const onReset = () => {
+    if (propOnReset) {
+      propOnReset();
+      return;
+    }
     setParams({
       date_ops: '',
       shift_id: '',

@@ -28,8 +28,7 @@ import OrderPaymentFilter, {
   defaultDateStart,
 } from "./filter";
 import OrderPaymentList from "./list";
-
-const STORAGE_KEY = "orders_payments_filter_params";
+import useFilterStorage from "hooks/useFilterStorage";
 
 const money = (v) =>
   new Intl.NumberFormat("id-ID", {
@@ -50,47 +49,12 @@ const buildDefaultFilters = () => ({
   date_end: defaultDateEnd(),
 });
 
-const getStoredParams = () => {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.error("Error reading orders payments filter from localStorage:", error);
-    return null;
-  }
-};
-
-const saveParamsToStorage = (params) => {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
-  } catch (error) {
-    console.error("Error saving orders payments filter to localStorage:", error);
-  }
-};
-
-const mergeStoredFilters = (stored) => {
-  const defaults = buildDefaultFilters();
-  if (!stored || typeof stored !== "object") return defaults;
-  return {
-    ...defaults,
-    ...stored,
-    page: Number(stored.page) > 0 ? Number(stored.page) : 1,
-    limit: Number(stored.limit) > 0 ? Number(stored.limit) : defaults.limit,
-    date_start: stored.date_start || defaults.date_start,
-    date_end: stored.date_end || defaults.date_end,
-    status: stored.status || defaults.status,
-  };
-};
-
 export default function OrderPaymentPage() {
-  const [params, setParams] = useState(() => mergeStoredFilters(getStoredParams()));
+  const [params, setParams, resetParams] = useFilterStorage(
+    "mkg_filter_scm_order_payment",
+    buildDefaultFilters
+  );
   const [filterOpen, setFilterOpen] = useState(false);
-
-  useEffect(() => {
-    saveParamsToStorage(params);
-  }, [params]);
   const {
     permissions,
     loading: accessLoading,
@@ -177,11 +141,7 @@ export default function OrderPaymentPage() {
   };
 
   const handleResetFilter = (resetValues) => {
-    setParams({
-      ...buildDefaultFilters(),
-      ...(resetValues || {}),
-      page: 1,
-    });
+    resetParams(resetValues);
     setFilterOpen(false);
   };
 

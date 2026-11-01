@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import useFilterStorage from "hooks/useFilterStorage";
 import Link from "next/link";
 
 import Button from "@mui/material/Button";
@@ -28,7 +29,7 @@ export default function GroupTagTimesheetScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [params, setParams] = useState({
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_setting_timesheet_tag', {
     page: 1,
     perPage: 25,
     kegiatan: "",
@@ -94,9 +95,10 @@ export default function GroupTagTimesheetScreen() {
         <FilterGroupTagTimesheet
           params={params}
           setParams={setParams}
+          onReset={resetParams}
           open={openFilter}
-          count={data?.total}
           onClose={toggleFilterHandle}
+          count={data?.total}
         />
         {dataLoading ? (
           <CircularLoader />

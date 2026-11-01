@@ -30,7 +30,7 @@ const selectedOptions = (options, selected) => {
   return (options || []).filter((option) => ids.has(String(option.id)));
 };
 
-export default function FilterOperatingHistory({ open, count, params, setParams, onClose, title, anchor = 'right' }) {
+export default function FilterOperatingHistory({ open, count, params, setParams, onReset, onClose, title, anchor = 'right' }) {
   const { penyewa: penyewaData = [], penyewaLoading } = usePublicPenyewa();
   const { data: shiftData = [], dataLoading: shiftLoading } = useGetShiftKerja();
   const { data: kegiatanData = [], dataLoading: kegiatanLoading } = useGetKegiatanKerja();
@@ -46,15 +46,19 @@ export default function FilterOperatingHistory({ open, count, params, setParams,
 
   const update = (values) => setParams((previous) => ({ ...previous, ...values, page: 1 }));
   const reset = () => {
-    const dates = defaultDates();
-    update({
-      startdate: dates.startdate,
-      enddate: dates.enddate,
-      penyewa_ids: [],
-      shift_ids: [],
-      kegiatan_ids: [],
-      equipment_ids: []
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      const dates = defaultDates();
+      update({
+        startdate: dates.startdate,
+        enddate: dates.enddate,
+        penyewa_ids: [],
+        shift_ids: [],
+        kegiatan_ids: [],
+        equipment_ids: []
+      });
+    }
   };
 
   return (

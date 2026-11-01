@@ -22,9 +22,16 @@ import { useGetDeliveryOrder } from 'api/delivery-order';
 import LinearWithLabel from 'components/@extended/progress/LinearWithLabel';
 import Paginate from 'components/Paginate';
 import FilterDeliveryOrder from './filter';
+import useFilterStorage from 'hooks/useFilterStorage';
 
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
+
+const DEFAULT_FILTERS = {
+  page: 1,
+  perPage: 25,
+  kode: ''
+};
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -33,11 +40,7 @@ const breadcrumbLinks = [
 
 export default function DeliveryOrderScreen() {
   const columns = DataColumn();
-  const [filtered, setFiltered] = useState({
-    page: 1,
-    perPage: 25,
-    kode: ''
-  });
+  const [filtered, setFiltered, resetFiltered] = useFilterStorage('mkg_filter_scm_delivery_order', DEFAULT_FILTERS);
   const { data, dataLoading } = useGetDeliveryOrder(filtered);
   const [state, setState] = useState([]);
   const [openFilter, setOpenFilter] = useState(false);
@@ -70,7 +73,7 @@ export default function DeliveryOrderScreen() {
         }
         content={false}
       >
-        <FilterDeliveryOrder count={data?.total} data={filtered} setData={setFiltered} open={openFilter} onClose={toggleFilterHandle} />
+        <FilterDeliveryOrder count={data?.total} data={filtered} setData={setFiltered} onReset={resetFiltered} open={openFilter} onClose={toggleFilterHandle} />
         {dataLoading || !data ? (
           <div>loading...</div>
         ) : (

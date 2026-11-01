@@ -17,26 +17,29 @@ import MainCard from 'components/MainCard';
 import ListTableBarang from './listtable';
 
 // HOOK
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetBarang } from 'api/barang';
 import Paginate from 'components/Paginate';
 import FilterBarang from './filter';
 
+const defaultParams = {
+  page: 1,
+  perPages: 30,
+  nama: '',
+  kode: '',
+  num_part: '',
+  kategori_id: '',
+  application_id: '',
+  manufacture_id: '',
+  brand_id: '',
+  satuan: '',
+  stn_pakai: ''
+};
+
 const BarangScreen = () => {
   const [isCard, setIsCard] = useState(false); // Default to table view
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 30,
-    nama: '',
-    kode: '',
-    num_part: '',
-    kategori_id: '',
-    application_id: '',
-    manufacture_id: '',
-    brand_id: '',
-    satuan: '',
-    stn_pakai: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_barang', defaultParams);
   const { data, dataLoading, dataError, pagination } = useGetBarang(params);
 
   const toggleFilterHandle = () => {
@@ -68,7 +71,7 @@ const BarangScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <FilterBarang data={params} setData={setParams} open={openFilter} count={pagination.total} onClose={toggleFilterHandle} />
+        <FilterBarang data={params} setData={setParams} onReset={resetParams} open={openFilter} count={pagination.total} onClose={toggleFilterHandle} />
         <ListTableBarang data={{ data: data || [] }} />
 
         <Stack sx={{ p: 2 }}>

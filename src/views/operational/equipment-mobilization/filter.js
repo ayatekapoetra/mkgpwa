@@ -27,7 +27,7 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Dibatalkan' }
 ];
 
-export default function FilterEquipmentMobilization({ open, onClose, data, setData, count = 0 }) {
+export default function FilterEquipmentMobilization({ open, onClose, data, setData, count = 0, onReset }) {
   const [draft, setDraft] = useState(data || {});
 
   useEffect(() => {
@@ -62,7 +62,11 @@ export default function FilterEquipmentMobilization({ open, onClose, data, setDa
       equipment_id: ''
     };
     setDraft(reset);
-    setData(reset);
+    if (onReset) {
+      onReset();
+    } else {
+      setData(reset);
+    }
     onClose?.();
   };
 

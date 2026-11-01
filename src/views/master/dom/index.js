@@ -19,6 +19,7 @@ import ListDom from './list';
 import FilterDom from './filter';
 
 // HOOK & SWR
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useDom } from 'api/dom';
 
 const breadcrumbLinks = [
@@ -26,18 +27,20 @@ const breadcrumbLinks = [
   { title: 'Dom', to: '/dom' }
 ];
 
+const defaultParams = {
+  kode: '',
+  cabang_id: '',
+  material_id: '',
+  cargo_type: '',
+  contractor_code: '',
+  status: '',
+  page: 1,
+  perPages: 25
+};
+
 const DomScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    kode: '',
-    cabang_id: '',
-    material_id: '',
-    cargo_type: '',
-    contractor_code: '',
-    status: '',
-    page: 1,
-    perPages: 25
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_dom', defaultParams);
 
   const { data, dataLoading, dataError } = useDom(params);
 
@@ -66,7 +69,7 @@ const DomScreen = () => {
         content={false}
       >
         <Stack>
-          <FilterDom data={params} setData={setParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
+          <FilterDom data={params} setData={setParams} onReset={resetParams} open={openFilter} count={data?.total} onClose={toggleFilterHandle} />
           {!dataLoading && <ListDom data={data} params={params} setParams={setParams} />}
         </Stack>
       </MainCard>

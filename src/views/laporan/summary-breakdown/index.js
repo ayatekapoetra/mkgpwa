@@ -11,6 +11,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadSummaryBreakdownPdf, useGetSummaryBreakdown } from 'api/summary-breakdown';
 import FilterSummaryBreakdown from './filter';
 import ListSummaryBreakdown from './list';
@@ -25,22 +26,26 @@ const getDefaultDates = () => {
   return { startdate: firstDay, enddate: today };
 };
 
-const SummaryBreakdownScreen = () => {
-  const defaultDates = useMemo(() => getDefaultDates(), []);
-  const [openFilter, setOpenFilter] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [params, setParams] = useState({
+const defaultParams = () => {
+  const dates = getDefaultDates();
+  return {
     page: 1,
     perPage: 25,
-    startdate: defaultDates.startdate,
-    enddate: defaultDates.enddate,
+    startdate: dates.startdate,
+    enddate: dates.enddate,
     areas: [],
     lokasi_ids: [],
     equipment_ids: [],
     penyewa_ids: [],
     status: '',
     problem_issue: ''
-  });
+  };
+};
+
+const SummaryBreakdownScreen = () => {
+  const [openFilter, setOpenFilter] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_laporan_summary_breakdown', defaultParams);
 
   const { data, total, summary, page, perPage, dataLoading, dataError } = useGetSummaryBreakdown(params);
 
@@ -86,7 +91,7 @@ const SummaryBreakdownScreen = () => {
             <CircularProgress />
           </Box>
         ) : null}
-        <FilterSummaryBreakdown open={openFilter} count={total} params={params} setParams={setParams} onClose={toggleFilter} />
+        <FilterSummaryBreakdown open={openFilter} count={total} params={params} setParams={setParams} onReset={resetParams} onClose={toggleFilter} />
         <ListSummaryBreakdown
           data={data}
           total={total}

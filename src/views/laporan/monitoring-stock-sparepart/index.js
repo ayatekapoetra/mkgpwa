@@ -16,6 +16,7 @@ import { DocumentDownload, DocumentText, Filter } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import { downloadMonitoringStock, useMonitoringStock, useMonitoringStockAccess } from 'api/monitoring-stock-sparepart';
 import MonitoringStockDetail from './detail';
 import MonitoringStockFilter from './filter';
@@ -61,7 +62,10 @@ function SummaryCard({ label, value, color = 'text.primary', wide = false }) {
 
 export default function MonitoringStockSparepartScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const [params, setParams] = useState(defaults);
+  const [params, setParams, resetParams] = useFilterStorage(
+    'mkg_filter_laporan_monitoring_stock_sparepart',
+    defaults
+  );
   const [draftParams, setDraftParams] = useState(() => cloneParams(defaults()));
   const [openFilter, setOpenFilter] = useState(false);
   const [detailContext, setDetailContext] = useState(null);
@@ -77,7 +81,10 @@ export default function MonitoringStockSparepartScreen() {
     setParams({ ...cloneParams(draftParams), page: 1, perPage: params.perPage });
     setOpenFilter(false);
   };
-  const resetFilter = () => setDraftParams({ ...defaults(), perPage: params.perPage });
+  const resetFilter = () => {
+    resetParams({ perPage: params.perPage });
+    setDraftParams({ ...defaults(), perPage: params.perPage });
+  };
   const download = async (format) => {
     if (exporting) return;
     try {

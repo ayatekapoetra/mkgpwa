@@ -20,18 +20,22 @@ import FilterCabang from 'components/FilterCabang';
 import FilterSysOption from 'components/FilterSysOption';
 import FilterMitraBisnis from 'components/FilterMitraBisnis';
 
-export default function FilterEquipment({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterEquipment({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData({
-      kode: '',
-      cabang_id: '',
-      kategori: '',
-      manufaktur: '',
-      tipe: '',
-      partner_id: '',
-      page: 1,
-      perPages: 25
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setData({
+        kode: '',
+        cabang_id: '',
+        kategori: '',
+        manufaktur: '',
+        tipe: '',
+        partner_id: '',
+        page: 1,
+        perPages: 25
+      });
+    }
   };
 
   return (

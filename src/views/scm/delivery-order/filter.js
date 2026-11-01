@@ -17,7 +17,7 @@ import { Add } from 'iconsax-react';
 import InputSearch from 'components/InputSearch';
 import SelectSearch from 'components/SelectSearch';
 
-export default function FilterDeliveryOrder({ count, open, onClose, data, setData, anchor = 'top' }) {
+export default function FilterDeliveryOrder({ count, open, onClose, data, setData, onReset, anchor = 'top' }) {
   return (
     <div>
       <SwipeableDrawer anchor={anchor} onClose={onClose} open={open}>
@@ -26,7 +26,7 @@ export default function FilterDeliveryOrder({ count, open, onClose, data, setDat
             <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start" sx={{ maxHeight: '400px' }}>
               <Grid item xs={12} sm={2} lg={2}>
                 <InputLabel htmlFor="start-adornment-partnumber">Kode</InputLabel>
-                <InputSearch size="small" type="text" value={data['kode']} onChange={(e) => setData({ ...data, kode: e.target.value })} />
+                <InputSearch size="small" type="text" value={data['kode']} onChange={(e) => setData({ ...data, page: 1, kode: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={4} lg={4}>
                 <InputLabel htmlFor="start-adornment-partnumber">Pemasok</InputLabel>
@@ -41,7 +41,18 @@ export default function FilterDeliveryOrder({ count, open, onClose, data, setDat
             </Grid>
           </MainCard>
           <CardActions>
-            <Button variant="dashed" color="secondary" fullWidth>
+            <Button
+              variant="dashed"
+              color="secondary"
+              fullWidth
+              onClick={() => {
+                if (onReset) {
+                  onReset();
+                } else {
+                  setData({ page: 1, perPage: 25, kode: '' });
+                }
+              }}
+            >
               Reset Filter
             </Button>
           </CardActions>

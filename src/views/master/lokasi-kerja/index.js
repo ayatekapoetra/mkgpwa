@@ -14,21 +14,24 @@ import MainCard from 'components/MainCard';
 import ListTableLokasiKerja from './listtable';
 import FilterLokasiKerja from './filter';
 
+import useFilterStorage from 'hooks/useFilterStorage';
 import { useGetLokasiKerja } from 'api/lokasi-kerja';
 import Paginate from 'components/Paginate';
 import { Filter } from 'iconsax-react';
 
+const defaultParams = {
+  page: 1,
+  perPages: 25,
+  nama: '',
+  cabang_id: '',
+  type: '',
+  abbr: '',
+  area: ''
+};
+
 const LokasiKerjaScreen = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 25,
-    nama: '',
-    cabang_id: '',
-    type: '',
-    abbr: '',
-    area: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_lokasi_kerja', defaultParams);
   const { lokasiKerja, lokasiKerjaLoading, lokasiKerjaError, page, perPage, total, lastPage } = useGetLokasiKerja(params);
 
   const toggleFilterHandle = () => {
@@ -82,6 +85,7 @@ const LokasiKerjaScreen = () => {
       <FilterLokasiKerja 
         data={params} 
         setData={setParams} 
+        onReset={resetParams}
         open={openFilter} 
         count={total || 0} 
         onClose={toggleFilterHandle} 

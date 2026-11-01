@@ -14,6 +14,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { DocumentDownload, DocumentText, Filter, Refresh } from "iconsax-react";
 
+import useFilterStorage from 'hooks/useFilterStorage';
 import {
   downloadMonitoringOrderPart,
   useMonitoringOrderPart,
@@ -106,7 +107,10 @@ function SummaryCard({ label, value, color = "text.primary", wide = false }) {
 
 export default function MonitoringOrderPartScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const [params, setParams] = useState(defaults);
+  const [params, setParams, resetParams] = useFilterStorage(
+    'mkg_filter_laporan_monitoring_order_part',
+    defaults
+  );
   const [draftParams, setDraftParams] = useState(defaults);
   const [openFilter, setOpenFilter] = useState(false);
   const [detailContext, setDetailContext] = useState(null);
@@ -122,8 +126,10 @@ export default function MonitoringOrderPartScreen() {
     setParams({ ...draftParams, page: 1, perPage: params.perPage });
     setOpenFilter(false);
   };
-  const resetFilter = () =>
+  const resetFilter = () => {
+    resetParams({ perPage: params.perPage });
     setDraftParams({ ...defaults(), perPage: params.perPage });
+  };
   const download = async (format) => {
     if (exporting || !access.canExport) return;
     try {

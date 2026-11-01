@@ -27,6 +27,18 @@ import { useGetGoodsReceipt } from 'api/goods-receipt';
 import ListGoodsReceipt from './list';
 import FilterGoodsReceipt from './filter';
 import axiosServices from 'utils/axios';
+import useFilterStorage from 'hooks/useFilterStorage';
+
+const DEFAULT_FILTERS = {
+  page: 1,
+  perPage: 25,
+  kodeReceipt: '',
+  kodeSj: '',
+  narasi: '',
+  startDate: '',
+  endDate: '',
+  gudangId: ''
+};
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -36,16 +48,7 @@ const breadcrumbLinks = [
 export default function GoodsReceiptScreen() {
   const columns = DataColumn();
   const { enqueueSnackbar } = useSnackbar();
-  const [filters, setFilters] = useState({
-    page: 1,
-    perPage: 25,
-    kodeReceipt: '',
-    kodeSj: '',
-    narasi: '',
-    startDate: '',
-    endDate: '',
-    gudangId: ''
-  });
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_scm_goods_receipt', DEFAULT_FILTERS);
   const { data, dataLoading, dataError } = useGetGoodsReceipt(filters);
   const [openFilter, setOpenFilter] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('');
@@ -116,7 +119,7 @@ export default function GoodsReceiptScreen() {
         }
         content={false}
       >
-        <FilterGoodsReceipt count={data?.total} data={filters} setData={setFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
+        <FilterGoodsReceipt count={data?.total} data={filters} setData={setFilters} onReset={resetFilters} open={openFilter} onClose={() => setOpenFilter(false)} />
         {dataError ? (
           <Alert severity="warning" sx={{ m: 2 }}>Gagal memuat data terima barang.</Alert>
         ) : dataLoading ? (

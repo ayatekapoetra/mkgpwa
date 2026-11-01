@@ -16,6 +16,7 @@ import { Box1, DocumentDownload, DocumentText, Filter, MoneyRecive, Refresh } fr
 
 import MainCard from 'components/MainCard';
 import IconButton from 'components/@extended/IconButton';
+import useFilterStorage from 'hooks/useFilterStorage';
 import {
   downloadMonitoringSparepartStock,
   useMonitoringSparepartStock,
@@ -81,7 +82,10 @@ function SummaryCard({ label, value, icon, color = 'primary', featured = false, 
 
 export default function MonitoringSparepartStockScreen() {
   const { enqueueSnackbar } = useSnackbar();
-  const [params, setParams] = useState(defaults);
+  const [params, setParams, resetParams] = useFilterStorage(
+    'mkg_filter_laporan_monitoring_sparepart_stock',
+    defaults
+  );
   const [draftParams, setDraftParams] = useState(defaults);
   const [openFilter, setOpenFilter] = useState(false);
   const [detailContext, setDetailContext] = useState(null);
@@ -98,7 +102,10 @@ export default function MonitoringSparepartStockScreen() {
     setParams({ ...draftParams, page: 1, perPage: params.perPage });
     setOpenFilter(false);
   };
-  const resetFilter = () => setDraftParams({ ...defaults(), perPage: params.perPage });
+  const resetFilter = () => {
+    resetParams({ perPage: params.perPage });
+    setDraftParams({ ...defaults(), perPage: params.perPage });
+  };
   const download = async (format) => {
     if (exporting) return;
     try {

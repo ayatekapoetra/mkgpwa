@@ -27,17 +27,22 @@ export default function FilterGroupTagTimesheet({
   onClose,
   params,
   setParams,
+  onReset,
   anchor = "right",
 }) {
   const onResetFilterHandle = () => {
-    setParams({
-      kegiatan: "",
-      cabang_id: "",
-      penyewa_id: "",
-      lokasikerja_id: "",
-      page: 1,
-      perPage: 25,
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setParams({
+        kegiatan: "",
+        cabang_id: "",
+        penyewa_id: "",
+        lokasikerja_id: "",
+        page: 1,
+        perPage: params.perPage || 25,
+      });
+    }
   };
 
   return (

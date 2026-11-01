@@ -26,20 +26,24 @@ const statusOptions = [
   { value: 'R', label: 'Rejected' }
 ];
 
-export default function FilterCrewWorkActivity({ count, open, onClose, data, setData, anchor = 'right' }) {
+export default function FilterCrewWorkActivity({ count, open, onClose, data, setData, onReset, anchor = 'right' }) {
   const onResetFilterHandle = () => {
-    setData((prev) => ({
-      ...prev,
-      page: 1,
-      perPages: 25,
-      startdate: '',
-      enddate: '',
-      status: '',
-      crew_id: '',
-      spv_id: '',
-      cabang_id: '',
-      keterangan: ''
-    }));
+    if (onReset) {
+      onReset();
+    } else {
+      setData((prev) => ({
+        ...prev,
+        page: 1,
+        perPages: 25,
+        startdate: '',
+        enddate: '',
+        status: '',
+        crew_id: '',
+        spv_id: '',
+        cabang_id: '',
+        keterangan: ''
+      }));
+    }
   };
 
   const onChange = (field) => (event) => {

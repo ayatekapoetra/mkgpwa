@@ -19,6 +19,7 @@ import CardListEquipment from './listcard';
 import ListTableEquipment from './listtable';
 
 // HOOK
+import useFilterStorage from 'hooks/useFilterStorage';
 import { endpoints, useGetEquipment } from 'api/equipment';
 import axiosServices from 'utils/axios';
 import Paginate from 'components/Paginate';
@@ -87,20 +88,22 @@ const fetchAllEquipment = async (filters = {}) => {
   return parseEquipmentList(res.data);
 };
 
+const defaultParams = {
+  page: 1,
+  perPages: 30,
+  kode: '',
+  cabang_id: '',
+  kategori: '',
+  manufaktur: '',
+  tipe: '',
+  partner_id: ''
+};
+
 const EquipmentScreen = () => {
   const [isCard, setIsCard] = useState(true);
   const [openFilter, setOpenFilter] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [params, setParams] = useState({
-    page: 1,
-    perPages: 30,
-    kode: '',
-    cabang_id: '',
-    kategori: '',
-    manufaktur: '',
-    tipe: '',
-    partner_id: ''
-  });
+  const [params, setParams, resetParams] = useFilterStorage('mkg_filter_master_equipment', defaultParams);
   const { data, dataLoading, dataError, page, perPage, total, lastPage } = useGetEquipment(params);
 
   const toggleFilterHandle = () => {
@@ -237,7 +240,7 @@ const EquipmentScreen = () => {
       content={false}
     >
       <Stack spacing={2}>
-        <FilterEquipment data={params} setData={setParams} open={openFilter} count={total || data?.total} onClose={toggleFilterHandle} />
+        <FilterEquipment data={params} setData={setParams} onReset={resetParams} open={openFilter} count={total || data?.total} onClose={toggleFilterHandle} />
 
         {dataError ? (
           <Typography variant="body2" color="error">

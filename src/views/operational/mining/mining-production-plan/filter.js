@@ -13,19 +13,23 @@ const activeOptions = [
   { key: 'N', teks: 'Inactive (N)' }
 ];
 
-export default function MiningProductionPlanFilter({ open, onClose, params, setParams, anchor = 'right' }) {
+export default function MiningProductionPlanFilter({ open, onClose, params, setParams, onReset, anchor = 'right' }) {
   const handleReset = () => {
-    setParams({
-      page: 1,
-      per_page: 25,
-      periode: '',
-      contractor_id: '',
-      iupowner_id: '',
-      lokasi_id: '',
-      material_id: '',
-      aktif: 'Y',
-      keyword: ''
-    });
+    if (onReset) {
+      onReset();
+    } else {
+      setParams({
+        page: 1,
+        per_page: 25,
+        periode: '',
+        contractor_id: '',
+        iupowner_id: '',
+        lokasi_id: '',
+        material_id: '',
+        aktif: 'Y',
+        keyword: ''
+      });
+    }
   };
 
   return (
