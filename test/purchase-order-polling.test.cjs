@@ -181,6 +181,8 @@ test('list toggles Pilih Data to Preview and keeps choices when page/filter chan
       usePurchaseOrderAccess: () => ({ permissions: { can_read: true } }),
       useGetPurchaseOrders: (params) => ({ rows: [order(params.page)], page: params.page, perPage: 25, total: 50, lastPage: 2, loading: false })
     },
+    // Synthetic in-memory stand-in for hooks/useFilterStorage (real hook covered by use-filter-storage.test.cjs)
+    'hooks/useFilterStorage': { __esModule: true, default: (_key, defaults) => { const [v, set] = h.react.useState(defaults); return [v, set, () => set(defaults)]; } },
     'api/notification': {}, 'components/@extended/Breadcrumbs': 'Breadcrumbs', 'components/MainCard': 'MainCard',
     'components/Paginate': 'Paginate', config: { APP_DEFAULT_PATH: '/home' },
     './filter': 'PurchaseOrderFilter', './list': 'PurchaseOrderList',
