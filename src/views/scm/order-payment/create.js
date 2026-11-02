@@ -45,6 +45,10 @@ import { APP_DEFAULT_PATH } from "config";
 import AddItemDialog from "./AddItemDialog";
 import OutstandingModal from "./outstanding-modal";
 import { canRescheduleDueDate } from "./rescheduleDueDateHelpers";
+import {
+  mergeAllocationsFromModal,
+  joinHeaderNarasi,
+} from "./orderPaymentNarasiHelpers";
 import RescheduleDueDateModal from "./RescheduleDueDateModal";
 
 const money = (v) =>
@@ -327,19 +331,7 @@ export default function OrderPaymentCreatePage() {
   };
 
   const handleModalConfirm = (rows) => {
-    setAllocations((prev) => {
-      const map = new Map(prev.map((a) => [String(a.id), a]));
-      rows.forEach((r) => {
-        const key = String(r.id);
-        if (!map.has(key)) {
-          map.set(key, {
-            ...r,
-            amount: String(r.sisa ?? r.total ?? 0),
-          });
-        }
-      });
-      return [...map.values()];
-    });
+    setAllocations((prev) => mergeAllocationsFromModal(prev, rows));
     setModalOpen(false);
   };
 
@@ -422,12 +414,8 @@ export default function OrderPaymentCreatePage() {
     }
     setSaving(true);
     try {
-      const itemNarasiList = payloadAllocations
-        .map((a) => a.narasi?.trim())
-        .filter(Boolean);
-      const computedNarasi = itemNarasiList.length
-        ? itemNarasiList.join("; ")
-        : `Pembayaran ${payloadAllocations.length} faktur / ${pemasokCount} pemasok`;
+      const fallbackNarasi = `Pembayaran ${payloadAllocations.length} faktur / ${pemasokCount} pemasok`;
+      const computedNarasi = joinHeaderNarasi(payloadAllocations, fallbackNarasi);
 
       const body = {
         bisnis_id: Number(bisnisId),
