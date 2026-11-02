@@ -6,7 +6,7 @@ import { Alert, Box, Button, Checkbox, Divider, FormControlLabel, Grid, InputAdo
 import { Business, CalendarToday, Category, Description, DirectionsCar, HomeWork, LocationOn, Numbers, Payments, Public, ReceiptLong, Straighten, TextFields, Tune } from '@mui/icons-material';
 import { Add, Building3, Location, Trash } from 'iconsax-react';
 
-import { createAssetPurchase, getAssetErrorMessage, updateAssetPurchase, useAssetPurchase, useAssetPurchases } from 'api/asset-purchases';
+import { createAssetPurchase, getAssetErrorMessage, isVersionConflict, updateAssetPurchase, useAssetPurchase, useAssetPurchases } from 'api/asset-purchases';
 import { openNotification } from 'api/notification';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import MainCard from 'components/MainCard';
@@ -108,6 +108,16 @@ export default function AssetPurchaseForm({ id = null }) {
       openNotification({ open: true, title: 'success', message: `Pengajuan berhasil ${isEdit ? 'diperbarui' : 'dibuat'}`, alert: { color: 'success' } });
       router.push(`/asset-purchases/${saved?.id || id}`);
     } catch (error) {
+      if (isVersionConflict(error)) {
+        await detail.mutate?.();
+        openNotification({
+          open: true,
+          title: 'Perhatian',
+          message: 'Data telah diubah oleh sesi lain; form dimuat ulang dengan versi terbaru — mohon tinjau ulang perubahan Anda.',
+          alert: { color: 'warning' }
+        });
+        return;
+      }
       openNotification({ open: true, title: 'error', message: getAssetErrorMessage(error, 'Pengajuan gagal disimpan'), alert: { color: 'error' } });
     } finally { setSaving(false); }
   };
