@@ -22,7 +22,7 @@ const ACTION_HELPS = [
     key: "can_direct_submit",
     label: "Ajukan Verifikasi",
     color: "primary.main",
-    text: "SCM-005: satu aksi atomik — validasi, finalisasi (status Diproses), dan pembentukan faktur beli + rencana pembayaran tunai/kredit/termin. Berlaku untuk dokumen open maupun verify. Konfirmasi diperlukan sebelum eksekusi.",
+    text: "SCM-005: satu aksi atomik — validasi, finalisasi (status Diproses), dan pembentukan rencana pembayaran tunai/kredit/termin. Berlaku untuk dokumen open maupun verify. Konfirmasi diperlukan sebelum eksekusi.",
   },
   {
     key: "can_verify",
