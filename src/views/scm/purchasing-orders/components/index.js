@@ -1,6 +1,7 @@
 export { default as ActionDialog } from "./ActionDialog";
 export { default as AttachmentCard } from "./AttachmentCard";
 export { default as AuditTimeline } from "./AuditTimeline";
+export { default as DirectSubmitDialog } from "./DirectSubmitDialog";
 export { default as DocumentActions } from "./DocumentActions";
 export { default as DocumentHeader } from "./DocumentHeader";
 export { default as DownstreamLinks } from "./DownstreamLinks";

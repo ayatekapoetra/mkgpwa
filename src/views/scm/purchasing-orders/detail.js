@@ -18,7 +18,7 @@ import {
   returnPurchaseOrder,
   rollbackPurchaseOrder,
   savePreparation,
-  submitVerification,
+  submitVerificationDirect,
   uploadAttachments,
   usePurchaseOrderAccess,
   usePurchaseOrderAuditTrail,
@@ -37,12 +37,17 @@ import {
   ActionDialog,
   AttachmentCard,
   AuditTimeline,
+  DirectSubmitDialog,
   DocumentActions,
   DocumentHeader,
   DownstreamLinks,
   PurchaseOrderItemCard,
   RollbackDialog,
 } from "./components";
+import {
+  buildDirectSubmitSummary,
+  canDirectSubmitVerification,
+} from "./directSubmit";
 import { calculateHeaderTotals } from "./utils";
 
 /** Purchase order detail page coordinating the 3-status lifecycle workflow. */
@@ -87,6 +92,26 @@ export default function PurchaseOrderDetail() {
     [row],
   );
   const headerTotals = useMemo(() => calculateHeaderTotals(items), [items]);
+
+  // SCM-005 (Q-03 B + Q-06 B): direct "Ajukan Verifikasi" button gating.
+  // canUpdate/canInsert from feature access, canValidate mirrors the
+  // backend feature permission map (can_verify: permissions.validate).
+  const canDirectSubmit = useMemo(
+    () =>
+      canDirectSubmitVerification({
+        status: row?.status,
+        canUpdate: access.can_update,
+        canInsert: access.can_insert,
+        canValidate: access.can_verify,
+      }),
+    [row?.status, access.can_update, access.can_insert, access.can_verify],
+  );
+
+  // SCM-005 (Q-04 A): pre-action summary for the confirmation dialog.
+  const directSubmitSummary = useMemo(
+    () => buildDirectSubmitSummary({ row, items }),
+    [row, items],
+  );
 
   const notify = (color, message, title) => {
     openNotification({
@@ -163,15 +188,26 @@ export default function PurchaseOrderDetail() {
     );
   };
 
+  // SCM-005: "Ajukan Verifikasi" now runs the direct atomic action
+  // (validate + close + faktur beli + rencana pembayaran) behind the
+  // Q-04 A confirmation dialog instead of the legacy open→verify step.
   const handleSubmitVerification = () => {
+    setDialog("direct-submit");
+  };
+
+  const handleDirectSubmit = () => {
     runAction(
-      () => submitVerification(params.id),
-      "PO diajukan untuk verifikasi",
-      "Submit",
+      () =>
+        submitVerificationDirect(params.id, {
+          rekening_id: row?.rekening_id,
+        }),
+      "PO berhasil diajukan dan difinalisasi",
+      "Ajukan Verifikasi",
+      "/purchasing-orders",
     );
   };
 
-  // verify = final check + close + downstream
+  // verify = final check + close + downstream (legacy path, verify docs only)
   const handleVerify = () => {
     runAction(
       () => verifyPurchaseOrder(params.id, { rekening_id: row?.rekening_id }),
@@ -422,6 +458,8 @@ export default function PurchaseOrderDetail() {
             ) : (
               <DocumentActions
                 permissions={permissions}
+                canDirectSubmit={canDirectSubmit}
+                status={row.status}
                 loading={loading}
                 onPrepare={mode === "prepare" ? handleSavePreparation : () => setMode("prepare")}
                 onSubmitVerification={handleSubmitVerification}
@@ -435,6 +473,14 @@ export default function PurchaseOrderDetail() {
           </Stack>
         </Box>
       </MainCard>
+
+      <DirectSubmitDialog
+        open={dialog === "direct-submit"}
+        loading={loading}
+        summary={directSubmitSummary}
+        onClose={() => setDialog(null)}
+        onConfirm={handleDirectSubmit}
+      />
 
       <ActionDialog
         open={dialog === "return"}

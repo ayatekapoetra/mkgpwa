@@ -9,6 +9,8 @@ import {
   Trash,
 } from "iconsax-react";
 
+import { canShowLegacyVerifyAction } from "../directSubmit";
+
 const ACTION_HELPS = [
   {
     key: "can_prepare",
@@ -17,16 +19,16 @@ const ACTION_HELPS = [
     text: "Simpan perubahan item/header saat status open (rekening, prioritas, qty, harga, dsb).",
   },
   {
-    key: "can_submit",
+    key: "can_direct_submit",
     label: "Ajukan Verifikasi",
-    color: "text.primary",
-    text: "Ubah status open → verify. Mengisi verifiedby & verified_at, sts_code = 2.",
+    color: "primary.main",
+    text: "SCM-005: satu aksi atomik — validasi, finalisasi (status Diproses), dan pembentukan faktur beli + rencana pembayaran tunai/kredit/termin. Berlaku untuk dokumen open maupun verify. Konfirmasi diperlukan sebelum eksekusi.",
   },
   {
     key: "can_verify",
-    label: "Verifikasi & Finalisasi",
+    label: "Verifikasi & Finalisasi (jalur lama)",
     color: "success.main",
-    text: "Finalisasi PO (verify → close). Menutup dokumen dan memicu proses hilir (faktur/downstream).",
+    text: "Hanya untuk dokumen berstatus verify (legacy). Jalur kedua selain Ajukan Verifikasi. Menutup dokumen dan memicu proses hilir (faktur/downstream).",
   },
   {
     key: "can_return",
@@ -54,9 +56,17 @@ const ACTION_HELPS = [
   },
 ];
 
-/** Action bar driven by document permissions for the 3-status PO lifecycle. */
+/** Action bar driven by document permissions for the PO lifecycle.
+ * SCM-005 (PRD-SCM-005 v1.0): "Ajukan Verifikasi" is the direct atomic
+ * action (open|verify → close + rencana pembayaran) behind a mandatory
+ * confirmation dialog (Q-04 A), gated by update/insert + validate (Q-03 B)
+ * via the `canDirectSubmit` prop computed in detail.js. The legacy
+ * "Verifikasi & Finalisasi" button remains only for verify documents as the
+ * second path (Q-06 B). */
 export default function DocumentActions({
   permissions,
+  canDirectSubmit = false,
+  status = "",
   loading,
   onPrepare,
   onSubmitVerification,
@@ -66,7 +76,16 @@ export default function DocumentActions({
   onCancel,
   onPrint,
 }) {
-  const helps = ACTION_HELPS.filter((item) => permissions?.[item.key]);
+  const showLegacyVerify = canShowLegacyVerifyAction({
+    status,
+    canVerify: permissions?.can_verify,
+  });
+  const helpPermissions = {
+    ...permissions,
+    can_direct_submit: canDirectSubmit,
+    can_verify: showLegacyVerify,
+  };
+  const helps = ACTION_HELPS.filter((item) => helpPermissions?.[item.key]);
 
   return (
     <Stack spacing={1.5}>
@@ -80,24 +99,26 @@ export default function DocumentActions({
           Simpan Persiapan
         </Button>
       )}
-      {permissions.can_submit && (
+      {canDirectSubmit && (
         <Button
-          variant="outlined"
+          variant="contained"
+          color="primary"
+          startIcon={<TickCircle />}
           onClick={onSubmitVerification}
           disabled={loading}
         >
           Ajukan Verifikasi
         </Button>
       )}
-      {permissions.can_verify && (
+      {showLegacyVerify && (
         <Button
-          variant="contained"
+          variant="outlined"
           color="success"
           startIcon={<TickCircle />}
           onClick={onVerify}
           disabled={loading}
         >
-          Verifikasi & Finalisasi
+          Verifikasi &amp; Finalisasi
         </Button>
       )}
       {permissions.can_return && (

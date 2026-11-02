@@ -29,6 +29,13 @@ export const endpoints = {
   permissions: (id) => `/scm/purchase-orders/${id}/permissions`,
   preparation: (id) => `/scm/purchase-orders/${id}/preparation`,
   submitVerification: (id) => `/scm/purchase-orders/${id}/submit-verification`,
+  // SCM-005 (PRD-SCM-005 v1.0): direct "Ajukan Verifikasi" — one atomic
+  // action (submit + verify + finalize) for status open AND legacy verify
+  // (Q-06 B). CONTRACT NOTE: the path below is the FE proposal; it must be
+  // reconciled with the BE contract published on card t_9cb0dafc
+  // (branch feat/scm-005-p2p-submit) via the PM before integration.
+  submitVerificationDirect: (id) =>
+    `/scm/purchase-orders/${id}/submit-direct`,
   verify: (id) => `/scm/purchase-orders/${id}/verify`,
   return: (id) => `/scm/purchase-orders/${id}/return`,
   rollbackPreview: (id) => `/scm/purchase-orders/${id}/rollback-preview`,
@@ -494,6 +501,22 @@ export const updatePurchaseOrderHeader = async (id, payload) => {
 export const submitVerification = async (id, payload = {}) => {
   const response = await axiosServices.post(
     endpoints.submitVerification(id),
+    payload,
+    { skipOfflineQueue: true },
+  );
+  return response.data;
+};
+
+/**
+ * SCM-005 (PRD-SCM-005 v1.0): direct "Ajukan Verifikasi" — one atomic
+ * action that verifies + finalizes + builds the payment plan (faktur beli +
+ * rencana pembayaran). Accepts status open and legacy verify (Q-06 B);
+ * verifiedby/verified_at are set by the BE from the actor (Q-02 A).
+ * Idempotency for double submits is enforced server-side (BR-02).
+ */
+export const submitVerificationDirect = async (id, payload = {}) => {
+  const response = await axiosServices.post(
+    endpoints.submitVerificationDirect(id),
     payload,
     { skipOfflineQueue: true },
   );
