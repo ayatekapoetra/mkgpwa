@@ -11,12 +11,14 @@ import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 
-import { CloseSquare } from 'iconsax-react';
+import { CloseSquare, Calendar } from 'iconsax-react';
 import axiosServices from 'utils/axios';
 import { useGetGudang } from 'api/gudang';
 import { useGetBisnisUnit } from 'api/bisnis-unit';
+import { getDefaultDateRange, validateDateRange, isDefaultDateRange } from './dateRange';
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
@@ -28,6 +30,9 @@ const statusOptions = [
 
 export default function FilterStokopname({ count, data, setData, onReset, open, onClose }) {
   const [kodeInput, setKodeInput] = useState(data.kode || '');
+  const [fromInput, setFromInput] = useState(data.date_from || '');
+  const [toInput, setToInput] = useState(data.date_to || '');
+  const [dateError, setDateError] = useState('');
   const { data: gudangRows, dataLoading: gudangLoading } = useGetGudang();
   const bisnisUnitHook = useGetBisnisUnit({ my_units: true });
   const bisnisRows = bisnisUnitHook?.bisnisUnit?.rows || [];
@@ -85,6 +90,25 @@ export default function FilterStokopname({ count, data, setData, onReset, open, 
   useEffect(() => setKodeInput(data.kode || ''), [data.kode]);
 
   useEffect(() => {
+    setFromInput(data.date_from || '');
+    setToInput(data.date_to || '');
+    setDateError('');
+  }, [data.date_from, data.date_to]);
+
+  // Ubah tanggal: kosong => default 1 tahun; tidak valid => tampilkan error dan JANGAN kirim request.
+  const handleDateChange = (field, value) => {
+    const def = getDefaultDateRange();
+    const nextFrom = field === 'date_from' ? value || def.date_from : fromInput;
+    const nextTo = field === 'date_to' ? value || def.date_to : toInput;
+    setFromInput(nextFrom);
+    setToInput(nextTo);
+    const message = validateDateRange(nextFrom, nextTo);
+    setDateError(message);
+    if (message) return;
+    setData((prev) => ({ ...prev, page: 1, date_from: nextFrom, date_to: nextTo }));
+  };
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setData((prev) => {
         if (prev.kode === kodeInput) return prev;
@@ -96,6 +120,7 @@ export default function FilterStokopname({ count, data, setData, onReset, open, 
 
   const filterCount = useMemo(() => {
     let applied = 0;
+    if (!isDefaultDateRange(data.date_from, data.date_to)) applied += 1;
     if (data.kode) applied += 1;
     if (data.status) applied += 1;
     if (data.bisnis_id) applied += 1;
@@ -132,10 +157,22 @@ export default function FilterStokopname({ count, data, setData, onReset, open, 
 
   const handleReset = () => {
     setKodeInput('');
+    setDateError('');
     if (onReset) {
+      // useFilterStorage: hapus key sessionStorage + kembali ke default (termasuk rentang 365 hari).
       onReset();
     } else {
-      setData((prev) => ({ ...prev, page: 1, kode: '', status: '', bisnis_id: '', gudang_id: '', rack_id: '', user_id: '' }));
+      setData((prev) => ({
+        ...prev,
+        ...getDefaultDateRange(),
+        page: 1,
+        kode: '',
+        status: '',
+        bisnis_id: '',
+        gudang_id: '',
+        rack_id: '',
+        user_id: ''
+      }));
     }
   };
 
@@ -153,6 +190,45 @@ export default function FilterStokopname({ count, data, setData, onReset, open, 
         <Divider sx={{ mb: 2 }} />
         <Stack spacing={2.5}>
           <TextField label="Kode Dokumen" size="small" fullWidth value={kodeInput} onChange={(e) => setKodeInput(e.target.value)} />
+          <TextField
+            fullWidth
+            size="small"
+            type="date"
+            label="Dari Tanggal"
+            value={fromInput}
+            onChange={(e) => handleDateChange('date_from', e.target.value)}
+            error={Boolean(dateError)}
+            InputLabelProps={{ shrink: true }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Calendar size={18} />
+                </InputAdornment>
+              )
+            }}
+          />
+          <TextField
+            fullWidth
+            size="small"
+            type="date"
+            label="Sampai Tanggal"
+            value={toInput}
+            onChange={(e) => handleDateChange('date_to', e.target.value)}
+            error={Boolean(dateError)}
+            InputLabelProps={{ shrink: true }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Calendar size={18} />
+                </InputAdornment>
+              )
+            }}
+          />
+          {dateError ? (
+            <Typography variant="caption" color="error" role="alert" sx={{ mt: '-16px !important' }}>
+              {dateError}
+            </Typography>
+          ) : null}
           <Autocomplete
             options={statusOptions}
             value={selectedStatus}

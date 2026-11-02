@@ -26,10 +26,12 @@ import { APP_DEFAULT_PATH } from 'config';
 import { useGetStokopnames } from 'api/stokopname';
 import FilterStokopname from './filter';
 import useFilterStorage from 'hooks/useFilterStorage';
+import { getDefaultDateRange } from './dateRange';
 
 moment.locale('id');
 
-const DEFAULT_FILTERS = { page: 1, perPage: 25 };
+// Fungsi (bukan objek) agar rentang default 1 tahun dihitung ulang saat mount/reset.
+const getDefaultFilters = () => ({ page: 1, perPage: 25, ...getDefaultDateRange() });
 
 const breadcrumbLinks = [
   { title: 'Home', to: APP_DEFAULT_PATH },
@@ -54,7 +56,7 @@ const formatQty = (value) => {
 };
 
 export default function StokopnameScreen() {
-  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_warehouse_stokopname', DEFAULT_FILTERS);
+  const [filters, setFilters, resetFilters] = useFilterStorage('mkg_filter_warehouse_stokopname', getDefaultFilters);
   const [openFilter, setOpenFilter] = useState(false);
   const { rows, total, page, perPage, lastPage, summary, dataLoading } = useGetStokopnames(filters);
 
@@ -76,6 +78,18 @@ export default function StokopnameScreen() {
         }
         content
       >
+        {filters.date_from && filters.date_to ? (
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <Chip
+              size="small"
+              color="primary"
+              variant="outlined"
+              data-testid="stokopname-periode"
+              label={`Periode: ${moment(filters.date_from).format('DD MMM YYYY')} – ${moment(filters.date_to).format('DD MMM YYYY')}`}
+            />
+          </Stack>
+        ) : null}
+
         {summary ? (
           <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
             <Chip size="small" label={`Draft: ${summary.draft || 0}`} variant="outlined" />
