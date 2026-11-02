@@ -144,6 +144,17 @@ test("describePaymentPlan describes tunai, kredit and installment plans", () => 
   );
 });
 
+test("describePaymentPlan is null-safe when paymentTerms is null", () => {
+  assert.doesNotThrow(() => {
+    const desc = describePaymentPlan("kredit", null);
+    assert.match(desc, /Termin kredit: jatuh tempo 0 hari/);
+  });
+  assert.doesNotThrow(() => {
+    const desc = describePaymentPlan("tunai", null);
+    assert.match(desc, /tunai/i);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Q-04 A: confirmation summary payload
 // ---------------------------------------------------------------------------
@@ -174,4 +185,27 @@ test("buildDirectSubmitSummary is empty-safe for no items", () => {
   assert.equal(summary.groups.length, 0);
   assert.equal(summary.grandTotal, 0);
   assert.equal(summary.itemCount, 0);
+});
+
+test("buildDirectSubmitSummary handles row: null safely on initial render", () => {
+  assert.doesNotThrow(() => {
+    const summary = buildDirectSubmitSummary({ row: null, items: [] });
+    assert.equal(summary.groups.length, 0);
+    assert.equal(summary.grandTotal, 0);
+    assert.equal(summary.itemCount, 0);
+    assert.equal(summary.topType, "");
+    assert.equal(summary.topDays, 0);
+    assert.equal(summary.dpPercent, 0);
+  });
+
+  const summaryWithItems = buildDirectSubmitSummary({
+    row: null,
+    items: [{ id: 1, metode: "tunai", qty: 2, harga: 5000 }],
+  });
+  assert.equal(summaryWithItems.itemCount, 1);
+  assert.equal(summaryWithItems.grandTotal, 10000);
+  const tunai = summaryWithItems.groups.find((g) => g.metode === "tunai");
+  assert.ok(tunai);
+  assert.ok(tunai.documents.some((d) => /Faktur beli/.test(d)));
+  assert.ok(tunai.documents.some((d) => /tunai/i.test(d)));
 });

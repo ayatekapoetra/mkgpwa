@@ -72,10 +72,9 @@ export const groupItemsByMetode = (items = []) => {
 };
 
 /** Human description of the payment plan documents produced per method. */
-export const describePaymentPlan = (
-  metode,
-  { top_type = "", top_days = 0, dp_percent = 0 } = {},
-) => {
+export const describePaymentPlan = (metode, paymentTerms = {}) => {
+  const safeTerms = paymentTerms || {};
+  const { top_type = "", top_days = 0, dp_percent = 0 } = safeTerms;
   const key = String(metode || "").toLowerCase();
   const type = String(top_type || "").toUpperCase();
 
@@ -98,6 +97,7 @@ export const describePaymentPlan = (
  * faktur beli + rencana pembayaran (tunai/kredit/termin) + nilai total.
  */
 export const buildDirectSubmitSummary = ({ row = {}, items = [] } = {}) => {
+  const safeRow = row || {};
   const groups = groupItemsByMetode(items);
 
   return {
@@ -105,13 +105,13 @@ export const buildDirectSubmitSummary = ({ row = {}, items = [] } = {}) => {
       ...group,
       documents: [
         "Faktur beli (sesuai PRD-SCM-002)",
-        describePaymentPlan(group.metode, row),
+        describePaymentPlan(group.metode, safeRow),
       ],
     })),
     grandTotal: groups.reduce((acc, group) => acc + group.grand_total, 0),
     itemCount: groups.reduce((acc, group) => acc + group.item_count, 0),
-    topType: String(row.top_type || "").toUpperCase(),
-    topDays: Number(row.top_days || 0),
-    dpPercent: Number(row.dp_percent || 0),
+    topType: String(safeRow.top_type || "").toUpperCase(),
+    topDays: Number(safeRow.top_days || 0),
+    dpPercent: Number(safeRow.dp_percent || 0),
   };
 };
