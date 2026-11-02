@@ -23,13 +23,15 @@ export const assetEndpoints = {
   products: '/financing-products',
   product: (id) => `/financing-products/${id}`,
   approvalRules: '/asset-approval-rules',
-  approvalRule: (id) => `/asset-approval-rules/${id}`
+  approvalRule: (id) => `/asset-approval-rules/${id}`,
+  purchasePoPdf: (id) => `/asset-purchases/${id}/po-pdf`,
+  paymentReverse: (id) => `/asset-purchases/payment-instructions/${id}/reverse`
 };
 
 const permissionNames = [
   'read', 'insert', 'update', 'remove', 'submit', 'approve', 'reject', 'return', 'procure', 'verify_budget',
   'verify_financing', 'verify_legal', 'receive', 'inspect', 'create_payment_instruction', 'approve_payment_instruction',
-  'execute_payment', 'manage_giro', 'clear_giro', 'manage_contract', 'capitalize_request', 'configure_approval_matrix',
+  'execute_payment', 'reverse_payment', 'manage_giro', 'clear_giro', 'manage_contract', 'capitalize_request', 'configure_approval_matrix',
   'configure_financing_master', 'import', 'view_audit'
 ];
 
@@ -127,3 +129,6 @@ export const runPurchaseAction = (id, action, payload, version) => assetMutation
 export const runApprovalAction = (id, stepId, action, payload, version) => assetMutation('post', `${assetEndpoints.approvalSteps(id)}/${stepId}/${action}`, payload, version);
 export const runResourceAction = (endpoint, action, payload, version) => assetMutation('post', `${endpoint}/${action}`, payload, version);
 export const saveAssetResource = (endpoint, payload, id = null, version = null) => assetMutation(id ? 'put' : 'post', id ? `${endpoint}/${id}` : endpoint, payload, version);
+export const reversePaymentInstruction = (id, payload = {}, version = null) => assetMutation('post', assetEndpoints.paymentReverse(id), payload, version);
+export const getAssetPurchasePoPdf = async (id) => axiosServices.get(assetEndpoints.purchasePoPdf(id), { responseType: 'blob', skipOfflineQueue: true });
+export const runGiroBulkAction = (ids, action, payload = {}) => assetMutation('post', '/asset-giros/bulk-action', { ids, action, ...payload });
