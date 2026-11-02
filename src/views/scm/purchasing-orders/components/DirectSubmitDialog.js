@@ -20,14 +20,17 @@ import { formatCurrency } from "../utils";
 /**
  * SCM-005 (PRD-SCM-005 v1.0, Q-04 A): mandatory confirmation dialog before
  * executing the direct "Ajukan Verifikasi" action. Shows the downstream
- * document summary — faktur beli + rencana pembayaran tunai/kredit/termin
- * + nilai total — with an explicit continue button; both buttons are
- * disabled while the action is in flight (BR-02 double-submit guard).
+ * document summary — rencana pembayaran tunai/kredit/termin + nilai total —
+ * with an explicit continue button; both buttons are disabled while the
+ * action is in flight (BR-02 double-submit guard). Owner revision
+ * (Kensie, 2026-11-02): also shows a one-line permission info
+ * (permissionSummary) above the summary card.
  */
 export default function DirectSubmitDialog({
   open,
   loading = false,
   summary,
+  permissionSummary = "",
   onClose,
   onConfirm,
 }) {
@@ -45,10 +48,16 @@ export default function DirectSubmitDialog({
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            Aksi ini memvalidasi, memfinalisasi, dan membentuk dokumen turunan
-            dalam satu langkah. Status dokumen menjadi <b>Diproses</b> dan tidak
-            dapat di-rollback. Periksa ringkasan berikut sebelum melanjutkan.
+            Yakin ajukan PO ini? Status berubah menjadi <b>Diproses</b> dan
+            rencana pembayaran langsung terbentuk. Setelah itu PO tidak bisa
+            dikembalikan.
           </Typography>
+
+          {Boolean(permissionSummary) && (
+            <Typography variant="caption" color="text.secondary">
+              {permissionSummary}
+            </Typography>
+          )}
 
           {!hasItems && !loading && (
             <Alert severity="warning">

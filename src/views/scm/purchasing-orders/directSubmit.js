@@ -94,7 +94,7 @@ export const describePaymentPlan = (metode, paymentTerms = {}) => {
 
 /**
  * Builds the Q-04 A confirmation summary shown before executing the action:
- * faktur beli + rencana pembayaran (tunai/kredit/termin) + nilai total.
+ * rencana pembayaran (tunai/kredit/termin) + nilai total.
  */
 export const buildDirectSubmitSummary = ({ row = {}, items = [] } = {}) => {
   const safeRow = row || {};
@@ -103,10 +103,7 @@ export const buildDirectSubmitSummary = ({ row = {}, items = [] } = {}) => {
   return {
     groups: groups.map((group) => ({
       ...group,
-      documents: [
-        "Faktur beli (sesuai PRD-SCM-002)",
-        describePaymentPlan(group.metode, safeRow),
-      ],
+      documents: [describePaymentPlan(group.metode, safeRow)],
     })),
     grandTotal: groups.reduce((acc, group) => acc + group.grand_total, 0),
     itemCount: groups.reduce((acc, group) => acc + group.item_count, 0),
@@ -114,4 +111,19 @@ export const buildDirectSubmitSummary = ({ row = {}, items = [] } = {}) => {
     topDays: Number(safeRow.top_days || 0),
     dpPercent: Number(safeRow.dp_percent || 0),
   };
+};
+
+/**
+ * Owner revision (Kensie, 2026-11-02): one-line permission info shown above
+ * the summary card in the confirmation dialog. Uses the same feature access
+ * that gates the direct submit button (canUpdate || canInsert + canValidate).
+ * When the logged-in user name is unavailable in the FE session context, it
+ * falls back to listing the granting access without a name.
+ */
+export const buildDirectSubmitPermissionSummary = ({ userName = "" } = {}) => {
+  const name = String(userName || "").trim();
+  if (name) {
+    return `Diajukan oleh: ${name} — aksi ini hanya dapat dilakukan oleh user dengan akses validasi & finalisasi PO.`;
+  }
+  return "Aksi ini hanya dapat dilakukan oleh user dengan akses validasi & finalisasi PO (hak akses: update/insert + validate).";
 };

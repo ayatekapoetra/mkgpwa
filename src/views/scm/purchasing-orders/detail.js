@@ -32,6 +32,7 @@ import { openNotification } from "api/notification";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
 import BtnBack from "components/BtnBack";
 import MainCard from "components/MainCard";
+import useUser from "hooks/useUser";
 import { APP_DEFAULT_PATH } from "config";
 import {
   ActionDialog,
@@ -45,6 +46,7 @@ import {
   RollbackDialog,
 } from "./components";
 import {
+  buildDirectSubmitPermissionSummary,
   buildDirectSubmitSummary,
   canDirectSubmitVerification,
 } from "./directSubmit";
@@ -54,6 +56,7 @@ import { calculateHeaderTotals } from "./utils";
 export default function PurchaseOrderDetail() {
   const params = useParams();
   const router = useRouter();
+  const user = useUser();
   const [dialog, setDialog] = useState(null);
   const {
     permissions: access,
@@ -111,6 +114,15 @@ export default function PurchaseOrderDetail() {
   const directSubmitSummary = useMemo(
     () => buildDirectSubmitSummary({ row, items }),
     [row, items],
+  );
+
+  // Owner revision (Kensie, 2026-11-02): permission info line for the
+  // confirmation dialog. Logged-in user name comes from the existing FE
+  // session (useUser hook) — no new backend query. Same feature access
+  // gates the button itself (canUpdate || canInsert + canValidate).
+  const directSubmitPermissionSummary = useMemo(
+    () => buildDirectSubmitPermissionSummary({ userName: user?.name }),
+    [user?.name],
   );
 
   const notify = (color, message, title) => {
@@ -478,6 +490,7 @@ export default function PurchaseOrderDetail() {
         open={dialog === "direct-submit"}
         loading={loading}
         summary={directSubmitSummary}
+        permissionSummary={directSubmitPermissionSummary}
         onClose={() => setDialog(null)}
         onConfirm={handleDirectSubmit}
       />

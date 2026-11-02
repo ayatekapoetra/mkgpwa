@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 
 import {
   DIRECT_SUBMIT_ALLOWED_STATUSES,
+  buildDirectSubmitPermissionSummary,
+  buildDirectSubmitSummary,
   canDirectSubmitVerification,
   canShowLegacyVerifyAction,
-  groupItemsByMetode,
   describePaymentPlan,
-  buildDirectSubmitSummary,
+  groupItemsByMetode,
 } from "../directSubmit.js";
 
 // ---------------------------------------------------------------------------
@@ -173,8 +174,8 @@ test("buildDirectSubmitSummary aggregates documents and totals for dialog", () =
   assert.equal(summary.topDays, 30);
 
   const tunai = summary.groups.find((g) => g.metode === "tunai");
-  assert.ok(tunai.documents.some((d) => /Faktur beli/.test(d)));
-  assert.ok(tunai.documents.some((d) => /tunai/i.test(d)));
+  assert.equal(tunai.documents.length, 1);
+  assert.match(tunai.documents[0], /tunai/i);
 
   const kredit = summary.groups.find((g) => g.metode === "kredit");
   assert.ok(kredit.documents.some((d) => /30 hari/.test(d)));
@@ -206,6 +207,58 @@ test("buildDirectSubmitSummary handles row: null safely on initial render", () =
   assert.equal(summaryWithItems.grandTotal, 10000);
   const tunai = summaryWithItems.groups.find((g) => g.metode === "tunai");
   assert.ok(tunai);
-  assert.ok(tunai.documents.some((d) => /Faktur beli/.test(d)));
-  assert.ok(tunai.documents.some((d) => /tunai/i.test(d)));
+  assert.equal(tunai.documents.length, 1);
+  assert.match(tunai.documents[0], /tunai/i);
+});
+
+// ---------------------------------------------------------------------------
+// Owner revision (Kensie, 2026-11-02): remove the "Faktur beli (sesuai
+// PRD-SCM-002)" bullet from the dialog document list. documents now only
+// carry the payment plan description.
+// ---------------------------------------------------------------------------
+test("buildDirectSubmitSummary documents contain only the payment plan (no faktur beli bullet)", () => {
+  const summary = buildDirectSubmitSummary({
+    row: { top_type: "CREDIT", top_days: 30 },
+    items: [
+      { id: 1, metode: "tunai", qty: 1, harga: 10000 },
+      { id: 2, metode: "kredit", qty: 1, harga: 5000, ppn: 11 },
+    ],
+  });
+
+  assert.ok(summary.groups.length > 0);
+  summary.groups.forEach((group) => {
+    assert.equal(group.documents.length, 1);
+    group.documents.forEach((document) => {
+      assert.doesNotMatch(document, /Faktur beli/i);
+      assert.doesNotMatch(document, /PRD-SCM/);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Owner revision (Kensie, 2026-11-02): permission info line above the
+// summary card — "Diajukan oleh: {nama user}" with fallback when the FE
+// session has no user name.
+// ---------------------------------------------------------------------------
+test("buildDirectSubmitPermissionSummary renders submitter name with access note", () => {
+  const line = buildDirectSubmitPermissionSummary({ userName: "Budi Santoso" });
+  assert.match(line, /^Diajukan oleh: Budi Santoso — /);
+  assert.match(line, /akses validasi & finalisasi PO\.$/);
+});
+
+test("buildDirectSubmitPermissionSummary falls back to access list without a name", () => {
+  const line = buildDirectSubmitPermissionSummary({ userName: "" });
+  assert.doesNotMatch(line, /Diajukan oleh/);
+  assert.match(line, /validasi & finalisasi PO/);
+  assert.match(line, /update\/insert \+ validate/);
+});
+
+test("buildDirectSubmitPermissionSummary is null/undefined-safe for userName", () => {
+  assert.doesNotThrow(() => buildDirectSubmitPermissionSummary());
+  assert.doesNotThrow(() => buildDirectSubmitPermissionSummary({ userName: null }));
+  assert.doesNotThrow(() => buildDirectSubmitPermissionSummary({ userName: "   " }));
+  assert.doesNotMatch(
+    buildDirectSubmitPermissionSummary({ userName: "   " }),
+    /Diajukan oleh/,
+  );
 });
