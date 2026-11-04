@@ -18,6 +18,7 @@ import {
   FormControlLabel,
   Grid,
   InputAdornment,
+  MenuItem,
   Paper,
   Stack,
   Switch,
@@ -63,6 +64,7 @@ const initialValues = {
   application_id: '',
   manufacture_id: '',
   brand_id: '',
+  group: 'persediaan',
   satuan: '',
   stn_pakai: '',
   pembagi_pakai: 1,
@@ -76,6 +78,7 @@ const validationSchema = Yup.object({
   nama: Yup.string().trim().required('Nama barang wajib diisi').max(250, 'Maksimal 250 karakter'),
   num_part: Yup.string().trim().max(100, 'Maksimal 100 karakter'),
   serial: Yup.string().trim().max(100, 'Maksimal 100 karakter'),
+  group: Yup.string().oneOf(['persediaan', 'perlengkapan']).default('persediaan'),
   satuan: Yup.string().trim().required('Satuan order wajib diisi').max(50, 'Maksimal 50 karakter'),
   stn_pakai: Yup.string().trim().required('Satuan pakai wajib diisi').max(50, 'Maksimal 50 karakter'),
   pembagi_pakai: Yup.number().typeError('Pembagi harus berupa angka').moreThan(0, 'Pembagi harus lebih dari 0').required('Pembagi wajib diisi'),
@@ -296,6 +299,7 @@ export default function AddBarangScreen({ edit = false }) {
       application_id: nullableId(values.application_id),
       manufacture_id: nullableId(values.manufacture_id),
       brand_id: nullableId(values.brand_id),
+      group: values.group || 'persediaan',
       satuan: values.satuan.trim(),
       stn_pakai: values.stn_pakai.trim(),
       pembagi_pakai: Number(values.pembagi_pakai),
@@ -372,6 +376,7 @@ export default function AddBarangScreen({ edit = false }) {
         application_id: barang.application_id || '',
         manufacture_id: barang.manufacture_id || '',
         brand_id: barang.brand_id || '',
+        group: barang.group || 'persediaan',
         satuan: barang.satuan || '',
         stn_pakai: barang.stn_pakai || barang.satuan || '',
         pembagi_pakai: barang.pembagi_pakai ?? 1,
@@ -530,6 +535,25 @@ export default function AddBarangScreen({ edit = false }) {
                       </Grid>
                       <Grid item xs={12} md={6}>
                         <RelationField label="Brand" name="brand_id" options={options.brands || []} value={values.brand_id} loading={optionsLoading} setFieldValue={setFieldValue} setFieldTouched={setFieldTouched} error={errors.brand_id} touched={touched.brand_id} />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          select
+                          fullWidth
+                          name="group"
+                          label="Kelompok / Group"
+                          value={values.group || 'persediaan'}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          error={touched.group && Boolean(errors.group)}
+                          helperText={
+                            (touched.group && errors.group) ||
+                            'Persediaan dicatat sebagai aset gudang, Perlengkapan diakui langsung sebagai beban saat diterima.'
+                          }
+                        >
+                          <MenuItem value="persediaan">Persediaan</MenuItem>
+                          <MenuItem value="perlengkapan">Perlengkapan</MenuItem>
+                        </TextField>
                       </Grid>
                       <AutoKodePreview edit={edit} setFieldValue={setFieldValue} />
                     </Grid>

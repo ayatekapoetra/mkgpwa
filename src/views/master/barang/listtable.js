@@ -4,7 +4,7 @@ import Link from 'next/link';
 import React, { useState, useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
-import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, styled, IconButton } from '@mui/material';
+import { Box, Chip, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, styled, IconButton } from '@mui/material';
 
 import { Edit } from 'iconsax-react';
 
@@ -65,6 +65,26 @@ export default function ListTableBarang({ data = { data: [] } }) {
         enableResizing: true,
         cell: (info) => {
           return <Typography variant="subtitle1">{info.getValue() || '-'}</Typography>;
+        }
+      },
+      {
+        header: 'Group',
+        accessorKey: 'group',
+        size: 130,
+        minSize: 110,
+        enableResizing: true,
+        cell: (info) => {
+          const val = info.getValue() || 'persediaan';
+          const isPersediaan = String(val).toLowerCase() === 'persediaan';
+          return (
+            <Chip
+              size="small"
+              label={isPersediaan ? 'Persediaan' : 'Perlengkapan'}
+              color={isPersediaan ? 'primary' : 'warning'}
+              variant="outlined"
+              sx={{ fontWeight: 600 }}
+            />
+          );
         }
       },
       {
