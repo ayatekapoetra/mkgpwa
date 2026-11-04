@@ -60,6 +60,19 @@ import { openNotification } from 'api/notification';
 import { useGetGudang } from 'api/gudang';
 import { useGetGoodsIssueOption } from 'api/goods-issue';
 import { createMaterialRequestFromWo, deleteMaterialRequest, prepareGoodsIssue, useMaterialRequestList } from 'api/material-request';
+import {
+  getSatuanOrder,
+  getSatuanPakai,
+  getStokOrderValue,
+  getStokPakaiValue,
+  hasConversionHelper,
+  formatConversionHelper,
+  formatCartStokLabel,
+  isItemInsufficient,
+  buildCartItem,
+  buildManualCartItem,
+  buildSubmitPayload
+} from './materialRequestHelpers';
 
 const STATUS_LABEL = {
   active: 'Requested',
@@ -84,16 +97,18 @@ function useDebounce(value, delay = 400) {
   return debounced;
 }
 
-function StokBadge({ stok, qty }) {
-  const s = Number(stok || 0);
+function StokBadge({ stok, qty, stokOrder, satuanOrder }) {
+  const s = stokOrder !== undefined && stokOrder !== null ? stokOrder : (stok || 0);
+  const uom = satuanOrder ? ` ${satuanOrder}` : '';
+  const sNum = Number(s || 0);
   const q = Number(qty || 0);
-  if (s <= 0) {
+  if (sNum <= 0) {
     return <Chip icon={<Warning2 size={14} />} label="Stok Habis" size="small" color="error" variant="outlined" />;
   }
-  if (q > 0 && s < q) {
-    return <Chip icon={<Warning2 size={14} />} label={`Stok ${s} (kurang)`} size="small" color="warning" variant="outlined" />;
+  if (q > 0 && sNum < q) {
+    return <Chip icon={<Warning2 size={14} />} label={`Stok ${s}${uom} (kurang)`} size="small" color="warning" variant="outlined" />;
   }
-  return <Chip icon={<TickSquare size={14} />} label={`Stok ${s} (cukup)`} size="small" color="success" variant="outlined" />;
+  return <Chip icon={<TickSquare size={14} />} label={`Stok ${s}${uom} (cukup)`} size="small" color="success" variant="outlined" />;
 }
 
 export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
@@ -142,7 +157,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
   }, [optionData]);
 
   const cartTotalQty = cart.reduce((sum, c) => sum + Number(c.qty || 0), 0);
-  const cartHasInsufficientStok = cart.some((c) => !c.isManual && Number(c.stok || 0) < Number(c.qty || 0));
+  const cartHasInsufficientStok = cart.some(isItemInsufficient);
 
   const handleAddToCart = (barang) => {
     setCart((prev) => {
@@ -150,21 +165,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
       if (exists) {
         return prev.map((c) => (c.barang_id === barang.id ? { ...c, qty: (Number(c.qty) || 1) + 1 } : c));
       }
-      return [
-        ...prev,
-        {
-          uid: `b-${barang.id}`,
-          barang_id: barang.id,
-          kode: barang.kode,
-          nama: barang.nama,
-          num_part: barang.num_part,
-          satuan: barang.satuan_pakai || barang.satuan_order || '',
-          stok: barang.stok_pakai || 0,
-          qty: 1,
-          uom_used: barang.satuan_pakai || barang.satuan_order || '',
-          isManual: false
-        }
-      ];
+      return [...prev, buildCartItem(barang)];
     });
   };
 
@@ -189,23 +190,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
       return;
     }
 
-    setCart((prev) => [
-      ...prev,
-      {
-        uid: `m-${Date.now()}-${prev.length}`,
-        barang_id: '',
-        kode: '',
-        nama: narasi,
-        num_part: '',
-        satuan: manualForm.uom_used || '',
-        stok: 0,
-        qty,
-        uom_used: manualForm.uom_used || '',
-        narasi,
-        aliaspart: (manualForm.aliaspart || '').trim(),
-        isManual: true
-      }
-    ]);
+    setCart((prev) => [...prev, buildManualCartItem(manualForm, prev.length)]);
     setManualForm({ narasi: '', aliaspart: '', qty: 1, uom_used: '' });
   };
 
@@ -236,16 +221,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
 
     setSubmitting(true);
     try {
-      const payload = {
-        gudang_id: selectedGudang.id,
-        items: cart.map((c) => ({
-          barang_id: c.barang_id || null,
-          qty: Number(c.qty),
-          uom_used: c.uom_used || '',
-          narasi: c.isManual ? c.narasi : '',
-          aliaspart: c.isManual ? c.aliaspart : ''
-        }))
-      };
+      const payload = buildSubmitPayload(selectedGudang.id, cart);
       const response = await createMaterialRequestFromWo(woId, payload);
       if (response?.diagnostic?.error) {
         throw new Error(response.diagnostic.message || 'Gagal membuat material request');
@@ -483,7 +459,7 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       )}
                     </TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700 }}>{m.qty || 0}</TableCell>
-                    <TableCell align="center">{m.uom_used || m.barang?.stn_pakai || '-'}</TableCell>
+                    <TableCell align="center">{m.uom_used || m.barang?.stn_order || m.barang?.stn_pakai || '-'}</TableCell>
                     <TableCell align="center">
                       {m.barang_id ? (
                         <Typography variant="body2" fontWeight={700} color={stokAvailable > 0 ? 'success.main' : 'error.main'}>
@@ -766,15 +742,18 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                               <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: tableHeaderBg } }}>
                                 <TableCell sx={{ fontWeight: 700, width: 100 }}>Kode</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Nama Barang</TableCell>
-                                <TableCell sx={{ fontWeight: 700, align: 'center', width: 80 }} align="center">Stok</TableCell>
-                                <TableCell sx={{ fontWeight: 700, width: 50 }} align="center">Sat</TableCell>
+                                <TableCell sx={{ fontWeight: 700, align: 'center', width: 95 }} align="center">Stok</TableCell>
+                                <TableCell sx={{ fontWeight: 700, width: 60 }} align="center">Sat</TableCell>
                                 <TableCell sx={{ fontWeight: 700, width: 50 }} align="center">+</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
                               {barangList.map((b) => {
                                 const inCart = cart.find((c) => c.barang_id === b.id);
-                                const stokNum = Number(b.stok_pakai || 0);
+                                const stokOrderVal = getStokOrderValue(b);
+                                const stokOrderNum = Number(stokOrderVal || 0);
+                                const satuanOrder = getSatuanOrder(b);
+                                const conversionText = formatConversionHelper(b);
                                 return (
                                   <TableRow
                                     key={b.id}
@@ -793,13 +772,18 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                                       <Typography
                                         variant="body2"
                                         fontWeight={700}
-                                        color={stokNum > 0 ? 'success.main' : 'error.main'}
+                                        color={stokOrderNum > 0 ? 'success.main' : 'error.main'}
                                       >
-                                        {stokNum}
+                                        {stokOrderVal}
                                       </Typography>
+                                      {conversionText && (
+                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: 10, lineHeight: 1.2 }}>
+                                          {conversionText}
+                                        </Typography>
+                                      )}
                                     </TableCell>
                                     <TableCell align="center">
-                                      <Typography variant="caption">{b.satuan_pakai || b.satuan_order || '-'}</Typography>
+                                      <Typography variant="caption">{satuanOrder}</Typography>
                                     </TableCell>
                                     <TableCell align="center">
                                       {inCart ? (
@@ -878,9 +862,11 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                         ) : (
                           <Stack spacing={1}>
                             {cart.map((c, idx) => {
-                              const stokNum = Number(c.stok || 0);
+                              const stokOrderVal = getStokOrderValue(c);
+                              const stokOrderNum = Number(stokOrderVal || 0);
                               const qtyNum = Number(c.qty || 0);
-                              const kurang = stokNum < qtyNum;
+                              const kurang = isItemInsufficient(c);
+                              const stokLabel = formatCartStokLabel(c);
                               return (
                                 <Paper key={c.uid} variant="outlined" sx={{ p: 1, borderRadius: 1, borderLeft: '3px solid', borderLeftColor: kurang ? 'warning.main' : 'primary.main' }}>
                                   <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -931,12 +917,12 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                                       <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
                                         {c.isManual ? (
                                           <Chip label="Manual" size="small" color="warning" variant="outlined" sx={{ height: 18, fontSize: 10 }} />
-                                        ) : stokNum <= 0 ? (
-                                          <Chip label={`Stok habis`} size="small" color="error" sx={{ height: 18, fontSize: 10 }} />
+                                        ) : stokOrderNum <= 0 ? (
+                                          <Chip label="Stok habis" size="small" color="error" sx={{ height: 18, fontSize: 10 }} />
                                         ) : kurang ? (
-                                          <Chip label={`Stok ${stokNum} (kurang)`} size="small" color="warning" sx={{ height: 18, fontSize: 10 }} />
+                                          <Chip label={`${stokLabel} (kurang)`} size="small" color="warning" sx={{ height: 18, fontSize: 10 }} />
                                         ) : (
-                                          <Chip label={`Stok ${stokNum}`} size="small" color="success" variant="outlined" sx={{ height: 18, fontSize: 10 }} />
+                                          <Chip label={stokLabel} size="small" color="success" variant="outlined" sx={{ height: 18, fontSize: 10 }} />
                                         )}
                                       </Stack>
                                     </Box>
@@ -989,44 +975,65 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                       <TableHead>
                         <TableRow sx={{ '& .MuiTableCell-root': { bgcolor: tableHeaderBg } }}>
                           <TableCell sx={{ fontWeight: 700 }}>Barang</TableCell>
-                          <TableCell sx={{ fontWeight: 700, width: 90 }} align="center">Stok</TableCell>
+                          <TableCell sx={{ fontWeight: 700, width: 140 }} align="center">Stok</TableCell>
                           <TableCell sx={{ fontWeight: 700, width: 90 }} align="center">Qty</TableCell>
-                          <TableCell sx={{ fontWeight: 700, width: 50 }} align="center">Sat</TableCell>
+                          <TableCell sx={{ fontWeight: 700, width: 60 }} align="center">Sat</TableCell>
                           <TableCell sx={{ fontWeight: 700, width: 50 }} align="center">×</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {cart.map((c) => (
-                          <TableRow key={c.uid}>
-                            <TableCell>
-                              {c.isManual ? (
-                                <Chip label="Manual" size="small" color="warning" sx={{ mb: 0.5 }} />
-                              ) : (
-                                <Typography variant="body2" fontWeight={600}>{c.kode || '-'}</Typography>
-                              )}
-                              <Typography variant="caption" color="text.secondary" display="block">{c.nama}</Typography>
-                            </TableCell>
-                            <TableCell align="center">
-                              {c.isManual ? <Chip label="N/A" size="small" variant="outlined" /> : <StokBadge stok={c.stok} qty={c.qty} />}
-                            </TableCell>
-                            <TableCell align="center">
-                              <TextField
-                                type="number"
-                                size="small"
-                                value={c.qty}
-                                onChange={(e) => handleCartQtyChange(c.uid, e.target.value)}
-                                sx={{ width: 70 }}
-                                inputProps={{ min: 1, style: { textAlign: 'center', fontWeight: 700 } }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">{c.satuan || '-'}</TableCell>
-                            <TableCell align="center">
-                              <IconButton size="small" color="error" onClick={() => handleRemoveFromCart(c.uid)}>
-                                <Trash size={15} />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {cart.map((c) => {
+                          const conversionText = formatConversionHelper(c);
+                          const satuanOrder = getSatuanOrder(c);
+                          const stokOrderVal = getStokOrderValue(c);
+                          return (
+                            <TableRow key={c.uid}>
+                              <TableCell>
+                                {c.isManual ? (
+                                  <Chip label="Manual" size="small" color="warning" sx={{ mb: 0.5 }} />
+                                ) : (
+                                  <Typography variant="body2" fontWeight={600}>{c.kode || '-'}</Typography>
+                                )}
+                                <Typography variant="caption" color="text.secondary" display="block">{c.nama}</Typography>
+                              </TableCell>
+                              <TableCell align="center">
+                                {c.isManual ? (
+                                  <Chip label="N/A" size="small" variant="outlined" />
+                                ) : (
+                                  <Box>
+                                    <StokBadge
+                                      stok={c.stok}
+                                      qty={c.qty}
+                                      stokOrder={stokOrderVal}
+                                      satuanOrder={satuanOrder}
+                                    />
+                                    {conversionText && (
+                                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: 10, mt: 0.25 }}>
+                                        {conversionText}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                )}
+                              </TableCell>
+                              <TableCell align="center">
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={c.qty}
+                                  onChange={(e) => handleCartQtyChange(c.uid, e.target.value)}
+                                  sx={{ width: 70 }}
+                                  inputProps={{ min: 1, style: { textAlign: 'center', fontWeight: 700 } }}
+                                />
+                              </TableCell>
+                              <TableCell align="center">{c.satuan || '-'}</TableCell>
+                              <TableCell align="center">
+                                <IconButton size="small" color="error" onClick={() => handleRemoveFromCart(c.uid)}>
+                                  <Trash size={15} />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </TableContainer>
