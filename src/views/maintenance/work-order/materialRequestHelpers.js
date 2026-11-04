@@ -57,6 +57,21 @@ export function isItemInsufficient(cartItem = {}) {
   return stokPakai < qty;
 }
 
+export function getStokBadgeStatus({ stok, qty, stokOrder, stokPakai, kurang } = {}) {
+  const s = stokOrder !== undefined && stokOrder !== null ? stokOrder : (stok || 0);
+  const sNum = Number(s || 0);
+  const q = Number(qty || 0);
+  if (sNum <= 0) return 'habis';
+
+  const isKurang = typeof kurang === 'boolean'
+    ? kurang
+    : (stokPakai !== undefined && stokPakai !== null)
+      ? (q > 0 && Number(stokPakai || 0) < q)
+      : (q > 0 && sNum < q);
+
+  return isKurang ? 'kurang' : 'cukup';
+}
+
 export function buildCartItem(barang = {}) {
   const satuanPakai = getSatuanPakai(barang);
   const satuanOrder = barang?.satuan_order || barang?.satuan || '';

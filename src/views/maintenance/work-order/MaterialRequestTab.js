@@ -97,7 +97,7 @@ function useDebounce(value, delay = 400) {
   return debounced;
 }
 
-function StokBadge({ stok, qty, stokOrder, satuanOrder }) {
+function StokBadge({ stok, qty, stokOrder, satuanOrder, stokPakai, kurang }) {
   const s = stokOrder !== undefined && stokOrder !== null ? stokOrder : (stok || 0);
   const uom = satuanOrder ? ` ${satuanOrder}` : '';
   const sNum = Number(s || 0);
@@ -105,7 +105,15 @@ function StokBadge({ stok, qty, stokOrder, satuanOrder }) {
   if (sNum <= 0) {
     return <Chip icon={<Warning2 size={14} />} label="Stok Habis" size="small" color="error" variant="outlined" />;
   }
-  if (q > 0 && sNum < q) {
+
+  // DEF-MR-001-01: Evaluasi kecukupan dengan stok pakai (bukan stok order mentah vs qty pakai)
+  const isKurang = typeof kurang === 'boolean'
+    ? kurang
+    : (stokPakai !== undefined && stokPakai !== null)
+      ? (q > 0 && Number(stokPakai || 0) < q)
+      : (q > 0 && sNum < q);
+
+  if (isKurang) {
     return <Chip icon={<Warning2 size={14} />} label={`Stok ${s}${uom} (kurang)`} size="small" color="warning" variant="outlined" />;
   }
   return <Chip icon={<TickSquare size={14} />} label={`Stok ${s}${uom} (cukup)`} size="small" color="success" variant="outlined" />;
@@ -986,6 +994,8 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                           const conversionText = formatConversionHelper(c);
                           const satuanOrder = getSatuanOrder(c);
                           const stokOrderVal = getStokOrderValue(c);
+                          const stokPakaiVal = getStokPakaiValue(c);
+                          const kurang = isItemInsufficient(c);
                           return (
                             <TableRow key={c.uid}>
                               <TableCell>
@@ -1006,6 +1016,8 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
                                       qty={c.qty}
                                       stokOrder={stokOrderVal}
                                       satuanOrder={satuanOrder}
+                                      stokPakai={stokPakaiVal}
+                                      kurang={kurang}
                                     />
                                     {conversionText && (
                                       <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: 10, mt: 0.25 }}>

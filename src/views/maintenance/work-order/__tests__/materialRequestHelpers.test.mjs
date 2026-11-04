@@ -10,6 +10,7 @@ import {
   formatConversionHelper,
   formatCartStokLabel,
   isItemInsufficient,
+  getStokBadgeStatus,
   buildCartItem,
   buildManualCartItem,
   buildSubmitPayload
@@ -154,6 +155,70 @@ describe('Material Request UOM and Stock Helpers (PRD-BUGFIX-MR-001-v1.0)', () =
         narasi: 'Baut 10mm',
         aliaspart: ''
       });
+    });
+  });
+
+  describe('DEF-MR-001-01 / AC-QA-02: Evaluasi Kecukupan StokBadge Langkah 3', () => {
+    it('evaluates sufficiency correctly when drum item (stok 1.011808 drum, 210.46 liter) requested 5 liter', () => {
+      const cartItem = buildCartItem(sampleDrumItem);
+      cartItem.qty = 5;
+      assert.equal(isItemInsufficient(cartItem), false);
+      const badgeStatus = getStokBadgeStatus({
+        stokOrder: cartItem.stok_order,
+        satuanOrder: cartItem.satuan_order,
+        stokPakai: cartItem.stok_pakai,
+        qty: cartItem.qty,
+        kurang: isItemInsufficient(cartItem)
+      });
+      assert.equal(badgeStatus, 'cukup');
+    });
+
+    it('evaluates insufficiency correctly when drum item requested 250 liter (exceeding 210.46 liter)', () => {
+      const cartItem = buildCartItem(sampleDrumItem);
+      cartItem.qty = 250;
+      assert.equal(isItemInsufficient(cartItem), true);
+      const badgeStatus = getStokBadgeStatus({
+        stokOrder: cartItem.stok_order,
+        satuanOrder: cartItem.satuan_order,
+        stokPakai: cartItem.stok_pakai,
+        qty: cartItem.qty,
+        kurang: isItemInsufficient(cartItem)
+      });
+      assert.equal(badgeStatus, 'kurang');
+    });
+
+    it('returns "habis" if stok_order is 0 or less', () => {
+      assert.equal(
+        getStokBadgeStatus({
+          stokOrder: 0,
+          satuanOrder: 'drum',
+          stokPakai: 0,
+          qty: 5,
+          kurang: true
+        }),
+        'habis'
+      );
+    });
+
+    it('supports evaluating directly from stokPakai when kurang boolean is not explicitly provided', () => {
+      assert.equal(
+        getStokBadgeStatus({
+          stokOrder: 1.011808,
+          satuanOrder: 'drum',
+          stokPakai: 210.455984,
+          qty: 5
+        }),
+        'cukup'
+      );
+      assert.equal(
+        getStokBadgeStatus({
+          stokOrder: 1.011808,
+          satuanOrder: 'drum',
+          stokPakai: 210.455984,
+          qty: 250
+        }),
+        'kurang'
+      );
     });
   });
 });
