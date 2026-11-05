@@ -79,9 +79,9 @@ function PurchasingRequestFormBody({
   );
   const branches = Array.isArray(rawBranches) ? rawBranches : [];
   const { rows: warehouses = [] } = usePurchasingRequestGudang();
-  // Load all spare parts without bisnis filter so search works across all units.
+  // Load initial spare parts with pagination (25 items) to keep initial payload small (< 15 KB).
   const { rows: itemOptions = [], loading: itemLoading } =
-    usePurchasingRequestBarang({}, true);
+    usePurchasingRequestBarang({ page: 1, perPages: 25 }, true);
   // Load all active equipment so existing and cross-branch units remain selectable.
   const { rows: equipmentOptions = [], loading: equipmentLoading } =
     usePurchasingRequestEquipment({}, true);

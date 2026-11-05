@@ -112,6 +112,21 @@ axiosServices.interceptors.response.use(
       }
     }
 
+    const isTimeout =
+      error.code === "ECONNABORTED" ||
+      error.code === "ETIMEDOUT" ||
+      String(error.message || "").toLowerCase().includes("timeout of") ||
+      String(error.message || "").toLowerCase().includes("exceeded");
+
+    if (isTimeout) {
+      error.isTimeout = true;
+      error.message = "Mohon menunggu sejenak!";
+      if (error.response?.data && typeof error.response.data === "object") {
+        error.response.data.isTimeout = true;
+        error.response.data.message = "Mohon menunggu sejenak!";
+      }
+    }
+
     if (
       typeof window !== "undefined" &&
       typeof navigator !== "undefined" &&
@@ -170,4 +185,21 @@ export const fetcherPost = async (args) => {
   const res = await axiosServices.post(url, { ...config });
 
   return res.data;
+};
+
+export const isTimeoutError = (error) => {
+  if (!error) return false;
+  if (error.isTimeout) return true;
+  if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") return true;
+  const msg = String(
+    error.message ||
+      error.diagnostic?.message ||
+      error.data?.message ||
+      ""
+  ).toLowerCase();
+  return (
+    msg.includes("timeout of") ||
+    msg.includes("exceeded") ||
+    msg.includes("menunggu sejenak")
+  );
 };

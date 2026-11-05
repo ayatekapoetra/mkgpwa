@@ -10,6 +10,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   InputAdornment,
   Stack,
   TextField,
@@ -108,14 +109,22 @@ function RequestItemFields({
   const { rows: searchResults = [], loading: searchLoading } =
     usePurchasingRequestBarangSearch(barangSearch);
 
-  // Merge local options with server search results, dedup by id.
+  const currentBarang =
+    item.barang || getSelectedOption(itemOptions, item.barang_id) || null;
+  const isServerSearch = barangSearch.trim().length >= 3;
+
+  // Merge local options or server search results with selected barang, dedup by id.
   const mergedOptions = useMemo(() => {
     const map = new Map();
-    [...searchResults, ...itemOptions].forEach((option) => {
+    if (currentBarang && currentBarang.id != null) {
+      map.set(String(currentBarang.id), currentBarang);
+    }
+    const sourceOptions = isServerSearch ? searchResults : itemOptions;
+    (sourceOptions || []).forEach((option) => {
       if (option?.id != null) map.set(String(option.id), option);
     });
     return Array.from(map.values());
-  }, [itemOptions, searchResults]);
+  }, [currentBarang, isServerSearch, itemOptions, searchResults]);
 
   const selectedBarang =
     item.barang || getSelectedOption(mergedOptions, item.barang_id);
@@ -185,17 +194,24 @@ function RequestItemFields({
                   .trim()
                   .toLowerCase();
                 if (!query) return options;
+                if (query.length >= 3) {
+                  return options;
+                }
                 return options.filter((option) =>
                   getBarangSearchText(option).includes(query),
                 );
               }}
               onInputChange={(_, value, reason) => {
-                if (reason === "input") setBarangSearch(value);
+                if (reason === "input") {
+                  setBarangSearch(value);
+                } else if (reason === "clear" || reason === "reset") {
+                  setBarangSearch("");
+                }
               }}
               value={selectedBarang}
               getOptionLabel={getBarangOptionLabel}
               isOptionEqualToValue={(option, valueOption) =>
-                String(option.id) === String(valueOption.id)
+                String(option?.id) === String(valueOption?.id)
               }
               onChange={(_, option) => {
                 setFieldValue(`items.${index}.barang`, option);
@@ -205,6 +221,11 @@ function RequestItemFields({
                   option?.satuan || option?.stn || "",
                 );
               }}
+              noOptionsText={
+                searchLoading
+                  ? "Mencari data barang..."
+                  : "Tidak ada data barang"
+              }
               renderOption={(props, option) => (
                 <li {...props} key={`${option.id}-${option.kode || "barang"}`}>
                   <BarangOptionRow option={option} />
@@ -216,12 +237,28 @@ function RequestItemFields({
                   size="small"
                   label="Barang / Sparepart"
                   placeholder="Cari kode, nama, part number, brand, manufaktur"
-                  error={Boolean(errors.items?.[index]?.barang_id) || Boolean(errors.items?.[index]?.description)}
+                  error={
+                    Boolean(errors.items?.[index]?.barang_id) ||
+                    Boolean(errors.items?.[index]?.description)
+                  }
                   helperText={
                     errors.items?.[index]?.description ||
                     errors.items?.[index]?.barang_id ||
-                    `${mergedOptions.length} sparepart tersedia · ketik untuk cari lebih lanjut`
+                    (searchLoading
+                      ? "Mencari sparepart..."
+                      : `${mergedOptions.length} sparepart tersedia · ketik min 3 huruf untuk cari server`)
                   }
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {itemLoading || searchLoading ? (
+                          <CircularProgress color="inherit" size={18} />
+                        ) : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
                 />
               )}
             />

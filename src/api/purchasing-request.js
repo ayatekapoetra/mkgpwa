@@ -4,7 +4,7 @@ import useSWR from "swr";
 import axiosServices, { fetcher } from "utils/axios";
 
 /** Delays updating a value until the user stops typing for the given ms. */
-const useDebounce = (value, delay = 400) => {
+const useDebounce = (value, delay = 350) => {
   const [debounced, setDebounced] = useState(value);
   const timerRef = useRef(null);
 
@@ -352,14 +352,17 @@ export const usePurchasingRequestSupplierRecommendations = (
 export const usePurchasingRequestBarangSearch = (
   search,
   _bisnisId = "",
-  debounceMs = 400,
+  debounceMs = 350,
 ) => {
   const debouncedSearch = useDebounce(search, debounceMs);
-  const hasSearch = debouncedSearch.trim().length >= 2;
+  const rawSearch = typeof search === "string" ? search.trim() : "";
+  const debouncedTrimmed =
+    typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
+  const hasSearch = debouncedTrimmed.length >= 3;
 
   // No bisnis_id filter — search across all business units.
-  const params = { page: 1, perPages: 100 };
-  if (debouncedSearch.trim()) params.kode = debouncedSearch.trim();
+  const params = { page: 1, perPages: 25 };
+  if (debouncedTrimmed) params.kode = debouncedTrimmed;
 
   const url = hasSearch ? `${endpoints.barang}${toQueryString(params)}` : null;
   const { data, error, isLoading } = useSWR(url, fetcher, {
@@ -370,12 +373,14 @@ export const usePurchasingRequestBarangSearch = (
 
   return useMemo(() => {
     const rows = normalizeRows(data);
+    const isDebouncing =
+      rawSearch.length >= 3 && rawSearch !== debouncedTrimmed;
     return {
       rows: hasSearch ? rows : [],
-      loading: hasSearch && isLoading,
+      loading: isDebouncing || (hasSearch && isLoading),
       error,
     };
-  }, [data, error, hasSearch, isLoading]);
+  }, [data, error, hasSearch, isLoading, rawSearch, debouncedTrimmed]);
 };
 
 const itemsPayload = (items) => ({

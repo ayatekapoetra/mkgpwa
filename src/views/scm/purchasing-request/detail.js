@@ -76,7 +76,7 @@ export default function PurchasingRequestDetail() {
     Boolean(row),
   );
   const { rows: barangOptions = [] } = usePurchasingRequestBarang(
-    {},
+    { page: 1, perPages: 25 },
     Boolean(row),
   );
   const [mode, setMode] = useState("view");

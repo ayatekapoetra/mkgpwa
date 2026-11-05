@@ -3,10 +3,28 @@
  * Compatible with Axios envelopes, diagnostic payloads, and native errors.
  */
 
+export const isTimeoutError = (error) => {
+  if (!error) return false;
+  if (error.isTimeout) return true;
+  if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") return true;
+  const msg = String(
+    error?.message ||
+      error?.diagnostic?.message ||
+      error?.data?.message ||
+      ""
+  ).toLowerCase();
+  return (
+    msg.includes("timeout of") ||
+    msg.includes("exceeded") ||
+    msg.includes("menunggu sejenak")
+  );
+};
+
 export const getPurchasingRequestError = (
   error,
   fallback = "Proses Purchasing Request gagal",
 ) => {
+  const isTimeout = isTimeoutError(error);
   const rawPayload = error?.response?.data || error?.data || error || {};
   const payload =
     typeof rawPayload === "object" && rawPayload !== null ? rawPayload : {};
@@ -32,17 +50,25 @@ export const getPurchasingRequestError = (
     diagnostic.status ||
     null;
 
+  let message =
+    diagnostic.message ||
+    legacyMessage ||
+    payload.message ||
+    fieldMessage ||
+    (typeof rawPayload === "string" ? rawPayload : "") ||
+    error?.message ||
+    fallback;
+
+  if (isTimeout) {
+    message = "Mohon menunggu sejenak!";
+  }
+
   return {
-    message:
-      diagnostic.message ||
-      legacyMessage ||
-      payload.message ||
-      fieldMessage ||
-      (typeof rawPayload === "string" ? rawPayload : "") ||
-      error?.message ||
-      fallback,
+    message,
     code,
     status,
+    isTimeout: Boolean(isTimeout),
+    severity: isTimeout ? "warning" : "error",
     requestId: diagnostic.request_id || payload.request_id || null,
     errors: Array.isArray(payload?.errors) ? payload.errors : [],
   };
@@ -56,6 +82,7 @@ export const normalizeDetail = (payload) => {
 };
 
 export function getGoodsIssueError(error, fallback = "Proses Goods Issue gagal") {
+  const isTimeout = isTimeoutError(error);
   const rawPayload = error?.response?.data || error?.data || error || {};
   const payload =
     typeof rawPayload === "object" && rawPayload !== null ? rawPayload : {};
@@ -76,17 +103,23 @@ export function getGoodsIssueError(error, fallback = "Proses Goods Issue gagal")
     diagnostic.status ||
     null;
 
-  const message =
+  let message =
     diagnostic.message ||
     payload.message ||
     (typeof rawPayload === "string" ? rawPayload : "") ||
     error?.message ||
     fallback;
 
+  if (isTimeout) {
+    message = "Mohon menunggu sejenak!";
+  }
+
   return {
     message,
     code,
     status,
+    isTimeout: Boolean(isTimeout),
+    severity: isTimeout ? "warning" : "error",
     errors: Array.isArray(payload?.errors) ? payload.errors : [],
   };
 }

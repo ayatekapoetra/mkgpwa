@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Autocomplete,
   Box,
@@ -67,6 +68,17 @@ function ValidationFields({ item, value, suppliers, barangOptions, onChange }) {
     getSelectedOption(barangOptions, value.barang_id) || item.barang || null;
   const totals = calculateItemTotals(value);
 
+  const effectiveBarangOptions = useMemo(() => {
+    const map = new Map();
+    if (selectedBarang && selectedBarang.id != null) {
+      map.set(String(selectedBarang.id), selectedBarang);
+    }
+    (barangOptions || []).forEach((opt) => {
+      if (opt?.id != null) map.set(String(opt.id), opt);
+    });
+    return Array.from(map.values());
+  }, [barangOptions, selectedBarang]);
+
   // Grid helper: 12 columns on desktop, each field spans N columns.
   const col = (span) => ({
     gridColumn: { xs: "span 12", md: `span ${span}` },
@@ -79,18 +91,18 @@ function ValidationFields({ item, value, suppliers, barangOptions, onChange }) {
         gridTemplateColumns: { xs: "repeat(12, 1fr)" },
         gap: 1.5,
       }}
-      >
-        {/* Barang — lebar 6/12, opsional */}
-        <Autocomplete
-          options={barangOptions}
-          value={selectedBarang}
-          getOptionLabel={(option) =>
-            [option?.kode, option?.nama || option?.name].filter(Boolean).join(" · ") || ""
-          }
-          isOptionEqualToValue={(option, valueOption) =>
-            String(option?.id) === String(valueOption?.id)
-          }
-          filterOptions={(options, state) => {
+    >
+      {/* Barang — lebar 6/12, opsional */}
+      <Autocomplete
+        options={effectiveBarangOptions}
+        value={selectedBarang}
+        getOptionLabel={(option) =>
+          [option?.kode, option?.nama || option?.name].filter(Boolean).join(" · ") || ""
+        }
+        isOptionEqualToValue={(option, valueOption) =>
+          String(option?.id) === String(valueOption?.id)
+        }
+        filterOptions={(options, state) => {
             const query = String(state.inputValue || "")
               .trim()
               .toLowerCase();

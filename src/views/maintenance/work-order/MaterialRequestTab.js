@@ -369,7 +369,25 @@ export default function MaterialRequestTab({ woId, woStatus, kdwo }) {
   }
 
   if (dataError) {
-    return <Alert severity="error">{dataError?.message || 'Gagal memuat material request'}</Alert>;
+    const isTimeout =
+      Boolean(dataError.isTimeout) ||
+      dataError.code === 'ECONNABORTED' ||
+      dataError.code === 'ETIMEDOUT' ||
+      String(dataError.message || '').includes('menunggu sejenak') ||
+      String(dataError.message || '').toLowerCase().includes('timeout');
+
+    return (
+      <Alert
+        severity={isTimeout ? 'warning' : 'error'}
+        action={
+          <Button color="inherit" size="small" onClick={() => mutate()}>
+            Coba Lagi
+          </Button>
+        }
+      >
+        {dataError?.message || (isTimeout ? 'Mohon menunggu sejenak!' : 'Gagal memuat material request')}
+      </Alert>
+    );
   }
 
   return (
