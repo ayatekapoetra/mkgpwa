@@ -335,6 +335,7 @@ export default function OrderPaymentCreatePage() {
           map.set(key, {
             ...r,
             amount: String(r.sisa ?? r.total ?? 0),
+            narasi: r.narasi || r.po_narasi || "",
           });
         }
       });
