@@ -39,7 +39,24 @@ export default function PengajuanDanaPollPreview() {
   const selection = usePengajuanDanaPollSelection();
   const { permissions, loading: accessLoading, error: accessError } = usePengajuanDanaAccess();
   const canRead = !accessLoading && !accessError && permissions.can_read;
-  const details = usePengajuanDanaPollDetails(selection, canRead && !selection.error);
+  const rawDetails = usePengajuanDanaPollDetails(selection, canRead && !selection.error);
+  const details = useMemo(() => {
+    const rows = [];
+    const errors = { ...rawDetails.errors };
+
+    rawDetails.rows.forEach((row) => {
+      try {
+        // Validation can reject legacy dates, missing items or invalid amounts.
+        // Keep that failure on its document instead of throwing during render.
+        toPollItem(row);
+        rows.push(row);
+      } catch (failure) {
+        errors[String(row?.id)] = failure?.message || 'Data Pengajuan Dana tidak valid. Muat ulang data.';
+      }
+    });
+
+    return { data: rows, rows, errors, loading: rawDetails.loading, reload: rawDetails.reload };
+  }, [rawDetails.rows, rawDetails.errors, rawDetails.loading, rawDetails.reload]);
 
   const [contacts, setContacts] = useState({ key: null, sender_phone: '', recipient_phone: '' });
   const [touched, setTouched] = useState(false);
