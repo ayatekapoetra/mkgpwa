@@ -220,8 +220,23 @@ export default function OutstandingModal({
     setFilters((f) => ({ ...f, [key]: e.target.value }));
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      fullWidth
+      maxWidth="lg"
+      PaperProps={{
+        sx: {
+          // Tinggi modal fixed: 70vh dinaikkan 30% menjadi 91vh.
+          height: '91vh',
+          maxHeight: '91vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        },
+      }}
+    >
+      <DialogTitle sx={{ flexShrink: 0 }}>
         Pilih faktur outstanding
         <Typography variant="caption" color="text.secondary" display="block">
           Centang faktur (boleh beda pemasok, bisnis sama) lalu tambah ke alokasi
@@ -234,7 +249,7 @@ export default function OutstandingModal({
         </Typography>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Grid container spacing={1.5} mb={2}>
           <Grid item xs={6} sm={4} md={3}>
             <TextField
@@ -694,7 +709,7 @@ export default function OutstandingModal({
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: 3, py: 2, flexShrink: 0 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mr: "auto" }}>
           Terpilih: <strong>{selectedRows.length}</strong>
         </Typography>

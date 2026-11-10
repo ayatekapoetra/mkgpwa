@@ -402,21 +402,25 @@ export default function OrderPaymentCreatePage() {
         ? detailRow.files
         : [];
 
-  const canSubmit =
-    bisnisId &&
+  // Draft (rencana) does not require a wallet; posting does.
+  const canSubmitBase =
+    Boolean(bisnisId) &&
     payloadAllocations.length > 0 &&
-    grandTotal > 0 &&
-    walletId &&
-    selectedWallet?.coa_id;
+    grandTotal > 0;
+
+  const canSubmit = canSubmitBase;
+  const canPost = canSubmitBase && Boolean(walletId) && Boolean(selectedWallet?.coa_id);
 
   const submit = async (post) => {
-    if (!canSubmit) {
+    if (!canSubmit || (post && !canPost)) {
       openNotification({
         open: true,
         title: "Validasi",
-        message: !selectedWallet?.coa_id
-          ? "Wallet belum punya COA di master bank/kas"
-          : "Lengkapi bisnis, wallet, dan alokasi faktur",
+        message: post
+          ? (!selectedWallet?.coa_id
+            ? "Wallet belum punya COA di master bank/kas"
+            : "Lengkapi bisnis, wallet, dan alokasi faktur")
+          : "Lengkapi bisnis dan alokasi faktur",
         alert: { color: "warning" },
       });
       return;
@@ -1015,7 +1019,7 @@ export default function OrderPaymentCreatePage() {
             </Button>
             <Button
               variant="contained"
-              disabled={saving || !canSubmit}
+              disabled={saving || !canPost}
               onClick={() => submit(true)}
             >
               {saving ? "Memposting…" : "Posting bayar"}
