@@ -6,6 +6,7 @@ import { useIntl } from 'react-intl';
 // MATERIAL - UI
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
@@ -26,7 +27,7 @@ import { MenuOrientation } from 'config';
 
 const Navigation = () => {
   const theme = useTheme();
-  const { menu, menuLoading } = useGetMenu();
+  const { menu, menuLoading, menuHomeFallback, menuError } = useGetMenu();
   const { messages } = useIntl();
 
   const downLG = useMediaQuery(theme.breakpoints.down('lg'));
@@ -100,6 +101,11 @@ const Navigation = () => {
         display: isHorizontal ? { xs: 'block', lg: 'flex' } : 'block'
       }}
     >
+      {menuHomeFallback && (
+        <Alert severity="warning" sx={{ mx: 1.5, mb: 1 }}>
+          Menu gagal dimuat{menuError?.message ? `: ${menuError.message}` : ''}. Menampilkan Home saja.
+        </Alert>
+      )}
       {navGroups}
     </Box>
   );

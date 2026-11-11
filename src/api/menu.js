@@ -1,9 +1,15 @@
 import useSWR, { mutate } from "swr";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 
 // Project-imports
 import { fetcher } from "utils/axios";
-import { useOfflineStorage } from "lib/useOfflineStorage";
+import {
+  useOfflineStorage,
+  getOfflineData,
+  removeOfflineData,
+  clearOfflineDataByPrefix,
+} from "lib/useOfflineStorage";
 import { getMenuIcon } from "utils/getMenuIcon";
 
 const initialState = {
@@ -24,262 +30,173 @@ export const endpoints = {
   keySetting: "/setting/akses-menu/list",
 };
 
+export const USER_MENU_CACHE_PREFIX = "user-menu-";
+export const USER_MENU_SWR_KEY = endpoints.key + endpoints.user;
+
+export const getUserMenuCacheKey = (userId) =>
+  userId != null && `${userId}`.length > 0
+    ? `${USER_MENU_CACHE_PREFIX}${userId}`
+    : null;
+
+/** Same shape as BE unauthenticated fallback (BR-6). */
+export const HOME_ONLY_MENU = {
+  dashboard: {
+    id: "group-dashboard",
+    title: "dashboard",
+    type: "group",
+    icon: "dashboard",
+    children: [
+      {
+        id: "home",
+        title: "Home",
+        type: "item",
+        url: "/home",
+        icon: "home",
+      },
+    ],
+  },
+};
+
+/**
+ * Clear all per-user menu caches from IndexedDB + SWR (BR-3).
+ * Call from every logout handler.
+ */
+export async function clearUserMenuCaches() {
+  await clearOfflineDataByPrefix("menu", USER_MENU_CACHE_PREFIX);
+  // Legacy key before per-user keys (write-only path on older builds).
+  await removeOfflineData("menu", "user-menu");
+  await mutate(USER_MENU_SWR_KEY, undefined, { revalidate: false });
+}
+
+const transformMenuIcons = (menuItems) => {
+  if (!Array.isArray(menuItems)) return menuItems;
+
+  return menuItems.map((item) => {
+    const transformed = { ...item };
+
+    if (item.icon && typeof item.icon === "string") {
+      transformed.icon = getMenuIcon(item.icon);
+    }
+
+    if (item.url === "/laporan/summary-breakdown") {
+      transformed.icon = getMenuIcon("health");
+    }
+
+    if (item.children && Array.isArray(item.children)) {
+      transformed.children = transformMenuIcons(item.children);
+    }
+
+    return transformed;
+  });
+};
+
 export function useGetMenu() {
-  const { data, isLoading, error, isValidating } = useSWR(
-    endpoints.key + endpoints.user,
-    fetcher,
-    {
-      revalidateIfStale: true,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: false,
-    },
-  );
+  const { data: session, status } = useSession();
+  const userId = session?.id ?? session?.token?.id ?? null;
+  const cacheKey = getUserMenuCacheKey(userId);
+  const isAuthenticated = status === "authenticated" && Boolean(cacheKey);
 
-  useOfflineStorage("menu", "user-menu", data);
+  const [offlineMenu, setOfflineMenu] = useState(null);
+  const [hydrateDone, setHydrateDone] = useState(false);
 
-  // Transform menu data to include icon components
+  useEffect(() => {
+    let cancelled = false;
+
+    if (status === "loading") {
+      return undefined;
+    }
+
+    if (!isAuthenticated) {
+      setOfflineMenu(null);
+      setHydrateDone(true);
+      return undefined;
+    }
+
+    setHydrateDone(false);
+
+    (async () => {
+      try {
+        const cached = await getOfflineData("menu", cacheKey);
+        if (!cancelled) {
+          setOfflineMenu(cached ?? null);
+          setHydrateDone(true);
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          setOfflineMenu(null);
+          setHydrateDone(true);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey, status, isAuthenticated]);
+
+  const shouldFetch = isAuthenticated && hydrateDone;
+  const swrKey = shouldFetch ? USER_MENU_SWR_KEY : null;
+  const hasOfflineCache = Boolean(offlineMenu?.dashboard?.children);
+
+  const { data, isLoading, error, isValidating } = useSWR(swrKey, fetcher, {
+    fallbackData: hasOfflineCache ? offlineMenu : undefined,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    // Cache hit → no network (1x per login session). Empty cache → fetch once.
+    revalidateOnMount: !hasOfflineCache,
+  });
+
+  useOfflineStorage("menu", cacheKey, data);
+
   const transformedData = useMemo(() => {
-    if (!data?.dashboard?.children) {
-      return data;
-    }
-    
-    const transformMenu = (menuItems, depth = 0) => {
-      return menuItems.map(item => {
-        const transformed = { ...item };
-        const indent = '  '.repeat(depth);
-        
-        // Convert icon string to component
-        if (item.icon && typeof item.icon === 'string') {
-          const IconComponent = getMenuIcon(item.icon);
-          transformed.icon = IconComponent;
-        } else if (item.icon) {
-          console.log(`${indent}[Transform] ${item.title}: Already a component`);
-        } else {
-          console.log(`${indent}[Transform] ${item.title}: No icon`);
-        }
+    const source = data?.dashboard?.children
+      ? data
+      : error && !hasOfflineCache
+        ? HOME_ONLY_MENU
+        : data;
 
-        if (item.url === '/laporan/summary-breakdown') {
-          transformed.icon = getMenuIcon('health');
-        }
-        
-        // Transform children recursively
-        if (item.children && Array.isArray(item.children)) {
-          transformed.children = transformMenu(item.children, depth + 1);
-        }
-        
-        return transformed;
-      });
-    };
-
-    const dashboardChildren = transformMenu(data.dashboard.children);
-    const humanCapital = dashboardChildren.find((item) => {
-      const title = (item?.title || '').toString().toLowerCase();
-      const id = (item?.id || '').toString().toLowerCase();
-      return title === 'human capital' || id.includes('human-capital') || id.includes('humancapital');
-    });
-
-    if (humanCapital && Array.isArray(humanCapital.children)) {
-      const hasCrewWorkActivity = humanCapital.children.some((item) => item?.url === '/crew-work-activity');
-      if (!hasCrewWorkActivity) {
-        humanCapital.children.push({
-          id: 'crew-work-activity',
-          title: 'Crew Work Activity',
-          type: 'item',
-          url: '/crew-work-activity',
-          icon: getMenuIcon('clipboardText') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        });
-      }
+    if (!source?.dashboard?.children) {
+      return source;
     }
 
-    const masterMenu = dashboardChildren.find((item) => {
-      const title = (item?.title || '').toString().trim().toLowerCase();
-      const id = (item?.id || '').toString().trim().toLowerCase();
-      return title === 'master' || id === 'master' || id.includes('master-page');
-    });
-
-    if (masterMenu && Array.isArray(masterMenu.children) && !masterMenu.children.some((item) => item?.url === '/harga-beli')) {
-      masterMenu.children.push({
-        id: 'harga-beli',
-        title: 'Harga Beli',
-        type: 'item',
-        url: '/harga-beli',
-        icon: getMenuIcon('UsdCoin'),
-        breadcrumbs: true
-      });
-    }
-
-    const operationalMenu = dashboardChildren.find((item) => {
-      const title = (item?.title || '').toString().toLowerCase();
-      const id = (item?.id || '').toString().toLowerCase();
-      return title.includes('operational') || title.includes('operasi') || id.includes('operational') || id.includes('operasi');
-    });
-
-    if (operationalMenu && Array.isArray(operationalMenu.children)) {
-      const hasMobilization = operationalMenu.children.some((item) => (
-        item?.url === '/mobilisasi-equipments'
-        || item?.url === '/equipment-mobilization'
-        || item?.url === '/operational/equipment-mobilization'
-      ));
-      if (!hasMobilization) {
-        operationalMenu.children.push({
-          id: 'equipment-mobilization',
-          title: 'Equipment Mobilization',
-          type: 'item',
-          url: '/mobilisasi-equipments',
-          icon: getMenuIcon('truck') || getMenuIcon('truckFast') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        });
-      } else {
-        operationalMenu.children = operationalMenu.children.map((item) => {
-          if (
-            item?.url === '/operational/equipment-mobilization'
-            || item?.url === '/equipment-mobilization'
-          ) {
-            return { ...item, url: '/mobilisasi-equipments' };
-          }
-          return item;
-        });
-      }
-    }
-
-    const reportMenu = dashboardChildren.find((item) => {
-      const title = (item?.title || '').toString().trim().toLowerCase();
-      const id = (item?.id || '').toString().trim().toLowerCase();
-      const isReportGroup = title.includes('report') || title.includes('laporan') || id.includes('report') || id.includes('laporan');
-      return Array.isArray(item?.children) && isReportGroup;
-    });
-
-    if (reportMenu && Array.isArray(reportMenu.children)) {
-      const reportItems = [
-        {
-          id: 'event-history',
-          title: 'Event History',
-          type: 'item',
-          url: '/laporan/event-history',
-          icon: getMenuIcon('presentionChart') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        },
-        {
-          id: 'stokopname-report',
-          title: 'Laporan Stockopname',
-          type: 'item',
-          url: '/laporan/stokopname',
-          icon: getMenuIcon('BoxTime') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        }
-      ];
-
-      reportItems.forEach((reportItem) => {
-        if (!reportMenu.children.some((item) => item?.url === reportItem.url)) {
-          reportMenu.children.push(reportItem);
-        }
-      });
-    }
-
-    const settingMenu = dashboardChildren.find((item) => {
-      const title = (item?.title || '').toString().trim().toLowerCase();
-      const id = (item?.id || '').toString().trim().toLowerCase();
-      return title === 'setting' || title === 'pengaturan' || id.includes('setting') || id.includes('pengaturan');
-    });
-
-    if (settingMenu && Array.isArray(settingMenu.children)) {
-      const hasEquipmentProject = settingMenu.children.some((item) => (
-        item?.url === '/wa-config-breakdown'
-        || item?.id === 'wa-config-breakdown'
-      ));
-      if (!hasEquipmentProject) {
-        settingMenu.children.push({
-          id: 'wa-config-breakdown',
-          title: 'WA Config Equipment Breakdown',
-          type: 'item',
-          url: '/wa-config-breakdown',
-          icon: getMenuIcon('equipment') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        });
-      }
-
-      const hasAkuntingMapping = settingMenu.children.some((item) => (
-        item?.url === '/akunting-mapping'
-        || item?.id === 'akunting-mapping'
-      ));
-      if (!hasAkuntingMapping) {
-        settingMenu.children.push({
-          id: 'akunting-mapping',
-          title: 'Akunting Mapping',
-          type: 'item',
-          url: '/akunting-mapping',
-          icon: getMenuIcon('receiptItem') || getMenuIcon('documentText') || getMenuIcon('setting'),
-          breadcrumbs: true
-        });
-      }
-    }
-
-    const warehouseMenu = dashboardChildren.find((item) => {
-      const title = (item?.title || '').toString().trim().toLowerCase();
-      const id = (item?.id || '').toString().trim().toLowerCase();
-      return title === 'warehouse' || title === 'gudang' || id.includes('warehouse') || id.includes('gudang');
-    });
-
-    if (warehouseMenu && Array.isArray(warehouseMenu.children)) {
-      const hasGoodsIssues = warehouseMenu.children.some((item) => item?.url === '/goods-issues' || item?.id === 'goods-issues');
-      if (!hasGoodsIssues) {
-        warehouseMenu.children.push({
-          id: 'goods-issues',
-          title: 'Goods Issues',
-          type: 'item',
-          url: '/goods-issues',
-          icon: getMenuIcon('box') || getMenuIcon('documentText'),
-          breadcrumbs: true
-        });
-      }
-
-      const hasStokopname = warehouseMenu.children.some((item) => item?.url === '/warehouse/stokopname' || item?.id === 'stokopname');
-      if (!hasStokopname) {
-        warehouseMenu.children.push({
-          id: 'stokopname',
-          title: 'Stockopname',
-          type: 'item',
-          url: '/warehouse/stokopname',
-          icon: getMenuIcon('clipboardText') || getMenuIcon('box'),
-          breadcrumbs: true
-        });
-      }
-
-      const hasRacks = warehouseMenu.children.some((item) => item?.url === '/warehouse/racks' || item?.id === 'racks');
-      if (!hasRacks) {
-        warehouseMenu.children.push({
-          id: 'racks',
-          title: 'Rack Cycle Time',
-          type: 'item',
-          url: '/warehouse/racks',
-          icon: getMenuIcon('BoxTime') || getMenuIcon('box'),
-          breadcrumbs: true
-        });
-      }
-    }
-
-    const result = {
-      ...data,
+    return {
+      ...source,
       dashboard: {
-        ...data.dashboard,
-        children: dashboardChildren
-      }
+        ...source.dashboard,
+        children: transformMenuIcons(source.dashboard.children),
+      },
     };
-    
-    console.log('[Menu Transform] Transformation complete');
-    return result;
-  }, [data]);
+  }, [data, error, hasOfflineCache]);
+
+  const usingHomeFallback = Boolean(
+    error && !hasOfflineCache && !data?.dashboard?.children,
+  );
 
   const memoizedValue = useMemo(
     () => ({
       menu: transformedData?.dashboard,
-      menuLoading: isLoading,
-      menuError: error,
+      menuLoading:
+        status === "loading" ||
+        !hydrateDone ||
+        (isLoading && !hasOfflineCache),
+      menuError: error || null,
       menuValidating: isValidating,
-      menuEmpty: !isLoading && !transformedData?.length,
+      menuEmpty: hydrateDone && !isLoading && !transformedData?.dashboard,
+      menuFromCache: hasOfflineCache && !data,
+      menuHomeFallback: usingHomeFallback,
     }),
-    [transformedData, error, isLoading, isValidating],
+    [
+      transformedData,
+      error,
+      isLoading,
+      isValidating,
+      hydrateDone,
+      hasOfflineCache,
+      data,
+      usingHomeFallback,
+      status,
+    ],
   );
 
   return memoizedValue;
