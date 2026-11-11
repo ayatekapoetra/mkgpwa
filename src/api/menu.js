@@ -32,11 +32,41 @@ export const endpoints = {
 
 export const USER_MENU_CACHE_PREFIX = "user-menu-";
 export const USER_MENU_SWR_KEY = endpoints.key + endpoints.user;
+export const LAST_USER_MENU_KEY = "mkg_last_user_menu_key";
 
 export const getUserMenuCacheKey = (userId) =>
   userId != null && `${userId}`.length > 0
     ? `${USER_MENU_CACHE_PREFIX}${userId}`
     : null;
+
+const readStoredMenuKey = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    return (
+      window.sessionStorage?.getItem(LAST_USER_MENU_KEY) ||
+      window.localStorage?.getItem(LAST_USER_MENU_KEY) ||
+      null
+    );
+  } catch (_e) {
+    return null;
+  }
+};
+
+const writeStoredMenuKey = (key) => {
+  if (typeof window === "undefined" || !key) return;
+  try {
+    window.sessionStorage?.setItem(LAST_USER_MENU_KEY, key);
+    window.localStorage?.setItem(LAST_USER_MENU_KEY, key);
+  } catch (_e) {}
+};
+
+const removeStoredMenuKey = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage?.removeItem(LAST_USER_MENU_KEY);
+    window.localStorage?.removeItem(LAST_USER_MENU_KEY);
+  } catch (_e) {}
+};
 
 /** Same shape as BE unauthenticated fallback (BR-6). */
 export const HOME_ONLY_MENU = {
@@ -62,67 +92,90 @@ export const HOME_ONLY_MENU = {
  * Call from every logout handler.
  */
 export async function clearUserMenuCaches() {
+  removeStoredMenuKey();
   await clearOfflineDataByPrefix("menu", USER_MENU_CACHE_PREFIX);
   // Legacy key before per-user keys (write-only path on older builds).
   await removeOfflineData("menu", "user-menu");
   await mutate(USER_MENU_SWR_KEY, undefined, { revalidate: false });
 }
 
+const menuIconsCache = new WeakMap();
+
 const transformMenuIcons = (menuItems) => {
   if (!Array.isArray(menuItems)) return menuItems;
 
-  return menuItems.map((item) => {
-    const transformed = { ...item };
+  const cached = menuIconsCache.get(menuItems);
+  if (cached) return cached;
+
+  const transformed = menuItems.map((item) => {
+    const nextItem = { ...item };
 
     if (item.icon && typeof item.icon === "string") {
-      transformed.icon = getMenuIcon(item.icon);
+      nextItem.icon = getMenuIcon(item.icon);
     }
 
     if (item.url === "/laporan/summary-breakdown") {
-      transformed.icon = getMenuIcon("health");
+      nextItem.icon = getMenuIcon("health");
     }
 
     if (item.children && Array.isArray(item.children)) {
-      transformed.children = transformMenuIcons(item.children);
+      nextItem.children = transformMenuIcons(item.children);
     }
 
-    return transformed;
+    return nextItem;
   });
+
+  menuIconsCache.set(menuItems, transformed);
+  return transformed;
 };
 
 export function useGetMenu() {
   const { data: session, status } = useSession();
   const userId = session?.id ?? session?.token?.id ?? null;
-  const cacheKey = getUserMenuCacheKey(userId);
-  const isAuthenticated = status === "authenticated" && Boolean(cacheKey);
+  const sessionCacheKey = getUserMenuCacheKey(userId);
 
   const [offlineMenu, setOfflineMenu] = useState(null);
   const [hydrateDone, setHydrateDone] = useState(false);
+  const [loadedKey, setLoadedKey] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    if (status === "loading") {
-      return undefined;
-    }
-
-    if (!isAuthenticated) {
+    if (status === "unauthenticated") {
+      removeStoredMenuKey();
+      setLoadedKey(null);
       setOfflineMenu(null);
       setHydrateDone(true);
       return undefined;
     }
 
-    setHydrateDone(false);
+    // AC-05 / BR-1 guard: Never hydrate or use cache before session.user.id is verified.
+    if (status === "loading" || !sessionCacheKey) {
+      if (loadedKey !== null) {
+        setLoadedKey(null);
+        setOfflineMenu(null);
+      }
+      return undefined;
+    }
+
+    // Keep session storage in sync with verified user session only
+    writeStoredMenuKey(sessionCacheKey);
+
+    if (loadedKey === sessionCacheKey) {
+      return undefined;
+    }
 
     (async () => {
       try {
-        const cached = await getOfflineData("menu", cacheKey);
+        const cached = await getOfflineData("menu", sessionCacheKey);
         if (!cancelled) {
+          setLoadedKey(sessionCacheKey);
           setOfflineMenu(cached ?? null);
           setHydrateDone(true);
         }
       } catch (_err) {
         if (!cancelled) {
+          setLoadedKey(sessionCacheKey);
           setOfflineMenu(null);
           setHydrateDone(true);
         }
@@ -132,11 +185,13 @@ export function useGetMenu() {
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, status, isAuthenticated]);
+  }, [sessionCacheKey, status, loadedKey]);
 
-  const shouldFetch = isAuthenticated && hydrateDone;
+  const isAuthenticated = status === "authenticated" && Boolean(sessionCacheKey);
+  const isKeyMatched = loadedKey === sessionCacheKey;
+  const hasOfflineCache = isKeyMatched && Boolean(offlineMenu?.dashboard?.children);
+  const shouldFetch = isAuthenticated && hydrateDone && isKeyMatched;
   const swrKey = shouldFetch ? USER_MENU_SWR_KEY : null;
-  const hasOfflineCache = Boolean(offlineMenu?.dashboard?.children);
 
   const { data, isLoading, error, isValidating } = useSWR(swrKey, fetcher, {
     fallbackData: hasOfflineCache ? offlineMenu : undefined,
@@ -145,19 +200,25 @@ export function useGetMenu() {
     revalidateOnReconnect: false,
     // Cache hit → no network (1x per login session). Empty cache → fetch once.
     revalidateOnMount: !hasOfflineCache,
+    dedupingInterval: 60000,
   });
 
-  useOfflineStorage("menu", cacheKey, data);
+  useOfflineStorage("menu", sessionCacheKey, data);
 
   const transformedData = useMemo(() => {
+    // Identity guard: only expose menu items when user is authenticated AND cache key matches verified session
+    if (!isAuthenticated || !isKeyMatched) return null;
+
     const source = data?.dashboard?.children
       ? data
-      : error && !hasOfflineCache
-        ? HOME_ONLY_MENU
-        : data;
+      : offlineMenu?.dashboard?.children
+        ? offlineMenu
+        : error && !hasOfflineCache
+          ? HOME_ONLY_MENU
+          : null;
 
     if (!source?.dashboard?.children) {
-      return source;
+      return null;
     }
 
     return {
@@ -167,7 +228,7 @@ export function useGetMenu() {
         children: transformMenuIcons(source.dashboard.children),
       },
     };
-  }, [data, error, hasOfflineCache]);
+  }, [data, offlineMenu, error, hasOfflineCache, isAuthenticated, isKeyMatched]);
 
   const usingHomeFallback = Boolean(
     error && !hasOfflineCache && !data?.dashboard?.children,
@@ -176,10 +237,9 @@ export function useGetMenu() {
   const memoizedValue = useMemo(
     () => ({
       menu: transformedData?.dashboard,
-      menuLoading:
-        status === "loading" ||
-        !hydrateDone ||
-        (isLoading && !hasOfflineCache),
+      menuLoading: hasOfflineCache
+        ? false
+        : status === "loading" || !hydrateDone || (isLoading && !hasOfflineCache),
       menuError: error || null,
       menuValidating: isValidating,
       menuEmpty: hydrateDone && !isLoading && !transformedData?.dashboard,
