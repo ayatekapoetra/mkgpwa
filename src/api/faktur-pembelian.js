@@ -152,6 +152,20 @@ const planError = (error) =>
       "Gagal membuat rencana pembayaran",
   );
 
+export async function updateFakturPembelian(id, body) {
+  try {
+    const res = await axiosServices.put(endpoints.detail(id), body, {
+      skipOfflineQueue: true,
+      skipRetry: true,
+    });
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) throw new Error(diag.error);
+    return res?.data?.rows ?? null;
+  } catch (error) {
+    throw planError(error);
+  }
+}
+
 export async function createPaymentPlans(body) {
   try {
     const res = await axiosServices.post(endpoints.plans, body, {

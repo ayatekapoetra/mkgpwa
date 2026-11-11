@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Box, Checkbox, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Checkbox, Chip, Stack, Typography } from "@mui/material";
+import { Eye } from "iconsax-react";
 import moment from "moment";
 import "moment/locale/id";
 
@@ -96,6 +97,7 @@ export default function FakturPembelianList({
             <Box component="th" sx={{ textAlign: "right" }}>Grand Total</Box>
             <Box component="th" sx={{ textAlign: "right" }}>Sisa</Box>
             <Box component="th">Status</Box>
+            <Box component="th" sx={{ textAlign: "right" }}>Aksi</Box>
           </Box>
         </Box>
         <Box component="tbody">
@@ -192,6 +194,17 @@ export default function FakturPembelianList({
                     <Chip size="small" color="error" variant="outlined" label="Lewat" />
                   ) : null}
                 </Stack>
+              </Box>
+              <Box component="td" sx={{ ...cellSx, textAlign: "right" }}>
+                <Button
+                  component={Link}
+                  href={`/faktur-pembelian/${row.id}`}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<Eye size={15} />}
+                >
+                  Detail
+                </Button>
               </Box>
             </Box>
           ))}
