@@ -65,7 +65,6 @@ export default function FakturPembelianList({ rows = [] }) {
       >
         <Box component="thead">
           <Box component="tr">
-            <Box component="th">Aksi</Box>
             <Box component="th">No. Faktur</Box>
             <Box component="th">Sumber</Box>
             <Box component="th">Pemasok</Box>
@@ -83,11 +82,6 @@ export default function FakturPembelianList({ rows = [] }) {
         <Box component="tbody">
           {rows.map((row) => (
             <Box component="tr" key={row.id}>
-              <Box component="td" sx={cellSx}>
-                <Button component={Link} href={`/faktur-pembelian/${row.id}`} size="small" variant="outlined" aria-label={`Detail faktur ${row.kdfb || row.id}`}>
-                  Detail
-                </Button>
-              </Box>
               <Box component="td" sx={cellSx}>
                 <Link
                   href={`/faktur-pembelian/${row.id}`}
@@ -175,6 +169,7 @@ export default function FakturPembelianList({ rows = [] }) {
                   href={`/faktur-pembelian/${row.id}`}
                   size="small"
                   variant="outlined"
+                  aria-label={`Detail faktur ${row.kdfb || row.id}`}
                   startIcon={<Eye size={15} />}
                 >
                   Detail

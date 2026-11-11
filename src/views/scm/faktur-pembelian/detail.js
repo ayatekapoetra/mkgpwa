@@ -554,8 +554,8 @@ export default function FakturPembelianDetailPage() {
             />
             <Alert severity="info">
               Tanggal jatuh tempo tidak diubah di sini. Gunakan tombol
-              <strong> Ubah Jatuh Tempo</strong> agar perubahan tercatat di audit
-              dan memerlukan persetujuan.
+              <strong> Edit Jatuh Tempo / Narasi</strong> agar perubahan tercatat
+              di audit dan memerlukan persetujuan.
             </Alert>
           </Stack>
         </DialogContent>
