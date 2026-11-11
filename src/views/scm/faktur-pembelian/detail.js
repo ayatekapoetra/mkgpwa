@@ -1,24 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import DetailActions from "./DetailActions";
 import { useParams } from "next/navigation";
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
+  IconButton,
   Stack,
+  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { DocumentText, Gallery, Receipt2 } from "iconsax-react";
+import { DocumentText, Edit, Gallery, Receipt2 } from "iconsax-react";
 
 import {
+  updateFakturPembelian,
   useFakturPembelianDetail,
 } from "api/faktur-pembelian";
+import { openNotification } from "api/notification";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
 import BtnBack from "components/BtnBack";
 import MainCard from "components/MainCard";
@@ -48,6 +59,9 @@ export default function FakturPembelianDetailPage() {
   const id = params?.id;
   const { row, loading, error, refresh } = useFakturPembelianDetail(id, Boolean(id));
   const permissions = row?.permissions || {};
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ kode: "", date_faktur: "", title: "", penerima: "" });
 
   const header = row?.header || null;
   const termins = row?.termins || [];
@@ -57,6 +71,48 @@ export default function FakturPembelianDetailPage() {
   const items = row?.items || [];
 
 
+
+  const canEdit = Boolean(row?.permissions?.can_update);
+
+  const openEdit = () => {
+    setForm({
+      kode: header?.kode || "",
+      date_faktur: header?.date_faktur ? String(header.date_faktur).slice(0, 10) : "",
+      title: header?.title || "",
+      penerima: header?.penerima || "",
+    });
+    setEditOpen(true);
+  };
+
+  const submitEdit = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await updateFakturPembelian(header.id, {
+        kode: form.kode,
+        date_faktur: form.date_faktur || null,
+        title: form.title,
+        penerima: form.penerima,
+      });
+      openNotification({
+        open: true,
+        title: "Berhasil",
+        message: "Faktur berhasil diperbarui",
+        alert: { color: "success" },
+      });
+      setEditOpen(false);
+      await refresh();
+    } catch (err) {
+      openNotification({
+        open: true,
+        title: "Gagal",
+        message: err?.message || "Gagal memperbarui faktur",
+        alert: { color: "error" },
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -91,7 +147,16 @@ export default function FakturPembelianDetailPage() {
         title={<BtnBack href="/faktur-pembelian" />}
         secondary={
           <Stack direction="row" spacing={1} alignItems="center">
-
+            {canEdit ? (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Edit size={16} />}
+                onClick={openEdit}
+              >
+                Edit
+              </Button>
+            ) : null}
             <Chip
               size="small"
               color={Number(header.sisa) > 0 ? "warning" : "success"}
@@ -171,7 +236,16 @@ export default function FakturPembelianDetailPage() {
                     />
                   </Grid>
                   <Grid item xs={6}>
-                    <Field label="No. Invoice Vendor" value={header.kode} />
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Field label="No. Invoice Vendor" value={header.kode} />
+                      {canEdit ? (
+                        <Tooltip title="Edit No. Invoice Vendor">
+                          <IconButton size="small" onClick={openEdit}>
+                            <Edit size={14} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : null}
+                    </Stack>
                   </Grid>
                   <Grid item xs={12}>
                     <Field label="Catatan / Narasi" value={header.narasi} />
@@ -436,6 +510,64 @@ export default function FakturPembelianDetailPage() {
 
       <DetailActions key={id} id={id} header={header} permissions={permissions} refresh={refresh} />
 
+      <Dialog
+        open={editOpen}
+        onClose={() => (saving ? null : setEditOpen(false))}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Edit Faktur Pembelian</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} mt={0.5}>
+            <TextField
+              fullWidth
+              size="small"
+              label="No. Invoice Vendor"
+              value={form.kode}
+              onChange={(e) => setForm((p) => ({ ...p, kode: e.target.value }))}
+              helperText="Nomor faktur dari pemasok (boleh dikosongkan)"
+            />
+            <TextField
+              fullWidth
+              size="small"
+              type="date"
+              label="Tanggal Faktur"
+              InputLabelProps={{ shrink: true }}
+              value={form.date_faktur}
+              onChange={(e) => setForm((p) => ({ ...p, date_faktur: e.target.value }))}
+            />
+            <TextField
+              fullWidth
+              size="small"
+              label="Penerima"
+              value={form.penerima}
+              onChange={(e) => setForm((p) => ({ ...p, penerima: e.target.value }))}
+            />
+            <TextField
+              fullWidth
+              size="small"
+              label="Catatan"
+              multiline
+              minRows={2}
+              value={form.title}
+              onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+            />
+            <Alert severity="info">
+              Tanggal jatuh tempo tidak diubah di sini. Gunakan tombol
+              <strong> Ubah Jatuh Tempo</strong> agar perubahan tercatat di audit
+              dan memerlukan persetujuan.
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditOpen(false)} disabled={saving}>
+            Batal
+          </Button>
+          <Button variant="contained" onClick={submitEdit} disabled={saving}>
+            {saving ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

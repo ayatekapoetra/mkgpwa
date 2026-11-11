@@ -212,14 +212,13 @@ async function mutateFaktur(method, url, body) {
   }
 }
 
-export const updateFakturPembelian = (id, { next_due_date, narasi }) =>
-  mutateFaktur("put", endpoints.detail(id), { next_due_date, narasi });
+export const updateFakturPembelian = (id, body) =>
+  mutateFaktur("put", endpoints.detail(id), body);
 export const sendFakturToPayment = (id) => mutateFaktur("post", endpoints.payment(id), {});
 export const rollbackFakturPembelian = (id, reason) =>
   mutateFaktur("post", endpoints.rollback(id), { reason });
 export const requestVoidFakturPembelian = (id, reason) =>
   mutateFaktur("post", endpoints.requestVoid(id), { reason });
-
 export async function createPaymentPlans(body) {
   try {
     const res = await axiosServices.post(endpoints.plans, body, {

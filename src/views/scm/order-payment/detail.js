@@ -689,6 +689,9 @@ export default function OrderPaymentDetailPage() {
     : row.no_pd && row.reff_pd
       ? <ReferenceLink inverse href={`/pengajuan-dana/${row.reff_pd}`}>{row.no_pd}</ReferenceLink>
       : row.no_pd || "—";
+  const rekeningTujuanValue = [row.nm_bank, row.no_rekening, row.an_rekening]
+    .filter(Boolean)
+    .join(" · ") || row.penerima || "—";
   const canPost = permissions.can_post && pending;
   const canRemove = permissions.can_delete && pending;
   const canAddItem = (permissions.can_update || permissions.can_create) && pending;
@@ -760,7 +763,7 @@ export default function OrderPaymentDetailPage() {
             <Grid item xs={12} sm={6} md={3}><Field inverse label="Tanggal transaksi" value={dateId(row.trx_date)} /></Grid>
             <Grid item xs={6} sm={6} md={3}><Field inverse label="Cabang" value={`${row.cabang_kode || ""}${row.cabang_kode && row.cabang_nama ? " · " : ""}${row.cabang_nama || "—"}`} /></Grid>
             <Grid item xs={6} sm={6} md={4}><Field inverse label="Unit Bisnis" value={`${row.bisnis_nama || "—"}`} /></Grid>
-            <Grid item xs={12} sm={6} md={4}><Field inverse label="Rekening tujuan" value={row.nm_bank ? `${row.nm_bank} · ${row.no_rekening || ""} · ${row.an_rekening || row.penerima || ""}` : row.penerima || "—"} /></Grid>
+            <Grid item xs={12} sm={6} md={4}><Field inverse label="Rekening tujuan" value={rekeningTujuanValue} /></Grid>
             <Grid item xs={12} sm={6} md={4}><Field inverse label="Akun kas / bank" value={row.coa_kode ? `${row.coa_kode} — ${row.coa_name || ""}` : "Belum dipilih"} /></Grid>
           </Grid>
         </Box>

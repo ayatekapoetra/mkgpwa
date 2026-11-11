@@ -132,3 +132,33 @@ test('order payment create no longer requires a wallet for draft submission', ()
   assert.match(source, /const canPost = canSubmitBase && Boolean\(walletId\)/);
   assert.doesNotMatch(source, /disabled=\{saving \|\| !canSubmit\}\s*\n\s*onClick=\{\(\) => submit\(true\)\}/);
 });
+
+test('faktur pembelian API exposes updateFakturPembelian PUT to detail endpoint', async () => {
+  const calls = [];
+  const fakeAxios = {
+    get: async () => ({ data: { rows: [] } }),
+    put: async (...args) => {
+      calls.push(['put', ...args]);
+      return { data: { diagnostic: { error: false }, rows: { header: { id: 93 } } } };
+    }
+  };
+
+  const api = loadModule(await compile('src/api/faktur-pembelian.js'), {
+    react: { useMemo: (fn) => fn() },
+    swr: { __esModule: true, default: () => ({ data: null }) },
+    'utils/axios': { __esModule: true, default: fakeAxios, fetcher: async () => ({}) }
+  });
+
+  const result = await api.updateFakturPembelian(93, { kode: 'INV/1', date_faktur: '2026-11-05' });
+  const put = calls.find((c) => c[0] === 'put');
+  assert.equal(put[1], '/scm/faktur-pembelian/93');
+  assert.equal(put[3].skipOfflineQueue, true);
+  assert.equal(put[3].skipRetry, true);
+  assert.equal(result.header.id, 93);
+});
+
+test('faktur pembelian list renders a Detail action per row', async () => {
+  const code = await compile('src/views/scm/faktur-pembelian/list.js');
+  assert.match(code, /faktur-pembelian\/\$\{row\.id\}/);
+  assert.match(code, /Detail/);
+});
