@@ -43,11 +43,28 @@ moment.locale('id');
 
 const pickName = (...values) => values.find((v) => !!v) || '-';
 
+const DATETIME_INPUT = 'YYYY-MM-DDTHH:mm';
+
+// Waktu tiba placement aktif untuk item ini. Dipakai sebagai batas bawah
+// input datetime agar waktu berangkat tidak pernah mendahului waktu tiba.
+const activePlacementArrivedAt = (item) => {
+  const placements = Array.isArray(item?.placements) ? item.placements : [];
+  const active = placements
+    .filter((placement) => placement && placement.arrived_at)
+    .sort((a, b) => moment(a.arrived_at).valueOf() - moment(b.arrived_at).valueOf());
+  if (!active.length) return null;
+  const parsed = moment(active[0].arrived_at);
+  return parsed.isValid() ? parsed : null;
+};
+
+const toInputValue = (value) => (moment.isMoment(value) ? value.format(DATETIME_INPUT) : '');
+
 const emptyAction = {
   open: false,
   type: null,
   item: null,
-  datetime: moment().format('YYYY-MM-DDTHH:mm'),
+  datetime: moment().format(DATETIME_INPUT),
+  min_datetime: '',
   meter: '',
   meter_type: 'UNKNOWN',
   recipient_name: '',
@@ -81,11 +98,26 @@ export default function EquipmentMobilizationShowScreen({ id }) {
         ? 'HM'
         : 'UNKNOWN';
 
+    const placementArrivedAt = activePlacementArrivedAt(item);
+    const departedAt = item?.departed_at ? moment(item.departed_at) : null;
+
+    // Batas bawah input waktu:
+    // - dispatch: waktu tiba placement aktif (tidak boleh menutup placement
+    //   dengan waktu berangkat yang lebih awal dari waktu tibanya)
+    // - arrive: waktu berangkat item (waktu tiba tidak boleh mendahului)
+    const lowerBound = type === 'arrive'
+      ? (departedAt && departedAt.isValid() ? departedAt : null)
+      : placementArrivedAt;
+
+    const now = moment();
+    const initial = lowerBound && lowerBound.isAfter(now) ? lowerBound : now;
+
     setAction({
       open: true,
       type,
       item,
-      datetime: moment().format('YYYY-MM-DDTHH:mm'),
+      datetime: initial.format(DATETIME_INPUT),
+      min_datetime: toInputValue(lowerBound),
       meter: '',
       meter_type: meterType,
       recipient_name: '',
@@ -104,8 +136,14 @@ export default function EquipmentMobilizationShowScreen({ id }) {
 
       if (action.type === 'dispatch') {
         if (!action.meter) throw new Error('Meter berangkat wajib diisi');
+        const departedAt = moment(action.datetime);
+        if (!departedAt.isValid()) throw new Error('Waktu berangkat tidak valid');
+        const placementArrivedAt = activePlacementArrivedAt(action.item);
+        if (placementArrivedAt && departedAt.isBefore(placementArrivedAt)) {
+          throw new Error(`Waktu berangkat tidak boleh lebih awal dari waktu tiba placement aktif (${placementArrivedAt.format('DD MMM YYYY HH:mm')})`);
+        }
         await dispatchEquipmentMobilizationItem(id, itemId, {
-          departed_at: moment(action.datetime).format('YYYY-MM-DD HH:mm:ss'),
+          departed_at: departedAt.format('YYYY-MM-DD HH:mm:ss'),
           departed_meter: Number(action.meter),
           departed_meter_type: action.meter_type || 'UNKNOWN',
           dispatch_notes: action.notes || null
@@ -116,6 +154,7 @@ export default function EquipmentMobilizationShowScreen({ id }) {
         if (!action.meter) throw new Error('Meter tiba wajib diisi');
         if (!action.recipient_name?.trim()) throw new Error('Nama penerima wajib diisi');
         const arrivedAt = moment(action.datetime);
+        if (!arrivedAt.isValid()) throw new Error('Waktu tiba tidak valid');
         if (action.item?.departed_at && arrivedAt.isBefore(moment(action.item.departed_at))) {
           throw new Error('Waktu tiba tidak boleh lebih awal dari waktu berangkat');
         }
@@ -345,7 +384,12 @@ export default function EquipmentMobilizationShowScreen({ id }) {
                 value={action.datetime}
                 onChange={(e) => setAction((prev) => ({ ...prev, datetime: e.target.value }))}
                 InputLabelProps={{ shrink: true }}
-                helperText="Default waktu sekarang, dapat diubah"
+                inputProps={action.min_datetime ? { min: action.min_datetime } : undefined}
+                helperText={
+                  action.min_datetime
+                    ? `Tidak boleh lebih awal dari ${moment(action.min_datetime).format('DD MMM YYYY HH:mm')}`
+                    : 'Default waktu sekarang, dapat diubah'
+                }
               />
               <TextField
                 fullWidth
