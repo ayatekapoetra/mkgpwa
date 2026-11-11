@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import DetailActions from "./DetailActions";
 import { useParams } from "next/navigation";
 import {
   Alert,
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
@@ -15,10 +14,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { CalendarEdit, DocumentText, Gallery, Receipt2 } from "iconsax-react";
+import { DocumentText, Gallery, Receipt2 } from "iconsax-react";
 
 import {
-  useFakturPembelianAccess,
   useFakturPembelianDetail,
 } from "api/faktur-pembelian";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
@@ -26,8 +24,7 @@ import BtnBack from "components/BtnBack";
 import MainCard from "components/MainCard";
 import { APP_DEFAULT_PATH } from "config";
 
-import RescheduleDueDateModal from "views/scm/order-payment/RescheduleDueDateModal";
-import { canRescheduleDueDate } from "views/scm/order-payment/rescheduleDueDateHelpers";
+
 import {
   formatDate,
   INSTALLMENT_LABELS,
@@ -49,9 +46,8 @@ const Field = ({ label, value }) => (
 export default function FakturPembelianDetailPage() {
   const params = useParams();
   const id = params?.id;
-  const { permissions } = useFakturPembelianAccess();
   const { row, loading, error, refresh } = useFakturPembelianDetail(id, Boolean(id));
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const permissions = row?.permissions || {};
 
   const header = row?.header || null;
   const termins = row?.termins || [];
@@ -60,10 +56,7 @@ export default function FakturPembelianDetailPage() {
   const attachments = row?.attachments || [];
   const items = row?.items || [];
 
-  const canReschedule = useMemo(
-    () => canRescheduleDueDate(permissions) && header?.sisa > 0,
-    [permissions, header],
-  );
+
 
   if (loading) {
     return (
@@ -98,16 +91,7 @@ export default function FakturPembelianDetailPage() {
         title={<BtnBack href="/faktur-pembelian" />}
         secondary={
           <Stack direction="row" spacing={1} alignItems="center">
-            {canReschedule ? (
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CalendarEdit size={16} />}
-                onClick={() => setRescheduleOpen(true)}
-              >
-                Ubah Jatuh Tempo
-              </Button>
-            ) : null}
+
             <Chip
               size="small"
               color={Number(header.sisa) > 0 ? "warning" : "success"}
@@ -188,6 +172,9 @@ export default function FakturPembelianDetailPage() {
                   </Grid>
                   <Grid item xs={6}>
                     <Field label="No. Invoice Vendor" value={header.kode} />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Field label="Catatan / Narasi" value={header.narasi} />
                   </Grid>
                   <Grid item xs={6}>
                     <Field label="Bisnis Unit" value={header.bisnis_nama} />
@@ -447,23 +434,8 @@ export default function FakturPembelianDetailPage() {
         </Grid>
       </MainCard>
 
-      <RescheduleDueDateModal
-        open={rescheduleOpen}
-        onClose={() => setRescheduleOpen(false)}
-        faktur={{
-          id: header.id,
-          faktur_id: header.id,
-          kdfb: header.kdfb,
-          date_faktur: header.date_faktur,
-          due_date: header.next_due_date || header.due_date,
-          termin_id: termins.find((t) => t.status !== "PAID")?.id || null,
-        }}
-        permissions={permissions}
-        onSuccess={async () => {
-          setRescheduleOpen(false);
-          await refresh();
-        }}
-      />
+      <DetailActions key={id} id={id} header={header} permissions={permissions} refresh={refresh} />
+
     </>
   );
 }

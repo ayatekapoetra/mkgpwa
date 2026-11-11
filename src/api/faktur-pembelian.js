@@ -10,6 +10,9 @@ export const endpoints = {
   unpaid: "/scm/faktur-pembelian/unpaid",
   plans: "/scm/faktur-pembelian/plans",
   detail: (id) => `/scm/faktur-pembelian/${id}`,
+  payment: (id) => `/scm/faktur-pembelian/${id}/kirim-ke-pembayaran`,
+  rollback: (id) => `/scm/faktur-pembelian/${id}/rollback`,
+  requestVoid: (id) => `/scm/faktur-pembelian/${id}/request-void`,
 };
 
 const permissionDefaults = {
@@ -151,6 +154,29 @@ const planError = (error) =>
       error?.message ||
       "Gagal membuat rencana pembayaran",
   );
+
+// Mutations must never be queued offline or retried automatically.
+async function mutateFaktur(method, url, body) {
+  try {
+    const res = await axiosServices[method](url, body, {
+      skipOfflineQueue: true,
+      skipRetry: true,
+      timeout: 30000,
+    });
+    if (res?.data?.diagnostic?.error) throw new Error(res.data.diagnostic.error);
+    return res?.data?.rows;
+  } catch (error) {
+    throw new Error(error?.response?.data?.diagnostic?.error || error?.message || "Gagal menyimpan faktur");
+  }
+}
+
+export const updateFakturPembelian = (id, { next_due_date, narasi }) =>
+  mutateFaktur("put", endpoints.detail(id), { next_due_date, narasi });
+export const sendFakturToPayment = (id) => mutateFaktur("post", endpoints.payment(id), {});
+export const rollbackFakturPembelian = (id, reason) =>
+  mutateFaktur("post", endpoints.rollback(id), { reason });
+export const requestVoidFakturPembelian = (id, reason) =>
+  mutateFaktur("post", endpoints.requestVoid(id), { reason });
 
 export async function createPaymentPlans(body) {
   try {

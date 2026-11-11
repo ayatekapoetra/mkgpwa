@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Box, Checkbox, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import moment from "moment";
 import "moment/locale/id";
 
@@ -24,14 +24,7 @@ const cellSx = {
   borderColor: "divider",
 };
 
-export default function FakturPembelianList({
-  rows = [],
-  selectable = false,
-  checked = {},
-  onToggle,
-  onTogglePage,
-  allChecked = false,
-}) {
+export default function FakturPembelianList({ rows = [] }) {
   if (!rows.length) {
     return (
       <Box py={6} textAlign="center">
@@ -71,20 +64,7 @@ export default function FakturPembelianList({
       >
         <Box component="thead">
           <Box component="tr">
-            {selectable ? (
-              <Box component="th" sx={{ ...cellSx, width: 44 }}>
-                <Checkbox
-                  size="small"
-                  checked={allChecked}
-                  indeterminate={
-                    !allChecked &&
-                    rows.some((row) => checked[row.id] && !row.planned)
-                  }
-                  onChange={onTogglePage}
-                  inputProps={{ "aria-label": "Pilih semua faktur di halaman" }}
-                />
-              </Box>
-            ) : null}
+            <Box component="th">Aksi</Box>
             <Box component="th">No. Faktur</Box>
             <Box component="th">Sumber</Box>
             <Box component="th">Pemasok</Box>
@@ -101,17 +81,11 @@ export default function FakturPembelianList({
         <Box component="tbody">
           {rows.map((row) => (
             <Box component="tr" key={row.id}>
-              {selectable ? (
-                <Box component="td" sx={cellSx}>
-                  <Checkbox
-                    size="small"
-                    disabled={Boolean(row.planned)}
-                    checked={Boolean(checked[row.id])}
-                    onChange={() => onToggle?.(row)}
-                    inputProps={{ "aria-label": `Pilih faktur ${row.kdfb || row.id}` }}
-                  />
-                </Box>
-              ) : null}
+              <Box component="td" sx={cellSx}>
+                <Button component={Link} href={`/faktur-pembelian/${row.id}`} size="small" variant="outlined" aria-label={`Detail faktur ${row.kdfb || row.id}`}>
+                  Detail
+                </Button>
+              </Box>
               <Box component="td" sx={cellSx}>
                 <Link
                   href={`/faktur-pembelian/${row.id}`}
