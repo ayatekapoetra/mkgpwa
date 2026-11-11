@@ -13,6 +13,8 @@ export const endpoints = {
   payment: (id) => `/scm/faktur-pembelian/${id}/kirim-ke-pembayaran`,
   rollback: (id) => `/scm/faktur-pembelian/${id}/rollback`,
   requestVoid: (id) => `/scm/faktur-pembelian/${id}/request-void`,
+  voidRequest: (id) => `/scm/faktur-pembelian/${id}/request-void`,
+  voidDecision: (id, requestId) => `/scm/faktur-pembelian/${id}/request-void/${requestId}/decision`,
 };
 
 const permissionDefaults = {
@@ -20,6 +22,10 @@ const permissionDefaults = {
   can_create: false,
   can_update: false,
   can_delete: false,
+  can_send_payment: false,
+  can_request_void: false,
+  can_approve_void: false,
+  can_rollback: false,
   can_export: false,
   can_reschedule_due_date: false,
   can_upload_attachment: false,
@@ -139,8 +145,14 @@ export function useFakturPembelianDetail(id, enabled = true) {
     fetcher,
     { revalidateOnFocus: false },
   );
+  const raw = data?.rows ?? data?.data ?? null;
   return {
-    row: data?.rows ?? data?.data ?? null,
+    row: raw
+      ? {
+          ...raw,
+          permissions: normalizePermissions(raw.permissions || {}),
+        }
+      : null,
     loading: isLoading,
     error,
     refresh: mutate,
@@ -155,6 +167,36 @@ const planError = (error) =>
       "Gagal membuat rencana pembayaran",
   );
 
+export function fakturError(error) {
+  const diagnostic = error?.response?.data?.diagnostic || error?.diagnostic;
+  const code = diagnostic?.code || error?.code;
+  const result = new Error(code === "VOID_SCHEMA_MISSING" ? "fitur belum tersedia" : diagnostic?.error || error?.message || "Gagal memuat atau menyimpan faktur");
+  result.code = code;
+  return result;
+}
+
+export async function fetchVoidRequests(id) {
+  try {
+    const response = await axiosServices.get(endpoints.voidRequest(id), { timeout: 30000, skipRetry: true, skipOfflineQueue: true });
+    if (response?.data?.diagnostic?.error) throw response.data;
+    return response?.data?.rows;
+  } catch (error) {
+    throw fakturError(error);
+  }
+}
+
+export function useVoidRequests(id) {
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    id ? endpoints.voidRequest(id) : null,
+    () => fetchVoidRequests(id),
+    { revalidateOnFocus: true, shouldRetryOnError: false },
+  );
+  return { current: data?.current || null, history: Array.isArray(data?.history) ? data.history : [], error, loading: isLoading, validating: isValidating, refresh: mutate };
+}
+
+export const decideVoidRequest = (id, requestId, { decision, reason }) =>
+  mutateFaktur("post", endpoints.voidDecision(id, requestId), { decision, reason });
+
 // Mutations must never be queued offline or retried automatically.
 async function mutateFaktur(method, url, body) {
   try {
@@ -163,10 +205,10 @@ async function mutateFaktur(method, url, body) {
       skipRetry: true,
       timeout: 30000,
     });
-    if (res?.data?.diagnostic?.error) throw new Error(res.data.diagnostic.error);
+    if (res?.data?.diagnostic?.error) throw res.data;
     return res?.data?.rows;
   } catch (error) {
-    throw new Error(error?.response?.data?.diagnostic?.error || error?.message || "Gagal menyimpan faktur");
+    throw fakturError(error);
   }
 }
 
