@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import moment from 'moment';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -18,8 +18,12 @@ import { formatNumber, formatMinutes, formatCurrency, normalizePolarBreakdown } 
 
 export default function HomeDashboard() {
   const [filters, setFilters] = useState(() => ({ date_ops: moment().format('YYYY-MM-DD'), cabang_id: '', unitcabang: '' }));
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, []);
   const dash = useHomeDashboard(filters);
   const polar = useMemo(() => normalizePolarBreakdown(dash.maintenance.polar.data), [dash.maintenance.polar.data]);
   const payments = dash.finance.payments;

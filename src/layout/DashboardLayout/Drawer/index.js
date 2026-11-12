@@ -40,20 +40,20 @@ const MainDrawer = ({ window }) => {
       }}
       aria-label="mailbox folders"
     >
-      <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+      {!downLG ? (
         <MiniDrawerStyled variant="permanent" open={drawerOpen}>
           {drawerHeader}
           {drawerContent}
         </MiniDrawerStyled>
-      </Box>
-      <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+      ) : drawerOpen ? (
         <Drawer
           container={container}
           variant="temporary"
           open={Boolean(drawerOpen)}
           onClose={() => handlerDrawerOpen(false)}
-          ModalProps={{ keepMounted: true }}
+          ModalProps={{ keepMounted: false }}
           sx={{
+            display: { xs: 'block', lg: 'none' },
             '&[aria-hidden="true"]': {
               pointerEvents: 'none !important',
               visibility: 'hidden !important'
@@ -75,7 +75,7 @@ const MainDrawer = ({ window }) => {
           {drawerHeader}
           {drawerContent}
         </Drawer>
-      </Box>
+      ) : null}
     </Box>
   );
 };

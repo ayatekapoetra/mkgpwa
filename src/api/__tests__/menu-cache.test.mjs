@@ -10,6 +10,8 @@ const loadMenuModule = async (options = {}) => {
   const cleared = [];
   const removed = [];
   const mutated = [];
+  const swrCalls = [];
+  const swrStateHolder = { current: options.swrState ?? null };
 
   const sessionHolder = {
     current: options.session ?? { data: null, status: 'unauthenticated' }
@@ -44,12 +46,21 @@ const loadMenuModule = async (options = {}) => {
   await vmModule.link((specifier) => {
     if (specifier === 'swr') {
       return new SyntheticModule(['default', 'mutate'], function () {
-        this.setExport('default', (key, _fetcher, opts) => ({
-          data: opts?.fallbackData ?? undefined,
-          isLoading: !opts?.fallbackData,
-          error: undefined,
-          isValidating: false
-        }));
+        this.setExport('default', (key, _fetcher, opts) => {
+          swrCalls.push({ key, opts });
+          if (swrStateHolder.current) {
+            const state = typeof swrStateHolder.current === 'function'
+              ? swrStateHolder.current(key, _fetcher, opts)
+              : swrStateHolder.current;
+            return state;
+          }
+          return {
+            data: opts?.fallbackData ?? undefined,
+            isLoading: !opts?.fallbackData,
+            error: undefined,
+            isValidating: false
+          };
+        });
         this.setExport('mutate', async (key, data, opts) => {
           mutated.push({ key, data, opts });
         });
@@ -130,6 +141,12 @@ const loadMenuModule = async (options = {}) => {
 
   await vmModule.evaluate();
 
+  const rerender = () => {
+    hookState.index = 0;
+    hookState.effects = [];
+    return vmModule.namespace.useGetMenu();
+  };
+
   const renderHook = async () => {
     hookState.index = 0;
     hookState.effects = [];
@@ -151,9 +168,12 @@ const loadMenuModule = async (options = {}) => {
     cleared,
     removed,
     mutated,
+    swrCalls,
+    swrStateHolder,
     sessionHolder,
     idbStore,
-    renderHook
+    renderHook,
+    rerender
   };
 };
 
@@ -314,4 +334,59 @@ test('AC-F2 / Hydration: no react-device-detect in src/ to eliminate React invar
   }
 
   assert.deepEqual(offending, [], 'react-device-detect causes SSR hydration mismatch and must not be used in src/');
+});
+
+test('AC-F1 / Cache-miss fresh login: forwards verified session accessToken and renders menu when SWR resolves', async () => {
+  const idb = new Map();
+  let capturedFetcher = null;
+
+  const harness = await loadMenuModule({
+    idb,
+    session: {
+      data: { id: 1, token: { id: 1, accessToken: 'jwt-fresh-login-token' } },
+      status: 'authenticated'
+    },
+    swrState: (key, fn, opts) => {
+      capturedFetcher = fn;
+      return {
+        data: undefined,
+        isLoading: Boolean(key),
+        error: undefined,
+        isValidating: Boolean(key)
+      };
+    }
+  });
+
+  // 1. After IndexedDB cache-miss hydration, SWR key is active and menuLoading is true
+  const stateMiss = await harness.renderHook();
+  assert.equal(stateMiss.menuLoading, true);
+  assert.equal(stateMiss.menuFromCache, false);
+  const lastSwr = harness.swrCalls.at(-1);
+  assert.equal(lastSwr?.key, '/menu/user-menu');
+  assert.equal(lastSwr?.opts?.revalidateIfStale, true);
+  assert.equal(lastSwr?.opts?.revalidateOnMount, true);
+  assert.equal(typeof capturedFetcher, 'function');
+
+  // 2. When SWR resolves with fresh network menu data, menuLoading becomes false and menu is populated
+  harness.swrStateHolder.current = () => ({
+    data: {
+      dashboard: {
+        id: 'group-dashboard',
+        title: 'dashboard',
+        type: 'group',
+        children: [
+          { id: 'home', title: 'Home', type: 'item', url: '/home', icon: 'home' },
+          { id: 'scm', title: 'Purchasing', type: 'collapse', icon: 'box', children: [] }
+        ]
+      }
+    },
+    isLoading: false,
+    error: undefined,
+    isValidating: false
+  });
+
+  const stateLoaded = harness.rerender();
+  assert.equal(stateLoaded.menuLoading, false);
+  assert.equal(stateLoaded.menu?.children?.length, 2);
+  assert.equal(stateLoaded.menu?.children?.[1]?.title, 'Purchasing');
 });

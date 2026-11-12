@@ -132,6 +132,7 @@ const transformMenuIcons = (menuItems) => {
 export function useGetMenu() {
   const { data: session, status } = useSession();
   const userId = session?.id ?? session?.token?.id ?? null;
+  const accessToken = session?.accessToken ?? session?.token?.accessToken ?? null;
   const sessionCacheKey = getUserMenuCacheKey(userId);
 
   const [offlineMenu, setOfflineMenu] = useState(null);
@@ -193,7 +194,17 @@ export function useGetMenu() {
   const shouldFetch = isAuthenticated && hydrateDone && isKeyMatched;
   const swrKey = shouldFetch ? USER_MENU_SWR_KEY : null;
 
-  const { data, isLoading, error, isValidating } = useSWR(swrKey, fetcher, {
+  const menuFetcher = useMemo(
+    () => (url) =>
+      fetcher(
+        accessToken
+          ? [url, { headers: { Authorization: `Bearer ${accessToken}` } }]
+          : url,
+      ),
+    [accessToken],
+  );
+
+  const { data, isLoading, error, isValidating } = useSWR(swrKey, menuFetcher, {
     fallbackData: hasOfflineCache ? offlineMenu : undefined,
     revalidateIfStale: !hasOfflineCache,
     revalidateOnFocus: false,
