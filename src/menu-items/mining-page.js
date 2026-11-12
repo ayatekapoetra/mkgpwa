@@ -50,6 +50,38 @@ const MiningPage = {
       breadcrumbs: false
     },
     {
+      id: 'master-kdsm',
+      title: <FormattedMessage id="Master KDSM" />,
+      type: 'item',
+      url: '/master-kdsm',
+      icon: icons.checker,
+      breadcrumbs: false
+    },
+    {
+      id: 'ore-transport',
+      title: <FormattedMessage id="Ore Transport" />,
+      type: 'item',
+      url: '/ore-transport',
+      icon: icons.do,
+      breadcrumbs: false
+    },
+    {
+      id: 'input-kadar',
+      title: <FormattedMessage id="Input Kadar" />,
+      type: 'item',
+      url: '/input-kadar',
+      icon: icons.plan,
+      breadcrumbs: false
+    },
+    {
+      id: 'laporan-harian-pelanggan',
+      title: <FormattedMessage id="Laporan Harian Pelanggan" />,
+      type: 'item',
+      url: '/laporan-harian-pelanggan',
+      icon: icons.plan,
+      breadcrumbs: false
+    },
+    {
       id: 'mining-production-plan',
       title: <FormattedMessage id="Mining Production Plan" />,
       type: 'item',
