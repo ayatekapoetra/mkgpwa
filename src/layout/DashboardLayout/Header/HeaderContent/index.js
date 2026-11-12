@@ -16,7 +16,6 @@ import { MenuOrientation } from 'config';
 
 const HeaderContent = () => {
   const { menuOrientation } = useLayoutConfig();
-
   const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));
 
   return (

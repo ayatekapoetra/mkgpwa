@@ -8,10 +8,9 @@ import Box from '@mui/material/Box';
 
 // THIRD - PARTY
 import SimpleBar from 'simplebar-react';
-import { BrowserView, MobileView } from 'react-device-detect';
 
 // root style
-const RootStyle = styled(BrowserView)({
+const RootStyle = styled(Box)({
   flexGrow: 1,
   height: '100%',
   overflow: 'hidden'
@@ -43,18 +42,11 @@ const SimpleBarStyle = styled(SimpleBar)(({ theme }) => ({
 
 export default function SimpleBarScroll({ children, sx, ...other }) {
   return (
-    <>
-      <RootStyle>
-        <SimpleBarStyle clickOnTrack={false} sx={sx} {...other}>
-          {children}
-        </SimpleBarStyle>
-      </RootStyle>
-      <MobileView>
-        <Box sx={{ overflowX: 'auto', ...sx }} {...other}>
-          {children}
-        </Box>
-      </MobileView>
-    </>
+    <RootStyle>
+      <SimpleBarStyle clickOnTrack={false} sx={sx} {...other}>
+        {children}
+      </SimpleBarStyle>
+    </RootStyle>
   );
 }
 

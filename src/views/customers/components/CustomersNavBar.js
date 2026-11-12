@@ -32,6 +32,7 @@ import {
   ProfileCircle,
   PresentionChart
 } from 'iconsax-react';
+import { clearUserMenuCaches } from 'api/menu';
 
 const NAV_ITEMS = [
   {
@@ -71,6 +72,7 @@ export default function CustomersNavBar() {
 
   const handleLogout = async () => {
     // Avoid NextAuth resolving callbackUrl against baked NEXTAUTH_URL (often localhost).
+    await clearUserMenuCaches();
     await signOut({ redirect: false });
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     window.location.href = `${origin}/login-customers`;

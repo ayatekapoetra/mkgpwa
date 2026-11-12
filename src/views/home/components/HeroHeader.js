@@ -61,10 +61,14 @@ export default function HeroHeader({ filters, setFilters, lastUpdated, onRefresh
               <Chip
                 size="small"
                 variant="outlined"
-                label={moment(filters.date_ops).format('dddd, DD MMM YYYY')}
+                label={<span suppressHydrationWarning>{moment(filters.date_ops).format('dddd, DD MMM YYYY')}</span>}
               />
               {lastUpdated ? (
-                <Chip size="small" variant="outlined" label={`Update ${moment(lastUpdated).format('HH:mm:ss')}`} />
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={<span suppressHydrationWarning>{`Update ${moment(lastUpdated).format('HH:mm:ss')}`}</span>}
+                />
               ) : null}
             </Stack>
           </Box>

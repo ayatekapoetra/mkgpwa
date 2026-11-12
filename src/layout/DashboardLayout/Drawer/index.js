@@ -36,8 +36,7 @@ const MainDrawer = ({ window }) => {
       component="nav"
       sx={{
         flexShrink: { md: 0 },
-        zIndex: 1200,
-        ...(!downLG ? {} : { pointerEvents: 'none' })
+        zIndex: 1200
       }}
       aria-label="mailbox folders"
     >
