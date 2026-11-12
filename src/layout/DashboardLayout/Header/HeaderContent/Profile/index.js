@@ -73,7 +73,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      signOut({ redirect: false });
+      await signOut({ redirect: false });
       router.push('/login');
     } catch (err) {}
   };
