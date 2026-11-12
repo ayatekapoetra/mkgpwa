@@ -83,6 +83,8 @@ const NavGroup = ({ item, lastItem, remItems, lastItemId, setSelectedItems, sele
       } else {
         setCurrentItem(item);
       }
+    } else {
+      setCurrentItem(item);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item, lastItem, downLG]);

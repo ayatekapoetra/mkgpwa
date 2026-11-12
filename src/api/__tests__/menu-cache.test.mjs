@@ -336,7 +336,7 @@ test('AC-F2 / Hydration: no react-device-detect in src/ to eliminate React invar
   assert.deepEqual(offending, [], 'react-device-detect causes SSR hydration mismatch and must not be used in src/');
 });
 
-test('AC-F1 / Cache-miss fresh login: forwards verified session accessToken and renders menu when SWR resolves', async () => {
+test('AC-F1 / Cache-miss fresh login: triggers SWR fetch on authenticated session and renders menu when SWR resolves', async () => {
   const idb = new Map();
   let capturedFetcher = null;
 
@@ -389,4 +389,90 @@ test('AC-F1 / Cache-miss fresh login: forwards verified session accessToken and 
   assert.equal(stateLoaded.menuLoading, false);
   assert.equal(stateLoaded.menu?.children?.length, 2);
   assert.equal(stateLoaded.menu?.children?.[1]?.title, 'Purchasing');
+});
+
+test('AC-F1 / Cache-miss fresh login: menuLoading stays true when data is undefined even if isLoading is false', async () => {
+  const idb = new Map();
+
+  const harness = await loadMenuModule({
+    idb,
+    session: {
+      data: { id: 1, token: { id: 1 } },
+      status: 'authenticated'
+    },
+    swrState: () => ({
+      data: undefined,
+      isLoading: false, // Simulates delay before SWR internal isLoading toggles true
+      error: undefined,
+      isValidating: false
+    })
+  });
+
+  const state = await harness.renderHook();
+  assert.equal(state.menuLoading, true, 'menuLoading must not be false before data arrives');
+  assert.equal(state.menu, undefined);
+});
+
+test('AC-F1 / Defensive fallback: MenuFromAPI returns loadingMenu with valid id when menu is falsy or missing id', async () => {
+  const dashboardSourceUrl = new URL('../../menu-items/dashboard.js', import.meta.url);
+  const rawSource = await readFile(dashboardSourceUrl, 'utf8');
+  const cleanedSource = rawSource
+    .replace(/<FormattedMessage\s+id="dashboard"\s*\/>/g, '"dashboard"')
+    .replace(/<FormattedMessage\s+id=\{title\}\s*\/>/g, 'title');
+  const context = createContext({ console });
+  const vmModule = new SourceTextModule(cleanedSource, { context });
+  await vmModule.link((specifier) => {
+    if (specifier === 'react-intl') {
+      return new SyntheticModule(['FormattedMessage'], function () {
+        this.setExport('FormattedMessage', (props) => props.id);
+      }, { context });
+    }
+    if (specifier === 'iconsax-react') {
+      const iconNames = [
+        'Android', 'Windows', 'Home3', 'Home2', 'HomeTrendUp', 'Box1', 'Bank',
+        'Book1', 'I24Support', 'MessageProgramming', 'Truck', 'Box', 'Airdrop',
+        'VoiceCricle', 'CardCoin', 'TruckFast', 'TruckTime', 'Ship', 'OceanProtocol',
+        'Radar2', 'SmartCar', 'TaskSquare', 'CpuSetting', 'SecurityUser', 'Logout',
+        'Scanner', 'TruckTick', 'Book', 'FavoriteChart', 'PresentionChart', 'Location',
+        'Task', 'Profile2User', 'Buildings', 'Diagram', 'Layer', 'ReceiptItem',
+        'NoteText', 'ClipboardText', 'ShieldTick', 'DocumentText', 'FingerScan', 'Health'
+      ];
+      return new SyntheticModule(iconNames, function () {
+        for (const name of iconNames) {
+          this.setExport(name, () => null);
+        }
+      }, { context });
+    }
+    if (specifier === 'utils/getMenuIcon') {
+      return new SyntheticModule(['getMenuIcon'], function () {
+        this.setExport('getMenuIcon', () => () => null);
+      }, { context });
+    }
+    throw new Error(`Unmocked specifier: ${specifier}`);
+  });
+  await vmModule.evaluate();
+  const { MenuFromAPI } = vmModule.namespace;
+
+  // Case 1: menu is undefined and menuLoading is false (the bug path)
+  const menuUndef = MenuFromAPI({ menu: undefined, menuLoading: false, messages: {} });
+  assert.ok(menuUndef?.id, 'Returned menu must have an id so items is not empty []');
+  assert.equal(menuUndef.id, 'group-dashboard-loading');
+
+  // Case 2: menu has no id
+  const menuNoId = MenuFromAPI({ menu: { children: [] }, menuLoading: false, messages: {} });
+  assert.equal(menuNoId?.id, 'group-dashboard-loading');
+
+  // Case 3: menu is valid with id
+  const validMenu = MenuFromAPI({
+    menu: {
+      id: 'group-dashboard',
+      title: 'dashboard',
+      type: 'group',
+      children: [{ id: 'home', title: 'Home', type: 'item', url: '/home' }]
+    },
+    menuLoading: false,
+    messages: {}
+  });
+  assert.equal(validMenu?.id, 'group-dashboard');
+  assert.equal(validMenu?.children?.length, 1);
 });

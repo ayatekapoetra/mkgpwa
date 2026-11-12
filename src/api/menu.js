@@ -132,7 +132,6 @@ const transformMenuIcons = (menuItems) => {
 export function useGetMenu() {
   const { data: session, status } = useSession();
   const userId = session?.id ?? session?.token?.id ?? null;
-  const accessToken = session?.accessToken ?? session?.token?.accessToken ?? null;
   const sessionCacheKey = getUserMenuCacheKey(userId);
 
   const [offlineMenu, setOfflineMenu] = useState(null);
@@ -194,17 +193,7 @@ export function useGetMenu() {
   const shouldFetch = isAuthenticated && hydrateDone && isKeyMatched;
   const swrKey = shouldFetch ? USER_MENU_SWR_KEY : null;
 
-  const menuFetcher = useMemo(
-    () => (url) =>
-      fetcher(
-        accessToken
-          ? [url, { headers: { Authorization: `Bearer ${accessToken}` } }]
-          : url,
-      ),
-    [accessToken],
-  );
-
-  const { data, isLoading, error, isValidating } = useSWR(swrKey, menuFetcher, {
+  const { data, isLoading, error, isValidating } = useSWR(swrKey, fetcher, {
     fallbackData: hasOfflineCache ? offlineMenu : undefined,
     revalidateIfStale: !hasOfflineCache,
     revalidateOnFocus: false,
@@ -250,7 +239,10 @@ export function useGetMenu() {
       menu: transformedData?.dashboard,
       menuLoading: hasOfflineCache
         ? false
-        : status === "loading" || !hydrateDone || (isLoading && !hasOfflineCache),
+        : status === "loading" ||
+          !hydrateDone ||
+          (isLoading && !hasOfflineCache) ||
+          (isAuthenticated && !hasOfflineCache && data === undefined && !error),
       menuError: error || null,
       menuValidating: isValidating,
       menuEmpty: hydrateDone && !isLoading && !transformedData?.dashboard,
@@ -267,6 +259,7 @@ export function useGetMenu() {
       data,
       usingHomeFallback,
       status,
+      isAuthenticated,
     ],
   );
 

@@ -134,7 +134,7 @@ const loadingMenu = {
 // ==============================|| MENU ITEMS - API ||============================== //
 
 export const MenuFromAPI = ({ menu, menuLoading, messages }) => {
-  if (menuLoading) return loadingMenu;
+  if (menuLoading || !menu || !menu?.id) return loadingMenu;
 
   const subChildrenList = (children) => {
     return children?.map((subList) => {
@@ -161,6 +161,7 @@ export const MenuFromAPI = ({ menu, menuLoading, messages }) => {
 };
 
 function fillItem(item, children, messages) {
+  if (!item) return null;
   const title = item?.title || '';
   return {
     ...item,
