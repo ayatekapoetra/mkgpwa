@@ -50,6 +50,14 @@ const MiningPage = {
       breadcrumbs: false
     },
     {
+      id: 'rekap-ritase',
+      title: <FormattedMessage id="Rekap Ritase" />,
+      type: 'item',
+      url: '/rekap-ritase',
+      icon: icons.do,
+      breadcrumbs: false
+    },
+    {
       id: 'mining-production-plan',
       title: <FormattedMessage id="Mining Production Plan" />,
       type: 'item',
