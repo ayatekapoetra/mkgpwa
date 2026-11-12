@@ -195,7 +195,7 @@ export function useGetMenu() {
 
   const { data, isLoading, error, isValidating } = useSWR(swrKey, fetcher, {
     fallbackData: hasOfflineCache ? offlineMenu : undefined,
-    revalidateIfStale: false,
+    revalidateIfStale: !hasOfflineCache,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     // Cache hit → no network (1x per login session). Empty cache → fetch once.

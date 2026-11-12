@@ -165,7 +165,7 @@ function fillItem(item, children, messages) {
   return {
     ...item,
     // API-defined labels without a translation are displayed as plain text.
-    title: messages[title] ? <FormattedMessage id={title} /> : title,
+    title: messages?.[title] ? <FormattedMessage id={title} /> : title,
     icon: (() => {
       if (typeof item?.icon === 'function' || typeof item?.icon === 'object') {
         return item.icon;

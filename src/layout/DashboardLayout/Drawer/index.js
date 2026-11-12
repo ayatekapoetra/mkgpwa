@@ -36,25 +36,24 @@ const MainDrawer = ({ window }) => {
       component="nav"
       sx={{
         flexShrink: { md: 0 },
-        zIndex: 1200,
-        ...(!downLG ? {} : { pointerEvents: 'none' })
+        zIndex: 1200
       }}
       aria-label="mailbox folders"
     >
-      {!downLG ? (
+      <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
         <MiniDrawerStyled variant="permanent" open={drawerOpen}>
           {drawerHeader}
           {drawerContent}
         </MiniDrawerStyled>
-      ) : drawerOpen ? (
+      </Box>
+      <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
         <Drawer
           container={container}
           variant="temporary"
           open={Boolean(drawerOpen)}
           onClose={() => handlerDrawerOpen(false)}
-          ModalProps={{ keepMounted: false }}
+          ModalProps={{ keepMounted: true }}
           sx={{
-            display: { xs: 'block', lg: 'none' },
             '&[aria-hidden="true"]': {
               pointerEvents: 'none !important',
               visibility: 'hidden !important'
@@ -76,7 +75,7 @@ const MainDrawer = ({ window }) => {
           {drawerHeader}
           {drawerContent}
         </Drawer>
-      ) : null}
+      </Box>
     </Box>
   );
 };

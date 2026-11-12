@@ -1,6 +1,5 @@
 
 // MATERIAL - UI
-import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
 
 import Profile from './Profile';
@@ -17,17 +16,23 @@ import { MenuOrientation } from 'config';
 const HeaderContent = () => {
   const { menuOrientation } = useLayoutConfig();
 
-  const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));
-
   return (
     <>
-      {menuOrientation === MenuOrientation.HORIZONTAL && !downLG && <DrawerHeader open={true} />}
-      {downLG && <Box sx={{ width: '100%', ml: 1 }} />}
+      {menuOrientation === MenuOrientation.HORIZONTAL && (
+        <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+          <DrawerHeader open={true} />
+        </Box>
+      )}
+      <Box sx={{ display: { xs: 'block', lg: 'none' }, width: '100%', ml: 1 }} />
 
       <Notification />
       <ListFetchFailed />
-      {!downLG && <Profile />}
-      {downLG && <MobileSection />}
+      <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center' }}>
+        <Profile />
+      </Box>
+      <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center' }}>
+        <MobileSection />
+      </Box>
     </>
   );
 };

@@ -39,9 +39,9 @@ const loadMenuModule = async (options = {}) => {
       }
     }
   });
-  const module = new SourceTextModule(source, { context, identifier: SOURCE_URL.href });
+  const vmModule = new SourceTextModule(source, { context, identifier: SOURCE_URL.href });
 
-  await module.link((specifier) => {
+  await vmModule.link((specifier) => {
     if (specifier === 'swr') {
       return new SyntheticModule(['default', 'mutate'], function () {
         this.setExport('default', (key, _fetcher, opts) => ({
@@ -128,12 +128,12 @@ const loadMenuModule = async (options = {}) => {
     assert.fail(`Unexpected import: ${specifier}`);
   });
 
-  await module.evaluate();
+  await vmModule.evaluate();
 
   const renderHook = async () => {
     hookState.index = 0;
     hookState.effects = [];
-    module.namespace.useGetMenu();
+    vmModule.namespace.useGetMenu();
     // Run collected effects
     for (const ef of [...hookState.effects]) {
       await ef.fn();
@@ -143,11 +143,11 @@ const loadMenuModule = async (options = {}) => {
     // Re-render to pick up state updates
     hookState.index = 0;
     hookState.effects = [];
-    return module.namespace.useGetMenu();
+    return vmModule.namespace.useGetMenu();
   };
 
   return {
-    api: module.namespace,
+    api: vmModule.namespace,
     cleared,
     removed,
     mutated,
@@ -280,4 +280,38 @@ test('AC-05: session loading: cache tidak me-render menu sebelum userId terverif
   assert.equal(menuLoading.menu, undefined);
   assert.equal(menuLoading.menuLoading, true);
   assert.equal(menuLoading.menuFromCache, false);
+});
+
+test('AC-F2 / Hydration: no react-device-detect in src/ to eliminate React invariant 425 & 422', async () => {
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+
+  async function scanDir(dir) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== 'node_modules' && entry.name !== '.next') {
+          files.push(...(await scanDir(full)));
+        }
+      } else if (entry.name.endsWith('.js') || entry.name.endsWith('.jsx')) {
+        files.push(full);
+      }
+    }
+    return files;
+  }
+
+  const srcDir = path.resolve(import.meta.dirname, '../../');
+  const allFiles = await scanDir(srcDir);
+  const offending = [];
+
+  for (const file of allFiles) {
+    const content = await fs.readFile(file, 'utf8');
+    if (content.includes("from 'react-device-detect'") || content.includes('from "react-device-detect"')) {
+      offending.push(path.relative(srcDir, file));
+    }
+  }
+
+  assert.deepEqual(offending, [], 'react-device-detect causes SSR hydration mismatch and must not be used in src/');
 });

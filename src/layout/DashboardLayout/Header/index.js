@@ -82,13 +82,9 @@ const Header = () => {
 
   return (
     <>
-      {!downLG ? (
-        <AppBarStyled open={drawerOpen} {...appBar}>
-          {mainHeader}
-        </AppBarStyled>
-      ) : (
-        <AppBar {...appBar}>{mainHeader}</AppBar>
-      )}
+      <AppBarStyled open={drawerOpen} {...appBar}>
+        {mainHeader}
+      </AppBarStyled>
     </>
   );
 };
