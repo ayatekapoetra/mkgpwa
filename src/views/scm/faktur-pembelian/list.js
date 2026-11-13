@@ -65,9 +65,10 @@ export default function FakturPembelianList({ rows = [] }) {
       >
         <Box component="thead">
           <Box component="tr">
+            <Box component="th" sx={{ textAlign: "right" }}>Aksi</Box>
             <Box component="th">No. Faktur</Box>
             <Box component="th">Sumber</Box>
-            <Box component="th">Pemasok</Box>
+            <Box component="th">Pemasok / Penerima</Box>
             <Box component="th">Bisnis / Cabang</Box>
             <Box component="th">Tgl Faktur</Box>
             <Box component="th">Jatuh Tempo</Box>
@@ -76,12 +77,23 @@ export default function FakturPembelianList({ rows = [] }) {
             <Box component="th" sx={{ textAlign: "right" }}>Grand Total</Box>
             <Box component="th" sx={{ textAlign: "right" }}>Sisa</Box>
             <Box component="th">Status</Box>
-            <Box component="th" sx={{ textAlign: "right" }}>Aksi</Box>
           </Box>
         </Box>
         <Box component="tbody">
           {rows.map((row) => (
             <Box component="tr" key={row.id}>
+              <Box component="td" sx={{ ...cellSx, textAlign: "right" }}>
+                <Button
+                  component={Link}
+                  href={`/faktur-pembelian/${row.id}`}
+                  size="small"
+                  variant="outlined"
+                  aria-label={`Detail faktur ${row.kdfb || row.id}`}
+                  startIcon={<Eye size={15} />}
+                >
+                  Detail
+                </Button>
+              </Box>
               <Box component="td" sx={cellSx}>
                 <Link
                   href={`/faktur-pembelian/${row.id}`}
@@ -149,7 +161,7 @@ export default function FakturPembelianList({ rows = [] }) {
                 </Typography>
               </Box>
               <Box component="td" sx={cellSx}>
-                <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                <Stack direction="column" spacing={0.5} flexWrap="wrap">
                   <Chip
                     size="small"
                     color={row.sisa > 0 ? "warning" : "success"}
@@ -162,18 +174,6 @@ export default function FakturPembelianList({ rows = [] }) {
                     <Chip size="small" color="error" variant="outlined" label="Lewat" />
                   ) : null}
                 </Stack>
-              </Box>
-              <Box component="td" sx={{ ...cellSx, textAlign: "right" }}>
-                <Button
-                  component={Link}
-                  href={`/faktur-pembelian/${row.id}`}
-                  size="small"
-                  variant="outlined"
-                  aria-label={`Detail faktur ${row.kdfb || row.id}`}
-                  startIcon={<Eye size={15} />}
-                >
-                  Detail
-                </Button>
               </Box>
             </Box>
           ))}
