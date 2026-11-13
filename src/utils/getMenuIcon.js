@@ -19,6 +19,7 @@ import {
   Buildings2,
   Ship,
   ReceiptItem,
+  Receipt21,
   BoxTime,
   NoteText,
   ClipboardText,
@@ -147,6 +148,7 @@ const iconMap = {
   TruckTick: TruckTick,
   Hospital: Hospital,
   Lifebuoy: Lifebuoy,
+  Receipt21: Receipt21,
   // Aliases for common names`
   dom: Diagram,
   equipment: Truck,
