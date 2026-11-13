@@ -22,12 +22,16 @@ const OptionDoms = ({
         <Autocomplete
           fullWidth
           options={openDoms}
-          value={openDoms.find((option) => option?.id == value) || null}
+          value={openDoms.find((option) => String(option?.kode) === String(value) || String(option?.id) === String(value)) || null}
           noOptionsText="Tidak ada DOM status OPEN"
           onChange={(e, newValue) => {
-            setFieldValue(name, newValue?.id || '');
+            // Simpan KODE DOM, bukan id. Backend (RitaseRekapController /
+            // RitaseRekapWriter) mencari `mas_doms.kode` dan menyimpan kode
+            // tersebut ke kolom dom_id. Mengirim id akan gagal DOM_NOT_FOUND
+            // dan menghasilkan data salah.
+            setFieldValue(name, newValue?.kode || '');
           }}
-          isOptionEqualToValue={(option, value) => option.id === value?.id}
+          isOptionEqualToValue={(option, value) => String(option?.kode) === String(value?.kode ?? value) || String(option?.id) === String(value?.id ?? value)}
           getOptionLabel={(option) => option.kode || ''}
           sx={{ '& .MuiInputBase-root': { py: 0.9 } }}
           renderOption={(props, option) => (

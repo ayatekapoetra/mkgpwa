@@ -83,7 +83,7 @@ const OptionEquipment = ({
                 {...params}
                 label={label}
                 error={touched && Boolean(error)}
-                helperText={(touched && error) || (sortedOptions.length > 100 ? 'Maksimal 100 pilihan ditampilkan. Ketik kode atau model untuk mencari.' : '')}
+                helperText={(touched && error) || (sortedOptions.length > 100 ? 'Ketik kode untuk mencari.' : '')}
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: startAdornment && (

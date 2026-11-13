@@ -8,6 +8,8 @@ export const endpoints = {
   defaults: '/ritase/rekap/defaults',
   detail: '/ritase/rekap/detail',
   create: '/ritase/rekap',
+  createBulk: '/ritase/rekap/bulk',
+  update: '/ritase/rekap/update',
   access: '/ritase/rekap/access'
 };
 
@@ -123,6 +125,9 @@ export function useGetRekapDetail(params = {}, enabled = true) {
     detail,
     header: detail?.header || null,
     items: detail?.items || [],
+    hourly: detail?.hourly || [],
+    doms: detail?.doms || [],
+    diagnostic: detail?.diagnostic || null,
     loading: isLoading,
     error,
     refresh: mutate
@@ -150,5 +155,66 @@ export async function createRekapRitase(body) {
     customError.details = diag?.details;
     customError.status = error?.response?.status;
     throw customError;
+  }
+}
+
+/**
+ * Simpan N baris dump truck sekaligus secara ATOMIK.
+ * Backend membungkus semua baris dalam satu transaksi: semua berhasil
+ * atau tidak ada yang tersimpan.
+ */
+export async function createRekapRitaseBulk(items) {
+  try {
+    const res = await axiosServices.post(
+      endpoints.createBulk,
+      { items },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) {
+      const err = new Error(diag.message || 'Gagal menyimpan rekap ritase');
+      err.code = diag.code;
+      err.details = diag.details;
+      throw err;
+    }
+    return res?.data?.rows ?? res?.data;
+  } catch (error) {
+    const diag = error?.response?.data?.diagnostic || error?.diagnostic;
+    const msg = diag?.message || error?.message || 'Gagal menyimpan rekap ritase';
+    const err = new Error(msg);
+    err.code = diag?.code || error?.code;
+    err.details = diag?.details;
+    throw err;
+  }
+}
+
+
+/**
+ * Ganti seluruh isi satu grup rekap (tanggal + shift + excavator + PIT +
+ * material). Backend menghapus baris grup lama lalu menulis ulang semuanya
+ * dalam satu transaksi.
+ */
+export async function updateRekapRitaseGroup(group, items) {
+  try {
+    const res = await axiosServices.post(
+      endpoints.update,
+      { group, items },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) {
+      const err = new Error(diag.message || 'Gagal memperbarui rekap ritase');
+      err.code = diag.code;
+      err.details = diag.details;
+      throw err;
+    }
+    return res?.data?.rows ?? res?.data;
+  } catch (error) {
+    const diag = error?.response?.data?.diagnostic || error?.diagnostic;
+    const msg = diag?.message || error?.message || 'Gagal memperbarui rekap ritase';
+    const err = new Error(msg);
+    err.code = diag?.code || error?.code;
+    err.details = diag?.details;
+    throw err;
   }
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // MATERIAL - UI
 import {
@@ -21,7 +22,7 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import { Filter, Add, DocumentUpload, Eye } from 'iconsax-react';
+import { Filter, Add, DocumentUpload, Eye, Edit } from 'iconsax-react';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
@@ -30,7 +31,6 @@ import Paginate from 'components/Paginate';
 import { APP_DEFAULT_PATH } from 'config';
 
 import RekapRitaseFilter from './filter';
-import RekapRitaseDetailDialog from './detail';
 import { useGetRekapRitase, useRitaseRekapAccess } from 'api/ritase-rekap';
 import moment from 'moment';
 
@@ -46,9 +46,8 @@ const formatNum = (v, digits = 2) => {
 };
 
 export default function RekapRitaseScreen() {
+  const router = useRouter();
   const [openFilter, setOpenFilter] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [openDetail, setOpenDetail] = useState(false);
 
   const [params, setParams] = useState({
     page: 1,
@@ -64,23 +63,27 @@ export default function RekapRitaseScreen() {
   const { permissions } = useRitaseRekapAccess();
   const { rows, page, perPage, total, lastPage, loading, error, refresh } = useGetRekapRitase(params);
 
-  const handleOpenDetail = (row) => {
-    setSelectedGroup({
-      date_ops: row.date_ops,
-      shift_id: row.shift_id,
-      bisnis_id: row.bisnis_id,
-      penyewa_id: row.penyewa_id,
-      fleet_name: row.fleet_name,
-      excavator_id: row.excavator_id,
-      startpit_id: row.startpit_id,
-      material_id: row.material_id
-    });
-    setOpenDetail(true);
+  const buildGroupQuery = (row) => {
+    const q = new URLSearchParams();
+    q.set('date_ops', row.date_ops || '');
+    q.set('shift_id', row.shift_id ?? '');
+    q.set('excavator_id', row.excavator_id ?? '');
+    q.set('startpit_id', row.startpit_id ?? '');
+    q.set('material_id', row.material_id ?? '');
+    if (row.bisnis_id != null) q.set('bisnis_id', row.bisnis_id);
+    if (row.penyewa_id != null) q.set('penyewa_id', row.penyewa_id);
+    if (row.fleet_name) q.set('fleet_name', row.fleet_name);
+    return q.toString();
   };
 
-  const handleCloseDetail = () => {
-    setOpenDetail(false);
-    setSelectedGroup(null);
+  const handleOpenEdit = (row) => {
+    router.push(`/rekap-ritase/edit?${buildGroupQuery(row)}`);
+  };
+
+  const handleOpenDetail = (row) => {
+    // Detail sekarang berupa halaman penuh, bukan dialog, agar visualisasi
+    // (KPI, grafik, tabel alokasi) punya ruang lebih luas.
+    router.push(`/rekap-ritase/detail?${buildGroupQuery(row)}`);
   };
 
   const handleResetFilter = () => {
@@ -268,14 +271,16 @@ export default function RekapRitaseScreen() {
                       </Stack>
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleOpenDetail(row)}
-                        title="Lihat Detail Rekap"
-                      >
-                        <Eye size={18} />
-                      </IconButton>
+                      <Stack direction="row" spacing={0.5} justifyContent="center">
+                        <IconButton size="small" color="primary" onClick={() => handleOpenDetail(row)} title="Buka halaman detail">
+                          <Eye size={18} />
+                        </IconButton>
+                        {permissions?.can_create && (
+                          <IconButton size="small" color="warning" onClick={() => handleOpenEdit(row)} title="Ubah rekap ritase">
+                            <Edit size={18} />
+                          </IconButton>
+                        )}
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))
@@ -294,12 +299,6 @@ export default function RekapRitaseScreen() {
           />
         </Box>
       </MainCard>
-
-      <RekapRitaseDetailDialog
-        open={openDetail}
-        onClose={handleCloseDetail}
-        selectedGroup={selectedGroup}
-      />
     </Fragment>
   );
 }

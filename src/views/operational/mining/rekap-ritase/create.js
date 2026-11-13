@@ -52,15 +52,23 @@ import OptionDoms from 'components/OptionDoms';
 import { APP_DEFAULT_PATH } from 'config';
 
 import {
-  createRekapRitase,
+  createRekapRitaseBulk,
   fetchRekapDefaults,
+  updateRekapRitaseGroup,
+  useGetRekapDetail,
   useRitaseRekapAccess
 } from 'api/ritase-rekap';
 
-const breadcrumbLinks = [
+const CREATE_BREADCRUMBS = [
   { title: 'Home', to: APP_DEFAULT_PATH },
   { title: 'Rekap Ritase', to: '/rekap-ritase' },
   { title: 'Tambah Rekap', to: '/rekap-ritase/create' }
+];
+
+const EDIT_BREADCRUMBS = [
+  { title: 'Home', to: APP_DEFAULT_PATH },
+  { title: 'Rekap Ritase', to: '/rekap-ritase' },
+  { title: 'Ubah Rekap' }
 ];
 
 const formatNum = (v, digits = 2) => {
@@ -68,27 +76,30 @@ const formatNum = (v, digits = 2) => {
   return n.toLocaleString('id-ID', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 };
 
-export default function CreateRekapRitaseView() {
+export default function RekapRitaseFormView({ mode = 'create', group = null }) {
+  const isEdit = mode === 'edit';
+  const breadcrumbLinks = isEdit ? EDIT_BREADCRUMBS : CREATE_BREADCRUMBS;
   const router = useRouter();
   const { permissions } = useRitaseRekapAccess();
 
-  // Header form state
-  const [header, setHeader] = useState({
-    bisnis_id: 3, // Default MTK
-    cabang_id: '',
-    penyewa_id: '',
-    date_ops: moment().format('YYYY-MM-DD'),
-    shift_id: '',
-    fleet_name: 'Fleet 1',
-    excavator_id: '',
-    startpit_id: '',
+  // Header form state. Pada mode edit, nilai awal diisi dari grup terpilih
+  // agar form langsung menampilkan data yang sedang diubah.
+  const [header, setHeader] = useState(() => ({
+    bisnis_id: group?.bisnis_id ?? 3, // Default MTK
+    cabang_id: group?.cabang_id ?? '',
+    penyewa_id: group?.penyewa_id ?? '',
+    date_ops: group?.date_ops ?? moment().format('YYYY-MM-DD'),
+    shift_id: group?.shift_id ?? '',
+    fleet_name: group?.fleet_name ?? 'Fleet 1',
+    excavator_id: group?.excavator_id ?? '',
+    startpit_id: group?.startpit_id ?? '',
     seq: '1',
-    material_id: '',
+    material_id: group?.material_id ?? '',
     status: 'PRODUKSI',
-    distance_km: '',
-    tf_ton: '',
-    tf_bcm: ''
-  });
+    distance_km: group?.distance_km ?? '',
+    tf_ton: group?.tf_ton ?? '',
+    tf_bcm: group?.tf_bcm ?? ''
+  }));
 
   const [loadingDefaults, setLoadingDefaults] = useState(false);
   const [defaultsLoaded, setDefaultsLoaded] = useState(false);
@@ -135,6 +146,73 @@ export default function CreateRekapRitaseView() {
     return Boolean(permissions?.can_backdate);
   }, [isBackdate, permissions]);
 
+  // Mode edit: ambil rincian grup lalu petakan ke baris form.
+  const detailParams = useMemo(
+    () =>
+      isEdit && group
+        ? {
+            date_ops: group.date_ops,
+            shift_id: group.shift_id,
+            bisnis_id: group.bisnis_id || '',
+            penyewa_id: group.penyewa_id || '',
+            fleet_name: group.fleet_name || '',
+            excavator_id: group.excavator_id,
+            startpit_id: group.startpit_id,
+            material_id: group.material_id
+          }
+        : {},
+    [isEdit, group]
+  );
+
+  const { items: detailItems, header: detailHeader, loading: detailLoading, error: detailError } =
+    useGetRekapDetail(detailParams, Boolean(isEdit && group));
+
+  const [hydrated, setHydrated] = useState(!isEdit);
+
+  useEffect(() => {
+    if (!isEdit || hydrated || detailLoading || !detailHeader) return;
+
+    setHeader((prev) => ({
+      ...prev,
+      bisnis_id: detailHeader.bisnis_id ?? prev.bisnis_id,
+      cabang_id: detailHeader.cabang_id ?? prev.cabang_id,
+      penyewa_id: detailHeader.penyewa_id ?? prev.penyewa_id,
+      date_ops: detailHeader.date_ops ?? prev.date_ops,
+      shift_id: detailHeader.shift_id ?? prev.shift_id,
+      fleet_name: detailHeader.fleet_name ?? prev.fleet_name,
+      excavator_id: detailHeader.excavator_id ?? prev.excavator_id,
+      startpit_id: detailHeader.startpit_id ?? prev.startpit_id,
+      material_id: detailHeader.material_id ?? prev.material_id
+    }));
+
+    // Satu baris form per DT; alokasi DOM dikembalikan ke bentuk split.
+    const mapped = (detailItems || []).map((row, idx) => {
+      const allocations = (row.allocations || []).map((a) => ({
+        dom_id: a.dom_id || '',
+        stockpile_id: a.stockpile_id || '',
+        ritase: Number(a.ritase) || 0
+      }));
+      return {
+        id: row.dumptruck_id ?? `dt-${idx}`,
+        dumptruck_id: row.dumptruck_id ?? '',
+        dumptruck_label: row.dumptruck_kode || '',
+        kdsm: row.kdsm || '',
+        stockpile_id: allocations[0]?.stockpile_id || '',
+        dom_id: allocations.length === 1 ? allocations[0].dom_id : allocations.map((a) => a.dom_id).join(', '),
+        total_ritase: Number(row.total_ritase) || 0,
+        tf_ton: row.tf_ton ?? '',
+        tf_bcm: row.tf_bcm ?? '',
+        allocations
+      };
+    });
+
+    if (mapped.length > 0) setItems(mapped);
+    if (detailItems?.[0]?.distance_km != null) {
+      setHeader((prev) => ({ ...prev, distance_km: detailItems[0].distance_km }));
+    }
+    setHydrated(true);
+  }, [isEdit, hydrated, detailLoading, detailHeader, detailItems]);
+
   // Handler header changes
   const handleHeaderChange = (name, val) => {
     setHeader((prev) => ({ ...prev, [name]: val }));
@@ -174,12 +252,14 @@ export default function CreateRekapRitaseView() {
     }
   };
 
-  // Auto-fetch defaults bila material / pit / tanggal terisi
+  // Auto-fetch defaults bila material / pit / tanggal terisi.
+  // Pada mode edit nilai sudah berasal dari database, jadi jangan ditimpa.
   useEffect(() => {
+    if (isEdit) return;
     if (header.date_ops && header.bisnis_id && (header.material_id || header.startpit_id)) {
       handleLoadDefaults();
     }
-  }, [header.date_ops, header.bisnis_id, header.material_id, header.startpit_id]);
+  }, [isEdit, header.date_ops, header.bisnis_id, header.material_id, header.startpit_id]);
 
   // Baris DT manipulation
   const handleAddItem = () => {
@@ -375,10 +455,14 @@ export default function CreateRekapRitaseView() {
   };
 
   // Submit ke backend
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    setSubmitError(null);
-
+  /**
+   * Bangun payload satu baris DT.
+   *
+   * Backend `POST /ritase/rekap` menerima SATU dokumen per request
+   * (RitaseRekapController.store -> writeWebRekap), bukan array `items`.
+   * Karena itu UI mengirim N request berurutan, satu per baris DT.
+   */
+  const buildItemPayload = (item) => {
     const payload = {
       bisnis_id: Number(header.bisnis_id),
       cabang_id: Number(header.cabang_id),
@@ -392,43 +476,69 @@ export default function CreateRekapRitaseView() {
       material_id: Number(header.material_id),
       status: header.status || 'PRODUKSI',
       distance_km: Number(header.distance_km),
-      items: items.map((it) => {
-        const itemObj = {
-          dumptruck_id: Number(it.dumptruck_id),
-          kdsm: it.kdsm || '',
-          total_ritase: Number(it.total_ritase)
-        };
-        if (it.tf_ton) itemObj.tf_ton = Number(it.tf_ton);
-        else if (header.tf_ton) itemObj.tf_ton = Number(header.tf_ton);
-
-        if (it.tf_bcm) itemObj.tf_bcm = Number(it.tf_bcm);
-        else if (header.tf_bcm) itemObj.tf_bcm = Number(header.tf_bcm);
-
-        if (it.allocations && it.allocations.length > 0) {
-          itemObj.allocations = it.allocations.map((a) => ({
-            stockpile_id: a.stockpile_id ? Number(a.stockpile_id) : undefined,
-            dom_id: a.dom_id,
-            ritase: Number(a.ritase)
-          }));
-        } else if (it.dom_id) {
-          itemObj.allocations = [
-            {
-              stockpile_id: it.stockpile_id ? Number(it.stockpile_id) : undefined,
-              dom_id: it.dom_id,
-              ritase: Number(it.total_ritase)
-            }
-          ];
-        } else {
-          itemObj.allocations = [];
-        }
-
-        return itemObj;
-      })
+      dumptruck_id: Number(item.dumptruck_id),
+      kdsm: item.kdsm || '',
+      total_ritase: Number(item.total_ritase)
     };
 
+    if (item.tf_ton) payload.tf_ton = Number(item.tf_ton);
+    else if (header.tf_ton) payload.tf_ton = Number(header.tf_ton);
+
+    if (item.tf_bcm) payload.tf_bcm = Number(item.tf_bcm);
+    else if (header.tf_bcm) payload.tf_bcm = Number(header.tf_bcm);
+
+    if (Array.isArray(item.allocations) && item.allocations.length > 0) {
+      payload.allocations = item.allocations.map((a) => ({
+        stockpile_id: a.stockpile_id ? Number(a.stockpile_id) : undefined,
+        dom_id: a.dom_id,
+        ritase: Number(a.ritase)
+      }));
+    } else if (item.dom_id) {
+      payload.allocations = [
+        {
+          stockpile_id: item.stockpile_id ? Number(item.stockpile_id) : undefined,
+          dom_id: item.dom_id,
+          ritase: Number(item.total_ritase)
+        }
+      ];
+    } else {
+      payload.allocations = [];
+    }
+
+    return payload;
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+
     try {
-      const res = await createRekapRitase(payload);
-      setSubmitResult(res);
+      const payloadRows = items.map(buildItemPayload);
+
+      // Edit: backend mengganti seluruh isi grup dalam satu transaksi.
+      // Create: backend membungkus semua baris dalam 1 transaksi.
+      const res = isEdit
+        ? await updateRekapRitaseGroup(
+            {
+              date_ops: group.date_ops,
+              shift_id: Number(group.shift_id),
+              excavator_id: Number(group.excavator_id),
+              startpit_id: Number(group.startpit_id),
+              material_id: Number(group.material_id)
+            },
+            payloadRows
+          )
+        : await createRekapRitaseBulk(payloadRows);
+
+      setSubmitResult({
+        batch_id: Array.isArray(res?.batch_ids) ? res.batch_ids.join(', ') : res?.batch_id,
+        deleted_rows: Number(res?.deleted_rows) || 0,
+        total_ritase: Number(res?.total_ritase) || 0,
+        total_ton: Number(res?.total_ton) || 0,
+        total_bcm: Number(res?.total_bcm) || 0,
+        dom_status: Array.isArray(res?.dom_status) ? res.dom_status : [],
+        saved_rows: Number(res?.saved_rows) || items.length
+      });
       setConfirmDialogOpen(false);
       setResultDialogOpen(true);
     } catch (err) {
@@ -448,8 +558,9 @@ export default function CreateRekapRitaseView() {
           title={
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Typography variant="h4" fontWeight={700}>
-                Header Rekap Ritase
+                {isEdit ? 'Ubah Rekap Ritase' : 'Header Rekap Ritase'}
               </Typography>
+              {isEdit && <Chip size="small" color="warning" label="Mode Ubah" />}
               {isBackdate && (
                 <Chip
                   size="small"
@@ -482,7 +593,7 @@ export default function CreateRekapRitaseView() {
               </Grid>
             )}
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={5}>
               <OptionBisnisUnit
                 value={header.bisnis_id}
                 name="bisnis_id"
@@ -491,7 +602,7 @@ export default function CreateRekapRitaseView() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <OptionCabang
                 value={header.cabang_id}
                 name="cabang_id"
@@ -520,7 +631,7 @@ export default function CreateRekapRitaseView() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={6}>
               <OptionPenyewa
                 value={header.penyewa_id}
                 name="penyewa_id"
@@ -539,16 +650,20 @@ export default function CreateRekapRitaseView() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={6}>
               <OptionEquipment
                 value={header.excavator_id}
                 name="excavator_id"
                 label="Loader / Excavator"
-                setFieldValue={handleHeaderChange}
+                setFieldValue={(field, val) => {
+                  // Abaikan panggilan objValue (objek penuh); header hanya simpan id.
+                  if (field !== 'excavator_id') return;
+                  handleHeaderChange('excavator_id', val);
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <OptionLokasiPit
                 value={header.startpit_id}
                 name="startpit_id"
@@ -557,7 +672,7 @@ export default function CreateRekapRitaseView() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={2}>
               <TextField
                 fullWidth
                 label="Sequence (Seq)"
@@ -673,7 +788,15 @@ export default function CreateRekapRitaseView() {
                           value={item.dumptruck_id}
                           name={`dt_${idx}`}
                           label="Pilih Dump Truck"
-                          setFieldValue={(_, val) => handleItemChange(idx, 'dumptruck_id', val)}
+                          setFieldValue={(field, val) => {
+                            // OptionEquipment memanggil setFieldValue dua kali:
+                            //   (name, id)          -> id pilihan
+                            //   (objValue, objek)   -> objek penuh (default objValue='equipment')
+                            // Baris DT hanya menyimpan id; panggilan objek harus diabaikan,
+                            // jika tidak `dumptruck_id` tertimpa objek dan nilai tampilan hilang.
+                            if (field !== `dt_${idx}`) return;
+                            handleItemChange(idx, 'dumptruck_id', val);
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -796,7 +919,7 @@ export default function CreateRekapRitaseView() {
         <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
           <Link href="/rekap-ritase" passHref style={{ textDecoration: 'none' }}>
             <Button variant="outlined" color="secondary" startIcon={<ArrowLeft />}>
-              Kembali ke Daftar
+              {isEdit ? 'Batal & Kembali' : 'Kembali ke Daftar'}
             </Button>
           </Link>
 
@@ -807,7 +930,7 @@ export default function CreateRekapRitaseView() {
             onClick={handleOpenConfirm}
             disabled={validationErrors.length > 0 || !canSaveBackdate}
           >
-            Simpan Rekap Ritase
+            {isEdit ? 'Simpan Perubahan' : 'Simpan Rekap Ritase'}
           </Button>
         </Stack>
       </Stack>
@@ -816,7 +939,7 @@ export default function CreateRekapRitaseView() {
       <Dialog open={splitDialogOpen} onClose={() => setSplitDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h5" fontWeight={700}>
+            <Typography variant="h6" component="span" fontWeight={700}>
               Alokasi Split DOM
             </Typography>
             <Chip
@@ -898,8 +1021,8 @@ export default function CreateRekapRitaseView() {
       {/* DIALOG KONFIRMASI RINGKASAN */}
       <Dialog open={confirmDialogOpen} onClose={() => !submitting && setConfirmDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          <Typography variant="h5" fontWeight={700}>
-            Konfirmasi Ringkasan Rekap Ritase
+          <Typography variant="h6" component="span" fontWeight={700}>
+            {isEdit ? 'Konfirmasi Perubahan Rekap Ritase' : 'Konfirmasi Ringkasan Rekap Ritase'}
           </Typography>
         </DialogTitle>
         <Divider />
@@ -983,7 +1106,7 @@ export default function CreateRekapRitaseView() {
             disabled={submitting}
             startIcon={submitting ? <CircularProgress size={16} /> : <TickCircle />}
           >
-            {submitting ? 'Menyimpan...' : 'Konfirmasi & Simpan ke Database'}
+            {submitting ? 'Menyimpan...' : isEdit ? 'Konfirmasi & Perbarui Data' : 'Konfirmasi & Simpan ke Database'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -993,8 +1116,8 @@ export default function CreateRekapRitaseView() {
         <DialogTitle>
           <Stack direction="row" spacing={1} alignItems="center">
             <TickCircle color="#2e7d32" size={24} />
-            <Typography variant="h5" fontWeight={700} color="success.main">
-              Rekap Ritase Berhasil Disimpan
+            <Typography variant="h6" component="span" fontWeight={700} color="success.main">
+              {isEdit ? 'Rekap Ritase Berhasil Diperbarui' : 'Rekap Ritase Berhasil Disimpan'}
             </Typography>
           </Stack>
         </DialogTitle>
@@ -1002,8 +1125,14 @@ export default function CreateRekapRitaseView() {
         <DialogContent sx={{ p: 2.5 }}>
           <Stack spacing={2}>
             <Alert severity="success">
-              Data rekap ritase telah dicatat ke dalam sistem dengan batch ID:{' '}
-              <strong>{submitResult?.batch_id}</strong>
+              {isEdit
+                ? `Data grup telah diperbarui. ${submitResult?.deleted_rows || 0} baris lama diganti dengan ${submitResult?.saved_rows || 0} baris baru.`
+                : 'Data rekap ritase telah dicatat ke dalam sistem.'}{' '}
+              {submitResult?.batch_id && (
+                <>
+                  Batch ID: <strong>{submitResult.batch_id}</strong>
+                </>
+              )}
             </Alert>
 
             <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>

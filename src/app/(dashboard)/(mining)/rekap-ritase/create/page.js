@@ -1,8 +1,8 @@
 // PROJECT IMPORTS
-import CreateRekapRitaseView from 'views/operational/mining/rekap-ritase/create';
+import RekapRitaseFormView from 'views/operational/mining/rekap-ritase/create';
 
 // ==============================|| CREATE REKAP RITASE PAGE ||============================== //
 
 export default function CreateRekapRitasePage() {
-  return <CreateRekapRitaseView />;
+  return <RekapRitaseFormView mode="create" />;
 }
