@@ -28,7 +28,7 @@ const OptionSubmenuMulti = ({
           onChange={(e, newValue) => {
             setFieldValue(name, newValue); // langsung set array object
           }}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
+          isOptionEqualToValue={(option, value) => String(option?.id ?? '') === String(value?.id ?? '')}
           getOptionLabel={(option) => option.name || ''}
           sx={{ '& .MuiInputBase-root': { py: 0.9 } }}
           renderOption={(props, option) => (
