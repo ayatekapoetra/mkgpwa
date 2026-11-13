@@ -1,26 +1,22 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   IconButton,
   Stack,
   Typography,
 } from "@mui/material";
-import { Add as AddIcon, Filter as FilterIcon, Refresh as RefreshIcon } from "iconsax-react";
+import { Filter as FilterIcon, Refresh as RefreshIcon } from "iconsax-react";
 
 import {
-  createPaymentPlans,
   useFakturPembelianAccess,
   useFakturPembelianSummary,
   useGetFakturPembelian,
 } from "api/faktur-pembelian";
-import { openNotification } from "api/notification";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
 import MainCard from "components/MainCard";
 import Paginate from "components/Paginate";
@@ -34,14 +30,11 @@ import { buildDefaultFilters, money } from "./utils";
 const FILTER_KEY = "mkg_filter_scm_faktur_pembelian";
 
 export default function FakturPembelianPage() {
-  const router = useRouter();
   const [params, setParams, resetParams] = useFilterStorage(
     FILTER_KEY,
     buildDefaultFilters,
   );
   const [filterOpen, setFilterOpen] = useState(false);
-  const [checked, setChecked] = useState({});
-  const [saving, setSaving] = useState(false);
 
   const {
     permissions,
@@ -53,7 +46,6 @@ export default function FakturPembelianPage() {
   } = useFakturPembelianAccess();
 
   const canRead = Boolean(permissions?.can_read);
-  const canCreate = Boolean(permissions?.can_create);
 
   const listParams = useMemo(
     () => ({
@@ -94,50 +86,6 @@ export default function FakturPembelianPage() {
     [params],
   );
 
-  const selectedRows = useMemo(() => Object.values(checked), [checked]);
-  const totalSelected = selectedRows.reduce(
-    (sum, row) => sum + (Number(row.sisa) || 0),
-    0,
-  );
-  const selectedPemasok = new Set(
-    selectedRows.map((row) => String(row.pemasok_id || "")),
-  ).size;
-  const selectedBisnis = new Set(
-    selectedRows.map((row) => String(row.bisnis_id || "")),
-  ).size;
-  const planGroups = selectedBisnis * selectedPemasok || 0;
-
-  const selectableRows = rows.filter((row) => !row.planned);
-  const allChecked =
-    selectableRows.length > 0 &&
-    selectableRows.every((row) => checked[row.id]);
-
-  const toggle = useCallback((row) => {
-    if (row.planned) return;
-    setChecked((prev) => {
-      const next = { ...prev };
-      if (next[row.id]) delete next[row.id];
-      else next[row.id] = row;
-      return next;
-    });
-  }, []);
-
-  const togglePage = useCallback(() => {
-    setChecked((prev) => {
-      const next = { ...prev };
-      if (allChecked) {
-        selectableRows.forEach((row) => {
-          delete next[row.id];
-        });
-      } else {
-        selectableRows.forEach((row) => {
-          next[row.id] = row;
-        });
-      }
-      return next;
-    });
-  }, [allChecked, selectableRows]);
-
   const handleApplyFilter = (draft) => {
     setParams((current) => ({
       ...current,
@@ -150,53 +98,7 @@ export default function FakturPembelianPage() {
 
   const handleResetFilter = () => {
     resetParams(buildDefaultFilters());
-    setChecked({});
     setFilterOpen(false);
-  };
-
-  const handleCreatePlans = async () => {
-    if (!selectedRows.length || saving) return;
-    setSaving(true);
-    try {
-      const result = await createPaymentPlans({
-        allocations: selectedRows.map((row) => ({
-          faktur_id: row.id,
-          amount: Number(row.sisa) || undefined,
-        })),
-      });
-
-      const created = result?.created || [];
-      const failed = result?.failed || [];
-      openNotification({
-        open: true,
-        title: failed.length ? "Rencana dibuat sebagian" : "Rencana dibuat",
-        message: [
-          `${created.length} rencana pembayaran dibuat.`,
-          ...(failed.length
-            ? [`${failed.length} gagal: ${failed.map((f) => f.message).join("; ")}`]
-            : []),
-        ].join(" "),
-        alert: { color: failed.length ? "warning" : "success" },
-      });
-
-      setChecked({});
-      refresh();
-      refreshSummary();
-      router.push("/orders-payments?status=pending");
-    } catch (err) {
-      const payload = err?.payload;
-      const detail = Array.isArray(payload?.failed)
-        ? payload.failed.map((f) => f.message).join("; ")
-        : "";
-      openNotification({
-        open: true,
-        title: "Gagal membuat rencana",
-        message: detail || err?.message || "Gagal membuat rencana pembayaran",
-        alert: { color: "error" },
-      });
-    } finally {
-      setSaving(false);
-    }
   };
 
   return (
@@ -305,14 +207,7 @@ export default function FakturPembelianPage() {
           </Alert>
         ) : (
           <>
-            <FakturPembelianList
-              rows={rows}
-              selectable={canCreate}
-              checked={checked}
-              onToggle={toggle}
-              onTogglePage={togglePage}
-              allChecked={allChecked}
-            />
+            <FakturPembelianList rows={rows} />
 
             {total > 0 ? (
               <Stack
@@ -337,48 +232,7 @@ export default function FakturPembelianPage() {
               </Stack>
             ) : null}
 
-            {canCreate ? (
-              <Box
-                sx={{
-                  position: "sticky",
-                  bottom: 0,
-                  mt: 2,
-                  p: 2,
-                  borderTop: "1px solid",
-                  borderColor: "divider",
-                  bgcolor: "background.paper",
-                }}
-              >
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  alignItems={{ sm: "center" }}
-                  justifyContent="space-between"
-                >
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    <Chip
-                      size="small"
-                      color={selectedRows.length ? "primary" : "default"}
-                      label={`${selectedRows.length} faktur dipilih`}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedPemasok} pemasok · {money(totalSelected)}
-                      {selectedRows.length && planGroups
-                        ? ` · ${planGroups} rencana`
-                        : ""}
-                    </Typography>
-                  </Stack>
-                  <Button
-                    variant="contained"
-                    startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
-                    disabled={!selectedRows.length || saving}
-                    onClick={handleCreatePlans}
-                  >
-                    {saving ? "Menyimpan…" : "Kirim ke Rencana Pembayaran"}
-                  </Button>
-                </Stack>
-              </Box>
-            ) : null}
+
           </>
         )}
       </MainCard>

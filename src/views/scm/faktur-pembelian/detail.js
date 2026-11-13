@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import DetailActions from "./DetailActions";
 import { useParams } from "next/navigation";
 import {
   Alert,
@@ -22,11 +23,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { CalendarEdit, DocumentText, Gallery, Receipt2, Edit } from "iconsax-react";
+import { DocumentText, Edit, Gallery, Receipt2 } from "iconsax-react";
 
 import {
   updateFakturPembelian,
-  useFakturPembelianAccess,
   useFakturPembelianDetail,
 } from "api/faktur-pembelian";
 import { openNotification } from "api/notification";
@@ -35,8 +35,7 @@ import BtnBack from "components/BtnBack";
 import MainCard from "components/MainCard";
 import { APP_DEFAULT_PATH } from "config";
 
-import RescheduleDueDateModal from "views/scm/order-payment/RescheduleDueDateModal";
-import { canRescheduleDueDate } from "views/scm/order-payment/rescheduleDueDateHelpers";
+
 import {
   formatDate,
   INSTALLMENT_LABELS,
@@ -58,9 +57,8 @@ const Field = ({ label, value }) => (
 export default function FakturPembelianDetailPage() {
   const params = useParams();
   const id = params?.id;
-  const { permissions } = useFakturPembelianAccess();
   const { row, loading, error, refresh } = useFakturPembelianDetail(id, Boolean(id));
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const permissions = row?.permissions || {};
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ kode: "", date_faktur: "", title: "", penerima: "" });
@@ -72,10 +70,7 @@ export default function FakturPembelianDetailPage() {
   const attachments = row?.attachments || [];
   const items = row?.items || [];
 
-  const canReschedule = useMemo(
-    () => canRescheduleDueDate(permissions) && header?.sisa > 0,
-    [permissions, header],
-  );
+
 
   const canEdit = Boolean(row?.permissions?.can_update);
 
@@ -160,16 +155,6 @@ export default function FakturPembelianDetailPage() {
                 onClick={openEdit}
               >
                 Edit
-              </Button>
-            ) : null}
-            {canReschedule ? (
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CalendarEdit size={16} />}
-                onClick={() => setRescheduleOpen(true)}
-              >
-                Ubah Jatuh Tempo
               </Button>
             ) : null}
             <Chip
@@ -261,6 +246,9 @@ export default function FakturPembelianDetailPage() {
                         </Tooltip>
                       ) : null}
                     </Stack>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Field label="Catatan / Narasi" value={header.narasi} />
                   </Grid>
                   <Grid item xs={6}>
                     <Field label="Bisnis Unit" value={header.bisnis_nama} />
@@ -520,6 +508,8 @@ export default function FakturPembelianDetailPage() {
         </Grid>
       </MainCard>
 
+      <DetailActions key={id} id={id} header={header} permissions={permissions} refresh={refresh} />
+
       <Dialog
         open={editOpen}
         onClose={() => (saving ? null : setEditOpen(false))}
@@ -564,8 +554,8 @@ export default function FakturPembelianDetailPage() {
             />
             <Alert severity="info">
               Tanggal jatuh tempo tidak diubah di sini. Gunakan tombol
-              <strong> Ubah Jatuh Tempo</strong> agar perubahan tercatat di audit
-              dan memerlukan persetujuan.
+              <strong> Edit Jatuh Tempo / Narasi</strong> agar perubahan tercatat
+              di audit dan memerlukan persetujuan.
             </Alert>
           </Stack>
         </DialogContent>
@@ -578,24 +568,6 @@ export default function FakturPembelianDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <RescheduleDueDateModal
-        open={rescheduleOpen}
-        onClose={() => setRescheduleOpen(false)}
-        faktur={{
-          id: header.id,
-          faktur_id: header.id,
-          kdfb: header.kdfb,
-          date_faktur: header.date_faktur,
-          due_date: header.next_due_date || header.due_date,
-          termin_id: termins.find((t) => t.status !== "PAID")?.id || null,
-        }}
-        permissions={permissions}
-        onSuccess={async () => {
-          setRescheduleOpen(false);
-          await refresh();
-        }}
-      />
     </>
   );
 }

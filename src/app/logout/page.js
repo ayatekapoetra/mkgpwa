@@ -2,11 +2,20 @@
 
 import { useEffect } from 'react';
 import { signOut } from 'next-auth/react';
+import { clearUserMenuCaches } from 'api/menu';
 
 export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       console.log('Starting logout process...');
+
+      // Clear per-user menu IndexedDB + SWR cache (BR-3)
+      try {
+        await clearUserMenuCaches();
+        console.log('User menu caches cleared');
+      } catch (error) {
+        console.error('Error clearing user menu caches:', error);
+      }
 
       // Unregister service workers
       if ('serviceWorker' in navigator) {

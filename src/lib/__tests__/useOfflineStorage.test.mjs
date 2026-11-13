@@ -38,7 +38,9 @@ async function fixture({ browser = true } = {}) {
         config,
         data,
         getItem: (key) => operate(() => data.get(key) ?? null),
-        setItem: (key, value) => operate(() => { data.set(key, value); return value; })
+        setItem: (key, value) => operate(() => { data.set(key, value); return value; }),
+        removeItem: (key) => operate(() => { data.delete(key); }),
+        keys: () => operate(() => Array.from(data.keys()))
       };
       instances.push(store);
       return store;
@@ -147,4 +149,23 @@ test('a changed store name or key persists to the correct store', async () => {
     assert.strictEqual(await f.hook.getOfflineData(storeName, key), data);
   }
   assert.equal(f.instances.length, 2);
+});
+
+test('clearOfflineDataByPrefix removes only matching user-menu keys', async () => {
+  const f = await fixture();
+  const menu = f.cache.createLocalStore('menu');
+  await f.cache.setCachedData(menu, 'user-menu-1', { id: 1 });
+  await f.cache.setCachedData(menu, 'user-menu-2', { id: 2 });
+  await f.cache.setCachedData(menu, 'list-menu', { id: 3 });
+  await f.cache.setCachedData(menu, 'user-menu', { id: 4 });
+
+  await f.hook.clearOfflineDataByPrefix('menu', 'user-menu-');
+  assert.equal(await f.cache.getCachedData(menu, 'user-menu-1'), null);
+  assert.equal(await f.cache.getCachedData(menu, 'user-menu-2'), null);
+  assert.deepEqual(await f.cache.getCachedData(menu, 'list-menu'), { id: 3 });
+  assert.deepEqual(await f.cache.getCachedData(menu, 'user-menu'), { id: 4 });
+
+  await f.hook.removeOfflineData('menu', 'user-menu');
+  assert.equal(await f.cache.getCachedData(menu, 'user-menu'), null);
+  assert.equal(f.errors.length, 0);
 });

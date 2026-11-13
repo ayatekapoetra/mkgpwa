@@ -28,6 +28,7 @@ import Transitions from 'components/@extended/Transitions';
 import IconButton from 'components/@extended/IconButton';
 import useUser from 'hooks/useUser';
 import { ThemeMode } from 'config';
+import { clearUserMenuCaches } from 'api/menu';
 
 // ASSETS
 const avatar1 = '/assets/images/users/avatar-6.png';
@@ -73,7 +74,8 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      signOut({ redirect: false });
+      await clearUserMenuCaches();
+      await signOut({ redirect: false });
       router.push('/login');
     } catch (err) {}
   };

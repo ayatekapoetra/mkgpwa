@@ -45,3 +45,31 @@ export const setCachedData = async (store, key, data) => {
     console.error(`Error saving local ${key}:`, err);
   }
 };
+
+export const removeCachedData = async (store, key) => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    await runStorageOperation(() => store.removeItem(key));
+  } catch (err) {
+    console.error(`Error removing local ${key}:`, err);
+  }
+};
+
+export const clearCachedDataByPrefix = async (store, prefix) => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    // Each store call goes through runStorageOperation so IndexedDB access
+    // stays serialized (same contract as get/set/remove helpers).
+    const keys = await runStorageOperation(() => store.keys());
+    const matched = (keys || []).filter(
+      (key) => typeof key === 'string' && key.startsWith(prefix)
+    );
+    for (const key of matched) {
+      await runStorageOperation(() => store.removeItem(key));
+    }
+  } catch (err) {
+    console.error(`Error clearing local keys with prefix ${prefix}:`, err);
+  }
+};
