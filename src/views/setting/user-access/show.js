@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Grid,
@@ -67,23 +67,29 @@ export default function ShowUserAccess() {
   const userName = existingAccess[0]?.user?.nmlengkap || existingAccess[0]?.nmuser || `User #${id}`;
   const userType = existingAccess[0]?.user?.usertype;
 
-  const initialValues = {
-    user_id: id || '',
-    user: existingAccess[0]?.user || null,
-    submenu: existingAccess.map((acc) => acc.submenu).filter(Boolean) || [],
-    access:
-      existingAccess.map((acc) => ({
-        submenu: acc.submenu,
-        read: acc.read || 'N',
-        insert: acc.insert || 'N',
-        update: acc.update || 'N',
-        remove: acc.remove || 'N',
-        accept: acc.accept || 'N',
-        validate: acc.validate || 'N',
-        approve: acc.approve || 'N'
-      })) || [],
-    sync_removed: true
-  };
+  // useMemo: Formik memakai `enableReinitialize`, sehingga objek baru setiap
+  // render akan mereset state form dan menghapus isian pengguna.
+  const initialValues = useMemo(() => {
+    const rows = Array.isArray(existingAccess) ? existingAccess : [];
+    return {
+      user_id: id || '',
+      user: rows[0]?.user || null,
+      submenu: rows.map((acc) => acc?.submenu).filter((submenu) => Boolean(submenu?.id)),
+      access: rows
+        .filter((acc) => acc?.submenu?.id)
+        .map((acc) => ({
+          submenu: acc.submenu,
+          read: acc.read || 'N',
+          insert: acc.insert || 'N',
+          update: acc.update || 'N',
+          remove: acc.remove || 'N',
+          accept: acc.accept || 'N',
+          validate: acc.validate || 'N',
+          approve: acc.approve || 'N'
+        })),
+      sync_removed: true
+    };
+  }, [existingAccess, id]);
 
   const onSubmitHandle = async (values, { setSubmitting }) => {
     const config = {
