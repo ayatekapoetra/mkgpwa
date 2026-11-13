@@ -15,6 +15,12 @@ export const endpoints = {
   requestVoid: (id) => `/scm/faktur-pembelian/${id}/request-void`,
   voidRequest: (id) => `/scm/faktur-pembelian/${id}/request-void`,
   voidDecision: (id, requestId) => `/scm/faktur-pembelian/${id}/request-void/${requestId}/decision`,
+  // PRD-APINV-002 Tahap 1 — Koreksi faktur
+  correctionQueue: "/scm/faktur-pembelian/koreksi/antrian",
+  requestCorrection: (id) => `/scm/faktur-pembelian/${id}/koreksi`,
+  approveCorrection: (korId) => `/scm/faktur-pembelian/koreksi/${korId}/setujui`,
+  rejectCorrection: (korId) => `/scm/faktur-pembelian/koreksi/${korId}/tolak`,
+  correctionAudit: (id) => `/scm/faktur-pembelian/${id}/audit`,
 };
 
 const permissionDefaults = {
@@ -233,4 +239,125 @@ export async function createPaymentPlans(body) {
     err.payload = error?.response?.data?.rows || error?.rows || null;
     throw err;
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// PRD-APINV-002 Tahap 1 — Koreksi faktur pembelian
+// ---------------------------------------------------------------------------
+
+const correctionError = (error, fallback) =>
+  new Error(
+    error?.response?.data?.diagnostic?.error ||
+      error?.response?.data?.diagnostic?.message ||
+      error?.message ||
+      fallback,
+  );
+
+/** Antrian pengajuan koreksi untuk Accounting. */
+export function useCorrectionQueue(params = {}, enabled = true) {
+  const query = new URLSearchParams(
+    Object.entries(params || {}).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== null && String(value).trim() !== "") {
+        acc[key] = value;
+      }
+      return acc;
+    }, {}),
+  ).toString();
+  const url = enabled
+    ? `${endpoints.correctionQueue}${query ? `?${query}` : ""}`
+    : null;
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(url, fetcher, {
+    revalidateOnFocus: false,
+    keepPreviousData: true,
+  });
+
+  return useMemo(() => {
+    const payload = data?.rows ?? {};
+    const rows = Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+        ? payload
+        : [];
+    const meta = payload?.meta || {};
+    return {
+      rows,
+      page: Number(meta.page) || 1,
+      perPage: Number(meta.limit) || 25,
+      total: Number(meta.total) || rows.length,
+      lastPage: Number(meta.total_pages) || 1,
+      loading: isLoading,
+      validating: isValidating,
+      error,
+      refresh: mutate,
+    };
+  }, [data, error, isLoading, isValidating, mutate]);
+}
+
+/** Ajukan koreksi faktur (Purchasing). */
+export async function requestInvoiceCorrection(fakturId, body) {
+  try {
+    const res = await axiosServices.post(
+      endpoints.requestCorrection(fakturId),
+      body,
+      { skipOfflineQueue: true, skipRetry: true },
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) throw new Error(diag.error);
+    return res?.data?.rows ?? null;
+  } catch (error) {
+    throw correctionError(error, "Gagal mengajukan koreksi faktur");
+  }
+}
+
+/** Setujui pengajuan koreksi (Accounting). */
+export async function approveInvoiceCorrection(korId, body = {}) {
+  try {
+    const res = await axiosServices.post(
+      endpoints.approveCorrection(korId),
+      body,
+      { skipOfflineQueue: true, skipRetry: true },
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) throw new Error(diag.error);
+    return res?.data?.rows ?? null;
+  } catch (error) {
+    throw correctionError(error, "Gagal menyetujui koreksi");
+  }
+}
+
+/** Tolak pengajuan koreksi (Accounting). */
+export async function rejectInvoiceCorrection(korId, alasan) {
+  try {
+    const res = await axiosServices.post(
+      endpoints.rejectCorrection(korId),
+      { alasan },
+      { skipOfflineQueue: true, skipRetry: true },
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) throw new Error(diag.error);
+    return res?.data?.rows ?? null;
+  } catch (error) {
+    throw correctionError(error, "Gagal menolak koreksi");
+  }
+}
+
+/** Riwayat koreksi + audit trail satu faktur. */
+export function useCorrectionHistory(fakturId, enabled = true) {
+  const url = fakturId && enabled ? endpoints.correctionAudit(fakturId) : null;
+  const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  return useMemo(() => {
+    const payload = data?.rows ?? {};
+    return {
+      corrections: Array.isArray(payload?.corrections) ? payload.corrections : [],
+      audits: Array.isArray(payload?.audits) ? payload.audits : [],
+      loading: isLoading,
+      error,
+      refresh: mutate,
+    };
+  }, [data, error, isLoading, mutate]);
 }

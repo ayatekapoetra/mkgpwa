@@ -27,6 +27,7 @@ import { DocumentText, Edit, Gallery, Receipt2 } from "iconsax-react";
 
 import {
   updateFakturPembelian,
+  useCorrectionHistory,
   useFakturPembelianDetail,
 } from "api/faktur-pembelian";
 import { openNotification } from "api/notification";
@@ -35,6 +36,8 @@ import BtnBack from "components/BtnBack";
 import MainCard from "components/MainCard";
 import { APP_DEFAULT_PATH } from "config";
 
+
+import CorrectionFormDialog from "views/scm/faktur-pembelian/CorrectionFormDialog";
 
 import {
   formatDate,
@@ -58,8 +61,13 @@ export default function FakturPembelianDetailPage() {
   const params = useParams();
   const id = params?.id;
   const { row, loading, error, refresh } = useFakturPembelianDetail(id, Boolean(id));
+  const { corrections, audits, refresh: refreshHistory } = useCorrectionHistory(
+    id,
+    Boolean(id),
+  );
   const permissions = row?.permissions || {};
   const [editOpen, setEditOpen] = useState(false);
+  const [correctionOpen, setCorrectionOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ kode: "", date_faktur: "", title: "", penerima: "" });
 
@@ -155,6 +163,16 @@ export default function FakturPembelianDetailPage() {
                 onClick={openEdit}
               >
                 Edit
+              </Button>
+            ) : null}
+            {canEdit ? (
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
+                onClick={() => setCorrectionOpen(true)}
+              >
+                Ajukan Koreksi
               </Button>
             ) : null}
             <Chip
@@ -507,6 +525,132 @@ export default function FakturPembelianDetailPage() {
           </Grid>
         </Grid>
       </MainCard>
+
+      <CorrectionFormDialog
+        open={correctionOpen}
+        onClose={() => setCorrectionOpen(false)}
+        faktur={header}
+        items={items}
+        onSuccess={async () => {
+          await Promise.all([refresh(), refreshHistory()]);
+        }}
+      />
+
+      {(corrections.length > 0 || audits.length > 0) && (
+        <Card variant="outlined" sx={{ mt: 2, borderRadius: 2.5 }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+            <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
+              <DocumentText size={20} />
+              <Box>
+                <Typography variant="subtitle1" fontWeight={800}>
+                  Riwayat Koreksi
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Pengajuan, keputusan, dan jejak audit faktur ini
+                </Typography>
+              </Box>
+            </Stack>
+            <Divider sx={{ mb: 2 }} />
+
+            {corrections.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Belum ada pengajuan koreksi.
+              </Typography>
+            ) : (
+              <Stack spacing={1.5}>
+                {corrections.map((c) => (
+                  <Box
+                    key={c.id}
+                    sx={{ p: 1.5, borderRadius: 2, border: 1, borderColor: "divider" }}
+                  >
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      flexWrap="wrap"
+                      gap={1}
+                    >
+                      <Typography variant="body2" fontWeight={700}>
+                        #{c.id} ·{" "}
+                        {c.tipe_koreksi === "FULL" ? "Koreksi penuh" : "Narasi / rekening"}
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={
+                          c.status === "MENUNGGU_VERIFIKASI"
+                            ? "Menunggu verifikasi"
+                            : c.status === "DISETUJUI"
+                              ? "Disetujui"
+                              : "Ditolak"
+                        }
+                        color={
+                          c.status === "MENUNGGU_VERIFIKASI"
+                            ? "warning"
+                            : c.status === "DISETUJUI"
+                              ? "success"
+                              : "error"
+                        }
+                      />
+                    </Stack>
+                    <Typography variant="body2" sx={{ mt: 0.75 }}>
+                      {c.alasan}
+                    </Typography>
+                    {c.alasan_penolakan && (
+                      <Typography variant="caption" color="error" display="block" sx={{ mt: 0.5 }}>
+                        Alasan penolakan: {c.alasan_penolakan}
+                      </Typography>
+                    )}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      sx={{ mt: 0.5 }}
+                    >
+                      Diajukan: {c.requested_by_nama || `#${c.requested_by}`}
+                      {c.approved_at
+                        ? ` · Diputuskan: ${c.approved_by_nama || `#${c.approved_by}`}`
+                        : ""}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+
+            {audits.length > 0 && (
+              <>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                  Audit trail
+                </Typography>
+                <Stack spacing={0.75} sx={{ mt: 1 }}>
+                  {audits.map((a) => (
+                    <Stack
+                      key={a.id}
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                    >
+                      <Chip size="small" variant="outlined" label={a.aksi} />
+                      <Typography variant="caption" color="text.secondary">
+                        {a.actor_name || `#${a.actor_id}`}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(a.created_at)}
+                      </Typography>
+                      {a.catatan && (
+                        <Typography variant="caption" color="text.secondary">
+                          · {a.catatan}
+                        </Typography>
+                      )}
+                    </Stack>
+                  ))}
+                </Stack>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <DetailActions key={id} id={id} header={header} permissions={permissions} refresh={refresh} />
 
