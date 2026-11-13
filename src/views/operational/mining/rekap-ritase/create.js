@@ -36,7 +36,7 @@ import {
   CircularProgress,
   Tooltip
 } from '@mui/material';
-import { Add, Trash, Refresh, ArrowLeft, TickCircle, Warning2, InfoCircle, CallSplit } from 'iconsax-react';
+import { Add, Trash, Refresh, ArrowLeft, TickCircle, Warning2, InfoCircle, Hierarchy } from 'iconsax-react';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
@@ -733,7 +733,7 @@ export default function CreateRekapRitaseView() {
                             variant={hasSplit ? 'contained' : 'outlined'}
                             size="small"
                             color={hasSplit ? 'info' : 'primary'}
-                            startIcon={<CallSplit size={14} />}
+                            startIcon={<Hierarchy size={14} />}
                             onClick={() => handleOpenSplit(idx)}
                             sx={{ minWidth: 100, textTransform: 'none' }}
                           >
