@@ -171,9 +171,23 @@ export default function RekapRitaseScreen() {
         />
 
         {error && (
-          <Box sx={{ p: 2 }}>
-            <Alert severity="error">{error.message || 'Gagal memuat data rekap ritase'}</Alert>
-          </Box>
+          <Alert
+            severity={error?.isTimeout || error?.response?.data?.isTimeout ? 'warning' : 'error'}
+            action={
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() => refresh()}
+                data-testid="btn-retry"
+              >
+                Coba Lagi
+              </Button>
+            }
+            data-testid="alert-rekap-error"
+            sx={{ mb: 2 }}
+          >
+            {error?.message || 'Gagal memuat data rekap ritase'}
+          </Alert>
         )}
 
         <TableContainer

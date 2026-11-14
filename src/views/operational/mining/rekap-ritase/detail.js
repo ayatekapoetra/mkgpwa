@@ -335,8 +335,22 @@ export default function RekapRitaseDetailView() {
         )}
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            Gagal memuat rincian: {error?.response?.data?.diagnostic?.message || error?.message || 'kesalahan tidak diketahui'}
+          <Alert
+            severity={error?.isTimeout || error?.response?.data?.isTimeout ? 'warning' : 'error'}
+            action={
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() => refresh()}
+                data-testid="btn-retry"
+              >
+                Coba Lagi
+              </Button>
+            }
+            data-testid="alert-rekap-error"
+            sx={{ mb: 2 }}
+          >
+            {error?.response?.data?.diagnostic?.message || error?.message || 'Gagal memuat rincian rekap ritase'}
           </Alert>
         )}
 
