@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Grid, Stack, SwipeableDrawer, TextField, Typography, Alert } from '@mui/material';
+import { Box, Button, Grid, Stack, SwipeableDrawer, TextField, Typography, Alert, Radio, RadioGroup, FormControlLabel } from '@mui/material';
 import { CalendarMonth, Refresh, Filter } from '@mui/icons-material';
 import moment from 'moment';
 
@@ -54,6 +54,21 @@ export default function RekapRitaseFilter({
                 </Alert>
               </Grid>
             )}
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Status Validasi
+              </Typography>
+              <RadioGroup
+                row
+                value={params.validation_status || ''}
+                onChange={(e) => setFieldValue('validation_status', e.target.value)}
+              >
+                <FormControlLabel value="" control={<Radio size="small" />} label="Semua" />
+                <FormControlLabel value="DRAFT" control={<Radio size="small" />} label="Draft" />
+                <FormControlLabel value="VALIDATED" control={<Radio size="small" />} label="Validated" />
+              </RadioGroup>
+            </Grid>
 
             <Grid item xs={12}>
               <OptionBisnisUnit
