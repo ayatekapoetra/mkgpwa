@@ -10,7 +10,11 @@ export const endpoints = {
   create: '/ritase/rekap',
   createBulk: '/ritase/rekap/bulk',
   update: '/ritase/rekap/update',
-  access: '/ritase/rekap/access'
+  access: '/ritase/rekap/access',
+  pull: '/ritase/rekap/pull',
+  pullPreview: '/ritase/rekap/pull/preview',
+  validate: (groupKey) => `/ritase/rekap/${encodeURIComponent(groupKey)}/validate`,
+  revert: (groupKey) => `/ritase/rekap/${encodeURIComponent(groupKey)}/revert`
 };
 
 function buildQuery(params = {}) {
@@ -24,6 +28,20 @@ function buildQuery(params = {}) {
   return s ? `?${s}` : '';
 }
 
+export function buildGroupKey(rowOrParams = {}) {
+  if (rowOrParams.group_key) return String(rowOrParams.group_key);
+  const parts = [
+    rowOrParams.date_ops || '',
+    rowOrParams.shift_id ?? '',
+    rowOrParams.bisnis_id ?? '',
+    rowOrParams.penyewa_id ?? '',
+    rowOrParams.excavator_id ?? '',
+    rowOrParams.startpit_id ?? '',
+    rowOrParams.material_id ?? ''
+  ];
+  return parts.join(':');
+}
+
 export function useRitaseRekapAccess() {
   const { data, error, isLoading, mutate } = useSWR(endpoints.access, fetcher, {
     revalidateOnFocus: false,
@@ -31,12 +49,13 @@ export function useRitaseRekapAccess() {
   });
 
   return useMemo(() => {
-    // Normalisasi izin: backend kontrak §2
-    // ritase-rekap.view, ritase-rekap.create, ritase-rekap.backdate
+    // Normalisasi izin: backend kontrak §2 & PRD BR-12
+    // ritase-rekap.view, ritase-rekap.create, ritase-rekap.update, ritase-rekap.backdate
     const raw = data?.rows || data?.data || data || {};
     const permissions = {
       can_view: raw['ritase-rekap.view'] ?? raw.can_view ?? true,
       can_create: raw['ritase-rekap.create'] ?? raw.can_create ?? true,
+      can_update: raw['ritase-rekap.update'] ?? raw.can_update ?? raw['ritase-rekap.create'] ?? true,
       can_backdate: raw['ritase-rekap.backdate'] ?? raw.can_backdate ?? false
     };
 
@@ -188,7 +207,6 @@ export async function createRekapRitaseBulk(items) {
   }
 }
 
-
 /**
  * Ganti seluruh isi satu grup rekap (tanggal + shift + excavator + PIT +
  * material). Backend menghapus baris grup lama lalu menulis ulang semuanya
@@ -216,5 +234,134 @@ export async function updateRekapRitaseGroup(group, items) {
     err.code = diag?.code || error?.code;
     err.details = diag?.details;
     throw err;
+  }
+}
+
+/**
+ * Preview data checker sebelum Tarik Data
+ * GET /api/ritase/rekap/pull/preview?date_ops=&shift_id=
+ */
+export async function fetchPullPreview(params = {}) {
+  try {
+    const res = await axiosServices.get(`${endpoints.pullPreview}${buildQuery(params)}`);
+    return res?.data?.rows ?? res?.data?.data ?? res?.data ?? null;
+  } catch (err) {
+    const diag = err?.response?.data?.diagnostic || err?.diagnostic;
+    const msg = diag?.message || err?.message || 'Gagal memeriksa preview data';
+    const error = new Error(msg);
+    error.code = diag?.code || err?.response?.data?.code;
+    error.isTimeout = err?.isTimeout || false;
+    throw error;
+  }
+}
+
+/**
+ * Tarik Data checker menjadi draft rekap
+ * POST /api/ritase/rekap/pull
+ * body: { date_ops, shift_id }
+ */
+export async function pullRekapRitase({ date_ops, shift_id }) {
+  try {
+    const res = await axiosServices.post(
+      endpoints.pull,
+      { date_ops, shift_id: Number(shift_id) },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) {
+      const err = new Error(diag.message || 'Gagal menarik data rekap');
+      err.code = diag.code;
+      err.details = diag.details;
+      throw err;
+    }
+    return res?.data?.rows ?? res?.data ?? {};
+  } catch (error) {
+    const resData = error?.response?.data;
+    const diag = resData?.diagnostic || error?.diagnostic;
+    const code = diag?.code || resData?.code || error?.code;
+    let msg = diag?.message || resData?.message || error?.message || 'Gagal menarik data rekap';
+    if (code === 'DATE_LOCKED') {
+      msg = 'Tanggal melebihi batas 90 hari';
+    } else if (code === 'SHIFT_REQUIRED') {
+      msg = 'Shift wajib dipilih';
+    }
+    const customError = new Error(msg);
+    customError.code = code;
+    customError.status = error?.response?.status;
+    customError.details = diag?.details || resData?.details;
+    customError.isTimeout = error?.isTimeout || false;
+    throw customError;
+  }
+}
+
+/**
+ * Validasi grup draft rekap
+ * POST /api/ritase/rekap/:group_key/validate
+ */
+export async function validateRekapGroup(groupKey) {
+  try {
+    const url = typeof endpoints.validate === 'function' ? endpoints.validate(groupKey) : `/ritase/rekap/${encodeURIComponent(groupKey)}/validate`;
+    const res = await axiosServices.post(url, {}, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) {
+      const err = new Error(diag.message || 'Gagal memvalidasi rekap ritase');
+      err.code = diag.code;
+      err.details = diag.details;
+      throw err;
+    }
+    return res?.data?.rows ?? res?.data ?? {};
+  } catch (error) {
+    const resData = error?.response?.data;
+    const diag = resData?.diagnostic || error?.diagnostic;
+    const code = diag?.code || resData?.code || error?.code;
+    const msg = diag?.message || resData?.message || error?.message || 'Gagal memvalidasi rekap ritase';
+    const customError = new Error(msg);
+    customError.code = code;
+    customError.status = error?.response?.status;
+    customError.incomplete_rows = resData?.incomplete_rows || diag?.incomplete_rows || diag?.details || [];
+    customError.details = diag?.details || resData?.details;
+    customError.isTimeout = error?.isTimeout || false;
+    throw customError;
+  }
+}
+
+/**
+ * Batalkan validasi grup rekap (kembalikan ke draft)
+ * POST /api/ritase/rekap/:group_key/revert
+ * body: { reason }
+ */
+export async function revertRekapGroup(groupKey, reason) {
+  if (!reason || !String(reason).trim()) {
+    const err = new Error('Alasan pembatalan validasi wajib diisi');
+    err.code = 'REASON_REQUIRED';
+    err.status = 422;
+    throw err;
+  }
+  try {
+    const url = typeof endpoints.revert === 'function' ? endpoints.revert(groupKey) : `/ritase/rekap/${encodeURIComponent(groupKey)}/revert`;
+    const res = await axiosServices.post(url, { reason: String(reason).trim() }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const diag = res?.data?.diagnostic;
+    if (diag?.error) {
+      const err = new Error(diag.message || 'Gagal membatalkan validasi rekap');
+      err.code = diag.code;
+      err.details = diag.details;
+      throw err;
+    }
+    return res?.data?.rows ?? res?.data ?? {};
+  } catch (error) {
+    const resData = error?.response?.data;
+    const diag = resData?.diagnostic || error?.diagnostic;
+    const code = diag?.code || resData?.code || error?.code;
+    const msg = diag?.message || resData?.message || error?.message || 'Gagal membatalkan validasi rekap';
+    const customError = new Error(msg);
+    customError.code = code;
+    customError.status = error?.response?.status;
+    customError.details = diag?.details || resData?.details;
+    customError.isTimeout = error?.isTimeout || false;
+    throw customError;
   }
 }
