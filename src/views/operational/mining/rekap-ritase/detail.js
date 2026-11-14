@@ -260,6 +260,33 @@ export default function RekapRitaseDetailView() {
     [items]
   );
 
+  const group = header;
+  const groupKey = header?.group_key || query;
+
+  const handleValidate = async () => {
+    setActionLoading(true); setValidationError(null);
+    try {
+      await validateRekapGroup(groupKey);
+      openSnackbar({ open: true, message: 'Grup berhasil divalidasi', variant: 'alert', alert: { color: 'success' } }, false);
+      router.refresh?.();
+      window.location.reload();
+    } catch (e) {
+      const msg = e?.response?.data?.diagnostic?.message || e?.message || 'Validasi gagal';
+      setValidationError({ message: msg, rows: e?.response?.data?.rows || [] });
+    } finally { setActionLoading(false); }
+  };
+  const handleRevert = async () => {
+    if (!revertReason.trim()) { setRevertReasonError('Alasan wajib diisi'); return; }
+    setActionLoading(true);
+    try {
+      await revertRekapGroup(groupKey, { reason: revertReason.trim() });
+      setOpenRevertDialog(false); setRevertReason('');
+      window.location.reload();
+    } catch (e) {
+      setRevertReasonError(e?.response?.data?.diagnostic?.message || 'Gagal membatalkan validasi');
+    } finally { setActionLoading(false); }
+  };
+
   return (
     <Fragment>
       <Breadcrumbs custom heading="Detail Rekap Ritase" links={breadcrumbLinks} />
@@ -272,6 +299,16 @@ export default function RekapRitaseDetailView() {
         }
         secondary={
           <Stack direction="row" spacing={1}>
+            {group?.validation_status === 'DRAFT' && (
+              <Button variant="contained" color="success" disabled={actionLoading}
+                startIcon={<TickCircle size={18} />} onClick={handleValidate}
+                data-testid="btn-validate">Validasi</Button>
+            )}
+            {group?.validation_status === 'VALIDATED' && (
+              <Button variant="outlined" color="warning" disabled={actionLoading}
+                startIcon={<CloseCircle size={18} />} onClick={() => setOpenRevertDialog(true)}
+                data-testid="btn-revert">Batalkan Validasi</Button>
+            )}
             <Button
               variant="contained"
               color="warning"
