@@ -325,6 +325,15 @@ export default function RekapRitaseDetailView() {
           </Stack>
         }
       >
+        {validationError && (
+          <Alert severity="error" data-testid="validation-error" sx={{ mb: 2 }}>
+            {validationError.message}
+            {validationError.rows?.length ? (
+              <ul>{validationError.rows.map((r,i)=>(<li key={i}>{r.keterangan || r.dumptruck || JSON.stringify(r)}</li>))}</ul>
+            ) : null}
+          </Alert>
+        )}
+
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             Gagal memuat rincian: {error?.response?.data?.diagnostic?.message || error?.message || 'kesalahan tidak diketahui'}
@@ -737,6 +746,22 @@ export default function RekapRitaseDetailView() {
           </Stack>
         )}
       </MainCard>
+
+      <Dialog open={openRevertDialog} onClose={() => setOpenRevertDialog(false)}>
+        <DialogTitle>Batalkan Validasi</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Grup akan kembali ke status Draft.</DialogContentText>
+          <TextField fullWidth multiline rows={3} label="Alasan" sx={{ mt: 2 }}
+            value={revertReason} onChange={(e)=>{setRevertReason(e.target.value); setRevertReasonError('');}}
+            error={Boolean(revertReasonError)} helperText={revertReasonError}
+            data-testid="input-revert-reason" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=>setOpenRevertDialog(false)}>Batal</Button>
+          <Button variant="contained" color="warning" onClick={handleRevert}
+            disabled={actionLoading} data-testid="btn-confirm-revert">Batalkan Validasi</Button>
+        </DialogActions>
+      </Dialog>
     </Fragment>
   );
 }
