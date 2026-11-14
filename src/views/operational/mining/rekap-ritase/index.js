@@ -22,7 +22,7 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import { Filter, Add, DocumentUpload, Eye, Edit } from 'iconsax-react';
+import { Filter, Add, DocumentUpload, Eye, Edit, DocumentDownload } from 'iconsax-react';
 
 // COMPONENTS
 import MainCard from 'components/MainCard';
@@ -31,6 +31,7 @@ import Paginate from 'components/Paginate';
 import { APP_DEFAULT_PATH } from 'config';
 
 import RekapRitaseFilter from './filter';
+import PullDataDialog from './PullDataDialog';
 import { useGetRekapRitase, useRitaseRekapAccess } from 'api/ritase-rekap';
 import moment from 'moment';
 
@@ -48,6 +49,7 @@ const formatNum = (v, digits = 2) => {
 export default function RekapRitaseScreen() {
   const router = useRouter();
   const [openFilter, setOpenFilter] = useState(false);
+  const [openPull, setOpenPull] = useState(false);
 
   const [params, setParams] = useState({
     page: 1,
@@ -56,6 +58,7 @@ export default function RekapRitaseScreen() {
     cabang_id: '',
     penyewa_id: '',
     shift_id: '',
+    validation_status: '',
     start_date: moment().subtract(7, 'days').format('YYYY-MM-DD'),
     end_date: moment().format('YYYY-MM-DD')
   });
@@ -94,6 +97,7 @@ export default function RekapRitaseScreen() {
       cabang_id: '',
       penyewa_id: '',
       shift_id: '',
+      validation_status: '',
       start_date: moment().subtract(7, 'days').format('YYYY-MM-DD'),
       end_date: moment().format('YYYY-MM-DD')
     });
@@ -116,6 +120,15 @@ export default function RekapRitaseScreen() {
           <Stack direction="row" spacing={1} alignItems="center">
             {permissions?.can_create && (
               <>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<DocumentDownload />}
+                  size="small"
+                  onClick={() => setOpenPull(true)}
+                >
+                  Tarik Data
+                </Button>
                 <Link href="/rekap-ritase/create" passHref style={{ textDecoration: 'none' }}>
                   <Button variant="contained" color="primary" startIcon={<Add />} size="small">
                     Tambah Rekap
@@ -148,6 +161,15 @@ export default function RekapRitaseScreen() {
           onReset={handleResetFilter}
         />
 
+        <PullDataDialog
+          open={openPull}
+          onClose={() => setOpenPull(false)}
+          onSuccess={() => {
+            refresh();
+            setParams((p) => ({ ...p, validation_status: 'DRAFT' }));
+          }}
+        />
+
         {error && (
           <Box sx={{ p: 2 }}>
             <Alert severity="error">{error.message || 'Gagal memuat data rekap ritase'}</Alert>
@@ -177,6 +199,7 @@ export default function RekapRitaseScreen() {
                 <TableCell align="right" sx={{ fontWeight: 700 }}>Ritase</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>Tonase</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>BCM</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Sumber</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 700 }}>Aksi</TableCell>
               </TableRow>
@@ -184,7 +207,7 @@ export default function RekapRitaseScreen() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={12} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={13} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={32} />
                     <Typography variant="body2" sx={{ mt: 1 }} color="text.secondary">
                       Memuat data rekap ritase...
@@ -193,7 +216,7 @@ export default function RekapRitaseScreen() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={13} align="center" sx={{ py: 6 }}>
                     <Typography variant="body1" color="text.secondary">
                       Tidak ada data rekap ritase untuk filter yang dipilih.
                     </Typography>
@@ -258,17 +281,20 @@ export default function RekapRitaseScreen() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                        {(row.input_sources || []).map((src, sIdx) => (
-                          <Chip
-                            key={sIdx}
-                            size="small"
-                            label={src === 'EXCEL_IMPORT' ? 'Excel' : src === 'WEB_FORM' ? 'Web' : src}
-                            color={src === 'EXCEL_IMPORT' ? 'success' : 'primary'}
-                            variant="outlined"
-                          />
-                        ))}
-                      </Stack>
+                      {row.validation_status === 'DRAFT' && (
+                        <Chip size="small" color="warning" label="Draft" data-testid="badge-draft" />
+                      )}
+                      {row.validation_status === 'VALIDATED' && (
+                        <Chip size="small" color="success" label="Validated" data-testid="badge-validated" />
+                      )}
+                      {!['DRAFT', 'VALIDATED'].includes(row.validation_status) && (
+                        row.validation_status ? <Chip size="small" label={row.validation_status} /> : '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {row.source || (Array.isArray(row.input_sources) && row.input_sources.length > 0 ? row.input_sources.join(', ') : '-')}
+                      </Typography>
                     </TableCell>
                     <TableCell align="center">
                       <Stack direction="row" spacing={0.5} justifyContent="center">
