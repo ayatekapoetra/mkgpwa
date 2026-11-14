@@ -41,6 +41,7 @@ import { Add, Trash, Refresh, ArrowLeft, TickCircle, Warning2, InfoCircle, Hiera
 // COMPONENTS
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
+import BtnBack from 'components/BtnBack';
 import OptionBisnisUnit from 'components/OptionBisnisUnit';
 import OptionCabang from 'components/OptionCabang';
 import OptionPenyewa from 'components/OptionPenyewa';
