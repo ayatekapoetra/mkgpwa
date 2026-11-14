@@ -26,7 +26,13 @@ import {
   TableHead,
   TableRow,
   Tooltip,
-  Typography
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -42,14 +48,19 @@ import {
   Routing2,
   Timer1,
   TruckFast,
-  Weight
+  Weight,
+  TickCircle,
+  CloseCircle,
+  Warning2
 } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import BtnBack from 'components/BtnBack';
 import { APP_DEFAULT_PATH } from 'config';
-import { useGetRekapDetail } from 'api/ritase-rekap';
+import OptionStockpile from 'components/OptionStockpile';
+import { openSnackbar } from 'api/snackbar';
+import { useGetRekapDetail, validateRekapGroup, revertRekapGroup } from 'api/ritase-rekap';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -100,6 +111,12 @@ export default function RekapRitaseDetailView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState(() => new Set());
+  const [rowStockpiles, setRowStockpiles] = useState({});
+  const [actionLoading, setActionLoading] = useState(false);
+  const [validationError, setValidationError] = useState(null);
+  const [openRevertDialog, setOpenRevertDialog] = useState(false);
+  const [revertReason, setRevertReason] = useState('');
+  const [revertReasonError, setRevertReasonError] = useState('');
 
   const query = useMemo(
     () => ({
@@ -540,7 +557,7 @@ export default function RekapRitaseDetailView() {
                         const isOpen = expanded.has(row.dumptruck_id);
                         return (
                           <Fragment key={row.dumptruck_id}>
-                            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+                            <TableRow sx={row.incomplete ? { backgroundColor: 'warning.lighter' } : undefined}>
                               <TableCell>
                                 <IconButton size="small" onClick={() => toggleRow(row.dumptruck_id)}>
                                   {isOpen ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
@@ -592,6 +609,12 @@ export default function RekapRitaseDetailView() {
                                     <Chip size="small" label={`+${row.allocations.length - 2}`} onClick={() => toggleRow(row.dumptruck_id)} />
                                   )}
                                 </Stack>
+                                {row.incomplete ? (
+                                  <Stack direction="row" spacing={0.5} alignItems="center" data-testid="row-incomplete">
+                                    <Warning2 size={14} color="#f0a500" />
+                                    <Typography variant="caption" color="warning.main">Stockpile belum diisi</Typography>
+                                  </Stack>
+                                ) : null}
                               </TableCell>
                             </TableRow>
                             <TableRow>
