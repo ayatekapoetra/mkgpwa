@@ -557,17 +557,7 @@ export default function RekapRitaseFormView({ mode = 'create', group = null }) {
         <MainCard
           title={
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Typography variant="h4" fontWeight={700}>
-                {isEdit ? 'Ubah Rekap Ritase' : 'Header Rekap Ritase'}
-              </Typography>
-              {isEdit && <Chip size="small" color="warning" label="Mode Ubah" />}
-              {isBackdate && (
-                <Chip
-                  size="small"
-                  color={canSaveBackdate ? 'warning' : 'error'}
-                  label={canSaveBackdate ? 'Tanggal Backdate (H-2+)' : 'Backdate Dikunci (Butuh Izin)'}
-                />
-              )}
+              <BtnBack href="/rekap-ritase" />
             </Stack>
           }
           secondary={
