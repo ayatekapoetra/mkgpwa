@@ -29,17 +29,26 @@ function buildQuery(params = {}) {
 }
 
 export function buildGroupKey(rowOrParams = {}) {
-  if (rowOrParams.group_key) return String(rowOrParams.group_key);
-  const parts = [
-    rowOrParams.date_ops || '',
-    rowOrParams.shift_id ?? '',
-    rowOrParams.bisnis_id ?? '',
-    rowOrParams.penyewa_id ?? '',
-    rowOrParams.excavator_id ?? '',
-    rowOrParams.startpit_id ?? '',
-    rowOrParams.material_id ?? ''
+  if (typeof rowOrParams === 'string') return rowOrParams;
+  if (rowOrParams?.group_key) return String(rowOrParams.group_key);
+  const arr = [
+    rowOrParams.date_ops ? String(rowOrParams.date_ops) : null,
+    rowOrParams.shift_id != null && rowOrParams.shift_id !== '' ? Number(rowOrParams.shift_id) : null,
+    rowOrParams.bisnis_id != null && rowOrParams.bisnis_id !== '' ? Number(rowOrParams.bisnis_id) : null,
+    rowOrParams.penyewa_id != null && rowOrParams.penyewa_id !== '' ? Number(rowOrParams.penyewa_id) : null,
+    rowOrParams.excavator_id != null && rowOrParams.excavator_id !== '' ? Number(rowOrParams.excavator_id) : null,
+    rowOrParams.startpit_id != null && rowOrParams.startpit_id !== '' ? Number(rowOrParams.startpit_id) : null,
+    rowOrParams.material_id != null && rowOrParams.material_id !== '' ? Number(rowOrParams.material_id) : null
   ];
-  return parts.join(':');
+  try {
+    const jsonStr = JSON.stringify(arr);
+    if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+      return window.btoa(jsonStr);
+    }
+    return Buffer.from(jsonStr).toString('base64');
+  } catch (_) {
+    return arr.join(':');
+  }
 }
 
 export function useRitaseRekapAccess() {
@@ -300,7 +309,8 @@ export async function pullRekapRitase({ date_ops, shift_id }) {
  */
 export async function validateRekapGroup(groupKey) {
   try {
-    const url = typeof endpoints.validate === 'function' ? endpoints.validate(groupKey) : `/ritase/rekap/${encodeURIComponent(groupKey)}/validate`;
+    const key = typeof groupKey === 'object' && groupKey !== null ? buildGroupKey(groupKey) : String(groupKey);
+    const url = typeof endpoints.validate === 'function' ? endpoints.validate(key) : `/ritase/rekap/${encodeURIComponent(key)}/validate`;
     const res = await axiosServices.post(url, {}, {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -320,7 +330,7 @@ export async function validateRekapGroup(groupKey) {
     const customError = new Error(msg);
     customError.code = code;
     customError.status = error?.response?.status;
-    customError.incomplete_rows = resData?.incomplete_rows || diag?.incomplete_rows || diag?.details || [];
+    customError.incomplete_rows = resData?.incomplete_rows || resData?.rows || diag?.incomplete_rows || diag?.details || [];
     customError.details = diag?.details || resData?.details;
     customError.isTimeout = error?.isTimeout || false;
     throw customError;
@@ -340,7 +350,8 @@ export async function revertRekapGroup(groupKey, reason) {
     throw err;
   }
   try {
-    const url = typeof endpoints.revert === 'function' ? endpoints.revert(groupKey) : `/ritase/rekap/${encodeURIComponent(groupKey)}/revert`;
+    const key = typeof groupKey === 'object' && groupKey !== null ? buildGroupKey(groupKey) : String(groupKey);
+    const url = typeof endpoints.revert === 'function' ? endpoints.revert(key) : `/ritase/rekap/${encodeURIComponent(key)}/revert`;
     const res = await axiosServices.post(url, { reason: String(reason).trim() }, {
       headers: { 'Content-Type': 'application/json' }
     });
