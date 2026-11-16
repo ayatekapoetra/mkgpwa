@@ -26,6 +26,37 @@ const display = (value, fallback = '-') => (value === undefined || value === nul
 export const formatQuantity = (value) => (Number.isFinite(Number(value)) ? quantityFormatter.format(Number(value)) : '-');
 export const formatMoney = (value) => (Number.isFinite(Number(value)) ? moneyFormatter.format(Number(value)) : '-');
 
+const priceSourceLabels = {
+  TRANSFER: 'Transfer',
+  PURCHASE_ORDER: 'Purchase Order',
+  FUND_REQUEST: 'Pengajuan Dana',
+  REQUEST_ORDER: 'Request Order',
+  PURCHASE_PRICE: 'Harga Beli (Fallback)',
+  UNAVAILABLE: 'Harga belum tersedia'
+};
+
+function PriceDetails({ row }) {
+  const source = priceSourceLabels[row.price_source] || 'Sumber harga belum tersedia';
+  const uom = row.price_uom || row.order_uom || '';
+  return (
+    <Stack spacing={0.5}>
+      <Typography variant="caption">Sumber: {source}</Typography>
+      {row.price_reference ? <Typography variant="caption">Referensi: {row.price_reference}</Typography> : null}
+      {row.price_period ? <Typography variant="caption">Periode: {row.price_period}</Typography> : null}
+      {row.price_available !== false ? (
+        <>
+          <Typography variant="caption">Harga satuan: {formatMoney(row.actual_unit_price)}{uom ? ` / ${uom}` : ''}</Typography>
+          <Typography variant="caption">
+            Nilai stok: {formatQuantity(row.stock_order)} {row.order_uom || ''} × {formatMoney(row.actual_unit_price)} = {formatMoney(row.actual_stock_value)}
+          </Typography>
+        </>
+      ) : (
+        <Typography variant="caption">Nilai stok belum dapat dihitung karena harga yang sesuai belum tersedia.</Typography>
+      )}
+    </Stack>
+  );
+}
+
 export default function MonitoringSparepartStockList({ data, total, page, perPage, lastPage, initialLoading, refreshing, onPageChange, onRowsPerPageChange, onDetail }) {
   const theme = useTheme();
   const headerSx = { bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100', fontWeight: 700, whiteSpace: 'nowrap', verticalAlign: 'middle' };
@@ -87,9 +118,22 @@ export default function MonitoringSparepartStockList({ data, total, page, perPag
                   <TableCell align="right" sx={numericSx}>{formatQuantity(row.stock_used)} {display(row.used_uom, '')}</TableCell>
                   <TableCell align="right" sx={numericSx}>{formatMoney(row.avg_unit_price)}</TableCell>
                   <TableCell align="right" sx={{ ...numericSx, fontWeight: 600 }}>{formatMoney(row.avg_stock_value)}</TableCell>
-                  <TableCell align="right" sx={numericSx}>{row.price_available === false ? <Typography variant="caption" color="warning.main">Harga belum tersedia</Typography> : formatMoney(row.actual_unit_price)}</TableCell>
-                  <TableCell align="right" sx={{ ...numericSx, fontWeight: 700 }}>{formatMoney(row.actual_stock_value)}</TableCell>
-                  <TableCell><Chip size="small" variant="outlined" label={row.price_status === 'act' ? 'Actual' : 'Fallback'} color={row.price_status === 'act' ? 'success' : 'warning'} /></TableCell>
+                  <TableCell align="right" sx={numericSx}>
+                    <Tooltip title={<PriceDetails row={row} />} arrow>
+                      <Stack component="span" tabIndex={0} spacing={0.25} sx={{ cursor: 'help', alignItems: 'flex-end' }}>
+                        {row.price_available === false ? <Typography variant="caption" color="warning.main">Harga belum tersedia</Typography> : <span>{formatMoney(row.actual_unit_price)}</span>}
+                        <Typography variant="caption" color="text.secondary">{priceSourceLabels[row.price_source] || '-'}</Typography>
+                      </Stack>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="right" sx={{ ...numericSx, fontWeight: 700 }}>
+                    <Tooltip title={<PriceDetails row={row} />} arrow>
+                      <Typography component="span" variant="body2" tabIndex={0} sx={{ fontWeight: 700, cursor: 'help' }}>
+                        {row.price_available === false ? '-' : formatMoney(row.actual_stock_value)}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell><Chip size="small" variant="outlined" label={row.price_available === false ? 'Tidak tersedia' : row.price_status === 'act' ? 'Actual' : 'Fallback'} color={row.price_available === false ? 'default' : row.price_status === 'act' ? 'success' : 'warning'} /></TableCell>
                   <TableCell align="center"><Tooltip title="Movement history"><span><IconButton size="small" color="primary" aria-label={`Movement history ${display(row.item_code, row.item_id)}`} disabled={!canOpen} onClick={(event) => { event.stopPropagation(); openDetail(); }}><Eye size={19} /></IconButton></span></Tooltip></TableCell>
                 </TableRow>
               );
