@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NextLink from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import moment from "moment";
+import "moment/locale/id";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import {
@@ -79,16 +81,19 @@ function pembilang(n) {
 }
 function terbilangText(n) { return `${pembilang(n).trim()} Rupiah`; }
 
-const dateId = (v) => {
-  if (!v) return "—";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10);
-  return new Intl.DateTimeFormat("id-ID", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(d);
+const PAYMENT_UTC_OFFSET = 8;
+
+const paymentDate = (value) => {
+  if (!value) return null;
+  const date = moment.parseZone(value, moment.ISO_8601, true);
+  if (!date.isValid()) return null;
+  const hasZone = typeof value !== "string" || /[T ]\d{2}.*(?:Z|[+-]\d{2}(?::?\d{2})?)$/i.test(value);
+  return date.utcOffset(PAYMENT_UTC_OFFSET, !hasZone);
+};
+
+const dateId = (value) => {
+  const date = paymentDate(value);
+  return date ? date.locale("id").format("ddd, DD MMMM YYYY") : "—";
 };
 
 const attachmentUrl = (attachment) =>
@@ -240,9 +245,7 @@ export default function OrderPaymentDetailPage() {
   const [walletId, setWalletId] = useState("");
   const [wallets, setWallets] = useState([]);
   const [loadingWallet, setLoadingWallet] = useState(false);
-  const [trxDate, setTrxDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [trxDate, setTrxDate] = useState(() => moment().utcOffset(PAYMENT_UTC_OFFSET).format("YYYY-MM-DD"));
   const [narasi, setNarasi] = useState("");
   const [posting, setPosting] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -257,6 +260,7 @@ export default function OrderPaymentDetailPage() {
   const automaticPrintId = useRef(null);
   const mutationLock = useRef(false);
   const busy = posting || removing || attachmentBusy;
+  const validTrxDate = moment(trxDate, "YYYY-MM-DD", true).isValid();
 
   const canReschedule = canRescheduleDueDate(permissions);
   const pending = row?.status === "pending";
@@ -292,8 +296,8 @@ export default function OrderPaymentDetailPage() {
   useEffect(() => {
     setNarasi(row?.narasi || "");
     if (row?.trx_date) {
-      const d = new Date(row.trx_date);
-      if (!Number.isNaN(d.getTime())) setTrxDate(d.toISOString().slice(0, 10));
+      const date = paymentDate(row.trx_date);
+      setTrxDate(date ? date.format("YYYY-MM-DD") : "");
     }
   }, [id, row?.narasi, row?.trx_date]);
 
@@ -579,6 +583,10 @@ export default function OrderPaymentDetailPage() {
 
   const handlePost = async () => {
     if (mutationLock.current) return;
+    if (!validTrxDate) {
+      openNotification({ open: true, title: "Validasi", message: "Pilih tanggal bayar yang valid.", alert: { color: "warning" } });
+      return;
+    }
     if (!walletId) {
       openNotification({
         open: true,
@@ -965,9 +973,12 @@ export default function OrderPaymentDetailPage() {
                   fullWidth
                   type="date"
                   label="Tanggal bayar"
+                  required
                   InputLabelProps={{ shrink: true }}
                   value={trxDate}
                   onChange={(e) => setTrxDate(e.target.value)}
+                  error={Boolean(trxDate) && !validTrxDate}
+                  helperText={validTrxDate ? `${dateId(trxDate)} (WITA)` : "Pilih tanggal bayar yang valid."}
                 />
               </Grid>
               <Grid item xs={12} md={3}>
@@ -1034,7 +1045,7 @@ export default function OrderPaymentDetailPage() {
              {canPost ? (
                <Button
                  variant="contained"
-                  disabled={busy || !walletId || !selectedWallet?.coa_id}
+                  disabled={busy || !validTrxDate || !walletId || !selectedWallet?.coa_id}
                  onClick={handlePost}
                >
                  {posting ? "Memposting…" : "Posting Bayar"}

@@ -43,7 +43,7 @@ async function fixture(options = {}) {
   const calls = [];
   const notices = [];
   const storage = new Map(options.drafts ? [['order-payment-proofs:1', JSON.stringify(options.drafts)]] : []);
-  let row = { id: 1, bisnis_id: 9, narasi: 'Original', trx_date: '2026-10-19', status: options.paid ? 'paid' : 'pending', items: [], payment_attachments: [{ id: 7, url: 'https://cdn.test/old.png', datatype: 'png' }] };
+  let row = { id: 1, bisnis_id: 9, narasi: 'Original', trx_date: '2026-10-19', status: options.paid ? 'paid' : 'pending', items: [], payment_attachments: [{ id: 7, url: 'https://cdn.test/old.png', datatype: 'png' }], ...options.row };
   const permissions = { ...allPermissions, ...options.permissions };
   const react = {
     ...React,
@@ -104,6 +104,7 @@ async function fixture(options = {}) {
       module, exports: module.exports, React, window, File, FormData, atob, Uint8Array, Intl, URLSearchParams,
       require(name) {
         if (name === 'react') return react;
+        if (name === 'moment' || name === 'moment/locale/id') return require(name);
         if (name === '@mui/material' || name.startsWith('@mui/material/')) {
           return new Proxy({}, {
             get: (_, key) => {
@@ -281,4 +282,68 @@ test('upload/cache refresh preserves in-progress payment narrative and shares th
   assert.equal(disabledPost.props.disabled, true);
   await disabledPost.props.onClick();
   assert.ok(!f.calls.some(call => call[0] === 'post-payment'));
+});
+
+test('payment date uses the WITA calendar for timestamps and preserves date-only and unzoned SQL dates', async () => {
+  for (const trx_date of [
+    '2026-11-24T16:00:00.000Z',
+    '2026-11-25T00:00:00+08:00',
+    '2026-11-24T20:30:00-04:00',
+    '2026-11-25',
+    '2026-11-25 23:30:00',
+  ]) {
+    const f = await fixture({ row: { trx_date } });
+    f.render(true);
+    const nodes = f.render(true);
+    const input = nodes.find(node => node.type === 'TextField' && node.props.label === 'Tanggal bayar');
+    assert.equal(input.props.value, '2026-11-25', trx_date);
+    assert.equal(input.props.helperText, 'Rab, 25 November 2026 (WITA)', trx_date);
+    assert.equal(nodes.find(node => node.props.label === 'Tanggal transaksi').props.value, 'Rab, 25 November 2026', trx_date);
+  }
+});
+
+test('default payment date follows today in WITA when UTC is still the preceding day', async () => {
+  const moment = require('moment');
+  const originalNow = moment.now;
+  moment.now = () => Date.parse('2026-11-24T17:00:00.000Z');
+  try {
+    const f = await fixture({ row: { trx_date: null } });
+    f.render(true);
+    const input = f.render(true).find(node => node.type === 'TextField' && node.props.label === 'Tanggal bayar');
+    assert.equal(input.props.value, '2026-11-25');
+    assert.equal(input.props.helperText, 'Rab, 25 November 2026 (WITA)');
+  } finally {
+    moment.now = originalNow;
+  }
+});
+
+test('posting submits the selected calendar date as YYYY-MM-DD without UTC conversion', async () => {
+  const f = await fixture({ row: { trx_date: '2026-11-24T16:00:00.000Z' } });
+  f.render(true);
+  await flush();
+  let nodes = f.render(true);
+  nodes.find(node => node.type === 'Autocomplete').props.onChange(null, { id: 3 });
+  nodes.find(node => node.type === 'TextField' && node.props.label === 'Tanggal bayar').props.onChange({ target: { value: '2026-11-26' } });
+  nodes = f.render(true);
+  const input = nodes.find(node => node.type === 'TextField' && node.props.label === 'Tanggal bayar');
+  assert.equal(input.props.helperText, 'Kam, 26 November 2026 (WITA)');
+  await nodes.find(node => node.type === 'Button' && text(node) === 'Posting Bayar').props.onClick();
+  assert.equal(f.calls.find(call => call[0] === 'post-payment')[2].trx_date, '2026-11-26');
+});
+
+test('invalid backend dates and an empty payment date cannot be posted', async () => {
+  const f = await fixture({ row: { trx_date: '2026-02-30' } });
+  f.render(true);
+  await flush();
+  let nodes = f.render(true);
+  const input = nodes.find(node => node.type === 'TextField' && node.props.label === 'Tanggal bayar');
+  assert.equal(input.props.value, '');
+  assert.equal(nodes.find(node => node.props.label === 'Tanggal transaksi').props.value, '—');
+  nodes.find(node => node.type === 'Autocomplete').props.onChange(null, { id: 3 });
+  nodes = f.render(true);
+  const post = nodes.find(node => node.type === 'Button' && text(node) === 'Posting Bayar');
+  assert.equal(post.props.disabled, true);
+  await post.props.onClick();
+  assert.ok(!f.calls.some(call => call[0] === 'post-payment'));
+  assert.ok(f.notices.some(notice => notice.message === 'Pilih tanggal bayar yang valid.'));
 });
