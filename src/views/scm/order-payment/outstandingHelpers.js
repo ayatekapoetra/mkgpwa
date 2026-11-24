@@ -1,15 +1,9 @@
+import moment from "moment";
+
 export const formatDate = (v) => {
   if (!v) return "—";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) {
-    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-    return String(v);
-  }
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}-${mm}-${yyyy}`;
+  const date = moment(v);
+  return date.isValid() ? date.format("DD MMM YYYY") : "—";
 };
 
 export const getDueDateMeta = (row, referenceDate = new Date()) => {

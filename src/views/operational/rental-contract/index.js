@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import moment from 'moment';
 import { Add, Eye, Filter, DocumentText, Buildings, ShieldTick, CalendarTick, MessageQuestion } from 'iconsax-react';
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Grid, IconButton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
@@ -13,7 +14,8 @@ import FilterRentalContract from './filter';
 
 const formatDate = (value) => {
   if (!value) return '-';
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+  const date = moment(value);
+  return date.isValid() ? date.format('DD MMM YYYY') : '-';
 };
 
 const formatModelSummary = (row) => {

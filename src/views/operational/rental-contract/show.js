@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import moment from "moment";
 import {
   Alert,
   Box,
@@ -59,11 +60,8 @@ import {
 
 const formatDate = (value) => {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  const date = moment(value);
+  return date.isValid() ? date.format("DD MMM YYYY") : "-";
 };
 
 const formatPrice = (value) => {

@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useState } from 'react';
 import Link from 'next/link';
+import moment from 'moment';
 import { alpha } from '@mui/material/styles';
 import {
   Accordion,
@@ -69,10 +70,8 @@ function money(value, currency = 'IDR') {
 
 function dateLabel(value) {
   if (!value) return 'Tanggal belum tersedia';
-  const date = new Date(`${String(value).slice(0, 10)}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime())
-    ? 'Tanggal belum tersedia'
-    : new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+  const m = moment(value);
+  return m.isValid() ? m.format('DD MMM YYYY') : 'Tanggal belum tersedia';
 }
 
 function IconTile({ children, color = 'primary', small = false }) {

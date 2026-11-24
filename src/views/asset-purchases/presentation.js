@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 export const ASSET_TYPES = ['VEHICLE', 'HEAVY_EQUIPMENT', 'PROPERTY', 'OTHER'];
 export const FINANCING_TYPES = ['CASH', 'VENDOR_CREDIT', 'BANK_LOAN', 'MULTIFINANCE', 'FINANCE_LEASE', 'OPERATING_LEASE', 'OTHER'];
 export const OWNERSHIP_SCHEMES = ['COMPANY_OWNED', 'SGU'];
@@ -20,5 +22,9 @@ export const statusColor = (status = '') => {
 
 export const humanize = (value) => labels[value] || String(value || '-').replaceAll('_', ' ').toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 export const money = (value, currency = 'IDR') => new Intl.NumberFormat('id-ID', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(value || 0));
-export const date = (value) => value ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(value)) : '-';
+export const date = (value) => {
+  if (!value) return '-';
+  const parsed = moment(value);
+  return parsed.isValid() ? parsed.format('DD MMM YYYY') : '-';
+};
 export const rowValue = (row, ...keys) => keys.map((key) => row?.[key]).find((value) => value !== undefined && value !== null && value !== '') ?? '-';

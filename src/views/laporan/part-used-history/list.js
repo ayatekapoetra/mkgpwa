@@ -1,6 +1,7 @@
 "use client";
 
 import NextLink from "next/link";
+import moment from "moment";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -45,10 +46,8 @@ const formatMoney = (value) => {
 };
 const formatDate = (value) => {
   if (!value) return "-";
-  const parts = String(value).slice(0, 10).split("-");
-  return parts.length === 3
-    ? `${parts[2]}-${parts[1]}-${parts[0]}`
-    : String(value);
+  const date = moment(value);
+  return date.isValid() ? date.format("DD MMM YYYY") : "-";
 };
 
 export { formatMoney, formatQuantity, formatDate };

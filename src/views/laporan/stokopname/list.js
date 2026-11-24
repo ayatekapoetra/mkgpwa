@@ -1,5 +1,6 @@
 'use client';
 
+import moment from 'moment';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -21,8 +22,8 @@ const display = (value, fallback = '-') => (value === undefined || value === nul
 
 const formatDate = (value) => {
   if (!value) return '-';
-  const parts = String(value).slice(0, 10).split('-');
-  return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : String(value);
+  const date = moment(value);
+  return date.isValid() ? date.format('DD MMM YYYY') : '-';
 };
 
 export default function StokopnameReportList({ data, total, page, perPage, lastPage, initialLoading, refreshing, onPageChange, onRowsPerPageChange }) {
