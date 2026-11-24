@@ -1,16 +1,8 @@
-export const POLL_OPTIONS = [
-  { id: 'approve', label: 'Setuju' },
-  { id: 'reject', label: 'Tolak' },
-  { id: 'request_revision', label: 'Perlu Revisi' }
-];
-
 export const DELIVERY_MODES = [
   { id: 'pdf_text', label: 'Kirim PDF dan Text', description: 'Dokumen PDF ringkasan dan pesan teks WhatsApp lengkap dengan narasi tiap item.' },
-  { id: 'pdf', label: 'Kirim PDF', description: 'Dokumen PDF setiap PO, tanpa pesan teks.' },
+  { id: 'pdf', label: 'Kirim PDF', description: 'Satu PDF ringkasan gabungan seluruh PO terpilih, tanpa pesan teks.' },
   { id: 'text', label: 'Kirim Pesan Text Saja', description: 'Ringkasan PO dalam pesan teks, tanpa PDF.' }
 ];
-
-export const deliveryHasPoll = (mode) => mode === 'pdf_poll';
 
 export const pollStorageKey = (userId) => `purchase-order-poll:v1:${encodeURIComponent(String(userId))}`;
 export const validPoId = (id) => /^[1-9]\d*$/.test(String(id ?? ''));
@@ -180,25 +172,21 @@ export function buildPurchaseOrderText(items, summary) {
   return [header, ...documents, footer].join('\n\n');
 }
 
-export function buildPollBody(rows, { sender_phone, recipient_phone } = {}, mode = 'pdf_text') {
-  let effectiveMode = mode;
-  if (effectiveMode === 'pdf_poll') {
-    effectiveMode = 'pdf_text';
-  }
-  if (!DELIVERY_MODES.some((option) => option.id === effectiveMode)) throw new Error('Mode pengiriman tidak valid.');
+export function buildPollBody(rows, { recipient_phone } = {}, mode = 'pdf_text') {
+  if (!DELIVERY_MODES.some((option) => option.id === mode)) throw new Error('Mode pengiriman tidak valid.');
   if (!rows.length) throw new Error('Pilih minimal satu PO.');
   const items = rows.map(toPollItem);
   if (new Set(items.map((item) => item.po_id)).size !== items.length) throw new Error('Terdapat PO duplikat.');
   const summary = summarizePollItems(items);
-  const hasPdf = effectiveMode === 'pdf' || effectiveMode === 'pdf_text';
-  const hasText = effectiveMode === 'text' || effectiveMode === 'pdf_text';
+  const hasPdf = mode === 'pdf' || mode === 'pdf_text';
+  const hasText = mode === 'text' || mode === 'pdf_text';
   return {
     schema_version: '1.1',
     event: 'purchase_order_poll.requested',
     sender_phone: null,
     recipient_phone: normalizeWhatsAppPhone(recipient_phone),
     delivery: {
-      mode: effectiveMode,
+      mode,
       pdf_documents: hasPdf ? [{
         po_id: items[0].po_id,
         file_name: `purchase-order-${items[0].po_id}.pdf`,

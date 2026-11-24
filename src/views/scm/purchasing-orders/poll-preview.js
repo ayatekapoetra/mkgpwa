@@ -9,7 +9,7 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import { APP_DEFAULT_PATH } from 'config';
 import usePollSelection from './use-poll-selection';
 import usePollDetails from './use-poll-details';
-import { buildPollBody, DELIVERY_MODES, deliveryHasPoll, normalizeWhatsAppPhone, preparePollPayload, selectionSignature, summarizePollItems, toPollItem } from './polling';
+import { buildPollBody, DELIVERY_MODES, normalizeWhatsAppPhone, preparePollPayload, selectionSignature, summarizePollItems, toPollItem } from './polling';
 import PollPreviewView from './poll-preview-view';
 
 function phoneError(value) {
@@ -48,7 +48,6 @@ export default function PurchaseOrderPollPreview() {
 
   useEffect(() => () => { lifetime.current += 1; }, []);
 
-  const senderError = '';
   const recipientError = phoneError(phones.recipient_phone);
   const complete = canRead && selection.ready && !selection.error && !details.loading &&
     selection.data.items.length > 0 && details.rows.length === selection.data.items.length && Object.keys(details.errors).length === 0;
@@ -142,7 +141,7 @@ export default function PurchaseOrderPollPreview() {
       ]} />
       <PollPreviewView
         selection={selection} details={details} canRead={canRead} accessLoading={accessLoading} accessError={accessError}
-        phones={phones} touched={touched} senderError={senderError} recipientError={recipientError} complete={complete}
+        phones={phones} touched={touched} recipientError={recipientError} complete={complete}
         summary={summary} preview={preview} currentArtifact={currentArtifact} preparing={preparing} error={error} message={message}
         deliveryMode={deliveryMode} deliveryStatus={deliveryStatus}
         onEditPhone={editPhone} onSavePhones={savePhones} onPrepare={handlePrepare} onReset={handleReset}

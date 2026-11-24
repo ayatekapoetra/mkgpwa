@@ -46,7 +46,7 @@ import {
 } from 'iconsax-react';
 
 import MainCard from 'components/MainCard';
-import { DELIVERY_MODES, deliveryHasPoll, POLL_OPTIONS, relationName } from './polling';
+import { DELIVERY_MODES, relationName } from './polling';
 
 const panelSx = { borderRadius: 3, overflow: 'hidden', minWidth: 0 };
 
@@ -270,51 +270,6 @@ const PengajuanCard = memo(function PengajuanCard({ row, index }) {
   );
 });
 
-function PollIllustration({ count, ready }) {
-  return (
-    <Box
-      sx={(theme) => ({
-        p: 2.5,
-        borderRadius: 2.5,
-        bgcolor: alpha(theme.palette.success.main, 0.045),
-        border: '1px solid',
-        borderColor: alpha(theme.palette.success.main, 0.12)
-      })}
-    >
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.75, color: 'success.main' }}>
-        <MessageText size={19} variant="Bulk" />
-        <Typography variant="caption" fontWeight={700}>ILUSTRASI POLLING WHATSAPP</Typography>
-      </Stack>
-      <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: '2px 12px 12px 12px', p: 2 }}>
-        <Typography variant="caption" color="text.secondary">Satu keputusan untuk {count} pengajuan dana</Typography>
-        <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 0.75, mb: 1.75 }}>
-          Bagaimana keputusan Anda untuk seluruh Pengajuan Dana pada daftar berikut?
-        </Typography>
-        <Stack spacing={1}>
-          {POLL_OPTIONS.map((option) => (
-            <Stack
-              key={option.id}
-              direction="row"
-              spacing={1.25}
-              alignItems="center"
-              sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1 }}
-            >
-              <Box sx={{ width: 15, height: 15, borderRadius: '50%', border: '1.5px solid', borderColor: 'text.disabled', flexShrink: 0 }} />
-              <Typography variant="body2">{option.label}</Typography>
-            </Stack>
-          ))}
-        </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
-          Pilih satu jawaban · Berlaku untuk seluruh Pengajuan Dana
-        </Typography>
-      </Box>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, lineHeight: 1.7 }}>
-        {ready ? 'Data siap dijadikan paket JSON untuk Hermes.' : 'Lengkapi penerima dan periksa dokumen sebelum menyiapkan JSON.'} Pesan WhatsApp belum dikirim.
-      </Typography>
-    </Box>
-  );
-}
-
 export default function PollPreviewView({
   selection,
   details,
@@ -323,7 +278,6 @@ export default function PollPreviewView({
   accessError,
   phones,
   touched,
-  senderError,
   recipientError,
   complete,
   summary,
@@ -333,7 +287,7 @@ export default function PollPreviewView({
   error,
   message,
   deliveryStatus,
-  deliveryMode = 'pdf_poll',
+  deliveryMode = 'pdf_text',
   onEditPhone,
   onSavePhones,
   onPrepare,
@@ -348,9 +302,7 @@ export default function PollPreviewView({
   const count = selection.data.items.length;
   const hasSelection = canRead && selection.ready && count > 0;
   const failed = Object.keys(details.errors).length;
-  const senderReady = Boolean(phones.sender_phone && !senderError);
   const recipientReady = Boolean(phones.recipient_phone && !recipientError);
-  const withPoll = deliveryHasPoll(deliveryMode);
   const modeLabel = DELIVERY_MODES.find((mode) => mode.id === deliveryMode)?.label;
   const [sendMenu, setSendMenu] = useState(null);
 
@@ -370,7 +322,7 @@ export default function PollPreviewView({
         <MainCard sx={panelSx}>
           <Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}>
             <CircularProgress size={28} />
-            <Typography color="text.secondary">Menyiapkan workspace polling…</Typography>
+            <Typography color="text.secondary">Menyiapkan pengiriman…</Typography>
           </Stack>
         </MainCard>
       ) : accessError ? (
@@ -497,13 +449,13 @@ export default function PollPreviewView({
                           maxRows={22}
                           value={JSON.stringify(currentArtifact?.payload || preview, null, 2)}
                           InputProps={{ readOnly: true }}
-                          inputProps={{ 'aria-label': 'JSON polling Hermes' }}
+                          inputProps={{ 'aria-label': 'JSON pengiriman Hermes' }}
                           sx={{ '& textarea': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, lineHeight: 1.75 }, '& .MuiOutlinedInput-root': { bgcolor: 'action.hover' } }}
                         />
                       </Stack>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
-                        Lengkapi kedua nomor WhatsApp dan pastikan seluruh dokumen termuat untuk melihat draft JSON.
+                        Lengkapi nomor penerima WhatsApp dan pastikan seluruh dokumen termuat untuk melihat draft JSON.
                       </Typography>
                     )}
                   </AccordionDetails>
@@ -514,7 +466,7 @@ export default function PollPreviewView({
             <Stack spacing={2.5} sx={{ minWidth: 0, position: { lg: 'sticky' }, top: { lg: 96 } }}>
               <MainCard id="poll-recipients" sx={{ ...panelSx, scrollMarginTop: 96 }} contentSX={{ p: { xs: 2, md: 2.75 } }}>
                 <Stack spacing={2.5}>
-                  <SectionHeading icon={<Profile2User size={21} variant="Bulk" />} title="Atur penerima" description="Tentukan tujuan pesan dan laporan hasil polling." />
+                  <SectionHeading icon={<Profile2User size={21} variant="Bulk" />} title="Atur penerima" description="Tentukan tujuan pengiriman pesan teks dan PDF." />
                   <Box>
                     <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
                       <Typography variant="overline" color="text.secondary" fontWeight={700}>01 / TUJUAN PENGIRIMAN</Typography>
@@ -531,41 +483,11 @@ export default function PollPreviewView({
                       onChange={(event) => onEditPhone('recipient_phone', event.target.value)}
                       onBlur={onSavePhones}
                       error={touched && Boolean(recipientError)}
-                      helperText={touched && recipientError ? recipientError : 'Menerima PDF, polling, atau pesan teks sesuai pilihan pengiriman.'}
+                      helperText={touched && recipientError ? recipientError : 'Menerima pesan teks dan/atau PDF sesuai pilihan pengiriman.'}
                       InputProps={{ startAdornment: <InputAdornment position="start"><Mobile size={19} /></InputAdornment> }}
                       inputProps={{ inputMode: 'tel', autoComplete: 'tel' }}
                     />
                     {recipientReady && (
-                      <Typography variant="caption" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 1 }}>
-                        <TickCircle size={14} />Format nomor valid
-                      </Typography>
-                    )}
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Divider sx={{ flex: 1 }} />
-                    <ArrowDown2 size={15} />
-                    <Typography variant="caption" color="text.secondary">Hasil diteruskan ke</Typography>
-                    <Divider sx={{ flex: 1 }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="overline" color="text.secondary" fontWeight={700} sx={{ display: 'block', mb: 1.5 }}>02 / HASIL & REKOMENDASI</Typography>
-                    <TextField
-                      id="pd-poll-sender"
-                      name="sender_phone"
-                      fullWidth
-                      required={withPoll}
-                      label="Nomor penerima hasil polling"
-                      placeholder="0812 3456 7890"
-                      value={phones.sender_phone}
-                      disabled={!selection.ready || preparing || !withPoll}
-                      onChange={(event) => onEditPhone('sender_phone', event.target.value)}
-                      onBlur={onSavePhones}
-                      error={withPoll && touched && Boolean(senderError)}
-                      helperText={withPoll && touched && senderError ? senderError : withPoll ? 'Diisi untuk mode PDF dan Polling WA. Pilih mode pada menu Kirim Data.' : 'Tidak diperlukan untuk pengiriman tanpa polling.'}
-                      InputProps={{ startAdornment: <InputAdornment position="start"><Mobile size={19} /></InputAdornment> }}
-                      inputProps={{ inputMode: 'tel', autoComplete: 'tel' }}
-                    />
-                    {withPoll && senderReady && (
                       <Typography variant="caption" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 1 }}>
                         <TickCircle size={14} />Format nomor valid
                       </Typography>
@@ -580,34 +502,29 @@ export default function PollPreviewView({
                 </Stack>
               </MainCard>
 
-              {withPoll ? (
-                <PollIllustration count={count} ready={Boolean(preview)} />
-              ) : (
-                <MainCard sx={panelSx}>
-                  <Stack spacing={1.5}>
-                    <SectionHeading
-                      icon={deliveryMode === 'pdf' ? <DocumentDownload size={21} /> : <MessageText size={21} />}
-                      title={deliveryMode === 'pdf' ? 'Dokumen PDF Saja' : 'Pratinjau pesan teks'}
-                      description={deliveryMode === 'pdf' ? `Satu PDF ringkasan gabungan untuk ${count} Pengajuan Dana terpilih.` : 'Ringkasan seluruh Pengajuan Dana untuk penerima pesan.'}
-                    />
-                    {deliveryMode === 'text' && (
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320, overflowY: 'auto', p: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>
-                        {preview?.delivery?.text || 'Lengkapi nomor penerima untuk melihat pesan.'}
-                      </Typography>
-                    )}
-                    <Typography variant="caption" color="text.secondary">
-                      Mode ini tidak menyertakan polling. Status pengiriman tetap dapat dipantau dari request Hermes.
+              <MainCard sx={panelSx}>
+                <Stack spacing={1.5}>
+                  <SectionHeading
+                    icon={deliveryMode === 'pdf' ? <DocumentDownload size={21} /> : <MessageText size={21} />}
+                    title={deliveryMode === 'pdf' ? 'Dokumen PDF Saja' : deliveryMode === 'pdf_text' ? 'Pratinjau teks dan PDF' : 'Pratinjau pesan teks'}
+                    description={deliveryMode !== 'text' ? `Satu PDF ringkasan gabungan untuk ${count} Pengajuan Dana terpilih.` : 'Ringkasan seluruh Pengajuan Dana untuk penerima pesan.'}
+                  />
+                  {deliveryMode !== 'pdf' && (
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320, overflowY: 'auto', p: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>
+                      {preview?.delivery?.text || 'Lengkapi nomor penerima untuk melihat pesan.'}
                     </Typography>
-                  </Stack>
-                </MainCard>
-              )}
+                  )}
+                  <Typography variant="caption" color="text.secondary">
+                    Status pengiriman dapat dipantau dari request Hermes.
+                  </Typography>
+                </Stack>
+              </MainCard>
 
               <MainCard sx={panelSx} contentSX={{ p: { xs: 2, md: 2.5 } }}>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>Kesiapan paket</Typography>
                 <Stack spacing={1.25}>
                   <ReadinessRow ready={complete}>{complete ? `${count} Pengajuan Dana berhasil dimuat` : failed ? `${failed} dokumen perlu diperiksa` : 'Rincian dokumen siap'}</ReadinessRow>
                   <ReadinessRow ready={recipientReady}>Nomor penerima pesan valid</ReadinessRow>
-                  {withPoll && <ReadinessRow ready={senderReady}>Nomor penerima hasil valid</ReadinessRow>}
                 </Stack>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.8, display: 'block' }}>
@@ -658,7 +575,7 @@ export default function PollPreviewView({
                 {currentArtifact ? 'Request Hermes berhasil dibuat' : preview ? 'Paket siap dikirim' : 'Periksa paket pengiriman Anda'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {hasSelection ? `${count} Pengajuan · ${withPoll ? '1 PDF ringkasan + polling WA' : deliveryMode === 'pdf' ? '1 PDF ringkasan' : 'Teks saja'}` : 'Pilih Pengajuan untuk memulai'} · Status pengiriman dipantau
+                {hasSelection ? `${count} Pengajuan · ${deliveryMode === 'pdf_text' ? 'Teks + 1 PDF ringkasan' : deliveryMode === 'pdf' ? '1 PDF ringkasan' : 'Teks saja'}` : 'Pilih Pengajuan untuk memulai'} · Status pengiriman dipantau
               </Typography>
             </Box>
           </Stack>

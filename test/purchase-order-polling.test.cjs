@@ -273,10 +273,7 @@ test('PDF and text modes require only the recipient and never include a poll or 
   assert.match(text.delivery.text, /PO-2/);
   assert.match(text.delivery.text, /Filter/);
   assert.match(text.delivery.text, /IDR 0,30/);
-  const fallback = p.buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf_poll');
-  assert.equal(fallback.delivery.mode, 'pdf_text');
-  assert.equal(fallback.poll, null);
-  assert.equal(fallback.sender_phone, null);
+  assert.throws(() => p.buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf_poll'), /Mode pengiriman/);
   assert.throws(() => p.buildPollBody(rows, phones, 'unsupported'), /Mode pengiriman/);
 });
 
@@ -334,15 +331,13 @@ test('detail loader bounds concurrency, preserves order, surfaces missing PO and
   assert.equal(calls, 1);
 });
 
-test('generated JSON and examples conform to the published schemas; native poll and notify-only policy are enforced', async () => {
+test('generated JSON and examples conform to the published delivery schemas and reject voting', async () => {
   const p = await helpers();
   const docRoot = path.resolve(__dirname, '../docs/purchasing/polling');
   const contract = JSON.parse(fs.readFileSync(path.join(docRoot, 'openapi.json'), 'utf8'));
   const example = JSON.parse(fs.readFileSync(path.join(docRoot, 'request.example.json'), 'utf8'));
-  const vote = JSON.parse(fs.readFileSync(path.join(docRoot, 'vote.example.json'), 'utf8'));
   const ajv = new Ajv({ allErrors: true });
   const requestSchema = ajv.compile({ $ref: '#/components/schemas/PollRequest', components: contract.components });
-  const voteSchema = ajv.compile({ $ref: '#/components/schemas/PollVoteUpdate', components: contract.components });
   const { payload } = await p.preparePollPayload([order(1)], phones, null, metadata);
   assert.equal(requestSchema(plain(payload)), true, JSON.stringify(requestSchema.errors));
   assert.equal(requestSchema(example), true, JSON.stringify(requestSchema.errors));
@@ -358,10 +353,9 @@ test('generated JSON and examples conform to the published schemas; native poll 
   assert.equal(requestSchema({ ...textRequest, poll: { question: 'x', allow_multiple_answers: false, scope: 'all_selected_purchase_orders', options: [] } }), false, 'text must not include a poll');
   assert.equal(requestSchema({ ...textRequest, delivery: { ...textRequest.delivery, pdf_documents: payload.delivery.pdf_documents } }), false, 'text must not attach PDFs');
   assert.equal(requestSchema({ ...plain(payload), delivery: { ...payload.delivery, pdf_documents: [] } }), false, 'PDF/poll requires document references');
-  assert.equal(voteSchema(vote), true, JSON.stringify(voteSchema.errors));
+  const obsolete = { ...plain(payload), delivery: { ...plain(payload).delivery, mode: 'pdf_poll' } };
+  assert.equal(requestSchema(obsolete), false, 'obsolete voting mode must be rejected');
   assert.equal(requestSchema({ ...plain(payload), result_handling: { ...payload.result_handling, update_purchase_orders: true } }), false);
-  assert.equal(voteSchema({ ...vote, selected_option_ids: [] }), true);
-  assert.equal(voteSchema({ ...vote, selected_option_ids: ['approve', 'reject'] }), false);
 });
 
 function walk(node) {
@@ -399,7 +393,7 @@ for (const mobile of [false, true]) {
   });
 }
 
-test('preview dropdown submits each requested mode, validates polling contacts, and resets selection', async () => {
+test('preview dropdown submits the three delivery modes, validates recipient, and resets selection', async () => {
   const p = await helpers();
   const h = hookRuntime();
   const rows = [order(1)];
@@ -409,7 +403,7 @@ test('preview dropdown submits each requested mode, validates polling contacts, 
   const submissions = [];
   let focused;
   const view = (await load(base + 'poll-preview-view.js', {
-    react: h.react, 'next/link': 'NextLink', '@mui/material': mui(),
+    react: h.react, 'next/link': 'NextLink', moment: require('moment'), '@mui/material': mui(),
     '@mui/material/styles': { alpha: (color) => color },
     'iconsax-react': new Proxy({}, { get: (_, name) => name }),
     'components/MainCard': 'MainCard', './polling': p,

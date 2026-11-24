@@ -159,7 +159,7 @@ const OrderCard = memo(function OrderCard({ row, index }) {
 });
 
 export default function PollPreviewView({
-  selection, details, canRead, accessLoading, accessError, phones, touched, senderError, recipientError,
+  selection, details, canRead, accessLoading, accessError, phones, touched, recipientError,
   complete, summary, preview, currentArtifact, preparing, error, message, deliveryStatus, deliveryMode = 'pdf_text', onEditPhone, onSavePhones, onPrepare, onReset
 }) {
   const metrics = useMemo(() => ({
@@ -184,7 +184,7 @@ export default function PollPreviewView({
       </Stack>
 
       {accessLoading || (canRead && !selection.ready) ? (
-        <MainCard sx={panelSx}><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><CircularProgress size={28} /><Typography color="text.secondary">Menyiapkan workspace polling…</Typography></Stack></MainCard>
+        <MainCard sx={panelSx}><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><CircularProgress size={28} /><Typography color="text.secondary">Menyiapkan pengiriman…</Typography></Stack></MainCard>
       ) : accessError ? <Alert severity="error">Gagal memuat akses Purchase Order.</Alert>
         : !canRead ? <Alert severity="warning">Anda tidak memiliki akses untuk melihat Purchase Order.</Alert>
           : selection.error ? <Alert severity="error">{selection.error}</Alert>
@@ -244,7 +244,7 @@ export default function PollPreviewView({
                   {preview ? <Stack spacing={1.5}>
                     <Typography variant="caption" color="text.secondary">{currentArtifact ? `Request ID: ${currentArtifact.payload.request_id}` : 'Draft: request_id dan created_at ditambahkan saat Kirim Data.'}</Typography>
                     <TextField multiline fullWidth minRows={8} maxRows={22} value={JSON.stringify(currentArtifact?.payload || preview, null, 2)} InputProps={{ readOnly: true }}
-                      inputProps={{ 'aria-label': 'JSON polling Hermes' }} sx={{ '& textarea': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, lineHeight: 1.75 }, '& .MuiOutlinedInput-root': { bgcolor: 'action.hover' } }} />
+                      inputProps={{ 'aria-label': 'JSON pengiriman Hermes' }} sx={{ '& textarea': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, lineHeight: 1.75 }, '& .MuiOutlinedInput-root': { bgcolor: 'action.hover' } }} />
                   </Stack> : <Typography variant="body2" color="text.secondary">Lengkapi nomor WhatsApp penerima dan pastikan seluruh dokumen termuat untuk melihat draft JSON.</Typography>}
                 </AccordionDetails>
               </Accordion>

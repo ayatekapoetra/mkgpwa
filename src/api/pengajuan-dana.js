@@ -382,7 +382,7 @@ export const submitPengajuanDanaHermes = async (payload) => {
     skipOfflineQueue: true,
     skipAuthRedirect: true,
   });
-  return response.data;
+  return response.data?.data || response.data;
 };
 
 export const getPengajuanDanaHermesStatus = async (requestId) => {
@@ -391,7 +391,7 @@ export const getPengajuanDanaHermesStatus = async (requestId) => {
     skipOfflineQueue: true,
     skipAuthRedirect: true,
   });
-  return response.data;
+  return response.data?.data || response.data;
 };
 
 export const getPengajuanDanaForPoll = async (id, { signal } = {}) => {

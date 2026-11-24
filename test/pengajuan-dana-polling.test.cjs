@@ -254,34 +254,61 @@ test('buildPollBody builds valid Hermes payload for all 3 delivery modes', async
   const { buildPollBody } = await helpers();
   const rows = [samplePengajuan(1), samplePengajuan(2)];
 
-  // 1. pdf_poll mode
-  const pdfPollBody = buildPollBody(rows, phones, 'pdf_poll');
-  assert.equal(pdfPollBody.delivery.mode, 'pdf_poll');
-  assert.ok(pdfPollBody.poll);
-  assert.equal(pdfPollBody.poll.options.length, 3);
-  assert.equal(pdfPollBody.sender_phone, '+6281234567890');
-  assert.equal(pdfPollBody.recipient_phone, '+6281298765432');
-  assert.equal(pdfPollBody.items.length, 2);
+  const combined = buildPollBody(rows, { recipient_phone: phones.recipient_phone }, 'pdf_text');
+  assert.equal(combined.delivery.mode, 'pdf_text');
+  assert.equal(combined.event, 'pengajuan_dana_delivery.requested');
+  assert.equal(combined.poll, null);
+  assert.equal(combined.sender_phone, null);
+  assert.equal(combined.delivery.pdf_documents.length, 1);
+  assert.ok(combined.delivery.text.includes('RINGKASAN PENGAJUAN DANA'));
+  assert.equal(combined.recipient_phone, '+6281298765432');
+  assert.equal(combined.items.length, 2);
+  assert.equal(combined.result_handling.send_result_to, null);
+  assert.equal(combined.result_handling.include_recommendation, false);
+  assert.equal(combined.result_handling.update_pengajuan_dana, false);
+  assert.throws(() => buildPollBody(rows, phones, 'pdf_poll'), /Mode pengiriman/);
 
   // 2. pdf mode
   const pdfBody = buildPollBody(rows, phones, 'pdf');
   assert.equal(pdfBody.delivery.mode, 'pdf');
   assert.equal(pdfBody.poll, null);
+  assert.equal(pdfBody.delivery.text, null);
+  assert.equal(pdfBody.delivery.pdf_documents.length, 1);
 
   // 3. text mode
   const textBody = buildPollBody(rows, phones, 'text');
   assert.equal(textBody.delivery.mode, 'text');
   assert.ok(typeof textBody.delivery.text === 'string' && textBody.delivery.text.length > 0);
   assert.equal(textBody.poll, null);
+  assert.equal(textBody.delivery.pdf_documents.length, 0);
 });
 
 test('preparePollPayload wraps payload with metadata and enforces validation', async () => {
   const { preparePollPayload } = await helpers();
   const rows = [samplePengajuan(1)];
 
-  const result = await preparePollPayload(rows, phones, null, metadata, 'pdf_poll');
+  const result = await preparePollPayload(rows, phones, null, metadata, 'pdf_text');
   assert.ok(result.payload);
   assert.equal(result.payload.request_id, metadata.request_id);
   assert.equal(result.payload.created_at, metadata.created_at);
   assert.equal(result.payload.summary.pengajuan_dana_count, 1);
+});
+
+test('Hermes API helpers unwrap delivery data for status monitoring', async () => {
+  const requests = [];
+  const delivery = { request_id: metadata.request_id, status: 'queued' };
+  const axios = {
+    async post(url, payload, config) { requests.push({ url, payload, config }); return { data: { success: true, status: 202, data: delivery } }; },
+    async get() { return { data: { success: true, status: 200, data: { ...delivery, status: 'completed' } } }; }
+  };
+  const api = await load('src/api/pengajuan-dana.js', {
+    'utils/axios': axios,
+    swr: { default: () => ({}), mutate: () => {} },
+    react: React
+  });
+  const submitted = await api.submitPengajuanDanaHermes({ request_id: metadata.request_id });
+  assert.equal(submitted.status, 'queued');
+  assert.equal(submitted.request_id, metadata.request_id);
+  assert.equal(requests[0].config.headers['Idempotency-Key'], metadata.request_id);
+  assert.equal((await api.getPengajuanDanaHermesStatus(metadata.request_id)).status, 'completed');
 });

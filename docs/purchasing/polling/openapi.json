@@ -3,16 +3,16 @@
   "info": {
     "title": "Hermes Purchase Order WhatsApp Delivery Hook",
     "version": "1.2.0",
-    "description": "Proposed Hermes API. Next.js exports JSON for pdf_text, pdf, or text delivery. Hermes fetches the referenced PO print PDFs with its configured backend credentials. WhatsApp delivery contains PDF and/or full formatted text with line item narrative notes. No PO mutation is permitted."
+    "description": "ERP delivery contract for pdf_text, pdf, or text without voting. Legacy route/event names are retained for transport compatibility. ERP splits pdf_text into pdf and text requests for the deployed Hermes v1.1 hook; native pdf_text support requires a Hermes change. No PO mutation is permitted."
   },
   "paths": {
     "/hooks/purchase-order-polls": {
       "post": {
-        "operationId": "createPurchaseOrderPoll",
+        "operationId": "createPurchaseOrderDelivery",
         "security": [{ "HermesHookToken": [] }],
         "parameters": [{
           "name": "Idempotency-Key", "in": "header", "required": true,
-          "description": "Must equal request_id. Same key and payload never create a second poll; different payload returns 409.",
+          "description": "Must equal request_id. Same key and payload never create another delivery; different payload returns 409.",
           "schema": { "type": "string", "format": "uuid" }
         }],
         "requestBody": {
@@ -104,16 +104,6 @@
           "text": { "type": ["string", "null"] }
         }
       },
-      "NativePoll": {
-        "type": "object", "additionalProperties": false,
-        "required": ["question", "allow_multiple_answers", "scope", "options"],
-        "properties": {
-          "question": { "type": "string", "minLength": 1 },
-          "allow_multiple_answers": { "const": false },
-          "scope": { "const": "all_selected_purchase_orders" },
-          "options": { "const": [{ "id": "approve", "label": "Setuju" }, { "id": "reject", "label": "Tolak" }, { "id": "request_revision", "label": "Perlu Revisi" }] }
-        }
-      },
       "PollRequest": {
         "type": "object", "additionalProperties": false,
         "required": ["schema_version", "event", "sender_phone", "recipient_phone", "delivery", "poll", "items", "summary", "result_handling", "request_id", "created_at"],
@@ -122,10 +112,10 @@
           "event": { "const": "purchase_order_poll.requested" },
           "request_id": { "type": "string", "format": "uuid", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$" },
           "created_at": { "type": "string", "format": "date-time" },
-          "sender_phone": { "anyOf": [{ "$ref": "#/components/schemas/Phone" }, { "type": "null" }] },
+          "sender_phone": { "type": "null" },
           "recipient_phone": { "$ref": "#/components/schemas/Phone" },
           "delivery": { "$ref": "#/components/schemas/Delivery" },
-          "poll": { "anyOf": [{ "$ref": "#/components/schemas/NativePoll" }, { "type": "null" }] },
+          "poll": { "type": "null" },
           "items": { "type": "array", "minItems": 1, "description": "po_id must be unique (cross-field server validation)", "items": { "$ref": "#/components/schemas/PurchaseOrder" } },
           "summary": {
             "type": "object", "additionalProperties": false, "required": ["purchase_order_count", "totals_by_currency"],
@@ -136,7 +126,7 @@
           },
           "result_handling": {
             "type": "object", "additionalProperties": false, "required": ["send_result_to", "include_recommendation", "update_purchase_orders"],
-            "properties": { "send_result_to": { "enum": ["sender_phone", null] }, "include_recommendation": { "type": "boolean" }, "update_purchase_orders": { "const": false } }
+            "properties": { "send_result_to": { "type": "null" }, "include_recommendation": { "const": false }, "update_purchase_orders": { "const": false } }
           }
         },
         "allOf": [
@@ -185,18 +175,6 @@
               "fields": { "type": "array", "items": { "type": "object", "required": ["path", "message"], "properties": { "path": { "type": "string" }, "message": { "type": "string" } } } }
             }
           }
-        }
-      },
-      "PollVoteUpdate": {
-        "type": "object", "additionalProperties": false,
-        "description": "Normalized internal Hermes event, not a Next.js callback endpoint. Correlate by stored provider message ID; deduplicate event_id; validate respondent against stored recipient.",
-        "required": ["schema_version", "event", "event_id", "request_id", "poll_message_id", "respondent_phone", "selected_option_ids", "received_at"],
-        "properties": {
-          "schema_version": { "const": "1.0" }, "event": { "const": "purchase_order_poll.vote_updated" },
-          "event_id": { "type": "string", "format": "uuid" }, "request_id": { "type": "string", "format": "uuid" },
-          "poll_message_id": { "type": "string", "minLength": 1 }, "respondent_phone": { "$ref": "#/components/schemas/Phone" },
-          "selected_option_ids": { "type": "array", "maxItems": 1, "uniqueItems": true, "items": { "enum": ["approve", "reject", "request_revision"] } },
-          "received_at": { "type": "string", "format": "date-time" }
         }
       }
     }

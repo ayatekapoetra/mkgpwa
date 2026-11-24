@@ -1,16 +1,8 @@
-export const POLL_OPTIONS = [
-  { id: 'approve', label: 'Setuju' },
-  { id: 'reject', label: 'Tolak' },
-  { id: 'request_revision', label: 'Perlu Revisi' }
-];
-
 export const DELIVERY_MODES = [
-  { id: 'pdf_poll', label: 'Kirim PDF dan Polling', description: 'Dokumen PDF dan satu polling WhatsApp untuk seluruh pengajuan dana.' },
-  { id: 'pdf', label: 'Kirim PDF Saja', description: 'Dokumen PDF setiap pengajuan dana, tanpa polling.' },
-  { id: 'text', label: 'Kirim Teks Saja', description: 'Ringkasan pengajuan dana dalam pesan teks WhatsApp, tanpa PDF atau polling.' }
+  { id: 'pdf_text', label: 'Kirim Teks dan PDF', description: 'Ringkasan pesan teks dan satu PDF gabungan pengajuan dana.' },
+  { id: 'pdf', label: 'Kirim PDF Saja', description: 'Satu PDF ringkasan gabungan pengajuan dana.' },
+  { id: 'text', label: 'Kirim Teks Saja', description: 'Ringkasan pengajuan dana dalam pesan teks WhatsApp.' }
 ];
-
-export const deliveryHasPoll = (mode) => mode === 'pdf_poll';
 
 export const STORAGE_KEY = 'mkg_pengajuan_dana_poll_selection';
 export const pollStorageKey = () => STORAGE_KEY;
@@ -202,17 +194,16 @@ export function buildPengajuanDanaText(items, summary) {
   return [header, ...documents, footer].join('\n\n');
 }
 
-export function buildPollBody(rows, { sender_phone, recipient_phone }, mode = 'pdf_poll') {
+export function buildPollBody(rows, { recipient_phone }, mode = 'pdf_text') {
   if (!DELIVERY_MODES.some((option) => option.id === mode)) throw new Error('Mode pengiriman tidak valid.');
   if (!rows || !rows.length) throw new Error('Pilih minimal satu Pengajuan Dana.');
   const items = rows.map(toPollItem);
   if (new Set(items.map((item) => item.id)).size !== items.length) throw new Error('Terdapat Pengajuan Dana duplikat.');
-  const withPoll = deliveryHasPoll(mode);
   const summary = summarizePollItems(items);
   return {
     schema_version: '1.1',
-    event: 'pengajuan_dana_poll.requested',
-    sender_phone: withPoll ? normalizeWhatsAppPhone(sender_phone) : null,
+    event: 'pengajuan_dana_delivery.requested',
+    sender_phone: null,
     recipient_phone: normalizeWhatsAppPhone(recipient_phone),
     delivery: {
       mode,
@@ -223,25 +214,20 @@ export function buildPollBody(rows, { sender_phone, recipient_phone }, mode = 'p
         mime_type: 'application/pdf',
         source: { method: 'GET', path: `/pengajuan-dana/${items[0].id}/print` }
       }],
-      text: mode === 'text' ? buildPengajuanDanaText(items, summary) : null
+      text: mode === 'text' || mode === 'pdf_text' ? buildPengajuanDanaText(items, summary) : null
     },
-    poll: withPoll ? {
-      question: 'Bagaimana keputusan Anda untuk seluruh Pengajuan Dana pada daftar berikut?',
-      allow_multiple_answers: false,
-      scope: 'all_selected_pengajuan_dana',
-      options: POLL_OPTIONS.map((option) => ({ ...option }))
-    } : null,
+    poll: null,
     items,
     summary,
     result_handling: {
-      send_result_to: withPoll ? 'sender_phone' : null,
-      include_recommendation: withPoll,
-      update_status: false
+      send_result_to: null,
+      include_recommendation: false,
+      update_pengajuan_dana: false
     }
   };
 }
 
-export async function preparePollPayload(rows, phones, previous, metadata, mode = 'pdf_poll') {
+export async function preparePollPayload(rows, phones, previous, metadata, mode = 'pdf_text') {
   const body = buildPollBody(rows, phones, mode);
   if (typeof crypto === 'undefined' || !crypto.subtle) {
     throw new Error('Pembuatan JSON memerlukan browser dengan Web Crypto melalui HTTPS atau localhost.');

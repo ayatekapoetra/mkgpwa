@@ -156,7 +156,7 @@ export default function PengajuanDanaPage() {
                     disabled={!selection.ready || selectedIds.size === 0}
                     startIcon={<MessageText size={18} />}
                   >
-                    Preview Polling ({selectedIds.size})
+                    Preview Pengiriman ({selectedIds.size})
                   </Button>
                   <Tooltip title="Batal Pilih Data">
                     <IconButton

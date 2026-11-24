@@ -16,7 +16,6 @@ import usePengajuanDanaPollDetails from './usePengajuanDanaPollDetails';
 import {
   buildPollBody,
   DELIVERY_MODES,
-  deliveryHasPoll,
   normalizeWhatsAppPhone,
   preparePollPayload,
   selectionSignature,
@@ -61,7 +60,7 @@ export default function PengajuanDanaPollPreview() {
   const [contacts, setContacts] = useState({ key: null, sender_phone: '', recipient_phone: '' });
   const [touched, setTouched] = useState(false);
   const [preparing, setPreparing] = useState(false);
-  const [deliveryMode, setDeliveryMode] = useState('pdf_poll');
+  const [deliveryMode, setDeliveryMode] = useState('pdf_text');
   const [artifact, setArtifact] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -90,7 +89,6 @@ export default function PengajuanDanaPollPreview() {
   const latest = useRef({ key: selection.key, ids, rows: details.rows, phones });
   latest.current = { key: selection.key, ids, rows: details.rows, phones };
 
-  const senderError = deliveryHasPoll(deliveryMode) ? phoneError(phones.sender_phone) : '';
   const recipientError = phoneError(phones.recipient_phone);
   const complete =
     canRead &&
@@ -102,13 +100,13 @@ export default function PengajuanDanaPollPreview() {
     Object.keys(details.errors).length === 0;
 
   const preview = useMemo(() => {
-    if (!complete || senderError || recipientError) return null;
+    if (!complete || recipientError) return null;
     try {
       return buildPollBody(details.rows, phones, deliveryMode);
     } catch {
       return null;
     }
-  }, [complete, senderError, recipientError, details.rows, phones, deliveryMode]);
+  }, [complete, recipientError, details.rows, phones, deliveryMode]);
 
   const summary = useMemo(() => {
     return complete ? summarizePollItems(details.rows.map(toPollItem)) : null;
@@ -174,9 +172,8 @@ export default function PengajuanDanaPollPreview() {
     setMessage('');
     setDeliveryStatus(null);
 
-    const needsSender = deliveryHasPoll(mode) && phoneError(phones.sender_phone);
-    if (needsSender || recipientError) {
-      document.getElementById?.(recipientError ? 'pd-poll-recipient' : 'pd-poll-sender')?.focus();
+    if (recipientError) {
+      document.getElementById?.('pd-poll-recipient')?.focus();
       return;
     }
 
@@ -261,7 +258,6 @@ export default function PengajuanDanaPollPreview() {
         accessError={accessError}
         phones={phones}
         touched={touched}
-        senderError={senderError}
         recipientError={recipientError}
         complete={complete}
         summary={summary}
