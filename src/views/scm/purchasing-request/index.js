@@ -85,7 +85,9 @@ export default function PurchasingRequestPage() {
             >
               Buat PR
             </Button>
-          ) : null
+          ) : (
+            <Typography variant="h5">Daftar Purchasing Request</Typography>
+          )
         }
         secondary={
           permissions.can_read ? (

@@ -47,7 +47,7 @@ function PriceDetails({ row }) {
         <>
           <Typography variant="caption">Harga satuan: {formatMoney(row.actual_unit_price)}{uom ? ` / ${uom}` : ''}</Typography>
           <Typography variant="caption">
-            Nilai stok: {formatQuantity(row.stock_order)} {row.order_uom || ''} × {formatMoney(row.actual_unit_price)} = {formatMoney(row.actual_stock_value)}
+            Nilai stok: {formatQuantity(row.stock_order)} {row.order_uom || ''} × {formatMoney(row.actual_unit_price)} = {formatMoney(Math.round(row.actual_stock_value))}
           </Typography>
         </>
       ) : (
@@ -129,7 +129,7 @@ export default function MonitoringSparepartStockList({ data, total, page, perPag
                   <TableCell align="right" sx={{ ...numericSx, fontWeight: 700 }}>
                     <Tooltip title={<PriceDetails row={row} />} arrow>
                       <Typography component="span" variant="body2" tabIndex={0} sx={{ fontWeight: 700, cursor: 'help' }}>
-                        {row.price_available === false ? '-' : formatMoney(row.actual_stock_value)}
+                        {row.price_available === false ? '-' : formatMoney(Math.round(row.actual_stock_value))}
                       </Typography>
                     </Tooltip>
                   </TableCell>

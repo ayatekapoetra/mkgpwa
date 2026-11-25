@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 
 import axiosServices, { fetcher } from 'utils/axios';
+import useDebouncedValue from 'hooks/useDebouncedValue';
 
 export const hargaBeliEndpoint = '/master/harga-beli';
 
@@ -40,6 +41,24 @@ export function useHargaBeliAccess() {
 export function useHargaBeliOptions() {
   const { data, error, isLoading } = useSWR(`${hargaBeliEndpoint}/options`, fetcher, { revalidateOnFocus: false });
   return { options: data?.rows || {}, loading: isLoading, error };
+}
+
+export function useHargaBeliBarangSearch(search) {
+  const keyword = search.trim();
+  const debouncedKeyword = useDebouncedValue(keyword, 350);
+  const ready = keyword.length >= 3 && keyword === debouncedKeyword;
+  const query = queryString({ page: 1, perPages: 25, kode: debouncedKeyword });
+  const { data, error, isLoading } = useSWR(
+    ready ? `/master/barang/list?${query}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  return {
+    rows: ready && Array.isArray(data?.rows) ? data.rows : [],
+    loading: keyword.length >= 3 && (!ready || isLoading),
+    error: ready ? error : null
+  };
 }
 
 export function useHargaBeliDetail(id) {

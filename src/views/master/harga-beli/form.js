@@ -15,7 +15,7 @@ import BtnBack from 'components/BtnBack';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
-import { createHargaBeli, deactivateHargaBeli, updateHargaBeli, useHargaBeliAccess, useHargaBeliDetail, useHargaBeliOptions } from 'api/harga-beli';
+import { createHargaBeli, deactivateHargaBeli, updateHargaBeli, useHargaBeliAccess, useHargaBeliBarangSearch, useHargaBeliDetail, useHargaBeliOptions } from 'api/harga-beli';
 
 const emptyValues = { barang_id: '', bisnis_id: '', bisnis_ids: [], gudang_id: '', gudang_ids: [], periode: moment().format('YYYY-MM'), harga_beli: '', narasi: '', aktif: 'Y' };
 const schema = Yup.object({
@@ -23,7 +23,7 @@ const schema = Yup.object({
   bisnis_id: Yup.number().when('$edit', {
     is: true,
     then: () => Yup.number().typeError('Bisnis wajib dipilih').required('Bisnis wajib dipilih'),
-    otherwise: () => Yup.number().nullable()
+    otherwise: () => Yup.number().transform((value, originalValue) => originalValue === '' ? null : value).nullable()
   }),
   bisnis_ids: Yup.array().when('$edit', {
     is: false,
@@ -33,7 +33,7 @@ const schema = Yup.object({
   gudang_id: Yup.number().when('$edit', {
     is: true,
     then: () => Yup.number().typeError('Gudang wajib dipilih').required('Gudang wajib dipilih'),
-    otherwise: () => Yup.number().nullable()
+    otherwise: () => Yup.number().transform((value, originalValue) => originalValue === '' ? null : value).nullable()
   }),
   gudang_ids: Yup.array().nullable(),
   periode: Yup.string().matches(/^\d{4}-(0[1-9]|1[0-2])$/, 'Format periode tidak valid').required('Periode wajib diisi'),
@@ -55,6 +55,9 @@ export default function HargaBeliForm({ edit = false }) {
   const { permissions, loading: accessLoading } = useHargaBeliAccess();
   const { data, loading: detailLoading, error: detailError } = useHargaBeliDetail(edit ? id : null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [barangSearch, setBarangSearch] = useState('');
+  const [selectedBarang, setSelectedBarang] = useState(null);
+  const { rows: barangRows, loading: barangLoading, error: barangError } = useHargaBeliBarangSearch(barangSearch);
   const allowed = edit ? permissions.can_update : permissions.can_insert;
   const initialValues = edit && data ? { ...emptyValues, barang_id: data.barang_id || '', bisnis_id: data.bisnis_id || '', gudang_id: data.gudang_id || '', periode: data.periode || '', harga_beli: data.harga_beli ?? '', narasi: data.narasi || '', aktif: data.aktif === 'N' ? 'N' : 'Y' } : emptyValues;
 
@@ -102,7 +105,7 @@ export default function HargaBeliForm({ edit = false }) {
 
   return <Fragment><Breadcrumbs custom heading={edit ? 'Edit Harga Beli' : 'Tambah Harga Beli'} links={[{ title: 'Home', to: APP_DEFAULT_PATH }, { title: 'Harga Beli', to: '/harga-beli' }, { title: edit ? 'Edit' : 'Tambah' }]} /><MainCard title={<BtnBack href="/harga-beli" />} content>
     <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2.5, borderColor: alpha(theme.palette.primary.main, 0.2), background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.12)}, ${theme.palette.background.paper} 70%)` }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}><Box><Typography variant="h4" fontWeight={800}>{edit ? 'Perbarui Harga Beli' : 'Harga Beli Baru'}</Typography><Typography color="text.secondary">Harga berlaku per barang, bisnis, gudang, dan periode bulanan.</Typography></Box><Stack direction="row" spacing={1}><Chip label="IDR" color="primary" variant="outlined" /><Chip label="Histori Bulanan" color="info" variant="outlined" /></Stack></Stack></Paper>
-    <Formik initialValues={initialValues} enableReinitialize validationSchema={schema} validate={(values) => {
+    <Formik initialValues={initialValues} enableReinitialize validate={(values) => {
       try {
         schema.validateSync(values, { abortEarly: false, context: { edit } });
         return {};
@@ -117,7 +120,10 @@ export default function HargaBeliForm({ edit = false }) {
       }
     }} onSubmit={submit}>{({ errors, handleBlur, handleChange, isSubmitting, setFieldTouched, setFieldValue, touched, values }) => {
       const selected = (rows, value) => rows.find((row) => String(row.id) === String(value)) || null;
-      const barangOptions = [...(options.barangs || [])];
+      const barangOptions = [...barangRows];
+      if (selectedBarang && String(selectedBarang.id) === String(values.barang_id) && !selected(barangOptions, selectedBarang.id)) {
+        barangOptions.unshift(selectedBarang);
+      }
       if (edit && data?.barang_id && !selected(barangOptions, data.barang_id)) {
         barangOptions.unshift({
           id: data.barang_id,
@@ -158,7 +164,29 @@ export default function HargaBeliForm({ edit = false }) {
       const historyRows = Array.isArray(data?.history) ? data.history : [];
       return <Form noValidate><Stack spacing={3}>
         <Section icon={<Box1 size={21} />} title="Barang & Lokasi" subtitle="Pilih barang dan scope lokasi harga."><Grid container spacing={2.5}>
-          <Grid item xs={12}><Autocomplete options={barangOptions} value={barang} getOptionLabel={(row) => `${row.kode || '-'} - ${row.nama || '-'}`} isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)} onChange={(_, row) => setFieldValue('barang_id', row?.id || '')} onBlur={() => setFieldTouched('barang_id', true)} renderInput={(params) => <TextField {...params} required label="Barang" error={touched.barang_id && Boolean(errors.barang_id)} helperText={(touched.barang_id && errors.barang_id) || (barang?.num_part ? `Part number: ${barang.num_part}` : 'Pilih barang master')} />} /></Grid>
+          <Grid item xs={12}>
+            <Autocomplete
+              options={barangOptions}
+              value={barang}
+              filterOptions={(rows) => rows}
+              loading={barangLoading}
+              loadingText="Mencari barang..."
+              noOptionsText={barangError ? 'Gagal mencari barang. Silakan coba lagi.' : barangSearch.trim().length < 3 ? 'Ketik minimal 3 karakter untuk mencari barang' : 'Barang tidak ditemukan'}
+              getOptionLabel={(row) => `${row.kode || '-'} - ${row.nama || '-'}`}
+              isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)}
+              onInputChange={(_, value, reason) => {
+                if (reason === 'input') setBarangSearch(value);
+                else if (reason === 'clear' || reason === 'reset') setBarangSearch('');
+              }}
+              onChange={(_, row) => {
+                setSelectedBarang(row);
+                setBarangSearch('');
+                setFieldValue('barang_id', row?.id || '');
+              }}
+              onBlur={() => setFieldTouched('barang_id', true)}
+              renderInput={(params) => <TextField {...params} required label="Barang" error={Boolean(barangError) || (touched.barang_id && Boolean(errors.barang_id))} helperText={(touched.barang_id && errors.barang_id) || (barangError ? 'Gagal mencari barang. Silakan coba lagi.' : barang?.num_part ? `Part number: ${barang.num_part}` : 'Ketik minimal 3 karakter kode, nama, atau part number barang')} InputProps={{ ...params.InputProps, endAdornment: <>{barangLoading ? <CircularProgress color="inherit" size={18} /> : null}{params.InputProps.endAdornment}</> }} />}
+            />
+          </Grid>
           <Grid item xs={12} md={6}>
             {edit ? (
               <Autocomplete options={bisnisOptions} value={selected(bisnisOptions, values.bisnis_id)} getOptionLabel={(row) => `${row.initial || '-'} - ${row.name || '-'}`} isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)} onChange={(_, row) => { setFieldValue('bisnis_id', row?.id || ''); setFieldValue('gudang_id', ''); }} onBlur={() => setFieldTouched('bisnis_id', true)} renderInput={(params) => <TextField {...params} required label="Bisnis" error={touched.bisnis_id && Boolean(errors.bisnis_id)} helperText={(touched.bisnis_id && errors.bisnis_id) || 'Scope kepemilikan harga'} />} />
@@ -177,7 +205,10 @@ export default function HargaBeliForm({ edit = false }) {
                     setFieldValue('gudang_ids', (values.gudang_ids || []).filter((gid) => allowedGudangs.some((ag) => String(ag.id) === String(gid))));
                   }}
                   onBlur={() => setFieldTouched('bisnis_ids', true)}
-                  renderTags={(tagValue, getTagProps) => tagValue.map((option, index) => <Chip key={option.id} size="small" label={option.initial || option.name} {...getTagProps({ index })} />)}
+                  renderTags={(tagValue, getTagProps) => tagValue.map((option, index) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return <Chip key={key} size="small" label={option.initial || option.name} {...tagProps} />;
+                  })}
                   renderInput={(params) => <TextField {...params} required label="Unit Bisnis (Bisa Lebih dari Satu)" error={touched.bisnis_ids && Boolean(errors.bisnis_ids)} helperText={(touched.bisnis_ids && errors.bisnis_ids) || `${selectedBisnis.length} unit bisnis dipilih`} />}
                 />
                 {bisnisOptions.length > 1 ? (
@@ -205,7 +236,10 @@ export default function HargaBeliForm({ edit = false }) {
                   isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)}
                   onChange={(_, rows) => setFieldValue('gudang_ids', (rows || []).map((row) => row.id))}
                   onBlur={() => setFieldTouched('gudang_ids', true)}
-                  renderTags={(tagValue, getTagProps) => tagValue.map((option, index) => <Chip key={option.id} size="small" label={option.kode || option.nama} {...getTagProps({ index })} />)}
+                  renderTags={(tagValue, getTagProps) => tagValue.map((option, index) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return <Chip key={key} size="small" label={option.kode || option.nama} {...tagProps} />;
+                  })}
                   renderInput={(params) => <TextField {...params} label="Gudang (Opsional / Multi)" error={touched.gudang_ids && Boolean(errors.gudang_ids)} helperText={(touched.gudang_ids && errors.gudang_ids) || (activeBisnisIds.length ? (selectedGudangs.length ? `${selectedGudangs.length} gudang dipilih` : 'Kosongkan untuk otomatis mencakup seluruh gudang pada bisnis terpilih') : 'Pilih unit bisnis terlebih dahulu')} />}
                 />
                 {activeBisnisIds.length && gudangs.length > 1 ? (
