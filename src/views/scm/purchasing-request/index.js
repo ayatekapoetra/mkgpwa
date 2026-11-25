@@ -34,6 +34,7 @@ const DEFAULT_FILTERS = {
   prioritas: "",
   kode: "",
   description: "",
+  createdby: "",
   date_start: "",
   date_end: "",
 };

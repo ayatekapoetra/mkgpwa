@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 
 import {
+  usePurchasingRequestAuthors,
   usePurchasingRequestBisnis,
   usePurchasingRequestCabang,
   usePurchasingRequestGudang,
@@ -27,6 +28,7 @@ const EMPTY_FILTERS = {
   prioritas: "",
   kode: "",
   description: "",
+  createdby: "",
   date_start: "",
   date_end: "",
   limit: 25,
@@ -47,6 +49,7 @@ export default function PurchasingRequestFilter({
     open,
   );
   const { rows: gudang = [] } = usePurchasingRequestGudang({}, open);
+  const { rows: authors = [], loading: authorsLoading, error: authorsError } = usePurchasingRequestAuthors(open);
   useEffect(() => {
     if (open) {
       setDraft({ ...EMPTY_FILTERS, ...params });
@@ -106,6 +109,31 @@ export default function PurchasingRequestFilter({
             label="Deskripsi"
             value={draft.description}
             onChange={createFieldChangeHandler("description")}
+          />
+          <Autocomplete
+            options={authors}
+            value={getSelectedOption(authors, draft.createdby)}
+            loading={authorsLoading}
+            loadingText="Memuat author..."
+            noOptionsText="Author tidak ditemukan"
+            getOptionLabel={(option) => option.nama || String(option.id)}
+            isOptionEqualToValue={(option, valueOption) =>
+              String(option.id) === String(valueOption.id)
+            }
+            onChange={(_, option) =>
+              setDraft((current) => ({
+                ...current,
+                createdby: option?.id || "",
+              }))
+            }
+            renderInput={(inputParams) => (
+              <TextField
+                {...inputParams}
+                label="Author Dokumen"
+                error={Boolean(authorsError)}
+                helperText={authorsError ? "Daftar author gagal dimuat" : ""}
+              />
+            )}
           />
           <Autocomplete
             options={bisnis}

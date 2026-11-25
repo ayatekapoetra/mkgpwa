@@ -22,6 +22,7 @@ const useDebounce = (value, delay = 350) => {
 export const endpoints = {
   key: "/scm/purchase-request",
   access: "/scm/purchase-request/access",
+  authors: "/scm/purchase-request/authors",
   validate: "/scm/purchase-request/validate",
   updateItem: "/scm/purchase-request/update-item",
   approve: "/scm/purchase-request/approve",
@@ -161,6 +162,20 @@ export const usePurchasingRequestAccess = () => {
       mutate,
     };
   }, [data, error, isLoading, isValidating, mutate]);
+};
+
+export const usePurchasingRequestAuthors = (enabled = true) => {
+  const { data, error, isLoading } = useSWR(
+    enabled ? endpoints.authors : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+
+  return {
+    rows: normalizeRows(data),
+    loading: isLoading,
+    error,
+  };
 };
 
 export const useGetPurchasingRequests = (params = {}, enabled = true) => {
