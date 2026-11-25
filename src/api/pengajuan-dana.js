@@ -177,7 +177,7 @@ export const usePengajuanDanaApprovalCount = (enabled = true) => {
 };
 
 export const usePengajuanDanaCoas = (params = {}) => {
-  const url = `${endpoints.coas}${toQueryString(params)}`;
+  const url = params.bisnis_id ? `${endpoints.coas}${toQueryString(params)}` : null;
   const { data, error, isLoading, isValidating, mutate } = useSWR(url, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,

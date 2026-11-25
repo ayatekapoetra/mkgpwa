@@ -17,7 +17,9 @@ const OptionCoa = ({
   setFieldValue
 }) => {
   const { rows, loading } = usePengajuanDanaCoas(bisnisId ? { bisnis_id: bisnisId } : {});
-  const options = Array.isArray(rows) ? rows : [];
+  const options = bisnisId && Array.isArray(rows)
+    ? rows.filter((row) => String(row.bisnis_id) === String(bisnisId) && Number(row.coa_tipe) === 5 && row.alias != null)
+    : [];
 
   if (loading) {
     return <InputSkeleton height={40} />;
@@ -28,7 +30,7 @@ const OptionCoa = ({
       <FormControl fullWidth variant="outlined">
         <Autocomplete
           fullWidth
-          disabled={disabled}
+          disabled={disabled || !bisnisId}
           options={options}
           value={options.find((option) => String(option?.id) === String(value)) || null}
           onChange={(_e, newValue) => {
@@ -49,7 +51,7 @@ const OptionCoa = ({
                 <Stack sx={{ width: '100%' }} spacing={0.2}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 1, gap: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {option.kode}
+                      {option.alias}
                     </Typography>
                     <Typography variant="caption" color="primary.main">
                       {getCoaTypeName(option)}
