@@ -8,6 +8,7 @@ import {
   Alert,
   Autocomplete,
   Avatar,
+  AvatarGroup,
   Box,
   Button,
   Card,
@@ -85,10 +86,10 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
   const [updating, setUpdating] = useState(false);
 
   const [showAddAction, setShowAddAction] = useState(false);
-  const [actionForm, setActionForm] = useState({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' });
+  const [actionForm, setActionForm] = useState({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' });
   const [savingAction, setSavingAction] = useState(false);
   const [editAction, setEditAction] = useState(null);
-  const [editForm, setEditForm] = useState({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' });
+  const [editForm, setEditForm] = useState({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deletingAction, setDeletingAction] = useState(false);
@@ -160,11 +161,12 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
         starttime: actionForm.starttime ? moment(actionForm.starttime).format('YYYY-MM-DD HH:mm:ss') : null,
         endtime: actionForm.endtime ? moment(actionForm.endtime).format('YYYY-MM-DD HH:mm:ss') : null,
         teknisi_id: actionForm.teknisi_id,
+        teknisi_ids: actionForm.teknisi_ids.filter((id) => id != actionForm.teknisi_id),
         photo: actionForm.photo || undefined
       };
       await addWorkOrderAction(woId, payload);
       openNotification({ open: true, message: 'Catatan teknisi berhasil ditambahkan', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
-      setActionForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' });
+      setActionForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' });
       setShowAddAction(false);
       mutate();
     } catch (error) {
@@ -198,6 +200,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
       starttime: toDatetimeLocal(act.starttime),
       endtime: toDatetimeLocal(act.endtime),
       teknisi_id: act.teknisi_id || '',
+      teknisi_ids: [],
       photo: ''
     });
     setShowAddAction(false);
@@ -215,12 +218,13 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
         starttime: editForm.starttime ? moment(editForm.starttime).format('YYYY-MM-DD HH:mm:ss') : null,
         endtime: editForm.endtime ? moment(editForm.endtime).format('YYYY-MM-DD HH:mm:ss') : null,
         teknisi_id: editForm.teknisi_id,
+        teknisi_ids: editForm.teknisi_ids.filter((id) => id != editForm.teknisi_id),
         photo: editForm.photo || undefined
       };
       await updateWorkOrderAction(editAction.id, payload);
       openNotification({ open: true, message: 'Catatan teknisi berhasil diperbarui', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
       setEditAction(null);
-      setEditForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' });
+      setEditForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' });
       mutate();
     } catch (error) {
       const message = error?.response?.data?.diagnostic?.message || error?.message || 'Gagal memperbarui catatan';
@@ -314,6 +318,21 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
   }
 
   const actions = detail.actions || [];
+  const involvedTechnicians = Array.from(
+    new Map(
+      [
+        ...(detail.teknisi || [])
+          .filter((technician) => technician.aktif !== 'N' && technician.teknisi_id)
+          .map((technician) => ({
+            id: technician.teknisi_id,
+            nama: technician.karyawan?.nama || technician.nama || `Teknisi #${technician.teknisi_id}`
+          })),
+        ...actions
+          .filter((action) => action.aktif !== 'N' && action.teknisi_id)
+          .map((action) => ({ id: action.teknisi_id, nama: action.karyawan?.nama || `Teknisi #${action.teknisi_id}` }))
+      ].map((technician) => [String(technician.id), technician])
+    ).values()
+  );
   const duration = calculateDuration(detail.services_at || detail.breakdown?.breakdown_at, detail.ready_at);
   const OPTIONS_STATUS = WORK_ORDER_STATUS.slice(0, -1);
   return (
@@ -411,22 +430,44 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                   const isLast = idx === actions.length - 1;
                   return (
                     <Box key={act.id} sx={{ display: 'flex', gap: 1.5, position: 'relative', pb: isLast ? 0 : 2 }}>
-                      {!isLast && <Box sx={{ position: 'absolute', left: 15, top: 32, bottom: 0, width: 2, bgcolor: 'divider', borderRadius: 1 }} />}
-                      <Avatar sx={{ width: 32, height: 32, fontSize: 14, fontWeight: 700, bgcolor: 'primary.lighter', color: 'primary.main', flexShrink: 0, zIndex: 1 }}>
-                        {nama.charAt(0).toUpperCase()}
-                      </Avatar>
+
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Paper variant="outlined" sx={{ p: 1.5, transition: 'border-color 0.2s', '&:hover': { borderColor: 'primary.main' } }}>
+                          
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>{nama}</Typography>
+                              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>{nama} (Penanggung jawab)</Typography>
+                              {involvedTechnicians.some((technician) => String(technician.id) !== String(act.teknisi_id)) && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, overflowWrap: 'anywhere' }}>
+                                  Teknisi lain pada issue: {involvedTechnicians.filter((technician) => String(technician.id) !== String(act.teknisi_id)).map((technician) => technician.nama).join(', ')}
+                                </Typography>
+                              )}
                               <Typography variant="body2" color="text.primary" sx={{ mb: 1, lineHeight: 1.5 }}>{act.narasi || '-'}</Typography>
                               <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" spacing={0.5} alignItems="center">
-                                  <Clock size={13} color="text.secondary" />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {formatDateTime(act.starttime)}{act.starttime && act.endtime ? ` – ${formatTime(act.endtime)}` : ''}
-                                  </Typography>
+                                  <AvatarGroup
+                                    max={Math.max(2, involvedTechnicians.length)}
+                                    sx={{
+                                      mb: 1,
+                                      justifyContent: 'flex-end',
+                                      '& .MuiAvatar-root': {
+                                        width: 32, height: 32, fontSize: 14, fontWeight: 700,
+                                        bgcolor: 'primary.lighter', color: 'primary.main'
+                                      }
+                                    }}
+                                  >
+                                    {(involvedTechnicians.length ? involvedTechnicians : [{ id: 'system', nama }]).map((technician) => (
+                                      <Avatar key={technician.id} title={technician.nama} alt={technician.nama}>
+                                        {technician.nama.charAt(0).toUpperCase()}
+                                      </Avatar>
+                                    ))}
+                                  </AvatarGroup>
+                                  <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <Clock size={13} color="text.secondary" />
+                                    <Typography variant="caption" color="text.secondary">
+                                      {formatDateTime(act.starttime)}{act.starttime && act.endtime ? ` – ${formatTime(act.endtime)}` : ''}
+                                    </Typography>
+                                  </Stack>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} sx={{ display: detail?.status === 'CLOSE' ? 'none' : 'flex' }}>
                                   <IconButton size="small" color="primary" onClick={() => handleEditAction(act)}>
@@ -512,7 +553,11 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                     value={teknisiOptions.find((opt) => opt.id == actionForm.teknisi_id) || null}
                     isOptionEqualToValue={(option, value) => option.id == value?.id}
                     getOptionLabel={(option) => option?.nama || ''}
-                    onChange={(_, option) => setActionForm((prev) => ({ ...prev, teknisi_id: option?.id || '' }))}
+                    onChange={(_, option) => setActionForm((prev) => ({
+                      ...prev,
+                      teknisi_id: option?.id || '',
+                      teknisi_ids: prev.teknisi_ids.filter((id) => id != option?.id)
+                    }))}
                     renderOption={(props, option) => (
                       <Box component="li" {...props} key={option.id}>
                         <Stack>
@@ -521,7 +566,29 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                         </Stack>
                       </Box>
                     )}
-                    renderInput={(params) => <TextField {...params} label="Teknisi" />}
+                    renderInput={(params) => <TextField {...params} label="Teknisi Utama (penanggung jawab)" required />}
+                  />
+
+                  <Autocomplete
+                    multiple
+                    fullWidth
+                    size="small"
+                    options={teknisiOptions.filter((opt) => opt.id != actionForm.teknisi_id)}
+                    value={actionForm.teknisi_ids.map((id) => teknisiOptions.find((opt) => opt.id == id)).filter(Boolean)}
+                    isOptionEqualToValue={(option, value) => option.id == value?.id}
+                    getOptionLabel={(option) => option?.nama || ''}
+                    onChange={(_, options) => setActionForm((prev) => ({ ...prev, teknisi_ids: options.map((option) => option.id).filter((id) => id != prev.teknisi_id) }))}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Stack>
+                          <Typography variant="body2">{option.nama}</Typography>
+                          {option.subtitle && <Typography variant="caption" color="text.secondary">{option.subtitle}</Typography>}
+                        </Stack>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Teknisi Pendamping" helperText="Opsional. Teknisi pendamping dicatat di tingkat issue, bukan per catatan." />
+                    )}
                   />
 
                   <TextField
@@ -546,7 +613,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                   </Box>
 
                   <Stack direction="row" spacing={1.5}>
-                    <Button variant="outlined" fullWidth onClick={() => { setShowAddAction(false); setActionForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' }); }}>
+                    <Button variant="outlined" fullWidth onClick={() => { setShowAddAction(false); setActionForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' }); }}>
                       Batal
                     </Button>
                     <LoadingButton variant="contained" fullWidth loading={savingAction} onClick={handleAddAction}>
@@ -561,7 +628,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
               <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'primary.main', borderRadius: 1.5, bgcolor: 'primary.lighter' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
                   <Typography variant="subtitle1" fontWeight={700}>Edit Catatan Teknisi</Typography>
-                  <IconButton size="small" onClick={() => { setEditAction(null); setEditForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' }); }}>
+                  <IconButton size="small" onClick={() => { setEditAction(null); setEditForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' }); }}>
                     <CloseSquare size={18} />
                   </IconButton>
                 </Stack>
@@ -594,7 +661,11 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                     value={teknisiOptions.find((opt) => opt.id == editForm.teknisi_id) || null}
                     isOptionEqualToValue={(option, value) => option.id == value?.id}
                     getOptionLabel={(option) => option?.nama || ''}
-                    onChange={(_, option) => setEditForm((prev) => ({ ...prev, teknisi_id: option?.id || '' }))}
+                    onChange={(_, option) => setEditForm((prev) => ({
+                      ...prev,
+                      teknisi_id: option?.id || '',
+                      teknisi_ids: prev.teknisi_ids.filter((id) => id != option?.id)
+                    }))}
                     renderOption={(props, option) => (
                       <Box component="li" {...props} key={option.id}>
                         <Stack>
@@ -603,7 +674,33 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                         </Stack>
                       </Box>
                     )}
-                    renderInput={(params) => <TextField {...params} label="Teknisi" />}
+                    renderInput={(params) => <TextField {...params} label="Teknisi Utama (penanggung jawab)" required />}
+                  />
+
+                  <Autocomplete
+                    multiple
+                    fullWidth
+                    size="small"
+                    options={teknisiOptions.filter((opt) => opt.id != editForm.teknisi_id)}
+                    value={editForm.teknisi_ids.map((id) => teknisiOptions.find((opt) => opt.id == id)).filter(Boolean)}
+                    isOptionEqualToValue={(option, value) => option.id == value?.id}
+                    getOptionLabel={(option) => option?.nama || ''}
+                    onChange={(_, options) => setEditForm((prev) => ({ ...prev, teknisi_ids: options.map((option) => option.id).filter((id) => id != prev.teknisi_id) }))}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Stack>
+                          <Typography variant="body2">{option.nama}</Typography>
+                          {option.subtitle && <Typography variant="caption" color="text.secondary">{option.subtitle}</Typography>}
+                        </Stack>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Teknisi Pendamping"
+                        helperText="Opsional. Pilihan awal kosong karena pendamping dicatat di tingkat issue, bukan per catatan. Pilihan ini menambah pendamping; pendamping sebelumnya tetap tercatat."
+                      />
+                    )}
                   />
 
                   <TextField
@@ -630,7 +727,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
                   </Box>
 
                   <Stack direction="row" spacing={1.5}>
-                    <Button variant="outlined" fullWidth onClick={() => { setEditAction(null); setEditForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', photo: '' }); }}>
+                    <Button variant="outlined" fullWidth onClick={() => { setEditAction(null); setEditForm({ narasi: '', starttime: '', endtime: '', teknisi_id: '', teknisi_ids: [], photo: '' }); }}>
                       Batal
                     </Button>
                     <LoadingButton variant="contained" fullWidth loading={savingEdit} onClick={handleUpdateAction}>
