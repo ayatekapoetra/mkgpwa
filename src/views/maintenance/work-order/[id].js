@@ -43,9 +43,10 @@ import LoadingButton from 'components/@extended/LoadingButton';
 import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH } from 'config';
 import { openNotification } from 'api/notification';
-import { addWorkOrderAction, closeWorkOrder, deleteWorkOrderAction, getTeknisiOptions, reopenWorkOrder, updateWorkOrder, updateWorkOrderAction, useWorkOrderAccess, useWorkOrderDetail } from 'api/work-order';
+import { addWorkOrderAction, closeWorkOrder, deleteWorkOrderAction, getTeknisiOptions, reopenWorkOrder, updateWorkOrder, updateWorkOrderAction, useWorkOrderAccess, useWorkOrderDetail, useWorkOrderStatusHistory } from 'api/work-order';
 import { calculateDuration, formatBreakdownAt, formatDateIssue, getWorkOrderStatusInfo, parseApiDate, WORK_ORDER_STATUS } from '../breakdown/utils';
 import MaterialRequestTab from './MaterialRequestTab';
+import StatusHistoryTab from './StatusHistoryTab';
 
 moment.locale('id');
 
@@ -101,6 +102,10 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
   const [reopenReason, setReopenReason] = useState('');
   const [reopening, setReopening] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const statusHistory = useWorkOrderStatusHistory(woId, activeTab === 2);
+  const revalidateStatusHistory = () => {
+    if (statusHistory.data || statusHistory.dataError) statusHistory.mutate();
+  };
 
   useEffect(() => {
     getTeknisiOptions()
@@ -139,6 +144,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
         ready_at: form.ready_at ? moment(form.ready_at).format('YYYY-MM-DD HH:mm:ss') : null
       };
       await updateWorkOrder(woId, payload);
+      revalidateStatusHistory();
       openNotification({ open: true, message: 'Status work order berhasil diupdate', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
       mutate();
     } catch (error) {
@@ -258,6 +264,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
     setClosing(true);
     try {
       await closeWorkOrder(woId, closeReason);
+      revalidateStatusHistory();
       openNotification({ open: true, message: 'Work order berhasil ditutup (CLOSED)', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
       setCloseDialog(false);
       setCloseReason('');
@@ -278,6 +285,7 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
     setReopening(true);
     try {
       await reopenWorkOrder(woId, reopenReason.trim());
+      revalidateStatusHistory();
       openNotification({ open: true, message: 'Work order dibuka kembali', alert: { color: 'success', variant: 'filled' }, variant: 'alert' });
       setReopenDialog(false);
       setReopenReason('');
@@ -343,8 +351,15 @@ export default function WorkOrderDetail({ woId, breakdownId, backHref: backHrefO
         <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)}>
           <Tab label="Detail & Tindakan" />
           <Tab label="Material Request" />
+          <Tab label="Riwayat Status" />
         </Tabs>
       </Box>
+
+      {activeTab === 2 && (
+        <MainCard title={<BtnBack href={backHref} />}>
+          <StatusHistoryTab history={statusHistory} />
+        </MainCard>
+      )}
 
       {activeTab === 1 && (
         <Grid container spacing={2}>

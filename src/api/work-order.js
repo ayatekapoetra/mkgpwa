@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { fetcher } from 'utils/axios';
 import axiosServices from 'utils/axios';
@@ -78,6 +78,55 @@ export const useWorkOrderDetail = (id, enabled = true) => {
     revalidateOnFocus: false,
     revalidateOnReconnect: false
   });
+
+  return useMemo(
+    () => ({
+      data: data?.rows || null,
+      dataLoading: isLoading,
+      dataError: error,
+      dataValidating: isValidating,
+      mutate
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+};
+
+const statusHistoryFetcher = async (url) => {
+  const response = await axiosServices.get(url, {
+    skipOfflineQueue: true,
+    validateStatus: (status) => (status >= 200 && status < 300) || status === 403
+  });
+  if (response.status === 403) {
+    const error = new Error('Anda tidak memiliki akses untuk melihat riwayat status');
+    error.status = 403;
+    throw error;
+  }
+  return response.data;
+};
+
+export const useWorkOrderStatusHistory = (id, active = false) => {
+  const [activatedId, setActivatedId] = useState(null);
+
+  useEffect(() => {
+    if (active && id) setActivatedId(id);
+  }, [active, id]);
+
+  const enabled = !!id && (active || activatedId === id);
+  const { data, isLoading, error, isValidating, mutate } = useSWR(
+    enabled ? `${endpoints.key}/${id}/status-history` : null,
+    statusHistoryFetcher,
+    {
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: active,
+      refreshInterval: active ? 60000 : 0,
+      shouldRetryOnError: false
+    }
+  );
+
+  useEffect(() => {
+    if (active && id) mutate();
+  }, [active, id, mutate]);
 
   return useMemo(
     () => ({
